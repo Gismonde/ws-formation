@@ -1,20 +1,5 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const params = await searchParams
-
-  async function login(formData: FormData) {
-    'use server'
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-    const supabase = await createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      redirect('/login?error=1')
-    }
-    redirect('/dashboard')
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -26,7 +11,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="text-2xl font-bold text-gray-900">WS Formation</h1>
           <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
         </div>
-        <form action={login} className="space-y-5">
+        <form action="/api/auth/login" method="POST" className="space-y-5">
           {params.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               Email ou mot de passe incorrect.
