@@ -68,7 +68,7 @@ export default function AdminEmployesPage() {
     } else {
       // Create auth user first via admin API would require service role
       // For now just show info - admin creates user in Supabase dashboard
-      alert('Pour créer un employé : allez dans Supabase Dashboard > Authentication > Users > Invite user. Ensuite revenez ici pour compléter son profil.')
+      alert('Pour creer un employe : allez dans Supabase Dashboard > Authentication > Users > Invite user. Ensuite revenez ici pour completer son profil.')
       setSaving(false)
       return
     }
@@ -89,11 +89,11 @@ export default function AdminEmployesPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Employés</h1>
-          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>{filtered.length} employé{filtered.length !== 1 ? 's' : ''} {filterDept !== 'tous' ? 'dans ce département' : 'au total'}</p>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Employes</h1>
+          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>{filtered.length} employe{filtered.length !== 1 ? 's' : ''} {filterDept !== 'tous' ? 'dans ce departement' : 'au total'}</p>
         </div>
         <button onClick={openNew} style={{ backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: 6, padding: '10px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-          + Nouvel employé
+          + Nouvel employe
         </button>
       </div>
 
@@ -102,7 +102,7 @@ export default function AdminEmployesPage() {
         <button
           onClick={() => setFilterDept('tous')}
           style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid', borderColor: filterDept === 'tous' ? '#1e40af' : '#d1d5db', backgroundColor: filterDept === 'tous' ? '#1e40af' : 'white', color: filterDept === 'tous' ? 'white' : '#374151', cursor: 'pointer', fontSize: 13, fontWeight: filterDept === 'tous' ? 600 : 400 }}
-        >Tous les départements</button>
+        >Tous les departements</button>
         {departements.map(d => (
           <button key={d.id}
             onClick={() => setFilterDept(d.id)}
@@ -116,20 +116,20 @@ export default function AdminEmployesPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              {['Nom', 'Email', 'Département', 'Poste', 'Rôle', 'Statut', 'Actions'].map(h => (
+              {['Nom', 'Email', 'Departement', 'Poste', 'Role', 'Statut', 'Actions'].map(h => (
                 <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#9ca3af' }}>Aucun employé dans ce département</td></tr>
+              <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#9ca3af' }}>Aucun employe dans ce departement</td></tr>
             ) : filtered.map((e, i) => (
               <tr key={e.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: i % 2 === 0 ? 'white' : '#fafafa' }}>
                 <td style={{ padding: '12px 16px', fontWeight: 500 }}>{e.prenom} {e.nom}</td>
                 <td style={{ padding: '12px 16px', color: '#6b7280', fontSize: 14 }}>{e.email}</td>
-                <td style={{ padding: '12px 16px', fontSize: 14 }}>{e.departements?.nom || <span style={{ color: '#d1d5db' }}>—</span>}</td>
-                <td style={{ padding: '12px 16px', fontSize: 14, color: '#6b7280' }}>{e.poste || <span style={{ color: '#d1d5db' }}>—</span>}</td>
+                <td style={{ padding: '12px 16px', fontSize: 14 }}>{e.departements?.nom || <span style={{ color: '#d1d5db' }}>â</span>}</td>
+                <td style={{ padding: '12px 16px', fontSize: 14, color: '#6b7280' }}>{e.poste || <span style={{ color: '#d1d5db' }}>â</span>}</td>
                 <td style={{ padding: '12px 16px' }}>{badge(e.role)}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: e.actif ? '#16a34a' : '#dc2626' }}>
@@ -139,7 +139,7 @@ export default function AdminEmployesPage() {
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <button onClick={() => openEdit(e)} style={{ fontSize: 13, color: '#1e40af', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 4 }}>
-                    ✏️ Modifier
+                    âï¸ Modifier
                   </button>
                 </td>
               </tr>
@@ -152,9 +152,9 @@ export default function AdminEmployesPage() {
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ backgroundColor: 'white', borderRadius: 12, padding: 32, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 20px', fontSize: 18 }}>{editEmploye ? 'Modifier l'employé' : 'Nouvel employé'}</h2>
+            <h2 style={{ margin: '0 0 20px', fontSize: 18 }}>{editEmploye ? 'Modifier l'employe' : 'Nouvel employe'}</h2>
             
-            {[['Prénom', 'prenom', 'text'], ['Nom', 'nom', 'text'], ['Email', 'email', 'email'], ['Poste', 'poste', 'text']].map(([label, field, type]) => (
+            {[['Prenom', 'prenom', 'text'], ['Nom', 'nom', 'text'], ['Email', 'email', 'email'], ['Poste', 'poste', 'text']].map(([label, field, type]) => (
               <div key={field} style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{label}</label>
                 <input type={type} value={(form as any)[field]} disabled={field === 'email' && !!editEmploye}
@@ -164,19 +164,19 @@ export default function AdminEmployesPage() {
             ))}
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Département</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Departement</label>
               <select value={form.departement_id} onChange={e => setForm(f => ({ ...f, departement_id: e.target.value }))}
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}>
-                <option value="">— Sélectionner —</option>
+                <option value="">â Selectionner â</option>
                 {departements.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
               </select>
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Rôle</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Role</label>
               <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}>
-                <option value="employe">Employé</option>
+                <option value="employe">Employe</option>
                 <option value="gestionnaire">Gestionnaire</option>
                 <option value="admin">Admin</option>
               </select>
