@@ -1,80 +1,152 @@
 'use client'
+
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@supabase/ssr'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const form = e.currentTarget
-    // Read values directly from DOM to support autofill
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+    setLoading(true)
+    setError(null)
 
-    if (!email || !password) {
-      setError('Veuillez entrer votre email et mot de passe.')
+    // Read values from form directly to handle browser autofill
+    const form = e.currentTarget as HTMLFormElement
+    const emailVal = (form.querySelector('input[type="email"]') as HTMLInputElement)?.value || email
+    const passVal = (form.querySelector('input[type="password"]') as HTMLInputElement)?.value || password
+
+    if (!emailVal || !passVal) {
+      setError('Veuillez remplir tous les champs')
+      setLoading(false)
       return
     }
 
-    setLoading(true)
-    setError('')
-
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: emailVal,
+      password: passVal,
+    })
 
     if (authError) {
-      setError('Email ou mot de passe incorrect.')
+      setError('Email ou mot de passe incorrect')
       setLoading(false)
-    } else {
-      // Use full page redirect to ensure session cookies are sent with next request
-      window.location.replace('/dashboard')
+      return
     }
+
+    // Successful login - redirect to dashboard (which redirects to admin if role=admin)
+    router.push('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
-            <span className="text-white text-2xl font-bold">WS</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">WS Formation</h1>
-          <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f0f4ff',
+      fontFamily: 'sans-serif'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '40px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        width: '100%',
+        maxWidth: '400px'
+      }}>
+        {/* Logo / Title */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏥</div>
+          <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#1e40af' }}>WS Formation</h1>
+          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Plateforme de formations en ligne</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adresse email</label>
+
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
+              Email
+            </label>
             <input
               type="email"
               name="email"
               autoComplete="email"
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="vous@wsformation.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '16px',
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
+              placeholder="votre@email.com"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
+              Mot de passe
+            </label>
             <input
               type="password"
               name="password"
               autoComplete="current-password"
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '16px',
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
               placeholder="••••••••"
             />
           </div>
+
+          {error && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              padding: '10px 12px',
+              borderRadius: '6px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition duration-200"
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: loading ? '#93c5fd' : '#1e40af',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s'
+            }}
           >
             {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
