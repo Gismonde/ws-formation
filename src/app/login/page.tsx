@@ -1,31 +1,17 @@
-'use client'
-import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
-export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const emailRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const email = emailRef.current?.value || ''
-    const password = passwordRef.current?.value || ''
-    if (!email || !password) {
-      setError('Veuillez entrer votre email et mot de passe.')
-      return
-    }
-    setLoading(true)
-    setError(null)
+export default function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
+  async function login(formData: FormData) {
+    'use server'
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const supabase = await createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('Email ou mot de passe incorrect.')
-      setLoading(false)
-    } else {
-      window.location.href = '/dashboard'
+      redirect('/login?error=1')
     }
+    redirect('/dashboard')
   }
 
   return (
@@ -38,19 +24,19 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-gray-900">WS Formation</h1>
           <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-5">
-          {error && (
+        <form action={login} className="space-y-5">
+          {searchParams.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
+              Email ou mot de passe incorrect.
             </div>
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse email</label>
             <input
-              ref={emailRef}
               type="email"
               name="email"
               autoComplete="email"
+              required
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
               placeholder="vous@wsformation.com"
             />
@@ -58,20 +44,19 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
             <input
-              ref={passwordRef}
               type="password"
               name="password"
               autoComplete="current-password"
+              required
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition duration-200"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition duration-200"
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            Se connecter
           </button>
         </form>
       </div>
