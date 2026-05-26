@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: employe } = await supabase.from('employes').select('*').eq('auth_user_id', user.id).single()
+  const { data: employe } = await supabase.from('employes').select('*').eq('id', user.id).single()
   if (!employe) redirect('/login')
 
   const { data: formations } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', employe.id)
@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const terminees = formations?.filter((f: any) => ['termine','certifie'].includes(f.statut_global)) ?? []
 
   const couleurStatut = (s: string) => ({non_commence:'bg-gray-100 text-gray-700',en_cours:'bg-blue-100 text-blue-700',termine:'bg-green-100 text-green-700',certifie:'bg-purple-100 text-purple-700'}[s] ?? 'bg-gray-100 text-gray-700')
-  const labelStatut = (s: string) => ({non_commence:'À commencer',en_cours:'En cours',termine:'Terminé',certifie:'Certifié ✓'}[s] ?? s)
+  const labelStatut = (s: string) => ({non_commence:'à commencer',en_cours:'En cours',termine:'Terminé',certifie:'Certifié ✓'}[s] ?? s)
 
   const handleLogout = async () => { 'use server'; const { createClient: cc } = await import('@/lib/supabase/server'); const sb = await cc(); await sb.auth.signOut(); redirect('/login') }
 
