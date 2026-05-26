@@ -1,28 +1,31 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const email = emailRef.current?.value || ''
+    const password = passwordRef.current?.value || ''
+    if (!email || !password) {
+      setError('Veuillez entrer votre email et mot de passe.')
+      return
+    }
     setLoading(true)
     setError(null)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setError('Email ou mot de passe incorrect.')
+      setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     }
-    setLoading(false)
   }
 
   return (
@@ -36,21 +39,38 @@ export default function LoginPage() {
           <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-5">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            <input
+              ref={emailRef}
+              type="email"
+              name="email"
+              autoComplete="email"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="vous@wsformation.com" required />
+              placeholder="vous@wsformation.com"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            <input
+              ref={passwordRef}
+              type="password"
+              name="password"
+              autoComplete="current-password"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="••••••••" required />
+              placeholder="••••••••"
+            />
           </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition duration-200">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition duration-200"
+          >
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
