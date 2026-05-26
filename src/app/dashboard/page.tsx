@@ -7,18 +7,42 @@ export default function DashboardPage() {
   const [employe, setEmploye] = useState<any>(null)
   const [formations, setFormations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
     const load = async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { window.location.replace('/login'); return }
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        setDebugInfo('Auth error: ' + (authError?.message || 'no user'))
+        window.location.replace('/login')
+        return
+      }
+      
+      setDebugInfo('User: ' + user.id)
 
-      const { data: emp } = await supabase.from('employes').select('*').eq('id', user.id).single()
-      if (!emp) { window.location.replace('/login'); return }
+      const { data: emp, error: empError } = await supabase.from('employes').select('*').eq('id', user.id).single()
+      
+      if (empError) {
+        setDebugInfo(prev => prev + ' | Employe error: ' + empError.message + ' code:' + empError.code)
+        // Try without RLS filter for debugging
+        const { data: allEmps, error: allErr } = await supabase.from('employes').select('id, email, role').limit(5)
+        setDebugInfo(prev => prev + ' | All employes: ' + JSON.stringify(allEmps) + ' err:' + JSON.stringify(allErr))
+        setLoading(false)
+        return
+      }
+      
+      if (!emp) {
+        setDebugInfo(prev => prev + ' | No employee found for id: ' + user.id)
+        setLoading(false)
+        return
+      }
+      
       setEmploye(emp)
 
-      const { data: f } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', emp.id)
+      const { data: f, error: fError } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', emp.id)
+      if (fError) setDebugInfo(prev => prev + ' | Formations error: ' + fError.message)
       setFormations(f || [])
       setLoading(false)
     }
@@ -31,9 +55,11 @@ export default function DashboardPage() {
     window.location.replace('/login')
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-500">Chargement...</div>
+  if (loading || debugInfo) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center flex-col gap-4 p-8">
+      <div className="text-gray-500">{loading ? 'Chargement...' : ''}</div>
+      {debugInfo && <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm text-yellow-800 max-w-2xl break-all">{debugInfo}</div>}
+      {!loading && <button onClick={handleLogout} className="text-indigo-600 underline">Déconnexion</button>}
     </div>
   )
 
@@ -65,10 +91,7 @@ export default function DashboardPage() {
         </div>
       </nav>
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe?.prenom} 👋</h1>
-          <p className="text-gray-500 mt-1">{employe?.poste ?? employe?.role}</p>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Bonjour, {employe?.prenom} 👋</h1>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[{label:'Formations assignées',value:formations.length},{label:'En cours',value:enCours.length},{label:'Terminées',value:terminees.length},{label:'Certificats',value:formations.filter(f=>f.statut_global==='certifie').length}].map(stat=>(
             <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
@@ -77,31 +100,8 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-        {enCours.length > 0 && <section className="mb-6"><h2 className="text-lg font-semibold mb-3">🔵 En cours</h2><div className="grid md:grid-cols-2 gap-4">{enCours.map(f=><CarteFormation key={f.formation_id} f={f} couleurStatut={couleurStatut} labelStatut={labelStatut}/>)}</div></section>}
-        {nonCommence.length > 0 && <section className="mb-6"><h2 className="text-lg font-semibold mb-3">⚪ À commencer</h2><div className="grid md:grid-cols-2 gap-4">{nonCommence.map(f=><CarteFormation key={f.formation_id} f={f} couleurStatut={couleurStatut} labelStatut={labelStatut}/>)}</div></section>}
-        {terminees.length > 0 && <section><h2 className="text-lg font-semibold mb-3">✅ Terminées</h2><div className="grid md:grid-cols-2 gap-4">{terminees.map(f=><CarteFormation key={f.formation_id} f={f} couleurStatut={couleurStatut} labelStatut={labelStatut}/>)}</div></section>}
         {formations.length === 0 && <div className="text-center py-12 text-gray-400">Aucune formation assignée pour le moment.</div>}
       </main>
     </div>
-  )
-}
-
-function CarteFormation({f,couleurStatut,labelStatut}:{f:any,couleurStatut:(s:string)=>string,labelStatut:(s:string)=>string}) {
-  return (
-    <Link href={`/formations/${f.formation_id}`}>
-      <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-indigo-300 transition cursor-pointer">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight">{f.formation_titre}</h3>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full ml-2 shrink-0 ${couleurStatut(f.statut_global)}`}>{labelStatut(f.statut_global)}</span>
-        </div>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-gray-400">{f.categorie}</span>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1">
-          <div className="bg-indigo-500 h-1.5 rounded-full" style={{width:`${f.progression_pct || 0}%`}}/>
-        </div>
-        <p className="text-xs text-gray-400">{f.progression_pct || 0}% complété</p>
-      </div>
-    </Link>
   )
 }
