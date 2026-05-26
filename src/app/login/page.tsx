@@ -1,5 +1,37 @@
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const params = await searchParams
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+export default function LoginPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    // Read values directly from DOM to support autofill
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    if (!email || !password) {
+      setError('Veuillez entrer votre email et mot de passe.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setError('Email ou mot de passe incorrect.')
+      setLoading(false)
+    } else {
+      // Use full page redirect to ensure session cookies are sent with next request
+      window.location.replace('/dashboard')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -11,10 +43,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="text-2xl font-bold text-gray-900">WS Formation</h1>
           <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
         </div>
-        <form action="/api/auth/login" method="POST" className="space-y-5">
-          {params.error && (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              Email ou mot de passe incorrect.
+              {error}
             </div>
           )}
           <div>
@@ -41,9 +73,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition duration-200"
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg transition duration-200"
           >
-            Se connecter
+            {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
       </div>
