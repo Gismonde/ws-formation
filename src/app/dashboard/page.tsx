@@ -1,109 +1,99 @@
 'use client'
+
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@supabase/ssr'
+import { useRouter } from 'next/navigation'
+
+type Employe = {
+  id: string
+  auth_user_id: string
+  prenom: string
+  nom: string
+  email: string
+  role: string
+  departement: string | null
+  poste: string | null
+  actif: boolean
+}
 
 export default function DashboardPage() {
-  const [employe, setEmploye] = useState<any>(null)
-  const [formations, setFormations] = useState<any[]>([])
+  const [employe, setEmploye] = useState<Employe | null>(null)
   const [loading, setLoading] = useState(true)
-  const [debugInfo, setDebugInfo] = useState<string>('')
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
-    const load = async () => {
-      const supabase = createClient()
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
-      if (authError || !user) {
-        setDebugInfo('No user: ' + (authError?.message || 'null'))
+    async function loadProfile() {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !user) {
+          router.replace('/login')
+          return
+        }
+
+        const { data, error: dbError } = await supabase
+          .from('employes')
+          .select('*')
+          .eq('auth_user_id', user.id)
+          .single()
+
+        if (dbError || !data) {
+          setError('Profil introuvable. Contactez votre administrateur.')
+          setLoading(false)
+          return
+        }
+
+        setEmploye(data)
         setLoading(false)
-        return
-      }
-      
-      // Try query by email (user.email) instead of id
-      const { data: emp, error: empError } = await supabase
-        .from('employes')
-        .select('*')
-        .eq('email', user.email)
-        .single()
-      
-      if (empError || !emp) {
-        // Also try just selecting all visible employes
-        const { data: allEmps, error: allErr } = await supabase.from('employes').select('id, email, role').limit(10)
-        setDebugInfo(
-          'User: ' + user.id + ' | email: ' + user.email +
-          ' | empError: ' + empError?.message + ' (' + empError?.code + ')' +
-          ' | allEmps: ' + JSON.stringify(allEmps) +
-          ' | allErr: ' + allErr?.message
-        )
+
+        // Redirect based on role
+        if (data.role === 'admin') {
+          router.replace('/admin')
+        }
+      } catch (e) {
+        setError('Erreur de connexion')
         setLoading(false)
-        return
       }
-      
-      setEmploye(emp)
-      const { data: f } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', emp.id)
-      setFormations(f || [])
-      setLoading(false)
     }
-    load()
+
+    loadProfile()
   }, [])
 
   const handleLogout = async () => {
-    const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.replace('/login')
+    router.replace('/login')
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-400 text-lg">Chargement...</div>
-    </div>
-  )
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
+        <p>Chargement...</p>
+      </div>
+    )
+  }
 
-  if (debugInfo) return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h2 className="text-lg font-bold mb-4">Debug Info</h2>
-      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm font-mono break-all mb-4">{debugInfo}</div>
-      <button onClick={handleLogout} className="text-indigo-600 underline">Déconnexion</button>
-    </div>
-  )
-
-  const enCours = formations.filter(f => f.statut_global === 'en_cours')
-  const nonCommence = formations.filter(f => f.statut_global === 'non_commence')
-  const terminees = formations.filter(f => ['termine','certifie'].includes(f.statut_global))
+  if (error) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', flexDirection: 'column', gap: '16px' }}>
+        <p style={{ color: 'red' }}>{error}</p>
+        <button onClick={handleLogout} style={{ padding: '8px 16px', cursor: 'pointer' }}>Déconnexion</button>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">WS</span>
-            </div>
-            <span className="font-semibold text-gray-900">WS Formation</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/formations" className="text-gray-600 hover:text-gray-900 text-sm">Formations</Link>
-            <Link href="/certificats" className="text-gray-600 hover:text-gray-900 text-sm">Certificats</Link>
-            {['admin','gestionnaire'].includes(employe?.role) && (
-              <Link href="/admin/formations" className="text-indigo-600 font-medium text-sm">Admin</Link>
-            )}
-            <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-900">Déconnexion</button>
-          </div>
-        </div>
-      </nav>
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Bonjour, {employe?.prenom} 👋</h1>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[{label:'Formations assignées',value:formations.length},{label:'En cours',value:enCours.length},{label:'Terminées',value:terminees.length},{label:'Certificats',value:formations.filter(f=>f.statut_global==='certifie').length}].map(stat=>(
-            <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-        {formations.length === 0 && <div className="text-center py-12 text-gray-400">Aucune formation assignée pour le moment.</div>}
-      </main>
+    <div style={{ fontFamily: 'sans-serif', padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>Bienvenue, {employe?.prenom} {employe?.nom}</h1>
+      <p>Rôle : {employe?.role}</p>
+      <button onClick={handleLogout} style={{ marginTop: '16px', padding: '8px 16px', cursor: 'pointer' }}>
+        Déconnexion
+      </button>
     </div>
   )
 }
