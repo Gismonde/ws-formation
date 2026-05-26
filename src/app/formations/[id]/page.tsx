@@ -82,7 +82,7 @@ export default function FormationDetailPage() {
     if (currentIdx < modules.length - 1) setActiveModule(modules[currentIdx + 1])
   }
 
-  const niveauLabel: Record<string, string> = { debutant: '🟢 Débutant', intermediaire: '🟡 Intermédiaire', avance: '🔴 Avancé' }
+  const niveauLabel: Record<string, string> = { debutant: 'ð¢ Debutant', intermediaire: 'ð¡ Intermediaire', avance: 'ð´ Avance' }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', fontFamily: 'sans-serif' }}>Chargement...</div>
   if (!formation) return <div style={{ padding: 40, fontFamily: 'sans-serif' }}>Formation introuvable</div>
@@ -92,15 +92,15 @@ export default function FormationDetailPage() {
       {/* Top bar */}
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <Link href={isAdmin ? '/admin/formations' : '/formations'} style={{ color: '#6b7280', textDecoration: 'none', fontSize: 14 }}>
-          ← {isAdmin ? 'Admin formations' : 'Mes formations'}
+          â {isAdmin ? 'Admin formations' : 'Mes formations'}
         </Link>
         <span style={{ color: '#d1d5db' }}>|</span>
         <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>{formation.titre}</span>
         {isAdmin && (
           <>
             <span style={{ color: '#d1d5db' }}>|</span>
-            <Link href={'/admin/formations/' + id + '/modifier'} style={{ fontSize: 13, color: '#1e40af', textDecoration: 'none' }}>✏️ Modifier</Link>
-            <span style={{ fontSize: 12, backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 9999, fontWeight: 600 }}>MODE APERÇU ADMIN</span>
+            <Link href={'/admin/formations/' + id + '/modifier'} style={{ fontSize: 13, color: '#1e40af', textDecoration: 'none' }}>âï¸ Modifier</Link>
+            <span style={{ fontSize: 12, backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 9999, fontWeight: 600 }}>MODE APERAU ADMIN</span>
           </>
         )}
       </div>
@@ -136,8 +136,8 @@ export default function FormationDetailPage() {
           <div style={{ backgroundColor: 'white', borderRadius: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', padding: 18, marginTop: 16 }}>
             <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Infos</div>
             {formation.niveau && <div style={{ fontSize: 13, marginBottom: 6 }}>{niveauLabel[formation.niveau] || formation.niveau}</div>}
-            {formation.duree_estimee && <div style={{ fontSize: 13, color: '#6b7280' }}>⏱ {formation.duree_estimee} min estimées</div>}
-            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>📖 {modules.length} module{modules.length !== 1 ? 's' : ''}</div>
+            {formation.duree_estimee && <div style={{ fontSize: 13, color: '#6b7280' }}>â± {formation.duree_estimee} min estimees</div>}
+            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>ð {modules.length} module{modules.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
 
@@ -146,12 +146,12 @@ export default function FormationDetailPage() {
           {!assignation && !isAdmin ? (
             /* Welcome screen before starting */
             <div style={{ backgroundColor: 'white', borderRadius: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', padding: 40, textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📚</div>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>ð</div>
               <h2 style={{ margin: '0 0 10px', fontSize: 22 }}>{formation.titre}</h2>
               {formation.description && <p style={{ color: '#6b7280', lineHeight: 1.6, marginBottom: 28, maxWidth: 500, margin: '0 auto 28px' }}>{formation.description}</p>}
               <button onClick={startFormation}
                 style={{ padding: '12px 32px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
-                ▶️ Commencer la formation
+                â¶ï¸ Commencer la formation
               </button>
             </div>
           ) : activeModule ? (
@@ -169,7 +169,7 @@ export default function FormationDetailPage() {
                   <div style={{ fontSize: 15, lineHeight: 1.7, color: '#374151', whiteSpace: 'pre-wrap' }}>{activeModule.contenu}</div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: '#9ca3af' }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>📝</div>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>ð</div>
                     <p>Ce module ne contient pas encore de contenu.</p>
                   </div>
                 )}
@@ -179,24 +179,24 @@ export default function FormationDetailPage() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button onClick={() => markModuleComplete(activeModule.id)}
                     style={{ padding: '10px 24px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                    ✅ Marquer comme terminé
+                    â Marquer comme termine
                   </button>
                 </div>
               )}
 
               {assignation?.statut === 'complete' && (
                 <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac' }}>
-                  <div style={{ fontSize: 28 }}>🎉</div>
-                  <div style={{ fontWeight: 700, color: '#16a34a', marginTop: 6 }}>Formation complétée !</div>
+                  <div style={{ fontSize: 28 }}>ð</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a', marginTop: 6 }}>Formation completee !</div>
                   <Link href={'/certificats'} style={{ display: 'inline-block', marginTop: 12, padding: '8px 20px', backgroundColor: '#16a34a', color: 'white', borderRadius: 6, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
-                    📜 Voir mon certificat
+                    ð Voir mon certificat
                   </Link>
                 </div>
               )}
             </div>
           ) : (
             <div style={{ backgroundColor: 'white', borderRadius: 10, padding: 40, textAlign: 'center', color: '#9ca3af' }}>
-              Sélectionnez un module à gauche pour commencer
+              Selectionnez un module A  gauche pour commencer
             </div>
           )}
         </div>
