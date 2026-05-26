@@ -15,34 +15,33 @@ export default function DashboardPage() {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
-        setDebugInfo('Auth error: ' + (authError?.message || 'no user'))
-        window.location.replace('/login')
-        return
-      }
-      
-      setDebugInfo('User: ' + user.id)
-
-      const { data: emp, error: empError } = await supabase.from('employes').select('*').eq('id', user.id).single()
-      
-      if (empError) {
-        setDebugInfo(prev => prev + ' | Employe error: ' + empError.message + ' code:' + empError.code)
-        // Try without RLS filter for debugging
-        const { data: allEmps, error: allErr } = await supabase.from('employes').select('id, email, role').limit(5)
-        setDebugInfo(prev => prev + ' | All employes: ' + JSON.stringify(allEmps) + ' err:' + JSON.stringify(allErr))
+        setDebugInfo('No user: ' + (authError?.message || 'null'))
         setLoading(false)
         return
       }
       
-      if (!emp) {
-        setDebugInfo(prev => prev + ' | No employee found for id: ' + user.id)
+      // Try query by email (user.email) instead of id
+      const { data: emp, error: empError } = await supabase
+        .from('employes')
+        .select('*')
+        .eq('email', user.email)
+        .single()
+      
+      if (empError || !emp) {
+        // Also try just selecting all visible employes
+        const { data: allEmps, error: allErr } = await supabase.from('employes').select('id, email, role').limit(10)
+        setDebugInfo(
+          'User: ' + user.id + ' | email: ' + user.email +
+          ' | empError: ' + empError?.message + ' (' + empError?.code + ')' +
+          ' | allEmps: ' + JSON.stringify(allEmps) +
+          ' | allErr: ' + allErr?.message
+        )
         setLoading(false)
         return
       }
       
       setEmploye(emp)
-
-      const { data: f, error: fError } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', emp.id)
-      if (fError) setDebugInfo(prev => prev + ' | Formations error: ' + fError.message)
+      const { data: f } = await supabase.from('vue_formations_employe').select('*').eq('employe_id', emp.id)
       setFormations(f || [])
       setLoading(false)
     }
@@ -55,20 +54,23 @@ export default function DashboardPage() {
     window.location.replace('/login')
   }
 
-  if (loading || debugInfo) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center flex-col gap-4 p-8">
-      <div className="text-gray-500">{loading ? 'Chargement...' : ''}</div>
-      {debugInfo && <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm text-yellow-800 max-w-2xl break-all">{debugInfo}</div>}
-      {!loading && <button onClick={handleLogout} className="text-indigo-600 underline">Déconnexion</button>}
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-gray-400 text-lg">Chargement...</div>
+    </div>
+  )
+
+  if (debugInfo) return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <h2 className="text-lg font-bold mb-4">Debug Info</h2>
+      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm font-mono break-all mb-4">{debugInfo}</div>
+      <button onClick={handleLogout} className="text-indigo-600 underline">Déconnexion</button>
     </div>
   )
 
   const enCours = formations.filter(f => f.statut_global === 'en_cours')
   const nonCommence = formations.filter(f => f.statut_global === 'non_commence')
   const terminees = formations.filter(f => ['termine','certifie'].includes(f.statut_global))
-
-  const couleurStatut = (s: string) => ({non_commence:'bg-gray-100 text-gray-700',en_cours:'bg-blue-100 text-blue-700',termine:'bg-green-100 text-green-700',certifie:'bg-purple-100 text-purple-700'}[s] ?? 'bg-gray-100 text-gray-700')
-  const labelStatut = (s: string) => ({non_commence:'À commencer',en_cours:'En cours',termine:'Terminé',certifie:'Certifié ✓'}[s] ?? s)
 
   return (
     <div className="min-h-screen bg-gray-50">
