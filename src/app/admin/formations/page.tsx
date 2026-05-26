@@ -17,14 +17,14 @@ export default async function AdminFormationsPage() {
           <p className="text-gray-500 text-sm mt-1">{formations?.length ?? 0} formation(s)</p>
         </div>
         <Link href="/admin/formations/nouvelle">
-          <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition">+ Nouvelle formation</button>
-        </Link>
+          <Link href="/formations" target="_blank"><button className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-lg transition border border-gray-200">👁 Aperçu employé</button></Link>
+        <Link href="/admin/formations/nouvelle"><button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition">+ Nouvelle formation</button></Link>
       </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['Titre','Catégorie','Niveau','Modules','Assignées','Statut',''].map(h => (
+              {['Titre','CatÃ©gorie','Niveau','Modules','AssignÃ©es','Statut',''].map(h => (
                 <th key={h} className="text-left px-5 py-3 font-medium text-gray-500">{h}</th>
               ))}
             </tr>
@@ -33,12 +33,13 @@ export default async function AdminFormationsPage() {
             {formations?.map((f: any) => (
               <tr key={f.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-5 py-3.5 font-medium text-gray-900">{f.titre}</td>
-                <td className="px-5 py-3.5 text-gray-500">{f.categorie ?? '—'}</td>
+                <td className="px-5 py-3.5 text-gray-500">{f.categorie ?? 'â'}</td>
                 <td className="px-5 py-3.5"><span className={`text-xs px-2 py-0.5 rounded font-medium ${f.niveau==='debutant'?'bg-green-50 text-green-700':f.niveau==='intermediaire'?'bg-yellow-50 text-yellow-700':'bg-red-50 text-red-700'}`}>{f.niveau}</span></td>
                 <td className="px-5 py-3.5 text-center text-gray-600">{modulesCount(f.id)}</td>
                 <td className="px-5 py-3.5 text-center text-gray-600">{assignCount(f.id)}</td>
-                <td className="px-5 py-3.5"><span className={`text-xs px-2 py-0.5 rounded font-medium ${f.publiee?'bg-green-50 text-green-700':'bg-gray-100 text-gray-500'}`}>{f.publiee?'Publiée':'Brouillon'}</span></td>
-                <td className="px-5 py-3.5"><Link href={`/admin/formations/${f.id}/modifier`} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs">Modifier</Link></td>
+                <td className="px-5 py-3.5"><span className={`text-xs px-2 py-0.5 rounded font-medium ${f.publiee?'bg-green-50 text-green-700':'bg-gray-100 text-gray-500'}`}>{f.publiee?'PubliÃ©e':'Brouillon'}</span></td>
+                <td className="px-5 py-3.5"><Link href={`/admin/formations/${f.id}/modifier`} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs">Modifier</Link>
+                <Link href={`/formations/${f.id}`} target="_blank" className="text-gray-500 hover:text-gray-700 font-medium text-xs">👁 Aperçu</Link></td>
               </tr>
             ))}
           </tbody>
