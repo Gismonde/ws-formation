@@ -136,6 +136,14 @@ export default function ModifierFormationPage() {
             <p className="text-gray-500 mt-1 truncate max-w-md">{formation.titre}</p>
           </div>
           <div className="flex gap-3">
+            <a
+              href={`/admin/formations/${params.id}/apercu`}
+              className="px-4 py-2 border border-amber-300 text-amber-600 rounded-lg hover:bg-amber-50 transition flex items-center gap-2 text-sm font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              👁️ Aperçu employé
+            </a>
             <button onClick={handleDelete} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition">Supprimer</button>
             <button onClick={() => router.push('/admin/formations')} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Retour</button>
           </div>
