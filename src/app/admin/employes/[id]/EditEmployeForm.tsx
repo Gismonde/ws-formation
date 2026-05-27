@@ -3,34 +3,32 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Departement { id: string; nom: string }
-interface Employe {
-  id: string
-  prenom: string
-  nom: string
-  email: string
-  poste: string | null
-  role: string
-  actif: boolean
-  departement_id: string | null
-  departements: { id: string; nom: string } | null
+
+interface Props {
+  employe: {
+    id: string
+    prenom: string
+    nom: string
+    email: string
+    poste: string | null
+    role: string
+    actif: boolean
+    departement_id: string | null
+  }
+  departements: Departement[]
 }
-interface Props { employe: Employe; departements: Departement[] }
 
 export default function EditEmployeForm({ employe, departements }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [form, setForm] = useState({
-    prenom: employe.prenom || '',
-    nom: employe.nom || '',
-    poste: employe.poste || '',
-    role: employe.role || 'employe',
-    departement_id: employe.departement_id || '',
-    actif: employe.actif
-  })
-
-  const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }))
+  const [prenom, setPrenom] = useState(employe.prenom || '')
+  const [nom, setNom] = useState(employe.nom || '')
+  const [poste, setPoste] = useState(employe.poste || '')
+  const [role, setRole] = useState(employe.role || 'employe')
+  const [departementId, setDepartementId] = useState(employe.departement_id || '')
+  const [actif, setActif] = useState(employe.actif)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +37,15 @@ export default function EditEmployeForm({ employe, departements }: Props) {
     const res = await fetch('/api/admin/update-employee', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: employe.id, ...form, departement_id: form.departement_id || null })
+      body: JSON.stringify({
+        id: employe.id,
+        prenom,
+        nom,
+        poste: poste || null,
+        departement_id: departementId || null,
+        role,
+        actif
+      })
     })
     const data = await res.json()
     setLoading(false)
@@ -48,7 +54,6 @@ export default function EditEmployeForm({ employe, departements }: Props) {
     } else {
       setSuccess(true)
       setTimeout(() => router.push('/admin/employes'), 1500)
-      router.refresh()
     }
   }
 
@@ -72,25 +77,25 @@ export default function EditEmployeForm({ employe, departements }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Prenom *</label>
-          <input className={inputCls} value={form.prenom} onChange={e => set('prenom', e.target.value)} required />
+          <input className={inputCls} value={prenom} onChange={e => setPrenom(e.target.value)} required />
         </div>
         <div>
           <label className={labelCls}>Nom *</label>
-          <input className={inputCls} value={form.nom} onChange={e => set('nom', e.target.value)} required />
+          <input className={inputCls} value={nom} onChange={e => setNom(e.target.value)} required />
         </div>
       </div>
       <div>
         <label className={labelCls}>Email</label>
         <input className={inputCls + ' bg-gray-50 text-gray-400 cursor-not-allowed'} value={employe.email} disabled />
-        <p className="text-xs text-gray-400 mt-1">{"L'email ne peut pas etre modifie"}</p>
+        <p className="text-xs text-gray-400 mt-1">L&apos;email ne peut pas etre modifie</p>
       </div>
       <div>
-        <label className={labelCls}>Poste / Titre</label>
-        <input className={inputCls} value={form.poste} onChange={e => set('poste', e.target.value)} placeholder="Ex: Infirmier(e), Technicien(ne)..." />
+        <label className={labelCls}>Poste</label>
+        <input className={inputCls} value={poste} onChange={e => setPoste(e.target.value)} placeholder="Ex: Infirmier(e)..." />
       </div>
       <div>
         <label className={labelCls}>Departement</label>
-        <select className={inputCls} value={form.departement_id} onChange={e => set('departement_id', e.target.value)}>
+        <select className={inputCls} value={departementId} onChange={e => setDepartementId(e.target.value)}>
           <option value="">-- Aucun departement --</option>
           {departements.map(d => (
             <option key={d.id} value={d.id}>{d.nom}</option>
@@ -99,14 +104,14 @@ export default function EditEmployeForm({ employe, departements }: Props) {
       </div>
       <div>
         <label className={labelCls}>Role</label>
-        <select className={inputCls} value={form.role} onChange={e => set('role', e.target.value)}>
+        <select className={inputCls} value={role} onChange={e => setRole(e.target.value)}>
           <option value="employe">Employe</option>
           <option value="gestionnaire">Gestionnaire</option>
           <option value="admin">Administrateur</option>
         </select>
       </div>
       <div className="flex items-center gap-3">
-        <input type="checkbox" id="actif" checked={form.actif} onChange={e => set('actif', e.target.checked)}
+        <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-blue-600 rounded border-gray-300" />
         <label htmlFor="actif" className="text-sm font-medium text-gray-700">Employe actif</label>
       </div>
