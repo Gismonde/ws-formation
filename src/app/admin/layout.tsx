@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center">
               <span className="text-white text-xs font-bold">WS</span>
             </div>
-            <span className="font-semibold text-gray-900 text-sm">Administration</span>
+            <span className="font-semibold text-gray-900 text-sm">Formation</span>
           </div>
         </div>
         <nav className="flex-1 p-3">
