@@ -15,25 +15,25 @@ export default async function AdminEmployesPage() {
     gestionnaire: 'bg-orange-50 text-orange-700 border border-orange-200',
     employe: 'bg-blue-50 text-blue-700 border border-blue-200'
   }
-  const roleLabel: any = { admin: 'Admin', gestionnaire: 'Gestionnaire', employe: 'Employe' }
+  const roleLabel: any = { admin: 'Admin', gestionnaire: 'Gestionnaire', employe: 'Employé' }
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employes</h1>
-          <p className="text-gray-500 text-sm mt-1">{employes?.length ?? 0} employe(s) au total</p>
+          <h1 className="text-2xl font-bold text-gray-900">Employés</h1>
+          <p className="text-gray-500 text-sm mt-1">{employes?.length ?? 0} employé(s) au total</p>
         </div>
         <Link href="/admin/employes/nouveau"
           className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          + Nouvel employe
+          + Créer un employé
         </Link>
       </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['Nom','Email','Departement','Role','Formations','Certificats','Statut','Actions'].map(h => (
+              {['Nom', 'Email', 'Département', 'Rôle', 'Formations', 'Certificats', 'Statut', 'Actions'].map(h => (
                 <th key={h} className="text-left px-5 py-3 font-medium text-gray-500">{h}</th>
               ))}
             </tr>
@@ -47,7 +47,7 @@ export default async function AdminEmployesPage() {
                 </td>
                 <td className="px-5 py-3.5 text-gray-500">{e.email}</td>
                 <td className="px-5 py-3.5 text-gray-500">
-                  {e.departements?.nom ?? <span className="text-gray-300 italic text-xs">Non assigne</span>}
+                  {e.departements?.nom ?? <span className="text-gray-300 italic text-xs">Non assigné</span>}
                 </td>
                 <td className="px-5 py-3.5">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${roleColor[e.role] || roleColor.employe}`}>
@@ -72,7 +72,7 @@ export default async function AdminEmployesPage() {
             {(!employes || employes.length === 0) && (
               <tr>
                 <td colSpan={8} className="px-5 py-10 text-center text-gray-400">
-                  Aucun employe.
+                  Aucun employé.
                 </td>
               </tr>
             )}
