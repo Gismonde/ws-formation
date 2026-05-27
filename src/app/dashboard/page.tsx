@@ -1,99 +1,148 @@
-'use client'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
-import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-type Employe = {
-  id: string
-  auth_user_id: string
-  prenom: string
-  nom: string
-  email: string
-  role: string
-  departement: string | null
-  poste: string | null
-  actif: boolean
-}
+  const { data: employe } = await supabase
+    .from('employes')
+    .select('id, prenom, nom, role, departement, poste, email, actif')
+    .eq('auth_user_id', user.id)
+    .single()
 
-export default function DashboardPage() {
-  const [employe, setEmploye] = useState<Employe | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  if (!employe) redirect('/login')
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  // Admins et gestionnaires vers leur espace d’administration
+  if (employe.role === 'admin' || employe.role === 'gestionnaire') {
+    redirect('/admin')
+  }
+
+  // Récupérer uniquement les formations assignées à cet employé
+  const { data: assignations } = await supabase
+    .from('assignations')
+    .select('formation_id')
+    .eq('employe_id', employe.id)
+
+  const assignedIds = assignations?.map((a: any) => a.formation_id) ?? []
+
+  let formations: any[] = []
+  if (assignedIds.length > 0) {
+    const { data } = await supabase
+      .from('formations')
+      .select('*')
+      .eq('publiee', true)
+      .in('id', assignedIds)
+      .order('created_at', { ascending: false })
+    formations = data ?? []
+  }
+
+  const { data: progressions } = await supabase
+    .from('progressions')
+    .select('formation_id, module_id, statut')
+    .eq('employe_id', employe.id)
+
+  const { data: certificats } = await supabase
+    .from('certificats')
+    .select('formation_id')
+    .eq('employe_id', employe.id)
+
+  const certSet = new Set(certificats?.map((c: any) => c.formation_id) ?? [])
+
+  const formationsAvecProgression = await Promise.all(
+    formations.map(async (f: any) => {
+      const { data: modules } = await supabase
+        .from('modules')
+        .select('id')
+        .eq('formation_id', f.id)
+      const total = modules?.length ?? 0
+      const termines = progressions?.filter(
+        (p: any) => p.formation_id === f.id && p.statut === 'termine'
+      ).length ?? 0
+      const pct = total > 0 ? Math.round((termines / total) * 100) : 0
+      return { ...f, progressionPct: pct, certifie: certSet.has(f.id) }
+    })
   )
 
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
-        if (authError || !user) {
-          router.replace('/login')
-          return
-        }
-
-        const { data, error: dbError } = await supabase
-          .from('employes')
-          .select('*')
-          .eq('auth_user_id', user.id)
-          .single()
-
-        if (dbError || !data) {
-          setError('Profil introuvable. Contactez votre administrateur.')
-          setLoading(false)
-          return
-        }
-
-        setEmploye(data)
-        setLoading(false)
-
-        // Redirect based on role
-        if (data.role === 'admin') {
-          router.replace('/admin')
-        }
-      } catch (e) {
-        setError('Erreur de connexion')
-        setLoading(false)
-      }
-    }
-
-    loadProfile()
-  }, [])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.replace('/login')
-  }
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
-        <p>Chargement...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', flexDirection: 'column', gap: '16px' }}>
-        <p style={{ color: 'red' }}>{error}</p>
-        <button onClick={handleLogout} style={{ padding: '8px 16px', cursor: 'pointer' }}>Déconnexion</button>
-      </div>
-    )
-  }
+  const termineeCount = formationsAvecProgression.filter(f => f.progressionPct === 100).length
+  const enCoursCount = formationsAvecProgression.filter(f => f.progressionPct > 0 && f.progressionPct < 100).length
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Bienvenue, {employe?.prenom} {employe?.nom}</h1>
-      <p>Rôle : {employe?.role}</p>
-      <button onClick={handleLogout} style={{ marginTop: '16px', padding: '8px 16px', cursor: 'pointer' }}>
-        Déconnexion
-      </button>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-indigo-600 rounded-md flex items-center justify-center">
+              <span className="text-white text-xs font-bold">WS</span>
+            </div>
+            <span className="font-semibold text-gray-900">WS Formation</span>
+          </div>
+          <span className="text-sm text-gray-600">{employe.prenom} {employe.nom}</span>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe.prenom} !</h1>
+          <p className="text-gray-500 mt-1">Voici vos formations assignées.</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <p className="text-3xl font-bold text-indigo-600">{formationsAvecProgression.length}</p>
+            <p className="text-sm text-gray-500 mt-1">Formation(s) assignée(s)</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <p className="text-3xl font-bold text-amber-500">{enCoursCount}</p>
+            <p className="text-sm text-gray-500 mt-1">En cours</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <p className="text-3xl font-bold text-green-600">{termineeCount}</p>
+            <p className="text-sm text-gray-500 mt-1">Terminée(s)</p>
+          </div>
+        </div>
+
+        {formationsAvecProgression.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <p className="text-4xl mb-3">📚</p>
+            <p className="text-gray-500">Aucune formation ne vous a encore été assignée.</p>
+            <p className="text-gray-400 text-sm mt-1">Contactez votre administrateur pour en savoir plus.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {formationsAvecProgression.map((f: any) => (
+              <Link key={f.id} href={`/formations/${f.id}`}>
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md hover:border-indigo-300 transition cursor-pointer">
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 h-28 flex items-center justify-center relative">
+                    <span className="text-white text-4xl">📚</span>
+                    {f.certifie && (
+                      <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">🏆 Certifié</span>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{f.titre}</h3>
+                    <p className="text-gray-500 text-sm line-clamp-2 mb-3">{f.description}</p>
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Progression</span>
+                        <span className="font-medium">{f.progressionPct}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full ${f.progressionPct === 100 ? 'bg-green-500' : 'bg-indigo-500'}`}
+                          style={{ width: `${f.progressionPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   )
 }
