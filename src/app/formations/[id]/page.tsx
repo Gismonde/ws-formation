@@ -8,14 +8,42 @@ export default async function FormationDetailPage({ params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: employe } = await supabase.from('employes').select('id').eq('auth_user_id', user.id).single()
-  const { data: formation } = await supabase.from('formations').select('*').eq('id', id).single()
+  const { data: employe } = await supabase
+    .from('employes')
+    .select('id, role')
+    .eq('auth_user_id', user.id)
+    .single()
+
+  if (!employe) redirect('/login')
+
+  // Admins et gestionnaires n'ont pas accès à l'espace employé
+  if (employe.role === 'admin' || employe.role === 'gestionnaire') {
+    redirect('/admin')
+  }
+
+  // Vérifier que la formation est assignée à cet employé
+  const { data: assignation } = await supabase
+    .from('assignations')
+    .select('formation_id')
+    .eq('employe_id', employe.id)
+    .eq('formation_id', id)
+    .maybeSingle()
+
+  if (!assignation) notFound()
+
+  const { data: formation } = await supabase
+    .from('formations')
+    .select('*')
+    .eq('id', id)
+    .eq('publiee', true)
+    .single()
+
   if (!formation) notFound()
 
   const { data: modules } = await supabase.from('modules').select('*').eq('formation_id', id).order('ordre')
   const { data: questionnaire } = await supabase.from('questionnaires').select('*').eq('formation_id', id).eq('actif', true).maybeSingle()
-  const { data: progressions } = await supabase.from('progressions').select('module_id, statut').eq('employe_id', employe?.id ?? '').eq('formation_id', id)
-  const { data: certificat } = await supabase.from('certificats').select('numero_certificat').eq('employe_id', employe?.id ?? '').eq('formation_id', id).maybeSingle()
+  const { data: progressions } = await supabase.from('progressions').select('module_id, statut').eq('employe_id', employe.id).eq('formation_id', id)
+  const { data: certificat } = await supabase.from('certificats').select('numero_certificat').eq('employe_id', employe.id).eq('formation_id', id).maybeSingle()
 
   const modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
   const progressionPct = modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0
@@ -24,7 +52,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">← Dashboard</Link>
+          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">← Tableau de bord</Link>
         </div>
       </nav>
       <main className="max-w-4xl mx-auto px-6 py-8">
@@ -43,7 +71,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
           {certificat && (
             <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 flex items-center gap-2">
               <span className="text-purple-600">🏆</span>
-              <span className="text-sm text-purple-700 font-medium">Certificat : {certificat.numero_certificat}</span>
+              <span className="text-sm text-purple-700 font-medium">Certificat : {certificat.numero_certificat}</span>
             </div>
           )}
         </div>
@@ -79,8 +107,8 @@ export default async function FormationDetailPage({ params }: { params: Promise<
             <h2 className="text-lg font-semibold text-gray-900 mb-2">📝 {questionnaire.titre}</h2>
             <p className="text-gray-500 text-sm mb-4">{questionnaire.description}</p>
             <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-              <span>Note de passage : {questionnaire.note_passage}%</span>
-              <span>Tentatives max : {questionnaire.nb_tentatives_max}</span>
+              <span>Note de passage : {questionnaire.note_passage}%</span>
+              <span>Tentatives max : {questionnaire.nb_tentatives_max}</span>
             </div>
             <Link href={`/formations/${id}/questionnaire`}>
               <button disabled={progressionPct < 100}
