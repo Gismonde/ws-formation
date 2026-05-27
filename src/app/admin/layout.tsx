@@ -2,6 +2,17 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
+const adminNav = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/employes', label: 'Employés', icon: '👥' },
+  { href: '/admin/formations', label: 'Formations', icon: '📚' },
+  { href: '/admin/conformite', label: 'Conformité', icon: '✅' },
+  { href: '/admin/rapports', label: 'Rapports', icon: '📈' },
+  { href: '/admin/sop', label: 'SOP', icon: '📄' },
+  { href: '/admin/audit', label: 'Audit logs', icon: '🔍' },
+  { href: '/admin/parametres', label: 'Paramètres', icon: '⚙️' },
+]
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,27 +22,48 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
+        {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center">
+            <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold">WS</span>
             </div>
-            <span className="font-semibold text-gray-900 text-sm">Formation</span>
+            <span className="font-semibold text-gray-900 text-sm">WS Formation</span>
           </div>
         </div>
-        <nav className="flex-1 p-3">
-          {[{href:'/admin/formations',label:'📚 Formations'},{href:'/admin/employes',label:'👥 Employés'},{href:'/admin/rapports',label:'📊 Rapports'}].map(link => (
-            <Link key={link.href} href={link.href} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 mb-1 transition">{link.label}</Link>
-          ))}
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <ul className="space-y-0.5">
+            {adminNav.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group"
+                >
+                  <span className="text-base w-5 text-center">{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
-        <div className="p-4 border-t border-gray-100">
-          <p className="text-xs text-gray-500">{employe.prenom} {employe.nom}</p>
-          <p className="text-xs text-indigo-500 font-medium mt-0.5">{employe.role}</p>
-          <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600 mt-2 block">← Retour app</Link>
+
+        {/* Footer utilisateur */}
+        <div className="px-4 py-4 border-t border-gray-100">
+          <p className="text-xs text-gray-500 truncate">{employe.prenom} {employe.nom}</p>
+          <p className="text-xs text-indigo-500 font-medium capitalize mt-0.5">{employe.role}</p>
+          <Link href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700 mt-2 inline-block">
+            → Déconnexion
+          </Link>
         </div>
       </aside>
-      <div className="flex-1 overflow-auto">{children}</div>
+
+      {/* Contenu principal */}
+      <div className="flex-1 ml-60 min-h-screen">
+        {children}
+      </div>
     </div>
   )
 }
