@@ -22,7 +22,47 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session - required for Server Components
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+
+  // Routes nécessitant une authentification
+  const protectedPaths = ['/dashboard', '/formations', '/admin', '/certificats']
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
+
+  if (isProtected && !user) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Si connecté, vérifier le rôle pour les routes sensibles
+  if (user) {
+    const { data: employe } = await supabase
+      .from('employes')
+      .select('role')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    const role = employe?.role
+
+    // Les admins/gestionnaires accèdent à /admin, pas aux pages employé
+    const isEmployeeRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/formations')
+    const isAdminRoute = pathname.startsWith('/admin')
+
+    if (isEmployeeRoute && (role === 'admin' || role === 'gestionnaire')) {
+      const adminUrl = request.nextUrl.clone()
+      adminUrl.pathname = '/admin'
+      return NextResponse.redirect(adminUrl)
+    }
+
+    // Les employés n'ont pas accès à /admin
+    if (isAdminRoute && role === 'employe') {
+      const dashboardUrl = request.nextUrl.clone()
+      dashboardUrl.pathname = '/dashboard'
+      return NextResponse.redirect(dashboardUrl)
+    }
+  }
 
   return supabaseResponse
 }
