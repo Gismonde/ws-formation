@@ -17,7 +17,7 @@ export default async function AdminFormationsPage() {
           <p className="text-gray-500 text-sm mt-1">{formations?.length ?? 0} formation(s)</p>
         </div>
         <Link href="/admin/formations/nouvelle">
-          <Link href="/formations" target="_blank"><button className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition border border-gray-200 mr-2">Apercu employe</button></Link>
+          <Link href="/formations" target="_blank"><button className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition border mr-2">Apercu employe</button></Link>
         <Link href="/admin/formations/nouvelle"><button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition">+ Nouvelle formation</button></Link>
       </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
