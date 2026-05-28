@@ -1,33 +1,9 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-
-export default async function LoginPage({
+export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: any
 }) {
-  const params = await searchParams
-  const errorMsg = params.error === 'credentials' ? 'Email ou mot de passe incorrect' : null
-
-  async function login(formData: FormData) {
-    'use server'
-
-    const email = (formData.get('email') as string)?.trim()
-    const password = (formData.get('password') as string)?.trim()
-
-    if (!email || !password) {
-      redirect('/login?error=credentials')
-    }
-
-    const supabase = await createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      redirect('/login?error=credentials')
-    }
-
-    redirect('/dashboard')
-  }
+  const errorMsg = searchParams?.error ? 'Email ou mot de passe incorrect' : null
 
   return (
     <div style={{
@@ -52,7 +28,7 @@ export default async function LoginPage({
           <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Plateforme de formations en ligne</p>
         </div>
 
-        <form action={login}>
+        <form method="POST" action="/api/auth/login">
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
               Email
