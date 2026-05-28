@@ -8,7 +8,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   // Try to find employe by auth_user_id first
-  let { data: employe } = await supabase
+  let { data: employe, error: empError } = await supabase
     .from('employes')
     .select('id, prenom, nom, role, departement, poste, email, actif')
     .eq('auth_user_id', user.id)
@@ -16,12 +16,13 @@ export default async function DashboardPage() {
 
   // Fallback: if not found by auth_user_id, try by email and auto-link
   if (!employe && user.email) {
-    const { data: employeByEmail } = await supabase
+    const { data: employeByEmail, error: emailError } = await supabase
       .from('employes')
       .select('id, prenom, nom, role, departement, poste, email, actif')
       .eq('email', user.email)
       .maybeSingle()
 
+    console.error('[DASHBOARD] empError:', empError, 'emailError:', emailError, 'employeByEmail:', JSON.stringify(employeByEmail))
     if (employeByEmail) {
       await supabase
         .from('employes')
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
     }
   }
 
+  console.error('[DASHBOARD] user.id:', user.id, 'employe:', JSON.stringify(employe))
   if (!employe) redirect('/login')
 
   const { data: assignations } = await supabase
