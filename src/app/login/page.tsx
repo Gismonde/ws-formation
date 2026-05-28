@@ -1,41 +1,32 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const params = await searchParams
+  const errorMsg = params.error === 'credentials' ? 'Email ou mot de passe incorrect' : null
 
-export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  async function login(formData: FormData) {
+    'use server'
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    const formData = new FormData(e.currentTarget)
     const email = (formData.get('email') as string)?.trim()
     const password = (formData.get('password') as string)?.trim()
 
     if (!email || !password) {
-      setError('Veuillez remplir tous les champs')
-      setLoading(false)
-      return
+      redirect('/login?error=credentials')
     }
 
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const supabase = await createClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (authError) {
-      setError('Email ou mot de passe incorrect')
-      setLoading(false)
-      return
+    if (error) {
+      redirect('/login?error=credentials')
     }
 
-    // Hard navigation ensures the browser sends the session cookie with the next server request
-    window.location.href = '/dashboard'
+    redirect('/dashboard')
   }
 
   return (
@@ -61,7 +52,7 @@ export default function LoginPage() {
           <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Plateforme de formations en ligne</p>
         </div>
 
-        <form onSubmit={handleLogin}>
+        <form action={login}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
               Email
@@ -106,7 +97,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
+          {errorMsg && (
             <div style={{
               backgroundColor: '#fef2f2',
               border: '1px solid #fecaca',
@@ -116,30 +107,29 @@ export default function LoginPage() {
               marginBottom: '16px',
               fontSize: '14px'
             }}>
-              {error}
+              {errorMsg}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading}
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: loading ? '#93c5fd' : '#1e40af',
+              backgroundColor: '#1e40af',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
               fontSize: '16px',
               fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               transition: 'background-color 0.2s'
             }}
           >
-            {loading ? 'Connexion en cours...' : 'Se connecter'}
+            Se connecter
           </button>
         </form>
       </div>
     </div>
   )
-              }
+}
