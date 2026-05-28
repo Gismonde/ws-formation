@@ -4,8 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  console.error('[DASH-USER] user:', user?.id, 'error:', userError?.message)
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   // Try to find employe by auth_user_id first
@@ -16,15 +15,14 @@ export default async function DashboardPage() {
     .maybeSingle()
 
   // Fallback: if not found by auth_user_id, try by email and auto-link
-  if (!employe && user.email) {
+  if (!employe && !empError && user.email) {
     const { data: employeByEmail, error: emailError } = await supabase
       .from('employes')
       .select('id, prenom, nom, role, departement, poste, email, actif')
       .eq('email', user.email)
       .maybeSingle()
 
-    console.error('[DASHBOARD] empError:', empError, 'emailError:', emailError, 'employeByEmail:', JSON.stringify(employeByEmail))
-    if (employeByEmail) {
+    if (employeByEmail && !emailError) {
       await supabase
         .from('employes')
         .update({ auth_user_id: user.id })
@@ -33,7 +31,21 @@ export default async function DashboardPage() {
     }
   }
 
-  console.error('[DASHBOARD] user.id:', user.id, 'employe:', JSON.stringify(employe))
+  // If there's a DB error (e.g. RLS policy issue), show helpful error
+  if (empError) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4ff', fontFamily: 'sans-serif' }}>
+        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', maxWidth: '500px', textAlign: 'center' }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚠️</div>
+          <h1 style={{ color: '#dc2626', marginBottom: '8px' }}>Erreur de configuration</h1>
+          <p style={{ color: '#6b7280' }}>Une erreur de base de données empêche l'accès au tableau de bord.</p>
+          <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '8px' }}>Code: {empError.code} - {empError.message}</p>
+          <p style={{ color: '#6b7280', marginTop: '16px' }}>Contactez votre administrateur.</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!employe) redirect('/login')
 
   const { data: assignations } = await supabase
