@@ -5,8 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -16,25 +14,24 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    // Read values from form directly to handle browser autofill
-    const form = e.currentTarget as HTMLFormElement
-    const emailVal = (form.querySelector('input[type="email"]') as HTMLInputElement)?.value || email
-    const passVal = (form.querySelector('input[type="password"]') as HTMLInputElement)?.value || password
+    const formData = new FormData(e.currentTarget)
+    const email = (formData.get('email') as string)?.trim()
+    const password = (formData.get('password') as string)?.trim()
 
-    if (!emailVal || !passVal) {
+    if (!email || !password) {
       setError('Veuillez remplir tous les champs')
       setLoading(false)
       return
     }
 
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email: emailVal,
-      password: passVal,
+      email,
+      password,
     })
 
     if (authError) {
@@ -43,8 +40,8 @@ export default function LoginPage() {
       return
     }
 
-    // Successful login - redirect to dashboard (which redirects to admin if role=admin)
     router.push('/dashboard')
+    router.refresh()
   }
 
   return (
@@ -64,7 +61,6 @@ export default function LoginPage() {
         width: '100%',
         maxWidth: '400px'
       }}>
-        {/* Logo / Title */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏥</div>
           <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#1e40af' }}>WS Formation</h1>
@@ -80,8 +76,7 @@ export default function LoginPage() {
               type="email"
               name="email"
               autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              required
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -103,8 +98,7 @@ export default function LoginPage() {
               type="password"
               name="password"
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              required
               style={{
                 width: '100%',
                 padding: '10px 12px',
