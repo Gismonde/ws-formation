@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     .from('employes')
     .select('id, prenom, nom, role, departement, poste, email, actif')
     .eq('auth_user_id', user.id)
-    .single()
+    .maybeSingle()
 
   // Fallback: if not found by auth_user_id, try by email and auto-link
   if (!employe && user.email) {
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
       .from('employes')
       .select('id, prenom, nom, role, departement, poste, email, actif')
       .eq('email', user.email)
-      .single()
+      .maybeSingle()
 
     if (employeByEmail) {
       // Auto-link the auth user to the employe record
