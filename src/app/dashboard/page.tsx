@@ -7,20 +7,39 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: employe } = await supabase
+  // Try to find employe by auth_user_id first
+  let { data: employe } = await supabase
     .from('employes')
     .select('id, prenom, nom, role, departement, poste, email, actif')
     .eq('auth_user_id', user.id)
     .single()
 
+  // Fallback: if not found by auth_user_id, try by email and auto-link
+  if (!employe && user.email) {
+    const { data: employeByEmail } = await supabase
+      .from('employes')
+      .select('id, prenom, nom, role, departement, poste, email, actif')
+      .eq('email', user.email)
+      .single()
+
+    if (employeByEmail) {
+      // Auto-link the auth user to the employe record
+      await supabase
+        .from('employes')
+        .update({ auth_user_id: user.id })
+        .eq('id', employeByEmail.id)
+      employe = employeByEmail
+    }
+  }
+
   if (!employe) redirect('/login')
 
-  // Admins et gestionnaires vers leur espace d’administration
+  // Admins et gestionnaires vers leur espace d'administration
   if (employe.role === 'admin' || employe.role === 'gestionnaire') {
     redirect('/admin')
   }
 
-  // Récupérer uniquement les formations assignées à cet employé
+  // Recuperer uniquement les formations assignees a cet employe
   const { data: assignations } = await supabase
     .from('assignations')
     .select('formation_id')
@@ -85,14 +104,14 @@ export default async function DashboardPage() {
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe.prenom} !</h1>
-          <p className="text-gray-500 mt-1">Voici vos formations assignées.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe.prenom} !</h1>
+          <p className="text-gray-500 mt-1">Voici vos formations assignees.</p>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-3xl font-bold text-indigo-600">{formationsAvecProgression.length}</p>
-            <p className="text-sm text-gray-500 mt-1">Formation(s) assignée(s)</p>
+            <p className="text-sm text-gray-500 mt-1">Formation(s) assignee(s)</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-3xl font-bold text-amber-500">{enCoursCount}</p>
@@ -100,14 +119,14 @@ export default async function DashboardPage() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-3xl font-bold text-green-600">{termineeCount}</p>
-            <p className="text-sm text-gray-500 mt-1">Terminée(s)</p>
+            <p className="text-sm text-gray-500 mt-1">Terminee(s)</p>
           </div>
         </div>
 
         {formationsAvecProgression.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <p className="text-4xl mb-3">📚</p>
-            <p className="text-gray-500">Aucune formation ne vous a encore été assignée.</p>
+            <p className="text-gray-500">Aucune formation ne vous a encore ete assignee.</p>
             <p className="text-gray-400 text-sm mt-1">Contactez votre administrateur pour en savoir plus.</p>
           </div>
         ) : (
@@ -118,7 +137,7 @@ export default async function DashboardPage() {
                   <div className="bg-gradient-to-br from-indigo-500 to-purple-600 h-28 flex items-center justify-center relative">
                     <span className="text-white text-4xl">📚</span>
                     {f.certifie && (
-                      <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">🏆 Certifié</span>
+                      <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">🏆 Certifie</span>
                     )}
                   </div>
                   <div className="p-5">
