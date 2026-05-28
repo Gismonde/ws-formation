@@ -23,7 +23,6 @@ export default async function DashboardPage() {
       .maybeSingle()
 
     if (employeByEmail) {
-      // Auto-link the auth user to the employe record
       await supabase
         .from('employes')
         .update({ auth_user_id: user.id })
@@ -34,8 +33,6 @@ export default async function DashboardPage() {
 
   if (!employe) redirect('/login')
 
-  
-  // Recuperer uniquement les formations assignees a cet employe
   const { data: assignations } = await supabase
     .from('assignations')
     .select('formation_id')
@@ -99,20 +96,21 @@ export default async function DashboardPage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
-                <div className="mb-8 flex items-center justify-between">
-                          <div>
-                                      <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe.prenom} !</h1>h1>
-                                      <p className="text-gray-500 mt-1">Voici vos formations assignées.</p>p>
-                          </div>div>
-                  {(employe.role === 'admin' || employe.role === 'gestionnaire') && (
-                  <Link
-                                  href="/admin"
-                                  className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-                                >
-                                ⚙️ Espace Admin
-                  </Link>Link>
-                          )}
-                </div>div></div>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Bonjour, {employe.prenom} !</h1>
+            <p className="text-gray-500 mt-1">Voici vos formations assignées.</p>
+          </div>
+          {(employe.role === 'admin' || employe.role === 'gestionnaire') && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
+              ⚙️ Espace Admin
+            </Link>
+          )}
+        </div>
+
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-3xl font-bold text-indigo-600">{formationsAvecProgression.length}</p>
