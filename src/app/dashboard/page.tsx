@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  console.error('[DASH-USER] user:', user?.id, 'error:', userError?.message)
   if (!user) redirect('/login')
 
   // Try to find employe by auth_user_id first
