@@ -89,7 +89,7 @@ export default async function AdminFormationsPage() {
             fontSize: '14px',
             fontWeight: '600',
           }}>
-            \u{1F4C4} G\u00e9n\u00e9rer depuis document
+            📄 Générer depuis document
           </Link>
         )}
       </div>
