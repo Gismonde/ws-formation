@@ -1,20 +1,26 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdmin } from '@supabase/supabase-js'
+import Link from 'next/link'
 
 type StatutFormation = 'non_commence' | 'en_cours' | 'termine'
 
-type FormationEmploye = {
-  employe_id: string
-  employe_nom: string
-  employe_prenom: string
-  employe_email: string
-  departement: string
+type AssignationDetail = {
   formation_id: string
   formation_titre: string
   statut: StatutFormation
   progression: number
-  date_fin: string | null
+  certificat_valide: boolean
+  certificat_date: string | null
+}
+
+type EmployeConformite = {
+  id: string
+  nom: string
+  prenom: string
+  email: string
+  departement: string
+  assignations: AssignationDetail[]
 }
 
 export default async function ConformitePage() {
@@ -38,161 +44,194 @@ export default async function ConformitePage() {
 
   let employesQuery = adminSupabase
     .from('employes')
-    .select('id, nom, prenom, email, departement')
-    .eq('archive', false)
+    .select('id, nom, prenom, email, departement, departements(nom)')
+    .eq('actif', true)
+    .order('nom')
 
   if (isGestionnaire && moi?.departement_id) {
     employesQuery = employesQuery.eq('departement_id', moi.departement_id)
   }
 
   const { data: employes } = await employesQuery
-  const { data: formations } = await adminSupabase
-    .from('formations')
-    .select('id, titre')
-
-  const { data: progressions } = await adminSupabase
-    .from('progression')
-    .select('employe_id, formation_id, statut, progression')
-
-  const { data: certificats } = await adminSupabase
-    .from('certificats')
-    .select('employe_id, formation_id, issued_at')
+  const { data: formations } = await adminSupabase.from('formations').select('id, titre')
+  const { data: assignations } = await adminSupabase.from('assignations').select('employe_id, formation_id')
+  const { data: progressions } = await adminSupabase.from('progression').select('employe_id, formation_id, statut, progression')
+  const { data: certificats } = await adminSupabase.from('certificats').select('employe_id, formation_id, valide, issued_at')
 
   const employes_ = employes ?? []
   const formations_ = formations ?? []
+  const assignations_ = assignations ?? []
   const progressions_ = progressions ?? []
   const certificats_ = certificats ?? []
 
-  const rows: FormationEmploye[] = []
-  for (const emp of employes_) {
-    for (const form of formations_) {
-      const prog = progressions_.find(p => p.employe_id === emp.id && p.formation_id === form.id)
-      const cert = certificats_.find(c => c.employe_id === emp.id && c.formation_id === form.id)
-      rows.push({
-        employe_id: emp.id,
-        employe_nom: emp.nom ?? '',
-        employe_prenom: emp.prenom ?? '',
-        employe_email: emp.email ?? '',
-        departement: emp.departement ?? '',
-        formation_id: form.id,
-        formation_titre: form.titre,
+  const data: EmployeConformite[] = employes_.map((emp: any) => {
+    const empAssignations = assignations_.filter((a: any) => a.employe_id === emp.id)
+    const details: AssignationDetail[] = empAssignations.map((a: any) => {
+      const form = formations_.find((f: any) => f.id === a.formation_id)
+      const prog = progressions_.find((p: any) => p.employe_id === emp.id && p.formation_id === a.formation_id)
+      const cert = certificats_.find((c: any) => c.employe_id === emp.id && c.formation_id === a.formation_id && c.valide)
+      return {
+        formation_id: a.formation_id,
+        formation_titre: form?.titre ?? 'Formation inconnue',
         statut: prog?.statut ?? 'non_commence',
         progression: prog?.progression ?? 0,
-        date_fin: cert?.issued_at ?? null,
-      })
+        certificat_valide: !!cert,
+        certificat_date: cert?.issued_at ?? null,
+      }
+    })
+    return {
+      id: emp.id,
+      nom: emp.nom ?? '',
+      prenom: emp.prenom ?? '',
+      email: emp.email ?? '',
+      departement: (emp as any).departements?.nom ?? emp.departement ?? '',
+      assignations: details,
     }
+  })
+
+  const totalAssign = data.reduce((s, e) => s + e.assignations.length, 0)
+  const totalTermines = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'termine').length, 0)
+  const totalEnCours = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'en_cours').length, 0)
+  const totalNonCommences = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'non_commence').length, 0)
+  const totalCerts = data.reduce((s, e) => s + e.assignations.filter(a => a.certificat_valide).length, 0)
+  const taux = totalAssign > 0 ? Math.round((totalTermines / totalAssign) * 100) : 0
+
+  const statutConfig: Record<StatutFormation, { bg: string; color: string; label: string }> = {
+    non_commence: { bg: '#f3f4f6', color: '#6b7280', label: 'Non commence' },
+    en_cours: { bg: '#fef3c7', color: '#92400e', label: 'En cours' },
+    termine: { bg: '#d1fae5', color: '#065f46', label: 'Termine' },
   }
-
-  const total = rows.length
-  const termines = rows.filter(r => r.statut === 'termine').length
-  const enCours = rows.filter(r => r.statut === 'en_cours').length
-  const nonCommence = rows.filter(r => r.statut === 'non_commence').length
-  const tauxConformite = total > 0 ? Math.round((termines / total) * 100) : 0
-
-  function statutBadge(statut: StatutFormation) {
-    const cfg = {
-      non_commence: { bg: '#f3f4f6', color: '#6b7280', label: 'Non commence' },
-      en_cours: { bg: '#fef3c7', color: '#92400e', label: 'En cours' },
-      termine: { bg: '#d1fae5', color: '#065f46', label: 'Termine' },
-    }
-    const c = cfg[statut]
-    return (
-      <span style={{ background: c.bg, color: c.color, padding: '2px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
-        {c.label}
-      </span>
-    )
-  }
-
-  const depts = Array.from(new Set(rows.map(r => r.departement).filter(Boolean))).sort()
 
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Conformite</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Suivi de la conformite reglementaire des employes
+          Suivi de la conformite reglementaire - {data.length} employe(s) actif(s)
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', marginBottom: '32px' }}>
         {[
-          { label: 'Taux de conformite', value: tauxConformite + '%', color: '#6366f1', bg: '#eef2ff' },
-          { label: 'Formations terminees', value: termines, color: '#065f46', bg: '#d1fae5' },
-          { label: 'En cours', value: enCours, color: '#92400e', bg: '#fef3c7' },
-          { label: 'Non commencees', value: nonCommence, color: '#991b1b', bg: '#fee2e2' },
+          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b', bg: taux >= 80 ? '#d1fae5' : taux >= 50 ? '#fef3c7' : '#fee2e2' },
+          { label: 'Formations assignees', value: totalAssign, color: '#1a1f36', bg: '#f3f4f6' },
+          { label: 'Terminees', value: totalTermines, color: '#065f46', bg: '#d1fae5' },
+          { label: 'En cours', value: totalEnCours, color: '#92400e', bg: '#fef3c7' },
+          { label: 'Certificats obtenus', value: totalCerts, color: '#4338ca', bg: '#e0e7ff' },
         ].map(stat => (
-          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px 24px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
-            <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: stat.color }}>{stat.value}</p>
+          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
+            <p style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: stat.color }}>{stat.value}</p>
           </div>
         ))}
       </div>
 
-      {depts.length > 0 && (
-        <div style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginBottom: '12px' }}>Par departement</h2>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {depts.map(dept => {
-              const deptRows = rows.filter(r => r.departement === dept)
-              const deptTermines = deptRows.filter(r => r.statut === 'termine').length
-              const deptTaux = deptRows.length > 0 ? Math.round((deptTermines / deptRows.length) * 100) : 0
-              return (
-                <div key={dept} style={{ background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontWeight: '600', color: '#1a1f36', fontSize: '14px' }}>{dept}</span>
-                  <span style={{ background: deptTaux >= 80 ? '#d1fae5' : deptTaux >= 50 ? '#fef3c7' : '#fee2e2', color: deptTaux >= 80 ? '#065f46' : deptTaux >= 50 ? '#92400e' : '#991b1b', padding: '2px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
-                    {deptTaux}%
-                  </span>
-                </div>
-              )
-            })}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {data.length === 0 ? (
+          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+            Aucun employe actif trouve.
           </div>
-        </div>
-      )}
+        ) : data.map(emp => {
+          const empTermines = emp.assignations.filter(a => a.statut === 'termine').length
+          const empTotal = emp.assignations.length
+          const empTaux = empTotal > 0 ? Math.round((empTermines / empTotal) * 100) : 0
+          const empCerts = emp.assignations.filter(a => a.certificat_valide).length
+          const tauxColor = empTaux >= 80 ? '#065f46' : empTaux >= 50 ? '#92400e' : '#991b1b'
+          const tauxBg = empTaux >= 80 ? '#d1fae5' : empTaux >= 50 ? '#fef3c7' : '#fee2e2'
 
-      <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb' }}>
-          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1a1f36' }}>Detail des conformites</h2>
-        </div>
-        {rows.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Aucune donnee disponible.</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: '#f9fafb' }}>
-                  {['Employe', 'Departement', 'Formation', 'Statut', 'Progression', 'Date fin'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={row.employe_id + row.formation_id} style={{ borderTop: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: '600', color: '#1a1f36' }}>{row.employe_prenom} {row.employe_nom}</div>
-                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>{row.employe_email}</div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: '#6b7280' }}>{row.departement || '-'}</td>
-                    <td style={{ padding: '12px 16px', color: '#1a1f36', fontWeight: '500' }}>{row.formation_titre}</td>
-                    <td style={{ padding: '12px 16px' }}>{statutBadge(row.statut)}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '4px', height: '6px', minWidth: '60px' }}>
-                          <div style={{ width: row.progression + '%', background: row.statut === 'termine' ? '#10b981' : '#6366f1', height: '6px', borderRadius: '4px' }} />
-                        </div>
-                        <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>{row.progression}%</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: '#6b7280' }}>
-                      {row.date_fin ? new Date(row.date_fin).toLocaleDateString('fr-FR') : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+          return (
+            <details key={emp.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+              <summary style={{ padding: '16px 20px', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '16px', userSelect: 'none' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: '200px' }}>
+                    <div style={{ fontWeight: '700', color: '#1a1f36', fontSize: '14px' }}>{emp.prenom} {emp.nom}</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.email}</div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px' }}>
+                    {emp.departement || 'Sans departement'}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', width: '100px' }}>
+                      <div style={{ width: empTaux + '%', background: empTaux >= 80 ? '#10b981' : empTaux >= 50 ? '#f59e0b' : '#ef4444', height: '8px', borderRadius: '4px', transition: 'width 0.3s' }} />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: tauxColor, background: tauxBg, padding: '1px 8px', borderRadius: '20px' }}>{empTaux}%</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>{empTermines}/{empTotal} formations</span>
+                    {empCerts > 0 && (
+                      <span style={{ fontSize: '12px', color: '#4338ca', background: '#e0e7ff', padding: '1px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                        {empCerts} cert.
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Link
+                  href={'/admin/employes/' + emp.id}
+                  onClick={e => e.stopPropagation()}
+                  style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe', flexShrink: 0 }}
+                >
+                  Dossier
+                </Link>
+                <span style={{ color: '#9ca3af', fontSize: '18px', flexShrink: 0 }}>&#9660;</span>
+              </summary>
+
+              <div style={{ borderTop: '1px solid #e5e7eb' }}>
+                {emp.assignations.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>Aucune formation assignee.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Formation</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Progression</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Certificat</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {emp.assignations.map((a, i) => {
+                        const sc = statutConfig[a.statut]
+                        return (
+                          <tr key={a.formation_id} style={{ borderTop: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                            <td style={{ padding: '12px 20px', fontWeight: '500', color: '#1a1f36' }}>{a.formation_titre}</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                                {sc.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '4px', height: '6px', minWidth: '80px' }}>
+                                  <div style={{ width: a.progression + '%', background: a.statut === 'termine' ? '#10b981' : '#6366f1', height: '6px', borderRadius: '4px' }} />
+                                </div>
+                                <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>{a.progression}%</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              {a.certificat_valide ? (
+                                <div>
+                                  <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', display: 'inline-block' }}>Obtenu</span>
+                                  {a.certificat_date && (
+                                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
+                                      {new Date(a.certificat_date).toLocaleDateString('fr-FR')}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ color: '#d1d5db', fontSize: '18px' }}>-</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </details>
+          )
+        })}
       </div>
     </div>
   )
-}
+  }
