@@ -1,81 +1,186 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient as createAdmin } from '@supabase/supabase-js'
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
-const serviceRole = createServiceClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
+  debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Débutant' },
+  intermediaire: { bg: '#fefce8', color: '#ca8a04', label: 'Intermédiaire' },
+  avance: { bg: '#fff1f2', color: '#e11d48', label: 'Avancé' },
+}
 
 export default async function AdminFormationsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  // Get current user role using service role to avoid RLS recursion
-  let userRole = 'employe'
-  if (user) {
-    const { data: moi } = await serviceRole
-      .from('employes')
-      .select('role')
-      .eq('auth_user_id', user.id)
-      .single()
-    userRole = moi?.role ?? 'employe'
-  }
+  const adminSupabase = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 
-  const isAdmin = userRole === 'admin'
-  const isGestionnaireOrAdmin = userRole === 'admin' || userRole === 'gestionnaire'
+  const { data: moi } = await adminSupabase
+    .from('employes')
+    .select('role')
+    .eq('auth_user_id', user.id)
+    .single()
 
-  const { data: formations } = await supabase.from('formations').select('*, employes!creee_par(prenom, nom)').order('created_at', { ascending: false })
-  const { data: stats } = await supabase.from('modules').select('formation_id')
-  const { data: assignStats } = await supabase.from('assignations').select('formation_id')
-  const modulesCount = (id: string) => stats?.filter((m: any) => m.formation_id === id).length ?? 0
-  const assignCount = (id: string) => assignStats?.filter((a: any) => a.formation_id === id).length ?? 0
+  const isAdmin = moi?.role === 'admin'
+
+  const { data: formations } = await adminSupabase
+    .from('formations')
+    .select('id, titre, categorie, niveau, publiee')
+    .order('created_at', { ascending: false })
+
+  const { data: modules } = await adminSupabase
+    .from('modules')
+    .select('id, formation_id')
+
+  const { data: assignations } = await adminSupabase
+    .from('assignations')
+    .select('id, formation_id')
+
+  const nbModules = (id: string) => modules?.filter((m: any) => m.formation_id === id).length ?? 0
+  const nbAssign = (id: string) => assignations?.filter((a: any) => a.formation_id === id).length ?? 0
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div>
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Formations</h1>
-          <p className="text-gray-500 text-sm mt-1">{formations?.length ?? 0} formation(s)</p>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, letterSpacing: '-0.5px' }}>
+            Formations
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', margin: '4px 0 0 0' }}>
+            {formations?.length ?? 0} formation(s) disponible(s)
+          </p>
         </div>
         {isAdmin && (
-          <Link href="/admin/formations/nouvelle" className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+          <Link href="/admin/formations/nouvelle" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 18px',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            color: '#fff',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+          }}>
             + Nouvelle formation
           </Link>
         )}
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              {['Titre','Catégorie','Niveau','Modules','Assignées','Statut',''].map(h => (
-                <th key={h} className="text-left px-5 py-3 font-medium text-gray-500">{h}</th>
-              ))}
+
+      {/* Formations table */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '16px',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03)',
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <thead>
+            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+              <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Titre</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Catégorie</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Niveau</th>
+              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Modules</th>
+              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignées</th>
+              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
+              <th style={{ padding: '12px 20px' }}></th>
             </tr>
           </thead>
           <tbody>
-            {formations?.map((f: any) => (
-              <tr key={f.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-5 py-3.5 font-medium text-gray-900">{f.titre}</td>
-                <td className="px-5 py-3.5 text-gray-500">{f.categorie ?? '—'}</td>
-                <td className="px-5 py-3.5"><span className={`text-xs px-2 py-0.5 rounded font-medium ${f.niveau==='debutant'?'bg-green-50 text-green-700':f.niveau==='intermediaire'?'bg-yellow-50 text-yellow-700':'bg-red-50 text-red-700'}`}>{f.niveau}</span></td>
-                <td className="px-5 py-3.5 text-center text-gray-600">{modulesCount(f.id)}</td>
-                <td className="px-5 py-3.5 text-center text-gray-600">{assignCount(f.id)}</td>
-                <td className="px-5 py-3.5"><span className={`text-xs px-2 py-0.5 rounded font-medium ${f.publiee?'bg-green-50 text-green-700':'bg-gray-100 text-gray-500'}`}>{f.publiee?'Publiée':'Brouillon'}</span></td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    {isGestionnaireOrAdmin && (
-                      <Link href={`/admin/formations/${f.id}/assigner`} className="text-green-600 hover:text-green-800 font-medium text-xs">Assigner</Link>
-                    )}
-                    {isAdmin && (
-                      <Link href={`/admin/formations/${f.id}/modifier`} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs">Modifier</Link>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {formations?.map((f: any, i: number) => {
+              const niveau = niveauStyles[f.niveau] ?? { bg: '#f3f4f6', color: '#6b7280', label: f.niveau }
+              return (
+                <tr key={f.id} style={{
+                  borderBottom: i < (formations.length - 1) ? '1px solid #f3f4f6' : 'none',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+                >
+                  <td style={{ padding: '14px 20px' }}>
+                    <div style={{ fontWeight: '600', color: '#111827' }}>{f.titre}</div>
+                  </td>
+                  <td style={{ padding: '14px 16px', color: '#6b7280', fontSize: '13px' }}>{f.categorie ?? '—'}</td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      background: niveau.bg,
+                      color: niveau.color,
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}>
+                      {niveau.label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center', color: '#374151', fontWeight: '500' }}>{nbModules(f.id)}</td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center', color: '#374151', fontWeight: '500' }}>{nbAssign(f.id)}</td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      background: f.publiee ? '#f0fdf4' : '#f9fafb',
+                      color: f.publiee ? '#16a34a' : '#9ca3af',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      border: f.publiee ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
+                    }}>
+                      {f.publiee ? 'Publiée' : 'Brouillon'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                      <Link href={`/admin/formations/${f.id}/assigner`} style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        background: '#f0fdf4',
+                        color: '#16a34a',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        border: '1px solid #bbf7d0',
+                      }}>
+                        Assigner
+                      </Link>
+                      {isAdmin && (
+                        <Link href={`/admin/formations/${f.id}/modifier`} style={{
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          background: '#eff6ff',
+                          color: '#2563eb',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          border: '1px solid #bfdbfe',
+                        }}>
+                          Modifier
+                        </Link>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
+
+        {(!formations || formations.length === 0) && (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📚</div>
+            <p style={{ margin: 0, fontSize: '14px' }}>Aucune formation créée</p>
+          </div>
+        )}
       </div>
     </div>
   )
