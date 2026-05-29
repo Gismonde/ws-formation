@@ -19,7 +19,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Try to find employe by auth_user_id first
   let employe = null
   try {
     const serviceClient = createServiceClient(
@@ -39,7 +38,43 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const visibleNav = adminNav.filter(item => !item.adminOnly || isAdmin)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+        .admin-nav-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          color: rgba(255,255,255,0.65);
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 2px;
+          transition: all 0.15s ease;
+        }
+        .admin-nav-link:hover {
+          background: rgba(255,255,255,0.1);
+          color: #fff;
+        }
+        .admin-nav-link .material-icons {
+          font-size: 18px;
+          opacity: 0.8;
+        }
+        .admin-logout-btn:hover {
+          background: rgba(255,255,255,0.12) !important;
+        }
+        .admin-main-content {
+          margin-left: 240px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+        }
+      `}</style>
+
       {/* Sidebar */}
       <aside style={{
         width: '240px',
@@ -75,7 +110,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             }}>W</div>
             <div>
               <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff', letterSpacing: '-0.3px' }}>WS Formation</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '1px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Administration</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Administration</div>
             </div>
           </div>
         </div>
@@ -83,23 +118,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           {visibleNav.map((item) => (
-            <Link key={item.href} href={item.href} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              color: 'rgba(255,255,255,0.7)',
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '2px',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
-            >
-              <span className="material-icons" style={{ fontSize: '18px', opacity: 0.8 }}>{item.icon}</span>
+            <Link key={item.href} href={item.href} className="admin-nav-link">
+              <span className="material-icons">{item.icon}</span>
               {item.label}
             </Link>
           ))}
@@ -119,31 +139,30 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: '700',
               color: '#fff',
               flexShrink: 0,
             }}>
               {employe?.prenom?.[0] ?? user.email?.[0]?.toUpperCase() ?? 'U'}
             </div>
-            <div style={{ overflow: 'hidden' }}>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
               <div style={{ fontSize: '13px', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {employe ? `${employe.prenom} ${employe.nom}` : user.email}
               </div>
               <div style={{ fontSize: '11px', color: isAdmin ? '#a78bfa' : '#60a5fa', fontWeight: '600', textTransform: 'capitalize' }}>{role}</div>
             </div>
           </div>
-          <Link href="/login" style={{
+          <Link href="/login" className="admin-logout-btn" style={{
             display: 'block',
             textAlign: 'center',
             padding: '7px',
             borderRadius: '6px',
             background: 'rgba(255,255,255,0.07)',
-            color: 'rgba(255,255,255,0.6)',
+            color: 'rgba(255,255,255,0.55)',
             textDecoration: 'none',
             fontSize: '12px',
             fontWeight: '500',
-            transition: 'background 0.15s',
           }}>
             → Déconnexion
           </Link>
@@ -151,7 +170,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Main content area */}
-      <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div className="admin-main-content">
         {/* Top header */}
         <header style={{
           background: '#fff',
@@ -170,12 +189,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             WS Formation — Administration
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#6b7280' }}>{user.email}</span>
+            <span style={{ fontSize: '13px', color: '#9ca3af' }}>{user.email}</span>
             <Link href="/login" style={{
-              padding: '6px 14px',
+              padding: '7px 16px',
               background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
               color: '#fff',
-              borderRadius: '6px',
+              borderRadius: '7px',
               textDecoration: 'none',
               fontSize: '13px',
               fontWeight: '600',
@@ -190,10 +209,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {children}
         </main>
       </div>
-
-      {/* Google Material Icons */}
-      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     </div>
   )
 }
