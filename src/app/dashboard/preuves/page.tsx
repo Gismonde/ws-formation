@@ -81,14 +81,12 @@ export default function PreuvesPage() {
           .from('formations')
           .select('id, titre, obligatoire')
           .in('id', ids)
-          .eq('publiee', true)
         setFormations(formationsData ?? [])
       } else {
         // No assignations found - show all published formations
         const { data: allFormations } = await supabase
           .from('formations')
           .select('id, titre, obligatoire')
-          .eq('publiee', true)
         setFormations(allFormations ?? [])
       }
     } else {
@@ -96,7 +94,6 @@ export default function PreuvesPage() {
       const { data: allFormations } = await supabase
         .from('formations')
         .select('id, titre, obligatoire')
-        .eq('publiee', true)
       setFormations(allFormations ?? [])
     }
 
