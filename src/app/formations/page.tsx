@@ -15,11 +15,6 @@ export default async function FormationsPage() {
 
   if (!employe) redirect('/login')
 
-  // Admins et gestionnaires n'ont pas accès à l'espace employé
-  if (employe.role === 'admin' || employe.role === 'gestionnaire') {
-    redirect('/admin')
-  }
-
   // Récupérer uniquement les formations assignées
   const { data: assignations } = await supabase
     .from('assignations')
