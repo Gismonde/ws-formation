@@ -7,6 +7,7 @@ const employeNav = [
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
   { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
+  { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
   { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
 ]
 
