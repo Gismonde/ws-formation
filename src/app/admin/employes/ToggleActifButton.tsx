@@ -1,57 +1,75 @@
 'use client'
 
 import { useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
-interface Props {
+export default function ToggleActifButton({
+  id,
+  actif,
+  nom,
+}: {
   id: string
   actif: boolean
   nom: string
-}
-
-export default function ToggleActifButton({ id, actif, nom }: Props) {
+}) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleToggle = async () => {
+  async function handleToggle() {
     const action = actif ? 'archiver' : 'réactiver'
-    const confirm = window.confirm(
-      actif
-        ? `Archiver ${nom} ? Cet employé ne pourra plus se connecter à la plateforme.`
-        : `Réactiver ${nom} ? Cet employé pourra à nouveau accéder à la plateforme.`
-    )
-    if (!confirm) return
-
+    if (!confirm(`Voulez-vous vraiment ${action} ${nom} ?`)) return
     setLoading(true)
-    try {
-      const res = await fetch('/api/admin/toggle-employe-actif', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, actif: !actif }),
-      })
 
-      if (!res.ok) {
-        const data = await res.json()
-        alert('Erreur : ' + (data.error || 'Une erreur est survenue'))
-      } else {
-        router.refresh()
-      }
-    } catch (err) {
-      alert('Erreur réseau')
-    } finally {
-      setLoading(false)
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { error } = await supabase
+      .from('employes')
+      .update({ actif: !actif })
+      .eq('id', id)
+
+    setLoading(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+    } else {
+      router.refresh()
     }
+  }
+
+  const archiveStyle = {
+    padding: '5px 12px',
+    borderRadius: '6px',
+    background: '#fff7ed',
+    color: '#ea580c',
+    fontSize: '12px',
+    fontWeight: '600' as const,
+    border: '1px solid #fed7aa',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.6 : 1,
+    fontFamily: 'inherit',
+  }
+
+  const reactiveStyle = {
+    padding: '5px 12px',
+    borderRadius: '6px',
+    background: '#f0fdf4',
+    color: '#16a34a',
+    fontSize: '12px',
+    fontWeight: '600' as const,
+    border: '1px solid #bbf7d0',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.6 : 1,
+    fontFamily: 'inherit',
   }
 
   return (
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={
-        actif
-          ? 'text-sm font-medium border px-3 py-1 rounded-lg transition-colors text-orange-600 hover:text-orange-800 border-orange-200 hover:bg-orange-50 disabled:opacity-50'
-          : 'text-sm font-medium border px-3 py-1 rounded-lg transition-colors text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50 disabled:opacity-50'
-      }
+      style={actif ? archiveStyle : reactiveStyle}
     >
       {loading ? '...' : actif ? 'Archiver' : 'Réactiver'}
     </button>
