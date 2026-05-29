@@ -30,7 +30,6 @@ export default function PreuvesPage() {
   const [selectedFormationId, setSelectedFormationId] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [employeId, setEmployeId] = useState<string | null>(null)
   const [autreMode, setAutreMode] = useState(false)
   const [autreTitre, setAutreTitre] = useState('')
 
@@ -40,67 +39,18 @@ export default function PreuvesPage() {
 
   async function loadData() {
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
 
-    // Get employe - try by auth_user_id first, then by email
-    let employe: { id: string } | null = null
-
-    const { data: emp1 } = await supabase
-      .from('employes')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .maybeSingle()
-
-    if (emp1) {
-      employe = emp1
-    } else if (user.email) {
-      const { data: emp2 } = await supabase
-        .from('employes')
-        .select('id')
-        .eq('email', user.email)
-        .maybeSingle()
-      employe = emp2
+    // Load formations via server API (bypasses RLS)
+    const resFormations = await fetch('/api/mes-formations')
+    if (resFormations.ok) {
+      const data = await resFormations.json()
+      setFormations(data.formations ?? [])
     }
 
-    if (employe) {
-      setEmployeId(employe.id)
-
-      // Get assigned formations
-      const { data: assignations } = await supabase
-        .from('assignations')
-        .select('formation_id')
-        .eq('employe_id', employe.id)
-
-      const ids = assignations?.map((a: any) => a.formation_id) ?? []
-
-      if (ids.length > 0) {
-        // Show only assigned formations
-        const { data: formationsData } = await supabase
-          .from('formations')
-          .select('id, titre, obligatoire')
-          .in('id', ids)
-        setFormations(formationsData ?? [])
-      } else {
-        // No assignations found - show all published formations
-        const { data: allFormations } = await supabase
-          .from('formations')
-          .select('id, titre, obligatoire')
-        setFormations(allFormations ?? [])
-      }
-    } else {
-      // No employe record found - still show all published formations
-      const { data: allFormations } = await supabase
-        .from('formations')
-        .select('id, titre, obligatoire')
-      setFormations(allFormations ?? [])
-    }
-
-    // Get existing proofs
-    const res = await fetch('/api/preuves')
-    if (res.ok) {
-      const data = await res.json()
+    // Load existing proofs
+    const resPreuves = await fetch('/api/preuves')
+    if (resPreuves.ok) {
+      const data = await resPreuves.json()
       setPreuves(data.preuves ?? [])
     }
 
