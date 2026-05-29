@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 export default async function AdminRapportsPage() {
   const supabase = await createClient()
   const { data: formations } = await supabase.from('formations').select('id, titre, categorie').eq('publiee', true)
-  const { data: employes } = await supabase.from('employes').select('id').eq('actif', true).eq('role', 'employe')
+  const { data: employes } = await supabase.from('employes').select('id').eq('actif', true)
   const { data: certificats } = await supabase.from('certificats').select('*').eq('valide', true)
   const { data: progressions } = await supabase.from('vue_formations_employe').select('*')
 
