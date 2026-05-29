@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 interface Formation {
   id: string
   titre: string
+  categorie: string
   description: string
   niveau: string
   duree_heures: number
@@ -79,6 +80,7 @@ export default function ModifierFormationPage() {
     try {
       const { error: fErr } = await supabase.from('formations').update({
         titre: formation.titre,
+        categorie: formation.categorie,
         description: formation.description,
         niveau: formation.niveau,
         duree_heures: formation.duree_heures,
@@ -163,6 +165,20 @@ export default function ModifierFormationPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea value={formation.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Section / Catégorie</label>
+              <select value={formation.categorie || ''} onChange={e => updateField('categorie', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value="Administration médicale">Administration médicale</option>
+                <option value="Confidentialité &amp; Loi 25">Confidentialité &amp; Loi 25</option>
+                <option value="DSQ">DSQ</option>
+                <option value="Recherche clinique">Recherche clinique</option>
+                <option value="SOP &amp; politiques internes">SOP &amp; politiques internes</option>
+                <option value="Sécurité informatique">Sécurité informatique</option>
+                <option value="Santé &amp; sécurité">Santé &amp; sécurité</option>
+                <option value="Onboarding nouveaux employés">Onboarding nouveaux employés</option>
+                <option value="Formation continue">Formation continue</option>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
