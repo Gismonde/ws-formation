@@ -21,70 +21,92 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('auth_user_id', user.id)
     .single()
 
-  const role = employe?.role ?? 'employe'
-  const isAdminOrManager = role === 'admin' || role === 'gestionnaire'
+  const isAdmin = employe?.role === 'admin' || employe?.role === 'super_admin'
+  const displayName = employe?.prenom && employe?.nom
+    ? employe.prenom + ' ' + employe.nom
+    : (user.email?.split('@')[0] || 'Utilisateur')
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-
-      {/* Sidebar */}
-      <aside className="fixed top-0 left-0 h-screen w-60 flex flex-col z-50" style={{ background: 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)' }}>
-        {/* Logo */}
-        <div className="px-5 py-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="text-white font-bold text-lg">WS Formation</div>
-          <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Espace employe</div>
+    <div className="dashboard-shell">
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-title">WS Formation</div>
+          <div className="sidebar-subtitle">Espace employe</div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-2.5 py-3 overflow-y-auto">
+        <nav className="sidebar-nav">
           {employeNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-colors hover:bg-white/10"
-              style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}
-            >
-              <span className="material-icons text-xl" style={{ opacity: 0.8 }}>{item.icon}</span>
-              {item.label}
+            <Link key={item.href} href={item.href} className="sidebar-nav-item">
+              <span className="material-icons sidebar-icon">{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          {employe && (
-            <div className="text-sm mb-3" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {employe.prenom} {employe.nom}
-            </div>
-          )}
-          {isAdminOrManager && (
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm font-medium mb-2"
-              style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}
-            >
-              <span className="material-icons text-base">admin_panel_settings</span>
-              Espace Admin
+        <div className="sidebar-footer">
+          <div className="sidebar-user-info">
+            <div className="sidebar-user-label">Connecte en tant que</div>
+            <div className="sidebar-user-name">{displayName}</div>
+          </div>
+          {isAdmin && (
+            <Link href="/admin" className="sidebar-admin-btn">
+              <span className="material-icons" style={{ fontSize: '16px' }}>admin_panel_settings</span>
+              <span>Espace Admin</span>
             </Link>
           )}
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm font-medium w-full text-left"
-              style={{ background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer' }}
-            >
-              <span className="material-icons text-base">logout</span>
-              Deconnexion
-            </button>
-          </form>
+          <Link href="/logout" className="sidebar-logout-btn">
+            <span className="material-icons" style={{ fontSize: '16px' }}>logout</span>
+            <span>Deconnexion</span>
+          </Link>
         </div>
       </aside>
 
-      {/* Contenu principal */}
-      <main className="flex-1 flex flex-col min-h-screen" style={{ marginLeft: '240px' }}>
+      <main className="dashboard-main">
         {children}
       </main>
+
+      <style>{`
+        .dashboard-shell { display: flex; min-height: 100vh; font-family: Inter, system-ui, sans-serif; }
+        .dashboard-sidebar {
+          width: 260px; min-width: 260px;
+          background: linear-gradient(160deg, #1e3a5f 0%, #0d2137 50%, #111827 100%);
+          display: flex; flex-direction: column;
+          box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+          position: sticky; top: 0; height: 100vh; overflow-y: auto;
+        }
+        .sidebar-brand { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .sidebar-title { color: #ffffff; font-size: 17px; font-weight: 700; }
+        .sidebar-subtitle { color: rgba(255,255,255,0.45); font-size: 12px; margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 14px 10px; }
+        .sidebar-nav-item {
+          display: flex; align-items: center; gap: 12px;
+          padding: 11px 13px; border-radius: 10px; margin-bottom: 3px;
+          color: rgba(255,255,255,0.72); text-decoration: none;
+          font-size: 14px; font-weight: 500;
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+        .sidebar-nav-item:hover { background: rgba(255,255,255,0.09); color: #ffffff; }
+        .sidebar-icon { font-size: 19px !important; width: 22px; text-align: center; color: rgba(255,255,255,0.6); }
+        .sidebar-nav-item:hover .sidebar-icon { color: #60a5fa; }
+        .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.07); }
+        .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; }
+        .sidebar-user-label { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sidebar-user-name { color: #ffffff; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+        .sidebar-admin-btn {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 13px; border-radius: 10px; margin-bottom: 4px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600;
+        }
+        .sidebar-admin-btn:hover { opacity: 0.88; }
+        .sidebar-logout-btn {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 13px; border-radius: 10px;
+          color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px;
+        }
+        .sidebar-logout-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+        .dashboard-main { flex: 1; background: #f8fafc; min-height: 100vh; overflow-y: auto; }
+      `}</style>
     </div>
   )
 }
