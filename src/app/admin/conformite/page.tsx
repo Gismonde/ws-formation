@@ -44,8 +44,8 @@ export default async function ConformitePage() {
 
   let employesQuery = adminSupabase
     .from('employes')
-    .select('id, nom, prenom, email, departement, departements(nom)')
-    .eq('actif', true)
+    .select('id, nom, prenom, email, departement, archive, departements(nom)')
+    .neq('archive', true)
     .order('nom')
 
   if (isGestionnaire && moi?.departement_id) {
@@ -73,7 +73,7 @@ export default async function ConformitePage() {
       return {
         formation_id: a.formation_id,
         formation_titre: form?.titre ?? 'Formation inconnue',
-        statut: prog?.statut ?? 'non_commence',
+        statut: (prog?.statut ?? 'non_commence') as StatutFormation,
         progression: prog?.progression ?? 0,
         certificat_valide: !!cert,
         certificat_date: cert?.issued_at ?? null,
@@ -92,7 +92,6 @@ export default async function ConformitePage() {
   const totalAssign = data.reduce((s, e) => s + e.assignations.length, 0)
   const totalTermines = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'termine').length, 0)
   const totalEnCours = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'en_cours').length, 0)
-  const totalNonCommences = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'non_commence').length, 0)
   const totalCerts = data.reduce((s, e) => s + e.assignations.filter(a => a.certificat_valide).length, 0)
   const taux = totalAssign > 0 ? Math.round((totalTermines / totalAssign) * 100) : 0
 
@@ -111,22 +110,21 @@ export default async function ConformitePage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '32px' }}>
         {[
-          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b', bg: taux >= 80 ? '#d1fae5' : taux >= 50 ? '#fef3c7' : '#fee2e2' },
-          { label: 'Formations assignees', value: totalAssign, color: '#1a1f36', bg: '#f3f4f6' },
-          { label: 'Terminees', value: totalTermines, color: '#065f46', bg: '#d1fae5' },
-          { label: 'En cours', value: totalEnCours, color: '#92400e', bg: '#fef3c7' },
-          { label: 'Certificats obtenus', value: totalCerts, color: '#4338ca', bg: '#e0e7ff' },
+          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b', bg: '#fff' },
+          { label: 'Formations assignees', value: totalAssign, color: '#1a1f36', bg: '#fff' },
+          { label: 'Terminees', value: totalTermines, color: '#065f46', bg: '#fff' },
+          { label: 'Certificats obtenus', value: totalCerts, color: '#4338ca', bg: '#fff' },
         ].map(stat => (
-          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
+          <div key={stat.label} style={{ background: stat.bg, borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
             <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
             <p style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: stat.color }}>{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {data.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
             Aucun employe actif trouve.
@@ -136,63 +134,62 @@ export default async function ConformitePage() {
           const empTotal = emp.assignations.length
           const empTaux = empTotal > 0 ? Math.round((empTermines / empTotal) * 100) : 0
           const empCerts = emp.assignations.filter(a => a.certificat_valide).length
-          const tauxColor = empTaux >= 80 ? '#065f46' : empTaux >= 50 ? '#92400e' : '#991b1b'
-          const tauxBg = empTaux >= 80 ? '#d1fae5' : empTaux >= 50 ? '#fef3c7' : '#fee2e2'
+          const tauxColor = empTaux >= 80 ? '#065f46' : empTaux >= 50 ? '#92400e' : '#6b7280'
 
           return (
             <details key={emp.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-              <summary style={{ padding: '16px 20px', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '16px', userSelect: 'none' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ minWidth: '200px' }}>
+              <summary style={{ padding: '16px 20px', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', minWidth: 0 }}>
+                  <div style={{ minWidth: '180px' }}>
                     <div style={{ fontWeight: '700', color: '#1a1f36', fontSize: '14px' }}>{emp.prenom} {emp.nom}</div>
                     <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.email}</div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px' }}>
-                    {emp.departement || 'Sans departement'}
-                  </div>
+                  {emp.departement && (
+                    <span style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+                      {emp.departement}
+                    </span>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', width: '100px' }}>
-                      <div style={{ width: empTaux + '%', background: empTaux >= 80 ? '#10b981' : empTaux >= 50 ? '#f59e0b' : '#ef4444', height: '8px', borderRadius: '4px', transition: 'width 0.3s' }} />
+                    <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', width: '80px' }}>
+                      <div style={{ width: empTaux + '%', background: empTaux >= 80 ? '#10b981' : empTaux >= 50 ? '#f59e0b' : '#9ca3af', height: '8px', borderRadius: '4px' }} />
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: tauxColor, background: tauxBg, padding: '1px 8px', borderRadius: '20px' }}>{empTaux}%</span>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: tauxColor }}>{empTaux}%</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>{empTermines}/{empTotal} formations</span>
-                    {empCerts > 0 && (
-                      <span style={{ fontSize: '12px', color: '#4338ca', background: '#e0e7ff', padding: '1px 8px', borderRadius: '20px', fontWeight: '600' }}>
-                        {empCerts} cert.
-                      </span>
-                    )}
-                  </div>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>{empTermines}/{empTotal} formations</span>
+                  {empCerts > 0 && (
+                    <span style={{ fontSize: '12px', color: '#4338ca', background: '#e0e7ff', padding: '1px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                      {empCerts} cert.
+                    </span>
+                  )}
                 </div>
                 <Link
                   href={'/admin/employes/' + emp.id}
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe', flexShrink: 0 }}
                 >
                   Dossier
                 </Link>
-                <span style={{ color: '#9ca3af', fontSize: '18px', flexShrink: 0 }}>&#9660;</span>
+                <span style={{ color: '#9ca3af', fontSize: '14px', flexShrink: 0 }}>▼</span>
               </summary>
 
-              <div style={{ borderTop: '1px solid #e5e7eb' }}>
+              <div style={{ borderTop: '1px solid #f3f4f6' }}>
                 {emp.assignations.length === 0 ? (
                   <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>Aucune formation assignee.</div>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ background: '#f9fafb' }}>
-                        <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Formation</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Progression</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Certificat</th>
+                        <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Formation</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Statut</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Progression</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Certificat</th>
                       </tr>
                     </thead>
                     <tbody>
                       {emp.assignations.map((a, i) => {
                         const sc = statutConfig[a.statut]
                         return (
-                          <tr key={a.formation_id} style={{ borderTop: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                          <tr key={a.formation_id} style={{ borderTop: i > 0 ? '1px solid #f3f4f6' : 'none', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                             <td style={{ padding: '12px 20px', fontWeight: '500', color: '#1a1f36' }}>{a.formation_titre}</td>
                             <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                               <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
@@ -218,7 +215,7 @@ export default async function ConformitePage() {
                                   )}
                                 </div>
                               ) : (
-                                <span style={{ color: '#d1d5db', fontSize: '18px' }}>-</span>
+                                <span style={{ color: '#d1d5db' }}>-</span>
                               )}
                             </td>
                           </tr>
@@ -234,4 +231,4 @@ export default async function ConformitePage() {
       </div>
     </div>
   )
-  }
+                                                  }
