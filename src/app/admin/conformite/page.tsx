@@ -73,7 +73,7 @@ export default async function ConformitePage() {
       return {
         formation_id: a.formation_id,
         formation_titre: form?.titre ?? 'Formation inconnue',
-        statut: (prog?.statut ?? 'non_commence') as StatutFormation,
+        statut: (prog?.statut as StatutFormation) ?? 'non_commence',
         progression: prog?.progression ?? 0,
         certificat_valide: !!cert,
         certificat_date: cert?.issued_at ?? null,
@@ -112,12 +112,12 @@ export default async function ConformitePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '32px' }}>
         {[
-          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b', bg: '#fff' },
-          { label: 'Formations assignees', value: totalAssign, color: '#1a1f36', bg: '#fff' },
-          { label: 'Terminees', value: totalTermines, color: '#065f46', bg: '#fff' },
-          { label: 'Certificats obtenus', value: totalCerts, color: '#4338ca', bg: '#fff' },
+          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b' },
+          { label: 'Formations assignees', value: String(totalAssign), color: '#1a1f36' },
+          { label: 'Terminees', value: String(totalTermines), color: '#065f46' },
+          { label: 'Certificats obtenus', value: String(totalCerts), color: '#4338ca' },
         ].map(stat => (
-          <div key={stat.label} style={{ background: stat.bg, borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
+          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
             <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
             <p style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: stat.color }}>{stat.value}</p>
           </div>
@@ -127,7 +127,7 @@ export default async function ConformitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {data.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-            Aucun employe actif trouve.
+            Aucun employe actif.
           </div>
         ) : data.map(emp => {
           const empTermines = emp.assignations.filter(a => a.statut === 'termine').length
@@ -162,16 +162,13 @@ export default async function ConformitePage() {
                     </span>
                   )}
                 </div>
-                <Link
-                  href={'/admin/employes/' + emp.id}
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe', flexShrink: 0 }}
-                >
-                  Dossier
-                </Link>
-                <span style={{ color: '#9ca3af', fontSize: '14px', flexShrink: 0 }}>▼</span>
+                <span style={{ color: '#9ca3af', fontSize: '14px', flexShrink: 0 }}>&#9660;</span>
               </summary>
-
+              <div style={{ padding: '8px 20px', borderTop: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end' }}>
+                <Link href={'/admin/employes/' + emp.id} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
+                  Voir le dossier
+                </Link>
+              </div>
               <div style={{ borderTop: '1px solid #f3f4f6' }}>
                 {emp.assignations.length === 0 ? (
                   <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>Aucune formation assignee.</div>
@@ -231,4 +228,4 @@ export default async function ConformitePage() {
       </div>
     </div>
   )
-                                                  }
+            }
