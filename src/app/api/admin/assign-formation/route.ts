@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { logAudit } from '@/lib/audit'
 
 const serviceRole = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!moi || (moi.role !== 'admin' && moi.role !== 'gestionnaire')) {
+    if (!moi || !['admin', 'gestionnaire'].includes(moi.role)) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
     }
 
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
       if (moi.role === 'gestionnaire' && cibleId !== moi.departement_id) {
         return NextResponse.json({ error: 'Acces refuse - hors de votre departement' }, { status: 403 })
       }
+
       const { data: emps } = await serviceRole
         .from('employes')
         .select('id')
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (employeIds.length === 0) {
-      return NextResponse.json({ assigned: 0, skipped: 0, message: 'Aucun employe trouve' })
+      return NextResponse.json({ assigned: 0, skipped: 0, message: 'Aucun employe a assigner' })
     }
 
     // Check existing assignments to avoid duplicates
@@ -96,6 +98,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Log the audit event
+    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? null
+    const ua = req.headers.get('user-agent') ?? null
+    await Promise.all(toAssign.map(empId =>
+      logAudit({
+        acteur_id: moi.id,
+        type_action: 'FORMATION_ASSIGNEE',
+        description: 'Formation assignee a un employe',
+        formation_id: formationId,
+        cible_employe_id: empId,
+        ip_address: ip,
+        user_agent: ua,
+      })
+    ))
+
     return NextResponse.json({
       assigned: toAssign.length,
       skipped: alreadyAssigned.size,
@@ -104,4 +121,4 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
-}
+        }
