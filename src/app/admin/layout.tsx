@@ -153,6 +153,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <div style={{ fontSize: '11px', color: isAdmin ? '#a78bfa' : '#60a5fa', fontWeight: '600', textTransform: 'capitalize' }}>{role}</div>
             </div>
           </div>
+                    <Link href="/dashboard" style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '7px',
+                  borderRadius: '6px',
+                  background: 'rgba(255,255,255,0.07)',
+                  color: 'rgba(255,255,255,0.55)',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  marginBottom: '6px',
+    }}>
+                                  ← Portail Formation
+                    </Link>
           <Link href="/login" className="admin-logout-btn" style={{
             display: 'block',
             textAlign: 'center',
