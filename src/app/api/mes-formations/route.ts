@@ -24,23 +24,26 @@ export async function GET(request: NextRequest) {
     employe = emp2
   }
 
-  let formationIds: string[] = []
+  let formations: any[] = []
+
   if (employe) {
     const { data: assignations } = await serviceClient
       .from('assignations').select('formation_id').eq('employe_id', employe.id)
-    formationIds = assignations?.map((a: any) => a.formation_id) ?? []
+    const formationIds = assignations?.map((a: any) => a.formation_id) ?? []
+
+    if (formationIds.length > 0) {
+      const { data: assigned } = await serviceClient
+        .from('formations').select('id, titre, obligatoire').in('id', formationIds)
+      formations = assigned ?? []
+    }
   }
 
-  let formations: any[] = []
-  if (formationIds.length > 0) {
-    const { data: assigned } = await serviceClient
-      .from('formations').select('id, titre, obligatoire').in('id', formationIds)
-    formations = assigned ?? []
-  } else {
+  // If no formations found (no assignations or assigned formation IDs don't exist), show all
+  if (formations.length === 0) {
     const { data: all } = await serviceClient
       .from('formations').select('id, titre, obligatoire')
     formations = all ?? []
   }
 
-  return NextResponse.json({ formations, isAssigned: formationIds.length > 0 })
+  return NextResponse.json({ formations })
 }
