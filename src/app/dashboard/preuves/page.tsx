@@ -82,7 +82,6 @@ export default function PreuvesPage() {
           .select('id, titre, obligatoire')
           .in('id', ids)
           .eq('publiee', true)
-          .order('titre', { ascending: true })
         setFormations(formationsData ?? [])
       } else {
         // No assignations found - show all published formations
@@ -90,7 +89,6 @@ export default function PreuvesPage() {
           .from('formations')
           .select('id, titre, obligatoire')
           .eq('publiee', true)
-          .order('titre', { ascending: true })
         setFormations(allFormations ?? [])
       }
     } else {
@@ -99,7 +97,6 @@ export default function PreuvesPage() {
         .from('formations')
         .select('id, titre, obligatoire')
         .eq('publiee', true)
-        .order('titre', { ascending: true })
       setFormations(allFormations ?? [])
     }
 
