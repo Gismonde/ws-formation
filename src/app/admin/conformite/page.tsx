@@ -44,8 +44,7 @@ export default async function ConformitePage() {
 
   let employesQuery = adminSupabase
     .from('employes')
-    .select('id, nom, prenom, email, departement, archive, departements(nom)')
-    .neq('archive', true)
+    .select('id, nom, prenom, email, departement, actif, departements(nom)')
     .order('nom')
 
   if (isGestionnaire && moi?.departement_id) {
@@ -58,7 +57,8 @@ export default async function ConformitePage() {
   const { data: progressions } = await adminSupabase.from('progression').select('employe_id, formation_id, statut, progression')
   const { data: certificats } = await adminSupabase.from('certificats').select('employe_id, formation_id, valide, issued_at')
 
-  const employes_ = employes ?? []
+  // Filter active employees in JS (actif !== false handles null/true/undefined)
+  const employes_ = (employes ?? []).filter((e: any) => e.actif !== false)
   const formations_ = formations ?? []
   const assignations_ = assignations ?? []
   const progressions_ = progressions ?? []
@@ -127,7 +127,7 @@ export default async function ConformitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {data.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-            Aucun employe actif.
+            Aucun employe actif trouve.
           </div>
         ) : data.map(emp => {
           const empTermines = emp.assignations.filter(a => a.statut === 'termine').length
@@ -228,4 +228,4 @@ export default async function ConformitePage() {
       </div>
     </div>
   )
-            }
+              }
