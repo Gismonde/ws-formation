@@ -15,10 +15,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
 
-        {/* ================================================
-            PIED DE PAGE - Conformite Loi 25 (Quebec)
-            Lien vers politique de confidentialite + RPP
-            ================================================ */}
+import Link from 'next/link'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'WS Formation',
+  description: 'Plateforme de formations en ligne',
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="fr">
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', margin: 0 }}>
+        <main style={{ flex: 1 }}>
+          {children}
+        </main>
+
         <footer style={{
           borderTop: '1px solid #e5e7eb',
           padding: '16px 24px',
@@ -32,8 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gap: '8px',
         }}>
           <span>
-            &copy; {new Date().getFullYear()} WS Formation &mdash; Conforme a la{' '}
-            <strong>Loi 25</strong> (Quebec)
+            &copy; {new Date().getFullYear()} WS Formation &mdash; Conforme a la Loi 25 (Quebec)
           </span>
           <span style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
             <Link
@@ -44,19 +55,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <span style={{ color: '#d1d5db' }}>|</span>
             <span>
-              RPP :{' '}
-              <a
+              RPP: <a
                 href="mailto:confidentialite@wssurgical.com"
                 style={{ color: '#6366f1', textDecoration: 'none' }}
-              >
-                confidentialite@wssurgical.com
-              </a>
+              >confidentialite@wssurgical.com</a>
             </span>
             <span style={{ color: '#d1d5db' }}>|</span>
             <Link
               href="/api/droit-acces"
               style={{ color: '#6b7280', textDecoration: 'none' }}
-              title="Telecharger votre dossier personnel (Loi 25 art. 27-28)"
             >
               Telecharger mon dossier
             </Link>
@@ -65,4 +72,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </body>
     </html>
   )
-                }
+        }
