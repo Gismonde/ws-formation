@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getLessonWithBlocks, getLessonsWithBlocks } from '@/lib/actions/lessons'
 import { upsertLessonProgression } from '@/lib/actions/progressions'
+import AudioReader from '@/components/AudioReader'
 
 type ContentBlock = {
   id: string
@@ -258,6 +259,11 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
           )}
         </div>
 
+        {/* Lecteur audio */}
+        <AudioReader
+          text={lecon.blocs.filter(b => b.type === 'text' && b.contenu).map(b => b.contenu!).join(' ')}
+          title={lecon.titre}
+        />
         {/* Blocs de contenu */}
         {lecon.blocs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
