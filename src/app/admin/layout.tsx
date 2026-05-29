@@ -8,7 +8,7 @@ const adminNav = [
   { href: '/admin/employes', label: 'Employes', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
   { href: '/admin/conformite', label: 'Conformite', icon: 'verified' },
-  { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
+  { href: '/admin/rapports', label: 'Rpports', icon: 'bar_chart' },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
   { href: '/admin/parametres', label: 'Parametres', icon: 'settings', adminOnly: true },
@@ -68,7 +68,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {employe.prenom} {employe.nom}
             </div>
           )}
-          <Link href='/portail' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
+          <Link href='/dashboard' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
             <span className='material-icons' style={{ fontSize: '16px' }}>person</span>
             Mon espace
           </Link>
