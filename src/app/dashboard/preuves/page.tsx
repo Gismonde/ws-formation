@@ -19,7 +19,6 @@ type Preuve = {
 type Formation = {
   id: string
   titre: string
-  obligatoire: boolean
 }
 
 export default function PreuvesPage() {
@@ -159,7 +158,7 @@ export default function PreuvesPage() {
               <option value="">-- Choisir une formation --</option>
               {formations.map(f => (
                 <option key={f.id} value={f.id}>
-                  {f.titre}{f.obligatoire ? ' (Obligatoire)' : ''}
+                  {f.titre}
                 </option>
               ))}
               <option value="autre">-- Autre (preciser) --</option>
