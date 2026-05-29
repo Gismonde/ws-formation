@@ -61,7 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </aside>
 
-      <main className="dashboard-main">
+      <main className="dashboard-main" style={{padding: '32px'}}>
         {children}
       </main>
 
