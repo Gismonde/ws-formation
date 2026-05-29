@@ -137,6 +137,9 @@ export default async function AdminEmployesPage() {
                       <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
                         Modifier
                       </Link>
+                      <Link href={`/admin/employes/${emp.id}/preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
+                        Preuves
+                      </Link>
                       <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />
                     </div>
                   </td>
