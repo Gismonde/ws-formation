@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 const employeNav = [
-  { href: '/dashboard', label: 'Mes formations', icon: 'school' },
-  { href: '/dashboard/certificats', label: 'Mes certificats', icon: 'workspace_premium' },
-  { href: '/dashboard/sop', label: 'Mes SOP', icon: 'description' },
-  { href: '/dashboard/historique', label: 'Historique', icon: 'history' },
-  { href: '/dashboard/profil', label: 'Profil', icon: 'person' },
+  { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
+  { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
+  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
+  { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
+  { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
 ]
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -37,7 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <nav className="sidebar-nav">
           {employeNav.map((item) => (
             <Link key={item.href} href={item.href} className="sidebar-nav-item">
-              <span className="material-icons sidebar-icon">{item.icon}</span>
+              <span className="sidebar-emoji">{item.emoji}</span>
               <span>{item.label}</span>
             </Link>
           ))}
@@ -50,12 +50,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
           {isAdmin && (
             <Link href="/admin" className="sidebar-admin-btn">
-              <span className="material-icons" style={{ fontSize: '16px' }}>admin_panel_settings</span>
+              <span>⚙️</span>
               <span>Espace Admin</span>
             </Link>
           )}
           <Link href="/logout" className="sidebar-logout-btn">
-            <span className="material-icons" style={{ fontSize: '16px' }}>logout</span>
+            <span>🚪</span>
             <span>Deconnexion</span>
           </Link>
         </div>
@@ -81,15 +81,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .sidebar-nav-item {
           display: flex; align-items: center; gap: 12px;
           padding: 11px 13px; border-radius: 10px; margin-bottom: 3px;
-          color: rgba(255,255,255,0.72); text-decoration: none;
+          color: rgba(255,255,255,0.78); text-decoration: none;
           font-size: 14px; font-weight: 500;
           transition: background 0.15s ease, color 0.15s ease;
         }
-        .sidebar-nav-item:hover { background: rgba(255,255,255,0.09); color: #ffffff; }
-        .sidebar-icon { font-size: 19px !important; width: 22px; text-align: center; color: rgba(255,255,255,0.6); }
-        .sidebar-nav-item:hover .sidebar-icon { color: #60a5fa; }
+        .sidebar-nav-item:hover { background: rgba(255,255,255,0.1); color: #ffffff; }
+        .sidebar-emoji { font-size: 18px; width: 26px; text-align: center; }
         .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.07); }
-        .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.05); margin-bottom: 8px; }
+        .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.06); margin-bottom: 8px; }
         .sidebar-user-label { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
         .sidebar-user-name { color: #ffffff; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
         .sidebar-admin-btn {
