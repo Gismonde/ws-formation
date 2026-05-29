@@ -3,7 +3,11 @@ export default function LoginPage({
 }: {
   searchParams: any
 }) {
-  const errorMsg = searchParams?.error ? 'Email ou mot de passe incorrect' : null
+  const errorMsg = searchParams?.error === 'archived'
+    ? 'Votre compte a été désactivé. Contactez votre administrateur.'
+    : searchParams?.error
+    ? 'Email ou mot de passe incorrect'
+    : null
 
   return (
     <div style={{
