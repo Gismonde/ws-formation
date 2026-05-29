@@ -12,7 +12,7 @@ export default async function CertificatsPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">← Dashboard</Link>
+          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">&larr; Dashboard</Link>
           <h1 className="font-semibold text-gray-900">Mes certificats</h1>
         </div>
       </nav>
@@ -20,7 +20,7 @@ export default async function CertificatsPage() {
         {!certificats?.length ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🎓</div>
-            <p className="text-gray-500">Vous n'avez pas encore de certificats.</p>
+            <p className="text-gray-500">Vous n&apos;avez pas encore de certificats.</p>
             <Link href="/formations"><button className="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Voir les formations</button></Link>
           </div>
         ) : (
@@ -31,14 +31,23 @@ export default async function CertificatsPage() {
                   <span className="text-3xl">🏆</span>
                   <span className="text-xs font-mono text-purple-600 bg-purple-50 px-2 py-1 rounded">{cert.numero_certificat}</span>
                 </div>
-                <p className="text-xs text-purple-500 font-medium uppercase tracking-wide mb-1">Certificat de compétence</p>
+                <p className="text-xs text-purple-500 font-medium uppercase tracking-wide mb-1">Certificat de comp&eacute;tence</p>
                 <h3 className="text-lg font-bold text-gray-900 mb-1">{cert.formations?.titre}</h3>
                 <p className="text-sm text-gray-500 mb-4">{cert.formations?.categorie}</p>
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-sm text-gray-600">Délivré à <span className="font-semibold">{(employe as any)?.prenom} {(employe as any)?.nom}</span></p>
+                <div className="border-t border-gray-100 pt-4 mb-4">
+                  <p className="text-sm text-gray-600">D&eacute;livr&eacute; &agrave; <span className="font-semibold">{(employe as any)?.prenom} {(employe as any)?.nom}</span></p>
                   <p className="text-xs text-gray-400 mt-1">Le {new Date(cert.date_emission).toLocaleDateString('fr-CA', {year:'numeric',month:'long',day:'numeric'})}</p>
                   {cert.note_finale && <p className="text-xs text-green-600 font-medium mt-1">Note : {Math.round(cert.note_finale)}%</p>}
                 </div>
+                <Link
+                  href={`/certificat/${cert.id}`}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  T&eacute;l&eacute;charger le certificat PDF
+                </Link>
               </div>
             ))}
           </div>
