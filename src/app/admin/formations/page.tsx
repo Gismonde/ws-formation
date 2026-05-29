@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
-  debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Débutant' },
-  intermediaire: { bg: '#fefce8', color: '#ca8a04', label: 'Intermédiaire' },
-  avance: { bg: '#fff1f2', color: '#e11d48', label: 'Avancé' },
+  debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Debutant' },
+  intermediaire: { bg: '#fefce8', color: '#ca8a04', label: 'Intermediaire' },
+  avance: { bg: '#fff1f2', color: '#e11d48', label: 'Avance' },
 }
 
 export default async function AdminFormationsPage() {
@@ -61,36 +61,38 @@ export default async function AdminFormationsPage() {
           </p>
         </div>
         {isAdmin && (
-          <Link href="/admin/formations/nouvelle" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 18px',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            color: '#fff',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: '600',
-            boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
-          }}>
-            + Nouvelle formation
-          </Link>
-          <Link href="/admin/formations/generer" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 18px',
-            background: '#fff',
-            color: '#2563eb',
-            border: '2px solid #2563eb',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: '600',
-          }}>
-            📄 Générer depuis document
-          </Link>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link href="/admin/formations/generer" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 18px',
+              background: '#fff',
+              color: '#2563eb',
+              border: '2px solid #2563eb',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}>
+              Generer depuis document
+            </Link>
+            <Link href="/admin/formations/nouvelle" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 18px',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+              boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+            }}>
+              + Nouvelle formation
+            </Link>
+          </div>
         )}
       </div>
 
@@ -106,10 +108,10 @@ export default async function AdminFormationsPage() {
           <thead>
             <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
               <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Titre</th>
-              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Catégorie</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categorie</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Niveau</th>
               <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Modules</th>
-              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignées</th>
+              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignees</th>
               <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
               <th style={{ padding: '12px 20px' }}></th>
             </tr>
@@ -152,7 +154,7 @@ export default async function AdminFormationsPage() {
                       fontWeight: '600',
                       border: f.publiee ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
                     }}>
-                      {f.publiee ? 'Publiée' : 'Brouillon'}
+                      {f.publiee ? 'Publiee' : 'Brouillon'}
                     </span>
                   </td>
                   <td style={{ padding: '14px 20px' }}>
@@ -202,11 +204,11 @@ export default async function AdminFormationsPage() {
 
         {(!formations || formations.length === 0) && (
           <div style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📚</div>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>&#128218;</div>
             <p style={{ margin: 0, fontSize: '14px' }}>Aucune formation créée</p>
           </div>
         )}
       </div>
     </div>
   )
-}
+                }
