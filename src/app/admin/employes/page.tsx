@@ -103,7 +103,7 @@ export default async function AdminEmployesPage() {
                     <Link href={`/admin/employes/${emp.id}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-lg">
                       Modifier
                     </Link>
-                    <ToggleActifButton employeId={emp.id} currentActif={true} />
+                    <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />
                   </div>
                 </td>
               </tr>
@@ -152,7 +152,7 @@ export default async function AdminEmployesPage() {
                         <Link href={`/admin/employes/${emp.id}`} className="text-sm text-blue-500 font-medium border border-blue-200 px-3 py-1 rounded-lg">
                           Dossier
                         </Link>
-                        {!isGestionnaire && <ToggleActifButton employeId={emp.id} currentActif={false} />}
+                        {!isGestionnaire && <ToggleActifButton id={emp.id} actif={false} nom={`${emp.prenom} ${emp.nom}`} />}
                       </div>
                     </td>
                   </tr>
