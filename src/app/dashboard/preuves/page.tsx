@@ -7,7 +7,8 @@ type StatutPreuve = 'en_attente' | 'validee' | 'refusee'
 
 type Preuve = {
   id: string
-  formation_id: string
+  formation_id: string | null
+  nom_fichier: string
   fichier_url: string
   statut: StatutPreuve
   commentaire_admin: string | null
@@ -30,6 +31,8 @@ export default function PreuvesPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [employeId, setEmployeId] = useState<string | null>(null)
+  const [autreMode, setAutreMode] = useState(false)
+  const [autreTitre, setAutreTitre] = useState('')
 
   useEffect(() => {
     loadData()
@@ -80,14 +83,21 @@ export default function PreuvesPage() {
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
-    if (!selectedFile || !selectedFormationId) return
+    if (!selectedFile) return
+    if (!autreMode && !selectedFormationId) return
+    if (autreMode && !autreTitre.trim()) return
 
     setUploading(true)
     setMessage(null)
 
     const formData = new FormData()
     formData.append('file', selectedFile)
-    formData.append('formation_id', selectedFormationId)
+    if (autreMode) {
+      formData.append('formation_id', 'autre')
+      formData.append('formation_titre_autre', autreTitre.trim())
+    } else {
+      formData.append('formation_id', selectedFormationId)
+    }
 
     const res = await fetch('/api/upload-preuve', { method: 'POST', body: formData })
     const data = await res.json()
@@ -96,6 +106,8 @@ export default function PreuvesPage() {
       setMessage({ type: 'success', text: 'Preuve envoyee ! Un administrateur va la valider.' })
       setSelectedFile(null)
       setSelectedFormationId('')
+      setAutreMode(false)
+      setAutreTitre('')
       await loadData()
     } else {
       setMessage({ type: 'error', text: data.error || 'Erreur lors de l upload' })
@@ -103,11 +115,21 @@ export default function PreuvesPage() {
     setUploading(false)
   }
 
+  function handleFormationChange(val: string) {
+    if (val === 'autre') {
+      setAutreMode(true)
+      setSelectedFormationId('autre')
+    } else {
+      setAutreMode(false)
+      setSelectedFormationId(val)
+    }
+  }
+
   function statutBadge(statut: StatutPreuve) {
     const cfg = {
-      en_attente: { bg: '#fef3c7', color: '#92400e', label: '⏳ En attente' },
-      validee: { bg: '#d1fae5', color: '#065f46', label: '✅ Validee' },
-      refusee: { bg: '#fee2e2', color: '#991b1b', label: '❌ Refusee' },
+      en_attente: { bg: '#fef3c7', color: '#92400e', label: 'En attente' },
+      validee: { bg: '#d1fae5', color: '#065f46', label: 'Validee' },
+      refusee: { bg: '#fee2e2', color: '#991b1b', label: 'Refusee' },
     }
     const c = cfg[statut] || cfg.en_attente
     return (
@@ -115,6 +137,14 @@ export default function PreuvesPage() {
         {c.label}
       </span>
     )
+  }
+
+  function getFormationTitle(preuve: Preuve): string {
+    if (preuve.nom_fichier && preuve.nom_fichier.startsWith('[AUTRE: ')) {
+      const match = preuve.nom_fichier.match(/^\[AUTRE: (.+?)\]/)
+      if (match) return match[1] + ' (Autre)'
+    }
+    return preuve.formations?.titre ?? preuve.formation_id ?? 'Formation inconnue'
   }
 
   if (loading) {
@@ -128,15 +158,15 @@ export default function PreuvesPage() {
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>📎 Mes preuves de formation</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Mes preuves de formation</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Uploadez un document (attestation, certificat) pour faire valider une formation obligatoire par votre responsable.
+          Uploadez un document (attestation, certificat) pour faire valider une formation par votre responsable.
         </p>
       </div>
 
       {/* Upload form */}
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginTop: 0, marginBottom: '20px' }}>
           Soumettre une preuve
         </h2>
         <form onSubmit={handleUpload}>
@@ -146,7 +176,7 @@ export default function PreuvesPage() {
             </label>
             <select
               value={selectedFormationId}
-              onChange={e => setSelectedFormationId(e.target.value)}
+              onChange={e => handleFormationChange(e.target.value)}
               required
               style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#1a1f36' }}
             >
@@ -156,12 +186,29 @@ export default function PreuvesPage() {
                   {f.titre}{f.obligatoire ? ' (Obligatoire)' : ''}
                 </option>
               ))}
+              <option value="autre">-- Autre (preciser) --</option>
             </select>
           </div>
 
+          {autreMode && (
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                Nom de la formation *
+              </label>
+              <input
+                type="text"
+                value={autreTitre}
+                onChange={e => setAutreTitre(e.target.value)}
+                placeholder="Indiquez le nom de la formation..."
+                required
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1a1f36', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-              Document justificatif * (PDF, JPG, PNG — max 10MB)
+              Document justificatif * (PDF, JPG, PNG - max 10MB)
             </label>
             <input
               type="file"
@@ -172,16 +219,19 @@ export default function PreuvesPage() {
             />
             {selectedFile && (
               <p style={{ fontSize: '12px', color: '#6366f1', marginTop: '6px' }}>
-                ✓ {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                Fichier : {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
               </p>
             )}
           </div>
 
           {message && (
             <div style={{
-              padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginBottom: '16px',
               background: message.type === 'success' ? '#d1fae5' : '#fee2e2',
-              color: message.type === 'success' ? '#065f46' : '#991b1b'
+              color: message.type === 'success' ? '#065f46' : '#991b1b',
+              fontSize: '14px',
             }}>
               {message.text}
             </div>
@@ -189,51 +239,56 @@ export default function PreuvesPage() {
 
           <button
             type="submit"
-            disabled={uploading || !selectedFile || !selectedFormationId}
+            disabled={uploading}
             style={{
-              padding: '10px 24px', background: uploading ? '#9ca3af' : '#6366f1',
-              color: '#fff', borderRadius: '8px', border: 'none', fontSize: '14px',
-              fontWeight: '600', cursor: uploading ? 'not-allowed' : 'pointer'
+              padding: '10px 24px',
+              background: uploading ? '#9ca3af' : '#6366f1',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: uploading ? 'not-allowed' : 'pointer',
             }}
           >
-            {uploading ? 'Envoi en cours...' : '📤 Soumettre ma preuve'}
+            {uploading ? 'Envoi en cours...' : 'Envoyer la preuve'}
           </button>
         </form>
       </div>
 
-      {/* List of existing proofs */}
+      {/* Existing proofs list */}
       <div>
-        <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>
-          Mes demandes ({preuves.length})
-        </h2>
-
+        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>Mes preuves soumises</h2>
         {preuves.length === 0 ? (
-          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '48px', textAlign: 'center' }}>
-            <p style={{ fontSize: '32px', marginBottom: '8px' }}>📭</p>
-            <p style={{ color: '#6b7280', fontSize: '14px' }}>Aucune preuve soumise pour le moment.</p>
+          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+            Aucune preuve soumise pour le moment.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {preuves.map((p: Preuve) => (
-              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: '600', fontSize: '14px', color: '#1a1f36', margin: '0 0 4px' }}>
-                    {p.formations?.titre || 'Formation'}
+            {preuves.map((p) => (
+              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                <div>
+                  <p style={{ fontWeight: '600', color: '#1a1f36', margin: 0, fontSize: '14px' }}>
+                    {getFormationTitle(p)}
                   </p>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
-                    Soumis le {new Date(p.created_at).toLocaleDateString('fr-FR')}
+                  <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0' }}>
+                    {new Date(p.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   {p.commentaire_admin && (
-                    <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
-                      💬 {p.commentaire_admin}
+                    <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0', fontStyle: 'italic' }}>
+                      Note : {p.commentaire_admin}
                     </p>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   {statutBadge(p.statut)}
-                  <a href={p.fichier_url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}>
-                    Voir le fichier →
+                  <a
+                    href={p.fichier_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}
+                  >
+                    Voir le fichier
                   </a>
                 </div>
               </div>
