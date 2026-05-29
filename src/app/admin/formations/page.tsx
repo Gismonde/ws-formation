@@ -76,6 +76,21 @@ export default async function AdminFormationsPage() {
           }}>
             + Nouvelle formation
           </Link>
+          <Link href="/admin/formations/generer" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 18px',
+            background: '#fff',
+            color: '#2563eb',
+            border: '2px solid #2563eb',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: '600',
+          }}>
+            \u{1F4C4} G\u00e9n\u00e9rer depuis document
+          </Link>
         )}
       </div>
 
