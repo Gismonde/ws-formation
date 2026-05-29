@@ -44,31 +44,63 @@ export default function PreuvesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Get employe
-    const { data: employe } = await supabase
+    // Get employe - try by auth_user_id first, then by email
+    let employe: { id: string } | null = null
+
+    const { data: emp1 } = await supabase
       .from('employes')
       .select('id')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (!employe) return
-    setEmployeId(employe.id)
+    if (emp1) {
+      employe = emp1
+    } else if (user.email) {
+      const { data: emp2 } = await supabase
+        .from('employes')
+        .select('id')
+        .eq('email', user.email)
+        .maybeSingle()
+      employe = emp2
+    }
 
-    // Get assigned formations
-    const { data: assignations } = await supabase
-      .from('assignations')
-      .select('formation_id')
-      .eq('employe_id', employe.id)
+    if (employe) {
+      setEmployeId(employe.id)
 
-    const ids = assignations?.map((a: any) => a.formation_id) ?? []
+      // Get assigned formations
+      const { data: assignations } = await supabase
+        .from('assignations')
+        .select('formation_id')
+        .eq('employe_id', employe.id)
 
-    if (ids.length > 0) {
-      const { data: formationsData } = await supabase
+      const ids = assignations?.map((a: any) => a.formation_id) ?? []
+
+      if (ids.length > 0) {
+        // Show only assigned formations
+        const { data: formationsData } = await supabase
+          .from('formations')
+          .select('id, titre, obligatoire')
+          .in('id', ids)
+          .eq('publiee', true)
+          .order('titre', { ascending: true })
+        setFormations(formationsData ?? [])
+      } else {
+        // No assignations found - show all published formations
+        const { data: allFormations } = await supabase
+          .from('formations')
+          .select('id, titre, obligatoire')
+          .eq('publiee', true)
+          .order('titre', { ascending: true })
+        setFormations(allFormations ?? [])
+      }
+    } else {
+      // No employe record found - still show all published formations
+      const { data: allFormations } = await supabase
         .from('formations')
         .select('id, titre, obligatoire')
-        .in('id', ids)
         .eq('publiee', true)
-      setFormations(formationsData ?? [])
+        .order('titre', { ascending: true })
+      setFormations(allFormations ?? [])
     }
 
     // Get existing proofs
