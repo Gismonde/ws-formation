@@ -21,6 +21,7 @@ export default function NouvelleFormationPage() {
   const supabase = createClient()
 
   const [titre, setTitre] = useState('')
+  const [categorie, setCategorie] = useState('Administration médicale')
   const [description, setDescription] = useState('')
   const [niveau, setNiveau] = useState('debutant')
   const [dureeHeures, setDureeHeures] = useState(1)
@@ -86,6 +87,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: fErr } = await supabase.from('formations').insert({
         titre,
+        categorie,
         description,
         niveau,
         duree_heures: dureeHeures,
@@ -161,6 +163,20 @@ export default function NouvelleFormationPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Description de la formation..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Section / Catégorie *</label>
+              <select value={categorie} onChange={e => setCategorie(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value="Administration médicale">Administration médicale</option>
+                <option value="Confidentialité &amp; Loi 25">Confidentialité &amp; Loi 25</option>
+                <option value="DSQ">DSQ</option>
+                <option value="Recherche clinique">Recherche clinique</option>
+                <option value="SOP &amp; politiques internes">SOP &amp; politiques internes</option>
+                <option value="Sécurité informatique">Sécurité informatique</option>
+                <option value="Santé &amp; sécurité">Santé &amp; sécurité</option>
+                <option value="Onboarding nouveaux employés">Onboarding nouveaux employés</option>
+                <option value="Formation continue">Formation continue</option>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
