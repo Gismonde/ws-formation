@@ -35,6 +35,11 @@ export default function EditeurFormationPage() {
   const [typeBloc, setTypeBloc] = useState<'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image'>('text')
   const [contenuBloc, setContenuBloc] = useState('')
   const [titreBloc, setTitreBloc] = useState('')
+  const [showImportPptx, setShowImportPptx] = useState(false)
+  const [importPptxFile, setImportPptxFile] = useState<File | null>(null)
+  const [importPptxMode, setImportPptxMode] = useState<'one' | 'many'>('one')
+  const [importPptxLoading, setImportPptxLoading] = useState(false)
+  const [importPptxMessage, setImportPptxMessage] = useState<string | null>(null)
 
   const chargerFormation = useCallback(async () => {
     const res = await getFormationWithModules(formationId)
@@ -56,6 +61,32 @@ export default function EditeurFormationPage() {
   useEffect(() => { chargerFormation() }, [chargerFormation])
 
   // Selectionner un element
+  const importerPptx = async () => {
+    if (!importPptxFile || !formation) return
+    setImportPptxLoading(true)
+    setImportPptxMessage(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', importPptxFile)
+      formData.append('formationId', formation.id)
+      formData.append('moduleMode', importPptxMode)
+      const res = await fetch('/api/import-pptx', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.success) {
+        setImportPptxMessage(data.message || 'Import reussi!')
+        setImportPptxFile(null)
+        await chargerFormation()
+        setTimeout(() => { setShowImportPptx(false); setImportPptxMessage(null) }, 2000)
+      } else {
+        setImportPptxMessage('Erreur: ' + (data.error || 'Inconnu'))
+      }
+    } catch (e: any) {
+      setImportPptxMessage('Erreur: ' + e.message)
+    } finally {
+      setImportPptxLoading(false)
+    }
+  }
+
   const selectionnerModule = (mod: ModuleAvecLecons) => {
     setPanneau({ type: 'module', moduleId: mod.id })
     setTitreModule(mod.titre)
@@ -379,6 +410,15 @@ export default function EditeurFormationPage() {
           {(formation?.modules?.length || 0) > 0 && (
             <div className="p-4">
               <button
+                onClick={() => { setShowImportPptx(true); setImportPptxMessage(null) }}
+                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 mb-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Importer un PowerPoint
+              </button>
+              <button
                 onClick={ajouterModule}
                 className="w-full px-4 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
               >
@@ -636,6 +676,68 @@ export default function EditeurFormationPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Import PowerPoint */}
+      {showImportPptx && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">📊 Importer un PowerPoint</h2>
+              <button onClick={() => setShowImportPptx(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Chaque slide du PowerPoint sera converti automatiquement en lecon avec son contenu.</p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fichier PowerPoint (.pptx)</label>
+              <input
+                type="file"
+                accept=".pptx"
+                onChange={e => setImportPptxFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 border border-gray-300 rounded-lg p-2"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mode d'organisation</label>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-purple-50" style={{borderColor: importPptxMode === 'one' ? '#7c3aed' : '#e5e7eb'}}>
+                  <input type="radio" value="one" checked={importPptxMode === 'one'} onChange={() => setImportPptxMode('one')} className="mt-0.5" />
+                  <div>
+                    <div className="font-medium text-sm">1 module, N lecons</div>
+                    <div className="text-xs text-gray-500">Toutes les slides dans un seul module</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-purple-50" style={{borderColor: importPptxMode === 'many' ? '#7c3aed' : '#e5e7eb'}}>
+                  <input type="radio" value="many" checked={importPptxMode === 'many'} onChange={() => setImportPptxMode('many')} className="mt-0.5" />
+                  <div>
+                    <div className="font-medium text-sm">N modules, 1 lecon chacun</div>
+                    <div className="text-xs text-gray-500">Chaque slide devient un module independant</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {importPptxMessage && (
+              <div className={`mb-4 p-3 rounded-lg text-sm ${importPptxMessage.startsWith('Erreur') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                {importPptxMessage}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowImportPptx(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                Annuler
+              </button>
+              <button
+                onClick={importerPptx}
+                disabled={!importPptxFile || importPptxLoading}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {importPptxLoading ? 'Import en cours...' : 'Importer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
