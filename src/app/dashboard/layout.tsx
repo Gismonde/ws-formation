@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
-  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' }
+  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
 ]
