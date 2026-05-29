@@ -1,14 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
@@ -17,21 +12,6 @@ body {
   color: #111827;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  color: inherit;
-}
-
-/* Smooth transitions globally */
-* {
-  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-}
-
-button, a, input, select, textarea {
-  font-family: inherit;
 }
 
 /* Scrollbar styling */
