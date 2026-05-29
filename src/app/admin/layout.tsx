@@ -9,8 +9,8 @@ const adminNav = [
   { href: '/admin/conformite', label: 'Conformité', icon: '✅' },
   { href: '/admin/rapports', label: 'Rapports', icon: '📈' },
   { href: '/admin/sop', label: 'SOP', icon: '📄' },
-  { href: '/admin/audit', label: 'Audit logs', icon: '🔍' },
-  { href: '/admin/parametres', label: 'Paramètres', icon: '⚙️' },
+  { href: '/admin/audit', label: 'Audit logs', icon: '🔍', adminOnly: true },
+  { href: '/admin/parametres', label: 'Paramètres', icon: '⚙️', adminOnly: true },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!employe && user.email) {
     const { data: employeByEmail } = await supabase
       .from('employes')
-      .select('role, prenom, nom, id')
+      .select('role, prenom, nom, id, departement_id')
       .eq('email', user.email)
       .single()
 
@@ -59,7 +59,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <ul className="space-y-0.5">
-            {adminNav.map((link) => (
+            {adminNav.filter((link) => !link.adminOnly || employe.role === 'admin').map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
