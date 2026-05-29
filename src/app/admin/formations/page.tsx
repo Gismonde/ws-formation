@@ -142,6 +142,15 @@ export default async function AdminFormationsPage() {
                   </td>
                   <td style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                      <Link href={`/admin/formations/${f.id}/editeur`} style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        textDecoration: 'none',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                      }}>Editeur</Link>
                       <Link href={`/admin/formations/${f.id}/assigner`} style={{
                         padding: '5px 12px',
                         borderRadius: '6px',
