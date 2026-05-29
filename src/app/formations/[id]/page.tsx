@@ -118,6 +118,18 @@ export default async function FormationDetailPage({ params }: { params: Promise<
             </Link>
           </div>
         )}
+      {/* Submit External Proof */}
+      <div className="max-w-4xl mx-auto px-6 pb-8">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 flex items-center justify-between gap-4">
+          <div>
+            <div className="font-semibold text-yellow-800 text-sm mb-1">📎 Preuve externe</div>
+            <div className="text-yellow-700 text-xs">Vous avez complété cette formation hors de la plateforme ? Soumettez un certificat ou document justificatif pour validation par un administrateur.</div>
+          </div>
+          <a href={`/formations/${id}/soumettre-preuve`} className="flex-shrink-0 inline-block px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold rounded-lg transition-colors" style={{whiteSpace: 'nowrap'}}>
+            Soumettre une preuve →
+          </a>
+        </div>
+      </div>
       </main>
     </div>
   )
