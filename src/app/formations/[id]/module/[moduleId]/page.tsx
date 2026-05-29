@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import AudioReader from '@/components/AudioReader'
 
 interface Module {
   id: string
@@ -89,6 +90,9 @@ export default function ModulePage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-6">{module.titre}</h1>
           <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">{module.contenu}</div>
+        </div>
+        <div className="mb-6">
+          <AudioReader text={module.contenu || ''} title={module.titre} />
         </div>
         <div className="flex items-center justify-between">
           <button
