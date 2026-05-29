@@ -71,7 +71,7 @@ export default async function AdminEmployesPage() {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Link href={`/admin/employes/${emp.id}/modifier`} className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-lg">
+                    <Link href={`/admin/employes/${emp.id}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-lg">
                       Modifier
                     </Link>
                     <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />
@@ -127,7 +127,7 @@ export default async function AdminEmployesPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Link href={`/admin/employes/${emp.id}/modifier`} className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-lg">
+                        <Link href={`/admin/employes/${emp.id}`} className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-lg">
                           Dossier
                         </Link>
                         <ToggleActifButton id={emp.id} actif={false} nom={`${emp.prenom} ${emp.nom}`} />
