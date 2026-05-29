@@ -7,7 +7,7 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 // Loi 25 Quebec - Art. 27, 28, 28.1
 // Droit d'acces et portabilite des renseignements personnels
 // =====================================================
-// GET  : Exporter le dossier complet de l'employe authentifie (JSON)
+// GET : Exporter le dossier complet de l'employe authentifie (JSON)
 // DELETE : Demander la suppression des donnees (envoi email au RPP)
 // =====================================================
 
@@ -112,7 +112,7 @@ export async function GET() {
     await adminSupabase.from('audit_logs').insert({
       employe_id: employeId,
       type_action: 'EXPORT_DONNEES',
-      description: 'Export dossier personnel (droit acces Loi 25) par l'employe',
+      description: "Export dossier personnel (droit acces Loi 25) par l'employe",
       metadata: { source: 'api/droit-acces', articles: '27-28 Loi 25' },
     })
 
@@ -172,7 +172,7 @@ export async function DELETE() {
     })
 
     return NextResponse.json({
-      message: 'Demande d'effacement enregistree. Le RPP vous contactera dans un delai de 30 jours.',
+      message: "Demande d'effacement enregistree. Le RPP vous contactera dans un delai de 30 jours.",
       rpp: 'confidentialite@wssurgical.com',
       article: 'Art. 28.1 Loi 25 Quebec',
     })
@@ -180,4 +180,4 @@ export async function DELETE() {
     console.error('[droit-acces DELETE] Erreur:', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
-}
+          }
