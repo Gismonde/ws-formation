@@ -83,7 +83,7 @@ export default function AdminPage() {
               <div style={{ marginBottom: '32px' }}>
                       <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, letterSpacing: '-0.5px' }}>
                                 Tableau de bord
-                      </h1>h1>
+                      </h1>
                       <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>
                                 Vue d'ensemble de la plateforme de formation
                       </p>
@@ -115,15 +115,15 @@ export default function AdminPage() {
                                                                 justifyContent: 'center',
                                                                 marginBottom: '16px',
                                               }}>
-                                                              <span className="material-icons" style={{ color: action.color, fontSize: '24px' }}>{action.icon}</span>span>
+                                                              <span className="material-icons" style={{ color: action.color, fontSize: '24px' }}>{action.icon}</span>
                                               </div>
-                                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{action.title}</h3>h3>
+                                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{action.title}</h3>
                                               <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.5' }}>{action.desc}</p>
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '16px', color: action.color, fontSize: '13px', fontWeight: '600' }}>
-                                                              Accéder <span className="material-icons" style={{ fontSize: '16px' }}>arrow_forward</span>span>
+                                                              Accéder <span className="material-icons" style={{ fontSize: '16px' }}>arrow_forward</span>
                                               </div>
                                 </div>
-                    </Link>Link>
+                    </Link>
                   ))}
               </div>
         
@@ -138,7 +138,7 @@ export default function AdminPage() {
                   justifyContent: 'space-between',
         }}>
                       <div>
-                                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>Gérez votre équipe</h3>h3>
+                                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>Gérez votre équipe</h3>
                                 <p style={{ margin: 0, opacity: 0.85, fontSize: '14px' }}>Assignez des formations, suivez la conformité et exportez des rapports.</p>
                       </div>
                       <Link href="/admin/employes" style={{
@@ -154,12 +154,12 @@ export default function AdminPage() {
                     border: '1px solid rgba(255,255,255,0.3)',
         }}>
                                 Voir les employés →
-                      </Link>Link>
+                      </Link>
               </div>
         
               <style>{`
                       @keyframes spin { to { transform: rotate(360deg); } }
-                            `}</style>style>
+                            `}</style>
         </div>
       )
 }</div>
