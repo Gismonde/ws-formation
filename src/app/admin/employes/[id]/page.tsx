@@ -1,4 +1,4 @@
-import { createClient as createServerClient } from "@lib/supabase/server"
+import { createClient as createServerClient } from "@/lib/supabase/server"
 import { createClient } from "@supabase/supabase-js"
 import { redirect, notFound } from "next/navigation"
 import { headers } from "next/headers"
@@ -39,7 +39,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
     .select("id, nom")
     .order("nom")
 
-  // Journal de consultation (Loi 25 - traçabilite des accès)
+  // Journal de consultation (Loi 25 - tracabilite des acces)
   const headersList = await headers()
   const ipRaw = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || null
   const ipAddress = ipRaw ? ipRaw.split(",")[0].trim() : null
@@ -65,4 +65,4 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
       <EditEmployeForm employe={employe} departements={departements || []} />
     </div>
   )
-}
+    }
