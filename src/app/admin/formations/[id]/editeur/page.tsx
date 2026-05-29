@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock, updateContentBlock, deleteContentBlock, reorderContentBlocks } from '@/lib/actions/lessons'
@@ -19,7 +19,6 @@ type PanneauActif =
 
 export default function EditeurFormationPage() {
   const params = useParams()
-  const router = useRouter()
   const formationId = params.id as string
 
   const [formation, setFormation] = useState<FormationAvecModules | null>(null)
