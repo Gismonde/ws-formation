@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
-  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
+  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' }
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
 ]
@@ -104,7 +104,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px;
         }
         .sidebar-logout-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
-        .dashboard-main { flex: 1; background: #f8fafc; min-height: 100vh; overflow-y: auto; }
+        .dashboard-main { flex: 1; background: #f8fafc; min-height: 100vh; overflow-y: auto; padding: 32px; }
       `}</style>
     </div>
   )
