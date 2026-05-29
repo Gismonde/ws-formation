@@ -46,6 +46,10 @@ export default async function AdminFormationsPage() {
 
   return (
     <div>
+      <style>{`
+        .formations-row:hover { background: #fafafa; }
+      `}</style>
+
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
@@ -99,13 +103,10 @@ export default async function AdminFormationsPage() {
             {formations?.map((f: any, i: number) => {
               const niveau = niveauStyles[f.niveau] ?? { bg: '#f3f4f6', color: '#6b7280', label: f.niveau }
               return (
-                <tr key={f.id} style={{
+                <tr key={f.id} className="formations-row" style={{
                   borderBottom: i < (formations.length - 1) ? '1px solid #f3f4f6' : 'none',
                   transition: 'background 0.1s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
-                >
+                }}>
                   <td style={{ padding: '14px 20px' }}>
                     <div style={{ fontWeight: '600', color: '#111827' }}>{f.titre}</div>
                   </td>
