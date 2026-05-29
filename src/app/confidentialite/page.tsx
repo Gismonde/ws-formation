@@ -30,21 +30,21 @@ export default function ConfidentialitePage() {
           <strong>Organisation :</strong> WS Formation / WS Surgical<br />
         </InfoBox>
         <p>
-          Toute demande d&apos;acces, de rectification, de portabilite ou d&apos;effacement doit etre adressee au RPP a l&apos;adresse ci-dessus.
+          Toute demande d&apos;acces, de rectification, de portabilite ou d&apos;effacement doit etre adressee au RPP.
         </p>
       </Section>
 
       <Section title="2. Renseignements personnels collectes">
-        <p>Les renseignements personnels suivants sont collectes dans le cadre de la plateforme :</p>
+        <p>Les renseignements personnels suivants sont collectes :</p>
         <Table rows={[
-          ['Nom et prenom', 'Identification de l'employe'],
-          ['Adresse courriel', 'Authentification et communications'],
-          ['Departement', 'Gestion des formations par departement'],
-          ['Progression dans les formations', 'Suivi de la conformite reglementaire'],
-          ['Certificats obtenus', 'Preuve de completion (CNESST, assurances)'],
-          ['Adresse IP', 'Securite, detection des connexions frauduleuses, audit immuable (exigence legale)'],
-          ['Horodatage des connexions', 'Tracabilite et audit (exigence legale)'],
-          ['Preuves de formation externe', 'Validation des acquis hors plateforme'],
+          ["Nom et prenom", "Identification de l'employe"],
+          ["Adresse courriel", "Authentification et communications"],
+          ["Departement", "Gestion des formations par departement"],
+          ["Progression dans les formations", "Suivi de la conformite reglementaire"],
+          ["Certificats obtenus", "Preuve de completion (CNESST, assurances)"],
+          ["Adresse IP", "Securite et audit immuable (exigence legale)"],
+          ["Horodatage des connexions", "Tracabilite et audit (exigence legale)"],
+          ["Preuves de formation externe", "Validation des acquis hors plateforme"],
         ]} />
       </Section>
 
@@ -60,22 +60,22 @@ export default function ConfidentialitePage() {
 
       <Section title="4. Duree de conservation">
         <Table rows={[
-          ['Donnees de profil employe actif', 'Duree de l'emploi + 5 ans'],
-          ['Progressions et resultats', '5 ans apres la derniere activite'],
-          ['Certificats', '5 ans (exigence CNESST / assurances)'],
-          ['Journal d'audit (audit logs)', '5 ans — purge automatique mensuelle via pg_cron'],
-          ['Adresses IP dans les logs', '5 ans (inclus dans l'audit log)'],
-          ['Donnees d'un employe inactif', 'Anonymisation ou suppression sur demande au RPP'],
+          ["Donnees de profil employe actif", "Duree de l'emploi + 5 ans"],
+          ["Progressions et resultats", "5 ans apres la derniere activite"],
+          ["Certificats", "5 ans (exigence CNESST / assurances)"],
+          ["Journal d'audit (audit logs)", "5 ans - purge automatique mensuelle via pg_cron"],
+          ["Adresses IP dans les logs", "5 ans (inclus dans l'audit log)"],
+          ["Donnees d'un employe inactif", "Anonymisation ou suppression sur demande au RPP"],
         ]} />
       </Section>
 
-      <Section title="5. Hebergement et fournisseurs tiers (EFVP — art. 17 Loi 25)">
+      <Section title="5. Hebergement et fournisseurs tiers (EFVP)">
         <Table rows={[
-          ['Supabase (base de donnees)', 'Canada Central — ca-central-1 (Montreal, Quebec)', 'Donnees au repos au Canada — aucune communication transfrontaliere'],
-          ['Vercel (hebergement application)', 'Serveurs distribues (Etats-Unis / mondial)', 'Transit uniquement — aucune persistance hors Canada'],
-        ]} headers={['Fournisseur', 'Localisation', 'EFVP']} />
+          ["Supabase (base de donnees)", "Canada Central - ca-central-1 (Montreal, Quebec)", "Donnees au repos au Canada"],
+          ["Vercel (hebergement application)", "Serveurs distribues (transit uniquement)", "Aucune persistance hors Canada"],
+        ]} headers={["Fournisseur", "Localisation", "EFVP"]} />
         <p style={{ marginTop: '16px', fontSize: '14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px' }}>
-          <strong>Resultat EFVP :</strong> Les donnees personnelles au repos demeurent exclusivement dans la region canadienne de Supabase (ca-central-1, Montreal). Le traitement par Vercel est limite au transit des requetes HTTPS. Risque residuel juge <strong>faible</strong>. Aucune communication hors Canada au sens de l&apos;art. 17 Loi 25 pour les donnees persistees.
+          <strong>Resultat EFVP :</strong> Les donnees personnelles au repos demeurent exclusivement dans la region canadienne de Supabase (ca-central-1, Montreal). Risque residuel juge <strong>faible</strong>.
         </p>
       </Section>
 
@@ -83,9 +83,9 @@ export default function ConfidentialitePage() {
         <ul style={{ paddingLeft: '20px' }}>
           <li><strong>Droit d&apos;acces :</strong> Consulter l&apos;ensemble de vos renseignements personnels.</li>
           <li><strong>Droit de rectification :</strong> Corriger des informations inexactes.</li>
-          <li><strong>Droit a la portabilite :</strong> Exporter votre dossier complet (format JSON) via <Link href="/mon-dossier" style={{ color: '#6366f1' }}>votre espace personnel</Link> ou en contactant le RPP.</li>
+          <li><strong>Droit a la portabilite :</strong> Exporter votre dossier complet (format JSON).</li>
           <li><strong>Droit a l&apos;effacement :</strong> Demander la suppression de vos donnees, sous reserve des obligations legales de conservation.</li>
-          <li><strong>Droit de plainte :</strong> Deposer une plainte aupres de la CAI si vous estimez que vos droits ne sont pas respectes.</li>
+          <li><strong>Droit de plainte :</strong> Deposer une plainte aupres de la CAI.</li>
         </ul>
         <p style={{ marginTop: '12px' }}>
           Delai de reponse : <strong>30 jours</strong> conformement a la Loi 25.<br />
@@ -96,24 +96,15 @@ export default function ConfidentialitePage() {
       <Section title="7. Securite des renseignements personnels">
         <ul style={{ paddingLeft: '20px' }}>
           <li>Authentification securisee via Supabase Auth (JWT, chiffrement des mots de passe)</li>
-          <li>Controle d&apos;acces par role (admin, gestionnaire, employe) avec isolation par departement</li>
+          <li>Controle d&apos;acces par role (admin, gestionnaire, employe)</li>
           <li>Row Level Security (RLS) sur toutes les tables</li>
-          <li>Chiffrement en transit (HTTPS/TLS) et au repos (AES-256, AWS ca-central-1)</li>
+          <li>Chiffrement en transit (HTTPS/TLS) et au repos (AES-256)</li>
           <li>Journal d&apos;audit immuable (INSERT uniquement)</li>
           <li>Purge automatique des logs apres 5 ans (pg_cron)</li>
         </ul>
       </Section>
 
-      <Section title="8. Incidents de confidentialite">
-        <p>En cas d&apos;incident de confidentialite presentant un risque serieux :</p>
-        <ul style={{ paddingLeft: '20px' }}>
-          <li>Notification a la <strong>Commission d&apos;acces a l&apos;information (CAI)</strong></li>
-          <li>Notification des personnes concernees si le risque est serieux</li>
-          <li>Inscription dans le registre des incidents du RPP</li>
-        </ul>
-      </Section>
-
-      <Section title="9. Contact et recours">
+      <Section title="8. Contact et recours">
         <p>
           RPP : <a href="mailto:confidentialite@wssurgical.com" style={{ color: '#6366f1' }}>confidentialite@wssurgical.com</a>
         </p>
@@ -171,4 +162,4 @@ function Table({ rows, headers }: { rows: string[][]; headers?: string[] }) {
       </table>
     </div>
   )
-}
+        }
