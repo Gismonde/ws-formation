@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gap: "8px",
         }}>
           <span>
-            &copy; {new Date().getFullYear()} WS Formation &mdash; Conforme a la Loi 25 (Quebec)
+            &copy; {new Date().getFullYear()} WS Formation
           </span>
           <span style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <Link href="/confidentialite" style={{ color: "#6b7280", textDecoration: "underline" }}>
