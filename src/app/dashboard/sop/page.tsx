@@ -13,15 +13,6 @@ type SOP = {
   updated_at: string | null
 }
 
-// Hiérarchie des rôles : admin > gestionnaire > employe
-// Un rôle voit ses SOPs + celles des niveaux inférieurs
-const ROLE_HIERARCHY: Record<string, string[]> = {
-  super_admin: ['employe', 'gestionnaire', 'admin'],
-  admin:        ['employe', 'gestionnaire', 'admin'],
-  gestionnaire: ['employe', 'gestionnaire'],
-  employe:      ['employe'],
-}
-
 const ROLE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   employe:      { label: 'Tous',           bg: '#dcfce7', color: '#166534' },
   gestionnaire: { label: 'Gestionnaires', bg: '#dbeafe', color: '#1e40af' },
@@ -41,20 +32,17 @@ export default async function SOPPage() {
 
   if (!employe) redirect('/login')
 
-  const userRole = employe.role ?? 'employe'
-  const rolesVisibles = ROLE_HIERARCHY[userRole] ?? ['employe']
-
-  // Charger uniquement les SOPs accessibles au rôle de l'utilisateur
+  // Le RLS filtre automatiquement les SOPs selon le role de l'utilisateur
   const { data: sops } = await supabase
     .from('sop')
     .select('*')
-    .in('acces_role', rolesVisibles)
     .order('acces_role', { ascending: true })
     .order('created_at', { ascending: true })
 
   const sopList: SOP[] = sops ?? []
-  const categories = Array.from(new Set(sopList.map(s => s.categorie ?? 'Général'))).sort()
+  const categories = Array.from(new Set(sopList.map(s => s.categorie ?? 'General'))).sort()
 
+  const userRole = employe.role ?? 'employe'
   const isGestionnaire = ['gestionnaire', 'admin', 'super_admin'].includes(userRole)
   const isAdmin = ['admin', 'super_admin'].includes(userRole)
 
@@ -63,21 +51,20 @@ export default async function SOPPage() {
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Mes SOP</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Procédures opérationnelles standard disponibles pour votre rôle
+          Procedures operationnelles standard disponibles pour votre role
         </p>
-        {/* Légende des niveaux d'accès */}
         <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
           <span style={{ background: '#dcfce7', color: '#166534', borderRadius: '8px', padding: '3px 10px', fontSize: '12px', fontWeight: '500' }}>
-            🟢 Tous les employés
+            Employes
           </span>
           {isGestionnaire && (
             <span style={{ background: '#dbeafe', color: '#1e40af', borderRadius: '8px', padding: '3px 10px', fontSize: '12px', fontWeight: '500' }}>
-              🔵 Gestionnaires
+              Gestionnaires
             </span>
           )}
           {isAdmin && (
             <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '8px', padding: '3px 10px', fontSize: '12px', fontWeight: '500' }}>
-              🟡 Administration
+              Administration
             </span>
           )}
         </div>
@@ -90,7 +77,7 @@ export default async function SOPPage() {
       ) : (
         <div>
           {categories.map(cat => {
-            const sopsInCat = sopList.filter(s => (s.categorie ?? 'Général') === cat)
+            const sopsInCat = sopList.filter(s => (s.categorie ?? 'General') === cat)
             return (
               <div key={cat} style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -120,11 +107,11 @@ export default async function SOPPage() {
                             <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#6b7280', lineHeight: '1.5' }}>{sop.description}</p>
                           )}
                           <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>
-                            Mise à jour le {new Date(sop.updated_at ?? sop.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            Mise a jour le {new Date(sop.updated_at ?? sop.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                           </p>
                         </div>
                         {sop.fichier_url && (
-                          <a href={sop.fichier_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
+                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
                             Consulter
                           </a>
                         )}
