@@ -12,6 +12,7 @@ interface Formation {
   niveau: string
   duree_heures: number
   est_publiee: boolean
+    validite_mois: number | null
 }
 
 interface ModuleForm {
@@ -85,6 +86,7 @@ export default function ModifierFormationPage() {
         niveau: formation.niveau,
         duree_heures: formation.duree_heures,
         est_publiee: formation.est_publiee,
+                validite_mois: formation.validite_mois,
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
@@ -199,6 +201,36 @@ export default function ModifierFormationPage() {
               <label htmlFor="publiee" className="text-sm font-medium text-gray-700">Formation publiée (visible par les employés)</label>
             </div>
           </div>
+          
+          {/* Durée de validité */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
+            <h3 className="text-sm font-semibold text-amber-900 mb-3">⏱️ Validité du certificat</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Durée de validité (mois)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  placeholder="Ex: 12 pour 1 an, 24 pour 2 ans..."
+                  value={formation.validite_mois ?? ''}
+                  onChange={e => updateField('validite_mois', e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div className="flex items-end pb-1">
+                <p className="text-xs text-amber-700">
+                  {formation.validite_mois
+                    ? formation.validite_mois >= 12
+                      ? `Certificat valide ${Math.floor(formation.validite_mois / 12)} an(s)${formation.validite_mois % 12 > 0 ? ` et ${formation.validite_mois % 12} mois` : ''}`
+                      : `Certificat valide ${formation.validite_mois} mois`
+                    : 'Aucune expiration (certificat permanent)'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Modules */}
@@ -217,7 +249,7 @@ export default function ModifierFormationPage() {
                 <div className="space-y-3">
                   <input type="text" value={mod.titre} onChange={e => updateModule(idx, 'titre', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder="Titre du module" />
                   <textarea value={mod.contenu} onChange={e => updateModule(idx, 'contenu', e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder="Contenu du module..." />
-                  <div>
+                  <div
                     <label className="text-sm text-gray-600">Durée (minutes)</label>
                     <input type="number" value={mod.duree_minutes} onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))} min={5} className="ml-3 w-24 border rounded px-2 py-1 text-sm bg-white" />
                   </div>
