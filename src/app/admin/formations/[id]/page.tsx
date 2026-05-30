@@ -80,7 +80,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-gray-100">
+          <div className="grid grid-cols-5 gap-4 mt-5 pt-5 border-t border-gray-100">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{formation.modules?.length || 0}</p>
               <p className="text-xs text-gray-500 mt-0.5">Modules</p>
@@ -97,6 +97,17 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <p className="text-2xl font-bold text-gray-900">{formation.duree_estimee_minutes || 0}'</p>
               <p className="text-xs text-gray-500 mt-0.5">Durée estimée</p>
             </div>
+                          <div className="text-center">
+                <p className="text-2xl font-bold text-amber-600">
+                  {formation.validite_mois
+                    ? formation.validite_mois >= 12
+                      ? `${Math.floor(formation.validite_mois / 12)}a${formation.validite_mois % 12 > 0 ? ` ${formation.validite_mois % 12}m` : ''}`
+                      : `${formation.validite_mois}m`
+                    : '∞'}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Validité certificat</p>
+              </div>
+            
           </div>
         </div>
 
