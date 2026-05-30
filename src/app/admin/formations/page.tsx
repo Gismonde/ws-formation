@@ -75,7 +75,22 @@ export default async function AdminFormationsPage() {
               fontSize: "14px",
               fontWeight: "600",
             }}>
-              Generer IA
+              Créer à partir d&apos;un document
+            </Link>
+            <Link href="/admin/formations/depuis-pp" style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 18px",
+              background: "#fff",
+              color: "#7c3aed",
+              border: "2px solid #7c3aed",
+              borderRadius: "8px",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}>
+              Créer à partir d&apos;un PP
             </Link>
             <Link href="/admin/formations/nouvelle" style={{
               display: "inline-flex",
@@ -118,121 +133,70 @@ export default async function AdminFormationsPage() {
             </tr>
           </thead>
           <tbody>
-            {formations?.map((f: any, i: number) => {
-              const niveau = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
+            {formations?.map((f: any) => {
+              const style = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
               return (
-                <tr key={f.id} className="formations-row" style={{
-                  borderBottom: i < (formations.length - 1) ? "1px solid #f3f4f6" : "none",
-                  transition: "background 0.1s",
-                }}>
-                  <td style={{ padding: "14px 20px" }}>
-                    <div style={{ fontWeight: "600", color: "#111827" }}>{f.titre}</div>
-                  </td>
-                  <td style={{ padding: "14px 16px", color: "#6b7280", fontSize: "13px" }}>{f.categorie ?? "—"}</td>
+                <tr key={f.id} className="formations-row" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}>{f.titre}</td>
+                  <td style={{ padding: "14px 16px", color: "#6b7280" }}>{f.categorie}</td>
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{
                       display: "inline-block",
-                      padding: "3px 10px",
-                      borderRadius: "20px",
-                      background: niveau.bg,
-                      color: niveau.color,
+                      padding: "2px 10px",
+                      borderRadius: "999px",
+                      background: style.bg,
+                      color: style.color,
                       fontSize: "12px",
                       fontWeight: "600",
-                    }}>
-                      {niveau.label}
-                    </span>
+                    }}>{style.label}</span>
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    {f.obligatoire ? (
-                      <span style={{
-                        display: "inline-block",
-                        padding: "3px 10px",
-                        borderRadius: "20px",
-                        background: "#fef2f2",
-                        color: "#dc2626",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        border: "1px solid #fecaca",
-                        letterSpacing: "0.3px",
-                      }}>
-                        Obligatoire
-                      </span>
-                    ) : (
-                      <span style={{ color: "#9ca3af", fontSize: "13px" }}>—</span>
-                    )}
+                    {f.obligatoire
+                      ? <span style={{ color: "#dc2626", fontWeight: "700", fontSize: "16px" }}>✓</span>
+                      : <span style={{ color: "#d1d5db" }}>—</span>}
                   </td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#374151", fontWeight: "600" }}>
-                    {nbModules(f.id)}
-                  </td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#374151", fontWeight: "600" }}>
-                    {nbAssign(f.id)}
-                  </td>
+                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#6b7280" }}>{nbModules(f.id)}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#6b7280" }}>{nbAssign(f.id)}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <span style={{
                       display: "inline-block",
-                      padding: "3px 10px",
-                      borderRadius: "20px",
+                      padding: "2px 10px",
+                      borderRadius: "999px",
                       background: f.publiee ? "#f0fdf4" : "#f9fafb",
                       color: f.publiee ? "#16a34a" : "#9ca3af",
                       fontSize: "12px",
                       fontWeight: "600",
-                      border: f.publiee ? "1px solid #bbf7d0" : "1px solid #e5e7eb",
-                    }}>
-                      {f.publiee ? "Publiee" : "Brouillon"}
-                    </span>
+                    }}>{f.publiee ? "Publié" : "Brouillon"}</span>
                   </td>
-                  <td style={{ padding: "14px 20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
-                      <Link href={`/admin/formations/${f.id}/editeur`} style={{
-                        padding: "5px 12px",
-                        borderRadius: "6px",
-                        background: "#eff6ff",
-                        color: "#2563eb",
-                        textDecoration: "none",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                      }}>Editeur</Link>
-                      <Link href={`/admin/formations/${f.id}/assigner`} style={{
-                        padding: "5px 12px",
-                        borderRadius: "6px",
-                        background: "#f0fdf4",
-                        color: "#16a34a",
-                        textDecoration: "none",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        border: "1px solid #bbf7d0",
-                      }}>
-                        Assigner
-                      </Link>
-                      {isAdmin && (
-                        <Link href={`/admin/formations/${f.id}/modifier`} style={{
-                          padding: "5px 12px",
-                          borderRadius: "6px",
-                          background: "#fafafa",
-                          color: "#374151",
-                          textDecoration: "none",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          border: "1px solid #bfdbfe",
-                        }}>
-                          Modifier
-                        </Link>
-                      )}
-                    </div>
+                  <td style={{ padding: "14px 20px", textAlign: "right" }}>
+                    <Link href={`/admin/formations/${f.id}`} style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "6px 14px",
+                      background: "#f3f4f6",
+                      color: "#374151",
+                      borderRadius: "6px",
+                      textDecoration: "none",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                    }}>
+                      Gérer →
+                    </Link>
                   </td>
                 </tr>
               )
             })}
+            {(!formations || formations.length === 0) && (
+              <tr>
+                <td colSpan={8} style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>
+                  Aucune formation pour le moment.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-
-        {(!formations || formations.length === 0) && (
-          <div style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>
-            <div style={{ fontSize: "32px", marginBottom: "8px" }}>&#128218;</div>
-            <p style={{ margin: 0, fontSize: "14px" }}>Aucune formation creee</p>
-          </div>
-        )}
       </div>
     </div>
   )
-                          }
+}
