@@ -21,7 +21,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   if (!res.success || !res.data) notFound()
   const formation = res.data as Formation & { modules: Module[] }
 
-  // Charger les lecons de chaque module
+  // Charger les leçons de chaque module
   const modulesAvecLecons: ModuleAvecLecons[] = []
   let totalLecons = 0
   let totalBlocs = 0
@@ -34,9 +34,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   }
 
   const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
-    debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Debutant' },
-    intermediaire: { bg: '#fefce8', color: '#ca8a04', label: 'Intermediaire' },
-    avance: { bg: '#fff1f2', color: '#e11d48', label: 'Avance' },
+    debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Débutant' },
+    intermediaire: { bg: '#fefce8', color: '#ca8a04', label: 'Intermédiaire' },
+    avance: { bg: '#fff1f2', color: '#e11d48', label: 'Avancé' },
   }
   const niveauStyle = niveauStyles[formation.niveau || ''] || { bg: '#f3f4f6', color: '#6b7280', label: formation.niveau || '' }
 
@@ -52,7 +52,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           <span className="text-gray-800 font-medium truncate">{formation.titre}</span>
         </nav>
 
-        {/* En-tete */}
+        {/* En-tête */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -64,7 +64,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                   {niveauStyle.label}
                 </span>
                 {formation.publiee ? (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">Publiee</span>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">Publiée</span>
                 ) : (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700">Brouillon</span>
                 )}
@@ -87,7 +87,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{totalLecons}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Lecons</p>
+              <p className="text-xs text-gray-500 mt-0.5">Leçons</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{totalBlocs}</p>
@@ -95,7 +95,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{formation.duree_estimee_minutes || 0}'</p>
-              <p className="text-xs text-gray-500 mt-0.5">Duree estimee</p>
+              <p className="text-xs text-gray-500 mt-0.5">Durée estimée</p>
             </div>
           </div>
         </div>
@@ -109,8 +109,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            <span className="text-sm font-semibold">Editeur de cours</span>
-            <span className="text-xs text-blue-200">Modules et lecons</span>
+            <span className="text-sm font-semibold">Éditeur de cours</span>
+            <span className="text-xs text-blue-200">Modules et leçons</span>
           </Link>
           <Link
             href={"/admin/formations/" + id + "/modifier"}
@@ -120,8 +120,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-sm font-semibold">Parametres</span>
-            <span className="text-xs text-gray-400">Titre, niveau, duree</span>
+            <span className="text-sm font-semibold">Paramètres</span>
+            <span className="text-xs text-gray-400">Titre, niveau, durée</span>
           </Link>
           <Link
             href={"/admin/formations/" + id + "/assigner"}
@@ -131,7 +131,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <span className="text-sm font-semibold">Assigner</span>
-            <span className="text-xs text-gray-400">Employes / departements</span>
+            <span className="text-xs text-gray-400">Employés / départements</span>
           </Link>
           <Link
             href={"/admin/formations/" + id + "/apercu"}
@@ -141,8 +141,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span className="text-sm font-semibold">Apercu</span>
-            <span className="text-xs text-gray-400">Vue employe</span>
+            <span className="text-sm font-semibold">Aperçu</span>
+            <span className="text-xs text-gray-400">Vue employé</span>
           </Link>
         </div>
 
@@ -172,7 +172,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Ouvrir l&apos;editeur
+                Ouvrir l&apos;éditeur
               </Link>
             </div>
           ) : (
@@ -187,7 +187,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                       <h3 className="text-sm font-semibold text-gray-900">{mod.titre}</h3>
                       {mod.description && <p className="text-xs text-gray-500 mt-0.5">{mod.description}</p>}
                     </div>
-                    <span className="text-xs text-gray-400">{mod.lecons.length} lecon{mod.lecons.length !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-gray-400">{mod.lecons.length} leçon{mod.lecons.length !== 1 ? 's' : ''}</span>
                   </div>
                   {mod.lecons.map((lecon, j) => (
                     <div key={lecon.id} className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 transition-colors border-t border-gray-50">
@@ -201,7 +201,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                     </div>
                   ))}
                   {mod.lecons.length === 0 && (
-                    <p className="px-16 py-3 text-xs text-gray-400 italic">Aucune lecon dans ce module</p>
+                    <p className="px-16 py-3 text-xs text-gray-400 italic">Aucune leçon dans ce module</p>
                   )}
                 </div>
               ))}
