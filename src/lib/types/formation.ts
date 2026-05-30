@@ -4,6 +4,7 @@
 export type NiveauFormation = 'debutant' | 'intermediaire' | 'avance'
 export type ContentBlockType = 'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image'
 export type StatutProgression = 'non_commence' | 'en_cours' | 'termine'
+export type StatutValiditeCertificat = 'permanent' | 'valide' | 'bientot_expire' | 'expire'
 
 // FORMATION
 export interface Formation {
@@ -14,6 +15,7 @@ export interface Formation {
   niveau: NiveauFormation | null
   duree_estimee_minutes: number | null
   publiee: boolean
+  validite_mois: number | null
   created_at: string
 }
 
@@ -76,6 +78,23 @@ export interface LessonProgression {
   date_debut: string | null
   date_completion: string | null
   temps_passe_minutes: number
+}
+
+// CERTIFICAT
+export interface Certificat {
+  id: string
+  employe_id: string
+  formation_id: string
+  numero_certificat: string
+  date_emission: string
+  date_expiration: string | null
+}
+
+export interface CertificatAvecStatut extends Certificat {
+  formation_titre: string
+  validite_mois: number | null
+  statut_validite: StatutValiditeCertificat
+  jours_restants: number | null
 }
 
 // VUES ENRICHIES
