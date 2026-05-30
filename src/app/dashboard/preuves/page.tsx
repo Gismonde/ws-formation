@@ -58,8 +58,6 @@ export default function MesPreuvesPage() {
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedFile) return
-    if (!selectedFormationId) return
-
     setUploading(true)
     setMessage(null)
 
@@ -127,34 +125,6 @@ export default function MesPreuvesPage() {
         </p>
       </div>
 
-      {formationsObligatoires.length > 0 && (
-        <div style={{
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '12px',
-          padding: '16px 20px',
-          marginBottom: '24px',
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-start',
-        }}>
-          <div style={{ fontSize: '20px', flexShrink: 0 }}>&#9888;&#65039;</div>
-          <div>
-            <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#dc2626', fontSize: '14px' }}>
-              Formations obligatoires (LSST)
-            </p>
-            <p style={{ margin: 0, color: '#7f1d1d', fontSize: '13px' }}>
-              Les formations suivantes sont obligatoires selon la Loi sur la sante et la securite du travail :
-            </p>
-            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-              {formationsObligatoires.map(f => (
-                <li key={f.id} style={{ color: '#991b1b', fontSize: '13px', fontWeight: '600' }}>{f.titre}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginTop: 0, marginBottom: '20px' }}>
           Soumettre une preuve
@@ -172,7 +142,7 @@ export default function MesPreuvesPage() {
             >
               <option value="">-- Choisir une formation --</option>
               {formationsObligatoires.length > 0 && (
-                <optgroup label="OBLIGATOIRES (LSST)">
+                <optgroup label="Obligatoires (LSST)">
                   {formationsObligatoires.map(f => (
                     <option key={f.id} value={f.id}>{f.titre}</option>
                   ))}
@@ -228,7 +198,6 @@ export default function MesPreuvesPage() {
               marginBottom: '16px',
               background: message.type === 'success' ? '#d1fae5' : '#fee2e2',
               color: message.type === 'success' ? '#065f46' : '#991b1b',
-              fontSize: '14px',
             }}>
               {message.text}
             </div>
@@ -238,17 +207,17 @@ export default function MesPreuvesPage() {
             type="submit"
             disabled={uploading}
             style={{
-              padding: '10px 24px',
-              background: uploading ? '#9ca3af' : '#6366f1',
+              background: uploading ? '#9ca3af' : '#4f46e5',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
+              padding: '10px 20px',
               fontSize: '14px',
-              fontWeight: '600',
+              fontWeight: '500',
               cursor: uploading ? 'not-allowed' : 'pointer',
             }}
           >
-            {uploading ? 'Envoi en cours...' : 'Envoyer la preuve'}
+            {uploading ? 'Envoi en cours...' : 'Soumettre la preuve'}
           </button>
         </form>
       </div>
@@ -262,21 +231,21 @@ export default function MesPreuvesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {preuves.map(p => (
-              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <p style={{ fontWeight: '600', color: '#1a1f36', margin: 0, fontSize: '14px' }}>
                     {getFormationTitle(p)}
                   </p>
-                  <p style={{ color: '#6b7280', margin: '4px 0 0 0', fontSize: '13px' }}>
+                  <p style={{ color: '#6b7280', margin: '4px 0 0', fontSize: '13px' }}>
                     {new Date(p.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   {p.commentaire_admin && (
-                    <p style={{ color: '#374151', margin: '8px 0 0 0', fontSize: '13px', fontStyle: 'italic' }}>
+                    <p style={{ color: '#374151', margin: '8px 0 0', fontSize: '13px', fontStyle: 'italic' }}>
                       Commentaire : {p.commentaire_admin}
                     </p>
                   )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   <span style={{
                     display: 'inline-block',
                     padding: '4px 12px',
