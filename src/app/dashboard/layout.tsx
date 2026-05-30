@@ -9,6 +9,7 @@ const employeNav = [
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
   { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
+  { href: '/dashboard/securite', label: 'Sécurité', emoji: '🔐' },
 ]
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
