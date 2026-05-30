@@ -19,9 +19,10 @@ type Preuve = {
 type Formation = {
   id: string
   titre: string
+  obligatoire?: boolean
 }
 
-export default function PreuvesPage() {
+export default function MesPreuvesPage() {
   const [formations, setFormations] = useState<Formation[]>([])
   const [preuves, setPreuves] = useState<Preuve[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,14 +40,12 @@ export default function PreuvesPage() {
   async function loadData() {
     setLoading(true)
 
-    // Load formations via server API (bypasses RLS)
     const resFormations = await fetch('/api/mes-formations')
     if (resFormations.ok) {
       const data = await resFormations.json()
       setFormations(data.formations ?? [])
     }
 
-    // Load existing proofs
     const resPreuves = await fetch('/api/preuves')
     if (resPreuves.ok) {
       const data = await resPreuves.json()
@@ -59,19 +58,16 @@ export default function PreuvesPage() {
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedFile) return
-    if (!autreMode && !selectedFormationId) return
-    if (autreMode && !autreTitre.trim()) return
+    if (!selectedFormationId) return
 
     setUploading(true)
     setMessage(null)
 
     const formData = new FormData()
-    formData.append('file', selectedFile)
-    if (autreMode) {
-      formData.append('formation_id', 'autre')
+    formData.append('fichier', selectedFile)
+    formData.append('formation_id', selectedFormationId === 'autre' ? '' : selectedFormationId)
+    if (selectedFormationId === 'autre' && autreTitre.trim()) {
       formData.append('formation_titre_autre', autreTitre.trim())
-    } else {
-      formData.append('formation_id', selectedFormationId)
     }
 
     const res = await fetch('/api/upload-preuve', { method: 'POST', body: formData })
@@ -100,27 +96,19 @@ export default function PreuvesPage() {
     }
   }
 
-  function statutBadge(statut: StatutPreuve) {
-    const cfg = {
-      en_attente: { bg: '#fef3c7', color: '#92400e', label: 'En attente' },
-      validee: { bg: '#d1fae5', color: '#065f46', label: 'Validee' },
-      refusee: { bg: '#fee2e2', color: '#991b1b', label: 'Refusee' },
-    }
-    const c = cfg[statut] || cfg.en_attente
-    return (
-      <span style={{ background: c.bg, color: c.color, padding: '2px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
-        {c.label}
-      </span>
-    )
+  function getFormationTitle(p: Preuve): string {
+    if (p.formations?.titre) return p.formations.titre
+    return 'Formation inconnue'
   }
 
-  function getFormationTitle(preuve: Preuve): string {
-    if (preuve.nom_fichier && preuve.nom_fichier.startsWith('[AUTRE: ')) {
-      const match = preuve.nom_fichier.match(/^\[AUTRE: (.+?)\]/)
-      if (match) return match[1] + ' (Autre)'
-    }
-    return preuve.formations?.titre ?? preuve.formation_id ?? 'Formation inconnue'
+  function getStatutLabel(s: StatutPreuve) {
+    if (s === 'en_attente') return { label: 'En attente', bg: '#fef3c7', color: '#92400e' }
+    if (s === 'validee') return { label: 'Validee', bg: '#d1fae5', color: '#065f46' }
+    return { label: 'Refusee', bg: '#fee2e2', color: '#991b1b' }
   }
+
+  const formationsObligatoires = formations.filter(f => f.obligatoire)
+  const formationsOptionnelles = formations.filter(f => !f.obligatoire)
 
   if (loading) {
     return (
@@ -139,7 +127,34 @@ export default function PreuvesPage() {
         </p>
       </div>
 
-      {/* Upload form */}
+      {formationsObligatoires.length > 0 && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'flex-start',
+        }}>
+          <div style={{ fontSize: '20px', flexShrink: 0 }}>&#9888;&#65039;</div>
+          <div>
+            <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#dc2626', fontSize: '14px' }}>
+              Formations obligatoires (LSST)
+            </p>
+            <p style={{ margin: 0, color: '#7f1d1d', fontSize: '13px' }}>
+              Les formations suivantes sont obligatoires selon la Loi sur la sante et la securite du travail :
+            </p>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+              {formationsObligatoires.map(f => (
+                <li key={f.id} style={{ color: '#991b1b', fontSize: '13px', fontWeight: '600' }}>{f.titre}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginTop: 0, marginBottom: '20px' }}>
           Soumettre une preuve
@@ -153,13 +168,25 @@ export default function PreuvesPage() {
               value={selectedFormationId}
               onChange={e => handleFormationChange(e.target.value)}
               required
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#1a1f36' }}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff' }}
             >
               <option value="">-- Choisir une formation --</option>
-              {formations.map(f => (
-                <option key={f.id} value={f.id}>
-                  {f.titre}
-                </option>
+              {formationsObligatoires.length > 0 && (
+                <optgroup label="OBLIGATOIRES (LSST)">
+                  {formationsObligatoires.map(f => (
+                    <option key={f.id} value={f.id}>{f.titre}</option>
+                  ))}
+                </optgroup>
+              )}
+              {formationsOptionnelles.length > 0 && (
+                <optgroup label="Autres formations">
+                  {formationsOptionnelles.map(f => (
+                    <option key={f.id} value={f.id}>{f.titre}</option>
+                  ))}
+                </optgroup>
+              )}
+              {formationsObligatoires.length === 0 && formationsOptionnelles.length === 0 && formations.map(f => (
+                <option key={f.id} value={f.id}>{f.titre}</option>
               ))}
               <option value="autre">-- Autre (preciser) --</option>
             </select>
@@ -174,29 +201,24 @@ export default function PreuvesPage() {
                 type="text"
                 value={autreTitre}
                 onChange={e => setAutreTitre(e.target.value)}
-                placeholder="Indiquez le nom de la formation..."
+                placeholder="Ex: Formation premiers secours"
                 required
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1a1f36', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff', boxSizing: 'border-box' }}
               />
             </div>
           )}
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-              Document justificatif * (PDF, JPG, PNG - max 10MB)
+              Document (PDF, JPG, PNG) *
             </label>
             <input
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setSelectedFile(e.target.files?.[0] ?? null)}
               required
-              style={{ display: 'block', width: '100%', padding: '10px', border: '2px dashed #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#6b7280', cursor: 'pointer', background: '#f9fafb' }}
+              style={{ display: 'block', width: '100%' }}
             />
-            {selectedFile && (
-              <p style={{ fontSize: '12px', color: '#6366f1', marginTop: '6px' }}>
-                Fichier : {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
-              </p>
-            )}
           </div>
 
           {message && (
@@ -231,39 +253,48 @@ export default function PreuvesPage() {
         </form>
       </div>
 
-      {/* Existing proofs list */}
       <div>
         <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>Mes preuves soumises</h2>
         {preuves.length === 0 ? (
-          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#6b7280' }}>
             Aucune preuve soumise pour le moment.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {preuves.map((p) => (
+            {preuves.map(p => (
               <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
                   <p style={{ fontWeight: '600', color: '#1a1f36', margin: 0, fontSize: '14px' }}>
                     {getFormationTitle(p)}
                   </p>
-                  <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0' }}>
+                  <p style={{ color: '#6b7280', margin: '4px 0 0 0', fontSize: '13px' }}>
                     {new Date(p.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   {p.commentaire_admin && (
-                    <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0', fontStyle: 'italic' }}>
-                      Note : {p.commentaire_admin}
+                    <p style={{ color: '#374151', margin: '8px 0 0 0', fontSize: '13px', fontStyle: 'italic' }}>
+                      Commentaire : {p.commentaire_admin}
                     </p>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                  {statutBadge(p.statut)}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    background: getStatutLabel(p.statut).bg,
+                    color: getStatutLabel(p.statut).color,
+                  }}>
+                    {getStatutLabel(p.statut).label}
+                  </span>
                   <a
                     href={p.fichier_url}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}
+                    rel="noreferrer"
+                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}
                   >
-                    Voir le fichier
+                    Voir le document
                   </a>
                 </div>
               </div>
