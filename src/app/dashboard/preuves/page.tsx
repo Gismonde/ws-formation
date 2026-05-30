@@ -72,14 +72,14 @@ export default function MesPreuvesPage() {
     const data = await res.json()
 
     if (res.ok && data.success) {
-      setMessage({ type: 'success', text: 'Preuve envoyee ! Un administrateur va la valider.' })
+      setMessage({ type: 'success', text: 'Preuve envoyée ! Un administrateur va la valider.' })
       setSelectedFile(null)
       setSelectedFormationId('')
       setAutreMode(false)
       setAutreTitre('')
       await loadData()
     } else {
-      setMessage({ type: 'error', text: data.error || 'Erreur lors de l upload' })
+      setMessage({ type: 'error', text: data.error || "Erreur lors de l'envoi" })
     }
     setUploading(false)
   }
@@ -101,8 +101,8 @@ export default function MesPreuvesPage() {
 
   function getStatutLabel(s: StatutPreuve) {
     if (s === 'en_attente') return { label: 'En attente', bg: '#fef3c7', color: '#92400e' }
-    if (s === 'validee') return { label: 'Validee', bg: '#d1fae5', color: '#065f46' }
-    return { label: 'Refusee', bg: '#fee2e2', color: '#991b1b' }
+    if (s === 'validee') return { label: 'Validée', bg: '#d1fae5', color: '#065f46' }
+    return { label: 'Refusée', bg: '#fee2e2', color: '#991b1b' }
   }
 
   const formationsObligatoires = formations.filter(f => f.obligatoire)
@@ -132,7 +132,7 @@ export default function MesPreuvesPage() {
         <form onSubmit={handleUpload}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-              Formation concernee *
+              Formation concernée *
             </label>
             <select
               value={selectedFormationId}
@@ -158,7 +158,7 @@ export default function MesPreuvesPage() {
               {formationsObligatoires.length === 0 && formationsOptionnelles.length === 0 && formations.map(f => (
                 <option key={f.id} value={f.id}>{f.titre}</option>
               ))}
-              <option value="autre">-- Autre (preciser) --</option>
+              <option value="autre">-- Autre (préciser) --</option>
             </select>
           </div>
 
