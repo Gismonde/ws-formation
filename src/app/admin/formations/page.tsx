@@ -4,9 +4,9 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
-  debutant: { bg: "#f0fdf4", color: "#16a34a", label: "Debutant" },
-  intermediaire: { bg: "#fefce8", color: "#ca8a04", label: "Intermediaire" },
-  avance: { bg: "#fff1f2", color: "#e11d48", label: "Avance" },
+  debutant: { bg: "#f0fdf4", color: "#16a34a", label: "Débutant" },
+  intermediaire: { bg: "#fefce8", color: "#ca8a04", label: "Intermédiaire" },
+  avance: { bg: "#fff1f2", color: "#e11d48", label: "Avancé" },
 }
 
 export default async function AdminFormationsPage() {
