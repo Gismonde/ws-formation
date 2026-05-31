@@ -249,7 +249,7 @@ export default function ModifierFormationPage() {
                 <div className="space-y-3">
                   <input type="text" value={mod.titre} onChange={e => updateModule(idx, 'titre', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder="Titre du module" />
                   <textarea value={mod.contenu} onChange={e => updateModule(idx, 'contenu', e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder="Contenu du module..." />
-                  <div
+                  <div className="flex items-center">
                     <label className="text-sm text-gray-600">Durée (minutes)</label>
                     <input type="number" value={mod.duree_minutes} onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))} min={5} className="ml-3 w-24 border rounded px-2 py-1 text-sm bg-white" />
                   </div>
