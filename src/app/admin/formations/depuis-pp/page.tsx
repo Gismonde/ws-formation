@@ -52,7 +52,7 @@ export default function DepuisPPPage() {
       formData.append("categorie", categorie)
       formData.append("niveau", niveau)
 
-      const res = await fetch("/api/formations/depuis-pp", {
+      const res = await fetch("/api/import-pptx", {
         method: "POST",
         body: formData,
       })
