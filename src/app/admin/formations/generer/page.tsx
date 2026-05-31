@@ -24,12 +24,10 @@ interface ModuleData {
 function parseDocumentIntoModules(text: string): { titre: string; description: string; modules: ModuleData[] } {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
 
-  // Detect title: first non-empty line or line matching heading patterns
   let docTitle = ''
   let docDescription = ''
   const modules: ModuleData[] = []
 
-  // Heading patterns: # Heading, ## Heading, 1. Section, SECTION:, uppercase lines, ---
   const isHeading = (line: string) => {
     return (
       /^#{1,3}\s+.+/.test(line) ||
@@ -56,7 +54,6 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
         if (!docTitle) {
           docTitle = cleanHeading(line)
         } else {
-          // This is the first section
           currentModule = { titre: cleanHeading(line), contenu: '', duree_minutes: 30 }
         }
         docDescription = preambleLines.join(' ').substring(0, 300)
@@ -88,7 +85,6 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     modules.push(currentModule)
   }
 
-  // Fallback: if no modules found, split by paragraphs
   if (modules.length === 0 && lines.length > 0) {
     if (!docTitle) docTitle = lines[0]
     const chunks = text.split(/\n{2,}/).filter(c => c.trim().length > 20)
@@ -102,7 +98,6 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     })
   }
 
-  // Estimate durations based on content length
   modules.forEach(m => {
     const wordCount = m.contenu.split(/\s+/).length
     m.duree_minutes = Math.max(15, Math.min(120, Math.round(wordCount / 10) * 5))
@@ -127,24 +122,51 @@ export default function GenererFormationPage() {
   const [error, setError] = useState('')
   const [formationId, setFormationId] = useState('')
 
-  const processFile = useCallback((file: File) => {
+  const processFile = useCallback(async (file: File) => {
     if (!file) return
     setFileName(file.name)
     setError('')
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = (e.target?.result as string) || ''
-      const parsed = parseDocumentIntoModules(text)
-      setTitre(parsed.titre)
-      setDescription(parsed.description)
-      setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
-      setStep('review')
-    }
-    reader.onerror = () => setError('Erreur lors de la lecture du fichier.')
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
 
-    // Accept TXT, MD, and try to read other formats as text
-    reader.readAsText(file, 'UTF-8')
+    if (isPdf) {
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const pdfjsLib = await import('pdfjs-dist')
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        let fullText = ''
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i)
+          const content = await page.getTextContent()
+          fullText += content.items
+            .map((item: { str?: string }) => item.str ?? '')
+            .join(' ') + '\n'
+        }
+
+        const parsed = parseDocumentIntoModules(fullText)
+        setTitre(parsed.titre)
+        setDescription(parsed.description)
+        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
+        setStep('review')
+      } catch (err) {
+        setError("Erreur lors de la lecture du PDF. Vérifiez que le fichier n'est pas protégé.")
+        console.error(err)
+      }
+    } else {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = (e.target?.result as string) || ''
+        const parsed = parseDocumentIntoModules(text)
+        setTitre(parsed.titre)
+        setDescription(parsed.description)
+        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
+        setStep('review')
+      }
+      reader.onerror = () => setError('Erreur lors de la lecture du fichier.')
+      reader.readAsText(file, 'UTF-8')
+    }
   }, [])
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,7 +304,7 @@ export default function GenererFormationPage() {
             Générer une formation depuis un document
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
-            Importez un fichier texte (.txt, .md) contenant une procédure ou une politique. 
+            Importez un fichier texte (.txt, .md) ou PDF contenant une procédure ou une politique.
             Le système extraira automatiquement la structure en modules.
           </p>
         </div>
@@ -311,13 +333,13 @@ export default function GenererFormationPage() {
               ou cliquez pour sélectionner un fichier
             </p>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
-              Formats supportés: .txt, .md (procédures, politiques, SOPs)
+              Formats supportés: .txt, .md, .pdf (procédures, politiques, SOPs)
             </p>
           </div>
           <input
             id="file-input"
             type="file"
-            accept=".txt,.md,.text"
+            accept=".txt,.md,.text,.pdf,application/pdf"
             style={{ display: 'none' }}
             onChange={handleFileInput}
           />
@@ -330,8 +352,8 @@ export default function GenererFormationPage() {
 
           <div style={{ marginTop: '24px', padding: '16px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
             <p style={{ fontSize: '13px', color: '#0369a1', margin: 0, lineHeight: '1.6' }}>
-              <strong>Conseil :</strong> Pour de meilleurs résultats, utilisez un document avec des titres de sections clairs 
-              (ex: &quot;1. Introduction&quot;, &quot;## Procédure&quot;, &quot;SECTION: Sécurité&quot;). 
+              <strong>Conseil :</strong> Pour de meilleurs résultats, utilisez un document avec des titres de sections clairs
+              (ex: &quot;1. Introduction&quot;, &quot;## Procédure&quot;, &quot;SECTION: Sécurité&quot;).
               Chaque section deviendra un module de formation.
             </p>
           </div>
@@ -362,7 +384,6 @@ export default function GenererFormationPage() {
           </p>
         )}
 
-        {/* Formation metadata */}
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 20px' }}>
             Informations générales
@@ -411,7 +432,6 @@ export default function GenererFormationPage() {
           </div>
         </div>
 
-        {/* Modules */}
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
@@ -474,7 +494,6 @@ export default function GenererFormationPage() {
           ))}
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setStep('upload')} style={btnSecondaryStyle}>
             Annuler
