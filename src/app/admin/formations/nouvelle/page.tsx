@@ -59,6 +59,7 @@ export default function NouvelleFormationPage() {
   const [prerequisIds, setPrerequisIds] = useState<string[]>([])
   const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
   const [showPreview, setShowPreview] = useState(false)
+  const [publierImmediatement, setPublierImmediatement] = useState(false)
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -181,7 +182,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
+        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
@@ -370,6 +371,10 @@ export default function NouvelleFormationPage() {
             </div>
           )}
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#374151', marginBottom: '16px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={publierImmediatement} onChange={e => setPublierImmediatement(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+          <span>Publier immédiatement (visible par les apprenants)</span>
+        </label>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>← Modifier</button>
           <button onClick={handleSave} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>✓ Confirmer et créer</button>
