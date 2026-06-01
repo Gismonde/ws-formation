@@ -211,7 +211,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
                     disabled={!estTerminee}
                     className={'px-6 py-2.5 rounded-lg transition text-sm font-semibold ' + (estTerminee ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed')}
                   >
-                    {estTerminee ? 'Passer le questionnaire' : 'Terminez tous les modules d'abord (' + progressionPct + '%)'}
+                    {estTerminee ? 'Passer le questionnaire' : "Terminez tous les modules d'abord (" + progressionPct + "%)"}
                   </button>
                 </Link>
               </div>
