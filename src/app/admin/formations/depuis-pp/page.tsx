@@ -88,6 +88,10 @@ export default function DepuisPPPage() {
     setError([])
     setFile(selectedFile)
     if (!titre) setTitre(selectedFile.name.replace(/\.(pptx?|ppt)$/i, ""))
+    if (!description) {
+      const cleanName = selectedFile.name.replace(/\.(pptx?|ppt)$/i, "").replace(/[-_]/g, " ")
+      setDescription("Formation basée sur la présentation PowerPoint \"" + cleanName + "\". Les modules et leçons seront générés automatiquement à partir des diapositives.")
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
