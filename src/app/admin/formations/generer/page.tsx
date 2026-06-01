@@ -133,9 +133,10 @@ export default function GenererFormationPage() {
       try {
         const arrayBuffer = await file.arrayBuffer()
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) })
+        const pdf = await loadingTask.promise
         let fullText = ''
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i)
@@ -151,8 +152,8 @@ export default function GenererFormationPage() {
         setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
         setStep('review')
       } catch (err) {
+        console.error('PDF error:', err)
         setError("Erreur lors de la lecture du PDF. Vérifiez que le fichier n'est pas protégé.")
-        console.error(err)
       }
     } else {
       const reader = new FileReader()
