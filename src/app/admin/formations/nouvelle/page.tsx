@@ -418,7 +418,18 @@ export default function NouvelleFormationPage() {
             />
           </div>
           <div>
-            <label style={labelStyle}>Description</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <label style={labelStyle}>Description</label>
+              <button type="button" onClick={() => {
+                const modTitles = modules.map(m => m.titre).filter(t => t.trim()).slice(0, 6)
+                if (modTitles.length > 0) {
+                  const desc = 'Cette formation aborde ' + modTitles.length + ' module' + (modTitles.length > 1 ? 's' : '') + ' : ' + modTitles.join(', ') + '.'
+                  setDescription(desc)
+                }
+              }} style={{ fontSize: '11px', color: '#6366f1', background: 'none', border: '1px solid #6366f1', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer' }}>
+                ↺ Générer depuis les modules
+              </button>
+            </div>
             <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)" />
             <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
           </div>
