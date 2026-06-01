@@ -15,10 +15,16 @@ const CATEGORIES = [
   'Communication',
 ]
 
+interface BlocData {
+  type: 'video' | 'file' | 'code' | 'link'
+  contenu: string
+}
+
 interface LeconData {
   titre: string
   description: string
   image_url?: string
+  blocs?: BlocData[]
 }
 
 interface ModuleData {
@@ -168,7 +174,7 @@ export default function GenererFormationPage() {
         localStorage.setItem('generer-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite }))
       } catch {}
     }
-  }, [titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite])
+  }, [titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite, tags, objectifs, prerequisIds, imageCouverture])
 
   // Reorder modules
   const moveModule = (idx: number, dir: -1 | 1) => {
@@ -309,7 +315,7 @@ export default function GenererFormationPage() {
       const res = await fetch('/api/generer-formation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null }),
+        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -570,6 +576,85 @@ export default function GenererFormationPage() {
           </div>
         </div>
 
+        {/* Image de couverture + Tags + Objectifs */}
+        <div style={{ ...cardStyle, marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 20px' }}>
+            Enrichissement
+          </h2>
+          <div style={{ display: 'grid', gap: '20px' }}>
+
+            {/* Image de couverture */}
+            <div>
+              <label style={labelStyle}>Image de couverture</label>
+              {imageCouverture ? (
+                <div>
+                  <img src={imageCouverture} alt="Couverture" style={{ maxWidth: '240px', maxHeight: '140px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '8px' }} />
+                  <button onClick={() => setImageCouverture(null)} style={btnDangerStyle}>Retirer</button>
+                </div>
+              ) : (
+                <label htmlFor="cover-img" style={{ ...btnSecondaryStyle, display: 'inline-block', cursor: 'pointer', fontSize: '13px' }}>
+                  + Ajouter une image de couverture
+                  <input id="cover-img" type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                    const f = e.target.files?.[0]
+                    if (!f) return
+                    const fd = new FormData(); fd.append('file', f)
+                    const res = await fetch('/api/upload-lesson-image', { method: 'POST', body: fd })
+                    const d = await res.json()
+                    if (d.url) setImageCouverture(d.url)
+                  }} />
+                </label>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label style={labelStyle}>Tags / mots-clés</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                {tags.map((tag, ti) => (
+                  <span key={ti} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '12px', padding: '3px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {tag}
+                    <button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => { if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); setTags(prev => [...prev, tagInput.trim()]); setTagInput('') } }}
+                  placeholder="Ajouter un tag (Entrée ou virgule)"
+                />
+                <button onClick={() => { if (tagInput.trim()) { setTags(prev => [...prev, tagInput.trim()]); setTagInput('') } }} style={{ ...btnSecondaryStyle, padding: '10px 14px' }}>+</button>
+              </div>
+            </div>
+
+            {/* Objectifs pédagogiques */}
+            <div>
+              <label style={labelStyle}>Objectifs pédagogiques</label>
+              <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 8px' }}>À la fin de cette formation, l&apos;apprenant saura...</p>
+              {objectifs.map((obj, oi) => (
+                <div key={oi} style={{ display: 'flex', gap: '8px', marginBottom: '6px', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#10b981', marginTop: '2px' }}>✓</span>
+                  <span style={{ flex: 1, fontSize: '14px', color: '#374151' }}>{obj}</span>
+                  <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 6px' }}>×</button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={objectifInput}
+                  onChange={e => setObjectifInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && objectifInput.trim()) { e.preventDefault(); setObjectifs(prev => [...prev, objectifInput.trim()]); setObjectifInput('') } }}
+                  placeholder="Ex: utiliser le logiciel X de manière autonome"
+                />
+                <button onClick={() => { if (objectifInput.trim()) { setObjectifs(prev => [...prev, objectifInput.trim()]); setObjectifInput('') } }} style={{ ...btnSecondaryStyle, padding: '10px 14px' }}>+</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
@@ -698,7 +783,31 @@ export default function GenererFormationPage() {
                           }}
                           placeholder="Description de la leçon..."
                         />
-                        {/* Image de la leçon */}
+                        {/* Blocs de contenu enrichis */}
+                        {(lecon.blocs || []).length > 0 && (
+                          <div style={{ marginTop: '8px' }}>
+                            {(lecon.blocs || []).map((bloc: any, bi: number) => (
+                              <div key={bi} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px', marginBottom: '6px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '14px', flexShrink: 0 }}>
+                                  {bloc.type === 'video' ? '🎬' : bloc.type === 'file' ? '📎' : bloc.type === 'code' ? '💻' : bloc.type === 'link' ? '🔗' : '📝'}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', fontWeight: '600', textTransform: 'uppercase' }}>{bloc.type}</div>
+                                  <input style={{ ...inputStyle, fontSize: '12px' }} value={bloc.contenu} onChange={e => { const updated = [...modules]; const b = [...(updated[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL du PDF' : bloc.type === 'link' ? 'URL du lien' : 'Code...'} />
+                                </div>
+                                <button onClick={() => { const updated = [...modules]; const b = (updated[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '2px 6px', flexShrink: 0 }}>×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                          {(['video', 'file', 'code', 'link'] as const).map(type => (
+                            <button key={type} onClick={() => { const updated = [...modules]; const blocs = [...(updated[idx].lecons[leconIdx].blocs || []), { type, contenu: '' }]; updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs }; setModules(updated) }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer', color: '#374151' }}>
+                              + {type === 'video' ? '🎬 Vidéo' : type === 'file' ? '📎 PDF' : type === 'code' ? '💻 Code' : '🔗 Lien'}
+                            </button>
+                          ))}
+                        </div>
+                                                {/* Image de la leçon */}
                         <div style={{ marginTop: '8px' }}>
                           {lecon.image_url ? (
                             <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -906,7 +1015,7 @@ export default function GenererFormationPage() {
           <button onClick={() => router.push('/admin/formations')} style={btnSecondaryStyle}>
             Liste des formations
           </button>
-          <button onClick={() => { setStep('upload'); setFileName(''); setModules([]); setTitre(''); setDescription('') }} style={btnSecondaryStyle}>
+          <button onClick={() => { setStep('upload'); setFileName(''); setModules([]); setTitre(''); setDescription(''); setTags([]); setObjectifs([]); setPrerequisIds([]); setImageCouverture(null) }} style={btnSecondaryStyle}>
             Générer une autre
           </button>
         </div>
