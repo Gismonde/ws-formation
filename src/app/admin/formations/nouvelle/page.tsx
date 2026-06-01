@@ -42,6 +42,7 @@ export default function NouvelleFormationPage() {
   const [description, setDescription] = useState('')
   const [niveau, setNiveau] = useState('debutant')
   const [dureeHeures, setDureeHeures] = useState(1)
+  const [dureeManuelle, setDureeManuelle] = useState(false)
   const [modules, setModules] = useState<ModuleForm[]>([{ titre: '', contenu: '', duree_minutes: 30, ordre: 1, lecons: [] }])
   const [questions, setQuestions] = useState<QuestionForm[]>([
     { texte: '', reponses: [{ texte: '', est_correcte: true }, { texte: '', est_correcte: false }, { texte: '', est_correcte: false }] }
@@ -49,6 +50,43 @@ export default function NouvelleFormationPage() {
   const [seuilReussite, setSeuilReussite] = useState(70)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Durée auto-calculée depuis les modules
+  useEffect(() => {
+    if (!dureeManuelle && modules.length > 0) {
+      const totalMinutes = modules.reduce((sum, m) => sum + (m.duree_minutes || 0), 0)
+      const heures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+      setDureeHeures(heures)
+    }
+  }, [modules, dureeManuelle])
+
+  // Restore draft from localStorage
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('nouvelle-formation-draft')
+      if (draft) {
+        const saved = JSON.parse(draft)
+        if (saved.titre) setTitre(saved.titre)
+        if (saved.description) setDescription(saved.description)
+        if (saved.categorie) setCategorie(saved.categorie)
+        if (saved.niveau) setNiveau(saved.niveau)
+        if (saved.dureeHeures) setDureeHeures(saved.dureeHeures)
+        if (saved.dureeManuelle) setDureeManuelle(saved.dureeManuelle)
+        if (saved.modules && saved.modules.length > 0) setModules(saved.modules)
+        if (saved.questions && saved.questions.length > 0) setQuestions(saved.questions)
+        if (saved.seuilReussite) setSeuilReussite(saved.seuilReussite)
+      }
+    } catch {}
+  }, [])
+
+  // Auto-save draft
+  useEffect(() => {
+    if (titre || modules.some(m => m.titre)) {
+      try {
+        localStorage.setItem('nouvelle-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite }))
+      } catch {}
+    }
+  }, [titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite])
 
   const addModule = () => {
     setModules(prev => [...prev, { titre: '', contenu: '', duree_minutes: 30, ordre: prev.length + 1, lecons: [] }])
@@ -60,6 +98,27 @@ export default function NouvelleFormationPage() {
 
   const updateModule = (idx: number, field: keyof ModuleForm, value: string | number) => {
     setModules(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m))
+  }
+
+  const moveModule = (idx: number, dir: -1 | 1) => {
+    setModules(prev => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next.map((m, i) => ({ ...m, ordre: i + 1 }))
+    })
+  }
+
+  const moveLecon = (moduleIdx: number, leconIdx: number, dir: -1 | 1) => {
+    setModules(prev => {
+      const next = prev.map(m => ({ ...m, lecons: [...m.lecons] }))
+      const lecons = next[moduleIdx].lecons
+      const target = leconIdx + dir
+      if (target < 0 || target >= lecons.length) return prev
+      ;[lecons[leconIdx], lecons[target]] = [lecons[target], lecons[leconIdx]]
+      return next
+    })
   }
 
   const handleLeconImageUpload = async (file: File, moduleIdx: number, leconIdx: number) => {
@@ -86,35 +145,26 @@ export default function NouvelleFormationPage() {
     setQuestions(prev => prev.filter((_, i) => i !== idx))
   }
 
-    // Restore draft from localStorage
-  useEffect(() => {
-    try {
-      const draft = localStorage.getItem('nouvelle-formation-draft')
-      if (draft) {
-        const saved = JSON.parse(draft)
-        if (saved.titre) setTitre(saved.titre)
-        if (saved.description) setDescription(saved.description)
-        if (saved.categorie) setCategorie(saved.categorie)
-        if (saved.niveau) setNiveau(saved.niveau)
-        if (saved.dureeHeures) setDureeHeures(saved.dureeHeures)
-        if (saved.modules && saved.modules.length > 0) setModules(saved.modules)
-        if (saved.questions && saved.questions.length > 0) setQuestions(saved.questions)
-        if (saved.seuilReussite) setSeuilReussite(saved.seuilReussite)
-      }
-    } catch {}
-  }, [])
-
-  // Auto-save draft
-  useEffect(() => {
-    if (titre || modules.some(m => m.titre)) {
-      try {
-        localStorage.setItem('nouvelle-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite }))
-      } catch {}
-    }
-  }, [titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite])
-
   async function handleSave() {
-    if (!titre.trim()) { setError('Le titre est requis.'); return }
+    // Validation renforcée
+    const errors: string[] = []
+    if (!titre.trim()) errors.push('Le titre est requis.')
+    if (modules.length === 0) errors.push('Au moins un module est requis.')
+    const emptyModules = modules.filter(m => !m.titre.trim())
+    if (emptyModules.length > 0) errors.push('Chaque module doit avoir un titre.')
+    const invalidDurations = modules.filter(m => !m.duree_minutes || m.duree_minutes <= 0)
+    if (invalidDurations.length > 0) errors.push('Chaque module doit avoir une durée supérieure à 0.')
+    const emptyLecons = modules.flatMap(m => m.lecons || []).filter(l => !l.titre.trim())
+    if (emptyLecons.length > 0) errors.push('Chaque leçon doit avoir un titre.')
+    const filledQuestions = questions.filter(q => q.texte.trim())
+    if (filledQuestions.length > 0) {
+      const noCorrect = filledQuestions.filter(q => !q.reponses.some(r => r.est_correcte))
+      if (noCorrect.length > 0) errors.push('Chaque question doit avoir au moins une réponse correcte.')
+      const emptyR = filledQuestions.filter(q => q.reponses.some(r => !r.texte.trim()))
+      if (emptyR.length > 0) errors.push('Chaque réponse doit avoir un texte.')
+    }
+    if (errors.length > 0) { setError(errors.join(' | ')); return }
+
     setSaving(true)
     setError('')
     const supabase = createClient()
@@ -122,27 +172,17 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({
-          titre,
-          categorie,
-          description,
-          niveau,
-          duree_heures: dureeHeures,
-          est_publiee: false,
-        })
+        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
 
       const { data: modulesCreated, error: errM } = await supabase
         .from('modules')
-        .insert(
-          modules.map(m => ({ titre: m.titre, contenu: m.contenu, duree_minutes: m.duree_minutes, ordre: m.ordre, formation_id: formation.id }))
-        )
+        .insert(modules.map(m => ({ titre: m.titre, contenu: m.contenu, duree_minutes: m.duree_minutes, ordre: m.ordre, formation_id: formation.id })))
         .select()
       if (errM) throw new Error(errM.message)
 
-      // Insert leçons pour chaque module
       if (modulesCreated) {
         for (let mIdx = 0; mIdx < modules.length; mIdx++) {
           const mod = modules[mIdx]
@@ -150,26 +190,22 @@ export default function NouvelleFormationPage() {
           if (!createdMod || !mod.lecons || mod.lecons.length === 0) continue
           const { error: errL } = await supabase
             .from('lecons')
-            .insert(
-              mod.lecons.map((l, lIdx) => ({
-                module_id: createdMod.id,
-                titre: l.titre || ('Leçon ' + (lIdx + 1)),
-                description: l.description || '',
-                image_url: l.image_url || null,
-                ordre: lIdx + 1,
-                est_obligatoire: true,
-              }))
-            )
+            .insert(mod.lecons.map((l, lIdx) => ({
+              module_id: createdMod.id,
+              titre: l.titre || ('Leçon ' + (lIdx + 1)),
+              description: l.description || '',
+              image_url: l.image_url || null,
+              ordre: lIdx + 1,
+              est_obligatoire: true,
+            })))
           if (errL) console.error('Erreur insert leçons:', errL.message)
 
-          // Insert blocs_contenu for each leçon with description
           if (!errL) {
             const { data: insertedLecons } = await supabase
               .from('lecons')
               .select('id, ordre')
               .eq('module_id', createdMod.id)
               .order('ordre')
-            
             if (insertedLecons) {
               const blocsToInsert = insertedLecons
                 .map((lecon, lIdx) => {
@@ -178,7 +214,6 @@ export default function NouvelleFormationPage() {
                   return { lecon_id: lecon.id, type: 'texte', contenu: desc, ordre: 1 }
                 })
                 .filter(Boolean)
-              
               if (blocsToInsert.length > 0) {
                 await supabase.from('blocs_contenu').insert(blocsToInsert)
               }
@@ -191,11 +226,7 @@ export default function NouvelleFormationPage() {
       if (validQuestions.length > 0) {
         const { data: questionnaire, error: errQ } = await supabase
           .from('questionnaires')
-          .insert({
-            formation_id: formation.id,
-            titre: 'Questionnaire - ' + titre,
-            seuil_reussite: seuilReussite,
-          })
+          .insert({ formation_id: formation.id, titre: 'Questionnaire - ' + titre, seuil_reussite: seuilReussite })
           .select()
           .single()
         if (errQ || !questionnaire) throw new Error(errQ?.message || 'Erreur questionnaire')
@@ -204,27 +235,20 @@ export default function NouvelleFormationPage() {
           const q = validQuestions[i]
           const { data: question, error: errQu } = await supabase
             .from('questions')
-            .insert({
-              questionnaire_id: questionnaire.id,
-              texte: q.texte,
-              type: 'qcm',
-              ordre: i + 1,
-            })
+            .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: 'qcm', ordre: i + 1 })
             .select()
             .single()
           if (errQu || !question) continue
           const validReponses = q.reponses.filter(r => r.texte.trim())
           if (validReponses.length > 0) {
-            await supabase
-              .from('reponses_possibles')
-              .insert(
-                validReponses.filter(r => r.texte.trim()).map((r, ri) => ({
-                  question_id: question.id,
-                  texte: r.texte,
-                  est_correcte: r.est_correcte,
-                  ordre: ri + 1,
-                }))
-              )
+            await supabase.from('reponses_possibles').insert(
+              validReponses.map((r, ri) => ({
+                question_id: question.id,
+                texte: r.texte,
+                est_correcte: r.est_correcte,
+                ordre: ri + 1,
+              }))
+            )
           }
         }
       }
@@ -280,6 +304,19 @@ export default function NouvelleFormationPage() {
     fontSize: '12px',
     cursor: 'pointer',
   }
+  const btnMoveStyle: React.CSSProperties = {
+    background: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '3px',
+    padding: '1px 6px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    lineHeight: '1.2',
+  }
+
+  const totalMinutes = modules.reduce((s, m) => s + (m.duree_minutes || 0), 0)
+  const autoHeures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
 
   return (
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px', fontFamily: 'system-ui, sans-serif' }}>
@@ -296,7 +333,12 @@ export default function NouvelleFormationPage() {
         <div style={{ display: 'grid', gap: '14px' }}>
           <div>
             <label style={labelStyle}>Titre *</label>
-            <input style={inputStyle} value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre de la formation" />
+            <input
+              style={{ ...inputStyle, borderColor: !titre.trim() && saving ? '#ef4444' : '#d1d5db' }}
+              value={titre}
+              onChange={e => setTitre(e.target.value)}
+              placeholder="Titre de la formation"
+            />
           </div>
           <div>
             <label style={labelStyle}>Description</label>
@@ -318,8 +360,34 @@ export default function NouvelleFormationPage() {
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Durée (heures)</label>
-              <input style={inputStyle} type="number" min={1} max={40} value={dureeHeures} onChange={e => setDureeHeures(Number(e.target.value))} />
+              <label style={labelStyle}>
+                Durée (heures)
+                {!dureeManuelle && (
+                  <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginLeft: '6px' }}>
+                    (auto: {autoHeures}h)
+                  </span>
+                )}
+              </label>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  type="number"
+                  min={0.5}
+                  max={40}
+                  step={0.5}
+                  value={dureeHeures}
+                  onChange={e => { setDureeManuelle(true); setDureeHeures(Number(e.target.value)) }}
+                />
+                {dureeManuelle && (
+                  <button
+                    onClick={() => { setDureeManuelle(false); setDureeHeures(autoHeures) }}
+                    style={{ ...btnSecStyle, padding: '6px 8px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                    title="Recalculer automatiquement"
+                  >
+                    🔄
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -328,34 +396,59 @@ export default function NouvelleFormationPage() {
       {/* Modules */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#111827' }}>Modules ({modules.length})</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#111827' }}>Modules ({modules.length}) — {totalMinutes} min total</h2>
           <button onClick={addModule} style={{ ...btnStyle, padding: '6px 12px', fontSize: '13px' }}>+ Module</button>
         </div>
 
         {modules.map((mod, idx) => (
           <div key={idx} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '14px', marginBottom: '10px', background: '#f9fafb' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title="Monter">▲</button>
+                  <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title="Descendre">▼</button>
+                </div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+              </div>
               <button onClick={() => removeModule(idx)} style={btnDangerStyle}>Supprimer</button>
             </div>
             <div style={{ display: 'grid', gap: '8px' }}>
               <div>
                 <label style={{ ...labelStyle, fontSize: '12px' }}>Titre *</label>
-                <input style={inputStyle} value={mod.titre} onChange={e => updateModule(idx, 'titre', e.target.value)} placeholder="Titre du module" />
+                <input
+                  style={{ ...inputStyle, borderColor: !mod.titre.trim() ? '#ef4444' : '#d1d5db' }}
+                  value={mod.titre}
+                  onChange={e => updateModule(idx, 'titre', e.target.value)}
+                  placeholder="Titre du module"
+                />
+                {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '2px 0 0' }}>Titre requis</p>}
               </div>
               <div>
                 <label style={{ ...labelStyle, fontSize: '12px' }}>Contenu</label>
-                <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', fontSize: '13px' }} value={mod.contenu} onChange={e => updateModule(idx, 'contenu', e.target.value)} placeholder="Contenu du module..." />
+                <textarea
+                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', fontSize: '13px' }}
+                  value={mod.contenu}
+                  onChange={e => updateModule(idx, 'contenu', e.target.value)}
+                  placeholder="Contenu du module..."
+                />
               </div>
               <div style={{ maxWidth: '160px' }}>
-                <label style={{ ...labelStyle, fontSize: '12px' }}>Durée (min)</label>
-                <input style={inputStyle} type="number" min={5} max={480} value={mod.duree_minutes} onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))} />
+                <label style={{ ...labelStyle, fontSize: '12px' }}>Durée (min) *</label>
+                <input
+                  style={{ ...inputStyle, borderColor: (!mod.duree_minutes || mod.duree_minutes <= 0) ? '#ef4444' : '#d1d5db' }}
+                  type="number"
+                  min={5}
+                  max={480}
+                  value={mod.duree_minutes}
+                  onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))}
+                />
+                {(!mod.duree_minutes || mod.duree_minutes <= 0) && <p style={{ color: '#dc2626', fontSize: '11px', margin: '2px 0 0' }}>&gt; 0 requis</p>}
               </div>
 
               {/* Leçons */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ ...labelStyle, fontSize: '12px', marginBottom: 0 }}>Leçons</label>
+                  <label style={{ ...labelStyle, fontSize: '12px', marginBottom: 0 }}>Leçons ({(mod.lecons || []).length})</label>
                   <button
                     onClick={() => {
                       const updated = [...modules]
@@ -375,7 +468,13 @@ export default function NouvelleFormationPage() {
                   return (
                     <div key={leconIdx} style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px', marginBottom: '6px', background: '#fff' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === 0} title="Monter">▲</button>
+                            <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title="Descendre">▼</button>
+                          </div>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                        </div>
                         <button
                           onClick={() => {
                             const updated = [...modules]
@@ -388,15 +487,16 @@ export default function NouvelleFormationPage() {
                         </button>
                       </div>
                       <input
-                        style={{ ...inputStyle, marginBottom: '4px', fontSize: '12px' }}
+                        style={{ ...inputStyle, marginBottom: '4px', fontSize: '12px', borderColor: !lecon.titre.trim() ? '#ef4444' : '#d1d5db' }}
                         value={lecon.titre}
                         onChange={e => {
                           const updated = [...modules]
                           updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
                           setModules(updated)
                         }}
-                        placeholder="Titre de la leçon"
+                        placeholder="Titre de la leçon *"
                       />
+                      {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '-2px 0 4px' }}>Titre requis</p>}
                       <textarea
                         style={{ ...inputStyle, minHeight: '55px', resize: 'vertical', fontSize: '12px' }}
                         value={lecon.description}
@@ -466,11 +566,14 @@ export default function NouvelleFormationPage() {
               <button onClick={() => removeQuestion(qi)} style={btnDangerStyle}>Supprimer</button>
             </div>
             <input
-              style={{ ...inputStyle, marginBottom: '8px' }}
+              style={{ ...inputStyle, marginBottom: '8px', borderColor: q.texte.trim() && !q.reponses.some(r => r.est_correcte) ? '#ef4444' : '#d1d5db' }}
               value={q.texte}
               onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
               placeholder="Texte de la question..."
             />
+            {q.texte.trim() && !q.reponses.some(r => r.est_correcte) && (
+              <p style={{ color: '#dc2626', fontSize: '11px', margin: '-4px 0 8px' }}>Aucune réponse correcte sélectionnée</p>
+            )}
             {q.reponses.map((r, ri) => (
               <div key={ri} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                 <input
@@ -479,7 +582,7 @@ export default function NouvelleFormationPage() {
                   onChange={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => ({ ...r2, est_correcte: j === ri })) }))}
                 />
                 <input
-                  style={{ ...inputStyle, flex: 1 }}
+                  style={{ ...inputStyle, flex: 1, borderColor: q.texte.trim() && !r.texte.trim() ? '#ef4444' : '#d1d5db' }}
                   value={r.texte}
                   onChange={e => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => j === ri ? { ...r2, texte: e.target.value } : r2) }))}
                   placeholder={'Réponse ' + (ri + 1) + (r.est_correcte ? ' (correcte)' : '')}
