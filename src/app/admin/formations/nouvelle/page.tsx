@@ -58,6 +58,7 @@ export default function NouvelleFormationPage() {
   const [error, setError] = useState('')
   const [prerequisIds, setPrerequisIds] = useState<string[]>([])
   const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
+  const [showPreview, setShowPreview] = useState(false)
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -335,6 +336,47 @@ export default function NouvelleFormationPage() {
 
   const totalMinutes = modules.reduce((s, m) => s + (m.duree_minutes || 0), 0)
   const autoHeures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+
+    if (showPreview) {
+    const totalLecons = modules.reduce((sum, m) => sum + (m.lecons || []).length, 0)
+    const validQs = questions.filter(q => q.texte.trim())
+    return (
+      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontFamily: 'system-ui, sans-serif' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>Aperçu avant création</h2>
+        <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>Vérifiez les informations avant de créer la formation.</p>
+        <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
+          <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Titre</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Niveau</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Modules</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''} — {totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Durée</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
+            </div>
+          </div>
+          {(tags.length > 0 || objectifs.length > 0) && (
+            <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+              {tags.length > 0 && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', fontWeight: '600' }}>Tags</span><div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>{tags.map((t, i) => <span key={i} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '11px', padding: '1px 8px', borderRadius: '20px' }}>{t}</span>)}</div></div>}
+              {objectifs.length > 0 && <div><span style={{ fontSize: '12px', fontWeight: '600' }}>Objectifs ({objectifs.length})</span>{objectifs.map((o, i) => <p key={i} style={{ fontSize: '12px', color: '#374151', margin: '4px 0 0' }}>✓ {o}</p>)}</div>}
+            </div>
+          )}
+          {prerequisIds.length > 0 && (
+            <div style={{ padding: '12px 16px', background: '#fefce8', borderRadius: '10px', border: '1px solid #fef08a' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#713f12' }}>⚠️ {prerequisIds.length} prérequis obligatoire{prerequisIds.length > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          {validQs.length > 0 && (
+            <div style={{ padding: '12px 16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#15803d' }}>✓ Questionnaire : {validQs.length} question{validQs.length > 1 ? 's' : ''}, seuil {seuilReussite}%</span>
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>← Modifier</button>
+          <button onClick={handleSave} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>✓ Confirmer et créer</button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px', fontFamily: 'system-ui, sans-serif' }}>
@@ -726,7 +768,7 @@ export default function NouvelleFormationPage() {
 
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
         <a href="/admin/formations" style={{ ...btnSecStyle, textDecoration: 'none', display: 'inline-block', padding: '8px 18px' }}>Annuler</a>
-        <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, opacity: saving ? 0.7 : 1 }}>
+        <button onClick={() => setShowPreview(true)} disabled={saving} style={{ ...btnStyle, opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Enregistrement...' : '✓ Créer la formation'}
         </button>
       </div>
