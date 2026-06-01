@@ -36,6 +36,67 @@ interface ModuleData {
   lecons: LeconData[]
 }
 
+
+// ---- Auto-inference of formation metadata from document content ----
+function inferMetadata(text: string, titre: string, modules: ModuleData[]): {
+  categorie: string
+  niveau: string
+  tags: string[]
+  objectifs: string[]
+} {
+  const fullText = (titre + ' ' + text).toLowerCase()
+  const moduleTitles = modules.map(m => m.titre).join(' ').toLowerCase()
+  const combined = fullText + ' ' + moduleTitles
+
+  // --- Category detection ---
+  const categoryKeywords: Record<string, string[]> = {
+    'Hygiène et sécurité': ['hygiène', 'hygiene', 'sécurité', 'securite', 'nettoyage', 'désinfection', 'stérilisation', 'epi', 'risque', 'accident', 'incendie'],
+    'Gestion des soins': ['soin', 'patient', 'infirmier', 'médecin', 'clinique', 'traitement', 'médicament', 'diagnostic', 'chirurgie', 'soignant'],
+    'Communication': ['communication', 'communiquer', 'écoute', 'message', 'relation', 'verbal', 'empathie', 'assertivité', 'feedback'],
+    'Ressources humaines': ['ressources humaines', 'recrutement', 'entretien', 'congé', 'compétence', 'évaluation', 'onboarding'],
+    'Qualité et conformité': ['qualité', 'conformité', 'iso', 'audit', 'certification', 'norme', 'protocole', 'accréditation', 'traçabilité'],
+    'Informatique et systèmes': ['informatique', 'logiciel', 'système', 'numérique', 'excel', 'erp', 'réseau', 'cybersécurité', 'rgpd'],
+    'Administration médicale': ['administrative', 'administration', 'dossier', 'facturation', 'codification', 'pmsi', 'assurance', 'admission'],
+    'Gestion des risques': ['danger', 'précaution', 'prévention', 'vigilance', 'incident', 'événement indésirable'],
+    'Formation du personnel': ['habilitation', 'tutorat', 'stagiaire', 'e-learning'],
+  }
+
+  let bestCategorie = ''
+  let bestScore = 0
+  for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+    const score = keywords.reduce((acc, kw) => acc + (combined.split(kw).length - 1), 0)
+    if (score > bestScore) { bestScore = score; bestCategorie = cat }
+  }
+
+  // --- Level detection ---
+  let niveau = 'debutant'
+  if (/avancé|expert|spécialis|niveau\s*3|senior|complexe/i.test(combined)) niveau = 'avance'
+  else if (/intermédiaire|confirmé|niveau\s*2|approfondissement|perfectionnement/i.test(combined)) niveau = 'intermediaire'
+
+  // --- Tags from title + module titles ---
+  const stopWords = new Set(['de','du','des','le','la','les','un','une','et','ou','à','au','avec','pour','dans','sur','par','en','est','sont','cette','ce','ses','leur','leurs','qui','que','les','par','une'])
+  const tagSource = (titre + ' ' + moduleTitles).replace(/[^a-zàâäéèêëîïôöùûüç\s]/gi, ' ')
+  const wordFreq: Record<string, number> = {}
+  tagSource.toLowerCase().split(/\s+/).forEach(w => {
+    if (w.length >= 4 && !stopWords.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1
+  })
+  const tags = Object.entries(wordFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w]) => w.charAt(0).toUpperCase() + w.slice(1))
+
+  // --- Objectives from document text ---
+  const objectifs: string[] = []
+  const objRegex = /(?:objectif[s]?\s*:?\s*|l['\'']apprenant\s+(?:sera|pourra|saura|maîtrisera|comprendra)|vous\s+(?:saurez|pourrez|comprendrez|maîtriserez))([^.!?\n]{10,120})/gi
+  let match
+  while ((match = objRegex.exec(text)) !== null && objectifs.length < 4) {
+    const obj = match[1]?.trim()
+    if (obj && obj.length > 10) objectifs.push(obj.charAt(0).toUpperCase() + obj.slice(1))
+  }
+  if (objectifs.length === 0) {
+    modules.slice(0, 3).forEach(m => { if (m.titre?.length > 5) objectifs.push('Maîtriser : ' + m.titre) })
+  }
+
+  return { categorie: bestCategorie, niveau, tags, objectifs }
+}
+
 function parseDocumentIntoModules(text: string): { titre: string; description: string; modules: ModuleData[] } {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
 
@@ -379,6 +440,11 @@ export default function GenererFormationPage() {
         const parsed = parseDocumentIntoModules(fullText)
         setTitre(parsed.titre)
         setDescription(parsed.description)
+        const inferredPdf = inferMetadata(fullText, parsed.titre, parsed.modules)
+        if (!categorie) setCategorie(inferredPdf.categorie)
+        setNiveau(inferredPdf.niveau)
+        if (inferredPdf.tags.length > 0) setTags(inferredPdf.tags)
+        if (inferredPdf.objectifs.length > 0) setObjectifs(inferredPdf.objectifs)
         setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }])
         setStep('review')
       } catch (err) {
@@ -392,6 +458,11 @@ export default function GenererFormationPage() {
         const parsed = parseDocumentIntoModules(text)
         setTitre(parsed.titre)
         setDescription(parsed.description)
+        const inferredTxt = inferMetadata(text, parsed.titre, parsed.modules)
+        if (!categorie) setCategorie(inferredTxt.categorie)
+        setNiveau(inferredTxt.niveau)
+        if (inferredTxt.tags.length > 0) setTags(inferredTxt.tags)
+        if (inferredTxt.objectifs.length > 0) setObjectifs(inferredTxt.objectifs)
         setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }])
         setStep('review')
       }
