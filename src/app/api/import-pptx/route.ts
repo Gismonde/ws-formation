@@ -133,14 +133,14 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i]
         const { data: lecon } = await supabase
-          .from('lecons')
+          .from('lessons')
           .insert({ module_id: module.id, titre: slide.title, description: slide.texts.join(' ').substring(0, 1000), image_url: null, ordre: i + 1 })
           .select()
           .single()
 
         if (lecon && slide.texts.length > 0) {
-          await supabase.from('blocs_contenu').insert({
-            lecon_id: lecon.id,
+          await supabase.from('content_blocks').insert({
+            lesson_id: lecon.id,
             type: 'texte',
             contenu: slide.texts.join('\n'),
             ordre: 1
@@ -161,14 +161,14 @@ export async function POST(req: NextRequest) {
         if (!module) continue
 
         const { data: lecon } = await supabase
-          .from('lecons')
+          .from('lessons')
           .insert({ module_id: module.id, titre: slide.title, description: slide.texts.join(' ').substring(0, 1000), image_url: null, ordre: 1 })
           .select()
           .single()
 
         if (lecon && slide.texts.length > 0) {
-          await supabase.from('blocs_contenu').insert({
-            lecon_id: lecon.id,
+          await supabase.from('content_blocks').insert({
+            lesson_id: lecon.id,
             type: 'texte',
             contenu: slide.texts.join('\n'),
             ordre: 1
