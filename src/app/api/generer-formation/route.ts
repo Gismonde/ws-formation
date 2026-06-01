@@ -15,11 +15,17 @@ const CATEGORIES = [
   'Communication',
 ]
 
+interface LeconInput {
+  titre: string
+  contenu: string
+}
+
 interface ModuleInput {
   titre: string
   contenu: string
   duree_minutes: number
   ordre: number
+  lecons?: LeconInput[]
 }
 
 interface FormationInput {
@@ -82,14 +88,36 @@ export async function POST(req: NextRequest) {
       ordre: i + 1,
     }))
 
-    const { error: modulesError } = await adminClient
+    const { data: insertedModules, error: modulesError } = await adminClient
       .from('modules')
       .insert(modulesToInsert)
+      .select('id, ordre')
 
-    if (modulesError) {
+    if (modulesError || !insertedModules) {
       // Rollback: delete the formation
       await adminClient.from('formations').delete().eq('id', formation.id)
-      return NextResponse.json({ error: modulesError.message }, { status: 500 })
+      return NextResponse.json({ error: modulesError?.message || 'Erreur modules' }, { status: 500 })
+    }
+
+    // Create lecons for each module
+    const leconsToInsert = modules.flatMap((m, i) => {
+      const moduleId = insertedModules.find(mod => mod.ordre === i + 1)?.id
+      if (!moduleId || !m.lecons || m.lecons.length === 0) return []
+      return m.lecons.map((l, j) => ({
+        module_id: moduleId,
+        titre: l.titre?.trim() || `Leçon ${j + 1}`,
+        contenu: l.contenu?.trim() || '',
+        ordre: j + 1,
+      }))
+    })
+
+    if (leconsToInsert.length > 0) {
+      const { error: leconsError } = await adminClient
+        .from('lecons')
+        .insert(leconsToInsert)
+      if (leconsError) {
+        console.error('Leçons insert error (non-fatal):', leconsError.message)
+      }
     }
 
     // Log audit
