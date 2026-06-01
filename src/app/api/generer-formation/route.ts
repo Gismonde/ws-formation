@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire } = body
+  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, publier_immediatement } = body
 
   if (!titre?.trim()) {
     return NextResponse.json({ error: 'Titre requis' }, { status: 400 })
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       categorie: CATEGORIES.includes(categorie) ? categorie : CATEGORIES[0],
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
       duree_heures: duree_heures || 1,
-      est_publiee: false,
+      est_publiee: publier_immediatement === true,
       tags: tags || [],
       objectifs: objectifs || [],
       prerequis_ids: prerequis_ids || [],
