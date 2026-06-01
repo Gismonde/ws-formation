@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -86,6 +86,33 @@ export default function NouvelleFormationPage() {
     setQuestions(prev => prev.filter((_, i) => i !== idx))
   }
 
+    // Restore draft from localStorage
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('nouvelle-formation-draft')
+      if (draft) {
+        const saved = JSON.parse(draft)
+        if (saved.titre) setTitre(saved.titre)
+        if (saved.description) setDescription(saved.description)
+        if (saved.categorie) setCategorie(saved.categorie)
+        if (saved.niveau) setNiveau(saved.niveau)
+        if (saved.dureeHeures) setDureeHeures(saved.dureeHeures)
+        if (saved.modules && saved.modules.length > 0) setModules(saved.modules)
+        if (saved.questions && saved.questions.length > 0) setQuestions(saved.questions)
+        if (saved.seuilReussite) setSeuilReussite(saved.seuilReussite)
+      }
+    } catch {}
+  }, [])
+
+  // Auto-save draft
+  useEffect(() => {
+    if (titre || modules.some(m => m.titre)) {
+      try {
+        localStorage.setItem('nouvelle-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite }))
+      } catch {}
+    }
+  }, [titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite])
+
   async function handleSave() {
     if (!titre.trim()) { setError('Le titre est requis.'); return }
     setSaving(true)
@@ -134,6 +161,29 @@ export default function NouvelleFormationPage() {
               }))
             )
           if (errL) console.error('Erreur insert leçons:', errL.message)
+
+          // Insert blocs_contenu for each leçon with description
+          if (!errL) {
+            const { data: insertedLecons } = await supabase
+              .from('lecons')
+              .select('id, ordre')
+              .eq('module_id', createdMod.id)
+              .order('ordre')
+            
+            if (insertedLecons) {
+              const blocsToInsert = insertedLecons
+                .map((lecon, lIdx) => {
+                  const desc = mod.lecons[lIdx]?.description?.trim()
+                  if (!desc) return null
+                  return { lecon_id: lecon.id, type: 'texte', contenu: desc, ordre: 1 }
+                })
+                .filter(Boolean)
+              
+              if (blocsToInsert.length > 0) {
+                await supabase.from('blocs_contenu').insert(blocsToInsert)
+              }
+            }
+          }
         }
       }
 
@@ -179,6 +229,7 @@ export default function NouvelleFormationPage() {
         }
       }
 
+      localStorage.removeItem('nouvelle-formation-draft')
       router.push('/admin/formations/' + formation.id)
     } catch (err: any) {
       setError(err.message)
