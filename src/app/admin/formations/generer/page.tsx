@@ -44,8 +44,17 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
   const isPptPdf = lines.some(l => slidePattern.test(l))
 
   if (isPptPdf) {
+    // ---- Parse individual slides ----
     const slides: Array<{ num: number; total: number; content: string[] }> = []
     let currentSlide: { num: number; total: number; content: string[] } | null = null
+
+    // Patterns to skip: page numbers, "Narration" headers, repetitive footers
+    const skipLine = (line: string) =>
+      /^Narration\s*:?$/i.test(line) ||
+      /^Diapositive\s+\d+\s*\/\s*\d+$/i.test(line) ||
+      /^\d+\s*\/\s*\d+$/.test(line) ||
+      /^\[.*\]$/.test(line) ||
+      line.length < 2
 
     for (const line of lines) {
       const m = slidePattern.exec(line)
@@ -53,7 +62,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
         if (currentSlide) slides.push(currentSlide)
         currentSlide = { num: parseInt(m[1]), total: parseInt(m[2]), content: [] }
       } else if (currentSlide) {
-        if (!line.match(/^Narration$/i) && !line.match(/^Diapositive\s+\d+\s*\/\s*\d+$/i)) {
+        if (!skipLine(line)) {
           currentSlide.content.push(line)
         }
       }
@@ -64,36 +73,88 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       return { titre: 'Formation sans titre', description: '', modules: [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }] }
     }
 
-    const firstSlideContent = slides[0]?.content || []
-    const docTitle = firstSlideContent[0]?.substring(0, 100) || 'Formation'
-    const docDescription = firstSlideContent.slice(1, 4).join(' ').substring(0, 300)
+    // ---- Extract doc title and description from first slide ----
+    const firstContent = slides[0]?.content ?? []
+    const docTitle = firstContent[0]?.substring(0, 100) ?? 'Formation'
+    const docDescription = firstContent.slice(1, 4).join(' ').substring(0, 300)
 
-    const totalSlides = slides.length
-    const numModules = Math.max(1, Math.round(totalSlides / 5))
-    const slidesPerModule = Math.ceil(totalSlides / numModules)
-    const pptModules: ModuleData[] = []
+    // ---- Detect section-title slides as module boundaries ----
+    // A "title slide" has short content (≤3 lines) AND first line is ≤60 chars
+    // OR the first line is ALL-CAPS (section header style)
+    const isTitleSlide = (slide: { num: number; total: number; content: string[] }) => {
+      const c = slide.content
+      if (c.length === 0) return false
+      const firstLine = c[0]
+      if (firstLine.length > 80) return false
+      // Short slide with few lines
+      if (c.length <= 2 && firstLine.length <= 60) return true
+      // ALL CAPS heading
+      if (/^[A-ZÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s\d:.,\-–—]{4,}$/.test(firstLine)) return true
+      // Numbered section (e.g. "1. Introduction", "Section 2 -")
+      if (/^(\d+[.)]\s+|[IVXLCDM]+\.\s+|Section\s+\d+|Chapitre\s+\d+|Module\s+\d+|Partie\s+\d+)/i.test(firstLine)) return true
+      return false
+    }
 
-    for (let i = 0; i < slides.length; i += slidesPerModule) {
-      const moduleSlides = slides.slice(i, i + slidesPerModule)
-      const moduleNum = Math.floor(i / slidesPerModule) + 1
-      const firstContent = moduleSlides[0]?.content || []
-      const moduleTitre = firstContent[0]?.substring(0, 80) || ('Module ' + moduleNum)
+    // ---- Group slides into modules ----
+    // Strategy: slides that look like "title slides" start a new module
+    // Skip slide 1 (document title slide) — start grouping from slide 2
+    const contentSlides = slides.slice(1) // skip title slide
 
-      const lecons: LeconData[] = moduleSlides.map(slide => {
+    const moduleGroups: Array<{ title: string; slides: typeof contentSlides }> = []
+    let currentGroup: { title: string; slides: typeof contentSlides } | null = null
+
+    for (const slide of contentSlides) {
+      if (isTitleSlide(slide) || currentGroup === null) {
+        if (currentGroup) moduleGroups.push(currentGroup)
+        currentGroup = { title: slide.content[0]?.substring(0, 80) ?? ('Section ' + slide.num), slides: [] }
+        // Don't add the title slide itself as a lesson if it has no body content
+        if (slide.content.length > 1) {
+          currentGroup.slides.push(slide)
+        }
+      } else {
+        currentGroup.slides.push(slide)
+      }
+    }
+    if (currentGroup) moduleGroups.push(currentGroup)
+
+    // ---- Fallback: if no section boundaries found, split evenly ----
+    const finalGroups = moduleGroups.length > 0 && moduleGroups.some(g => g.slides.length > 0)
+      ? moduleGroups
+      : (() => {
+          const numMod = Math.max(1, Math.round(contentSlides.length / 5))
+          const perMod = Math.ceil(contentSlides.length / numMod)
+          const fallback: typeof moduleGroups = []
+          for (let i = 0; i < contentSlides.length; i += perMod) {
+            const chunk = contentSlides.slice(i, i + perMod)
+            const modNum = fallback.length + 1
+            fallback.push({
+              title: chunk[0]?.content[0]?.substring(0, 80) ?? ('Module ' + modNum),
+              slides: chunk,
+            })
+          }
+          return fallback
+        })()
+
+    // ---- Build ModuleData array ----
+    const pptModules: ModuleData[] = finalGroups.map((group, gi) => {
+      const lecons: LeconData[] = group.slides.map(slide => {
         const sc = slide.content
-        const leconTitre = sc[0]?.substring(0, 80) || ('Diapositive ' + slide.num)
-        const leconDesc = sc.slice(1).join('\n').substring(0, 500)
-        return { titre: leconTitre, description: leconDesc, duree_minutes: 5 }
+        // Find best title: first non-empty line that is not a repetition of the module title
+        const rawTitle = sc[0]?.substring(0, 80) ?? ('Diapositive ' + slide.num)
+        // Build description from remaining lines
+        const desc = sc.slice(1).join('\n').substring(0, 500)
+        return { titre: rawTitle, description: desc, duree_minutes: 5 }
       })
 
-      const contenu = moduleSlides.map(s => s.content.join('\n')).join('\n\n')
-      pptModules.push({
-        titre: moduleTitre,
+      const contenu = group.slides.map(s => s.content.join('\n')).join('\n\n')
+      const moduleNum = gi + 1
+      return {
+        titre: group.title || ('Module ' + moduleNum),
         contenu: contenu.substring(0, 1000),
         duree_minutes: Math.max(15, lecons.length * 5),
         lecons,
-      })
-    }
+      }
+    })
 
     return { titre: docTitle, description: docDescription, modules: pptModules }
   }
