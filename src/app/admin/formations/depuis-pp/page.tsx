@@ -10,6 +10,8 @@ interface QuestionForm {
   reponses: { texte: string; est_correcte: boolean }[]
 }
 
+const DRAFT_KEY = "depuis-pp-draft"
+
 export default function DepuisPPPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -19,7 +21,9 @@ export default function DepuisPPPage() {
   const [categorie, setCategorie] = useState("")
   const [niveau, setNiveau] = useState("debutant")
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0) // 0=idle, 1=creation, 2=import, 3=questionnaire
   const [error, setError] = useState<string[]>([])
+  const [showPreview, setShowPreview] = useState(false)
   // Enrichissement
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -34,6 +38,34 @@ export default function DepuisPPPage() {
   ])
   const [seuilReussite, setSeuilReussite] = useState(70)
 
+  // Load draft from localStorage
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem(DRAFT_KEY)
+      if (draft) {
+        const d = JSON.parse(draft)
+        if (d.titre) setTitre(d.titre)
+        if (d.categorie) setCategorie(d.categorie)
+        if (d.niveau) setNiveau(d.niveau)
+        if (d.tags) setTags(d.tags)
+        if (d.objectifs) setObjectifs(d.objectifs)
+        if (d.seuilReussite) setSeuilReussite(d.seuilReussite)
+        if (d.prerequisIds) setPrerequisIds(d.prerequisIds)
+        if (d.imageCouverture) setImageCouverture(d.imageCouverture)
+      }
+    } catch {}
+  }, [])
+
+  // Auto-save draft
+  useEffect(() => {
+    if (titre) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ titre, categorie, niveau, tags, objectifs, seuilReussite, prerequisIds, imageCouverture }))
+      } catch {}
+    }
+  }, [titre, categorie, niveau, tags, objectifs, seuilReussite, prerequisIds, imageCouverture])
+
+  // Load formations for prereq
   useEffect(() => {
     const supabase = createClient()
     supabase.from("formations").select("id, titre").eq("est_publiee", true).order("titre").then(({ data }) => {
@@ -59,8 +91,7 @@ export default function DepuisPPPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    const droppedFile = e.dataTransfer.files[0]
-    handleFileChange(droppedFile)
+    handleFileChange(e.dataTransfer.files[0])
   }
 
   const handleCoverUpload = async (f: File) => {
@@ -71,28 +102,31 @@ export default function DepuisPPPage() {
     if (d.url) setImageCouverture(d.url)
   }
 
-  const addQuestion = () => {
-    setQuestions(prev => [...prev, { texte: "", reponses: [{ texte: "", est_correcte: true }, { texte: "", est_correcte: false }, { texte: "", est_correcte: false }] }])
-  }
+  const addQuestion = () => setQuestions(prev => [...prev, { texte: "", reponses: [{ texte: "", est_correcte: true }, { texte: "", est_correcte: false }, { texte: "", est_correcte: false }] }])
+  const removeQuestion = (idx: number) => setQuestions(prev => prev.filter((_, i) => i !== idx))
 
-  const removeQuestion = (idx: number) => {
-    setQuestions(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePreview = (e: React.FormEvent) => {
     e.preventDefault()
     const errs: string[] = []
     if (!file) errs.push("Veuillez sélectionner un fichier PowerPoint")
     if (!titre.trim()) errs.push("Veuillez saisir un titre pour la formation")
     if (errs.length > 0) { setError(errs); return }
-
-    setIsLoading(true)
     setError([])
+    setShowPreview(true)
+  }
+
+  const handleSubmit = async () => {
+    setShowPreview(false)
+    setIsLoading(true)
+    setLoadingStep(1)
+    setError([])
+    let formationId: string | null = null
 
     try {
       const supabase = createClient()
 
-      // 1. Create the formation via Supabase client
+      // Etape 1: Creation formation
+      setLoadingStep(1)
       const { data: formation, error: errF } = await supabase
         .from("formations")
         .insert({
@@ -109,45 +143,50 @@ export default function DepuisPPPage() {
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || "Erreur creation formation")
+      formationId = formation.id
 
-      // 2. Import PPTX slides as modules/lessons
+      // Etape 2: Import PPTX
+      setLoadingStep(2)
       const formData = new FormData()
       formData.append("file", file!)
       formData.append("formationId", formation.id)
-
       const res = await fetch("/api/import-pptx", { method: "POST", body: formData })
 
-      // 3. Update duration based on imported modules count
+      if (!res.ok) {
+        const data = await res.json()
+        // Rollback: delete orphan formation
+        await supabase.from("formations").delete().eq("id", formation.id)
+        throw new Error(data.error || "Erreur import PowerPoint - formation annulee")
+      }
+
+      // Update duration
       const { count: moduleCount } = await supabase
-        .from("modules")
-        .select("id", { count: "exact", head: true })
-        .eq("formation_id", formation.id)
+        .from("modules").select("id", { count: "exact", head: true }).eq("formation_id", formation.id)
       if (moduleCount && moduleCount > 0) {
         const estimatedDuration = Math.max(1, Math.round(moduleCount * 0.5 * 10) / 10)
         await supabase.from("formations").update({ duree_heures: estimatedDuration }).eq("id", formation.id)
       }
 
-      // 4. Create questionnaire if questions provided
+      // Etape 3: Questionnaire
       const validQuestions = questions.filter(q => q.texte.trim())
       if (validQuestions.length > 0) {
+        setLoadingStep(3)
         const { data: questionnaire } = await supabase
           .from("questionnaires")
           .insert({ formation_id: formation.id, titre: "Questionnaire - " + titre, seuil_reussite: seuilReussite })
-          .select()
-          .single()
+          .select().single()
         if (questionnaire) {
           for (let i = 0; i < validQuestions.length; i++) {
             const q = validQuestions[i]
             const { data: question } = await supabase
               .from("questions")
               .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: "qcm", ordre: i + 1 })
-              .select()
-              .single()
+              .select().single()
             if (question) {
-              const validReponses = q.reponses.filter(r => r.texte.trim())
-              if (validReponses.length > 0) {
+              const validR = q.reponses.filter(r => r.texte.trim())
+              if (validR.length > 0) {
                 await supabase.from("reponses_possibles").insert(
-                  validReponses.map((r, ri) => ({ question_id: question.id, texte: r.texte, est_correcte: r.est_correcte, ordre: ri + 1 }))
+                  validR.map((r, ri) => ({ question_id: question.id, texte: r.texte, est_correcte: r.est_correcte, ordre: ri + 1 }))
                 )
               }
             }
@@ -155,98 +194,120 @@ export default function DepuisPPPage() {
         }
       }
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || "Erreur import PowerPoint")
-      }
-
+      localStorage.removeItem(DRAFT_KEY)
       router.push("/admin/formations/" + formation.id)
     } catch (err: any) {
       setError([err.message])
       setIsLoading(false)
+      setLoadingStep(0)
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 14px",
-    border: "1px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "14px",
-    outline: "none",
-    boxSizing: "border-box",
+  const STEPS = ["Création de la formation", "Import des slides PPTX", "Création du questionnaire"]
+
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }
+  const labelStyle: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }
+  const btnSecStyle: React.CSSProperties = { background: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db", borderRadius: "6px", padding: "6px 12px", fontSize: "13px", cursor: "pointer" }
+  const btnDangerStyle: React.CSSProperties = { background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: "4px", padding: "3px 8px", fontSize: "12px", cursor: "pointer" }
+  const btnStyle: React.CSSProperties = { background: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", padding: "8px 18px", fontSize: "14px", cursor: "pointer", fontWeight: "600" }
+
+  // Loading overlay
+  if (isLoading) {
+    return (
+      <div style={{ maxWidth: "500px", margin: "80px auto", padding: "40px", background: "#fff", borderRadius: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.1)", textAlign: "center" }}>
+        <div style={{ fontSize: "48px", marginBottom: "20px" }}>📊</div>
+        <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: "0 0 24px" }}>Création en cours...</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {STEPS.map((step, i) => {
+            const stepNum = i + 1
+            const isDone = loadingStep > stepNum
+            const isActive = loadingStep === stepNum
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: isDone ? "#f0fdf4" : isActive ? "#eff6ff" : "#f9fafb", border: "1px solid " + (isDone ? "#bbf7d0" : isActive ? "#bfdbfe" : "#e5e7eb") }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700", background: isDone ? "#16a34a" : isActive ? "#2563eb" : "#d1d5db", color: "#fff", flexShrink: 0 }}>
+                  {isDone ? "✓" : stepNum}
+                </div>
+                <span style={{ fontSize: "14px", fontWeight: isActive ? "600" : "400", color: isDone ? "#15803d" : isActive ? "#1d4ed8" : "#9ca3af" }}>
+                  {step}{isActive ? "..." : ""}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        {error.length > 0 && (
+          <div style={{ marginTop: "20px", padding: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#dc2626", fontSize: "13px" }}>
+            {error.map((e, i) => <div key={i}>⚠️ {e}</div>)}
+          </div>
+        )}
+      </div>
+    )
   }
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: "6px",
-  }
-  const btnSecStyle: React.CSSProperties = {
-    background: "#f3f4f6",
-    color: "#374151",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "6px 12px",
-    fontSize: "13px",
-    cursor: "pointer",
-  }
-  const btnDangerStyle: React.CSSProperties = {
-    background: "#fee2e2",
-    color: "#991b1b",
-    border: "none",
-    borderRadius: "4px",
-    padding: "3px 8px",
-    fontSize: "12px",
-    cursor: "pointer",
-  }
-  const btnStyle: React.CSSProperties = {
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    padding: "8px 18px",
-    fontSize: "14px",
-    cursor: "pointer",
-    fontWeight: "600",
+
+  // Preview modal
+  if (showPreview) {
+    const validQs = questions.filter(q => q.texte.trim())
+    return (
+      <div style={{ maxWidth: "600px", margin: "40px auto", padding: "32px", background: "#fff", borderRadius: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.1)", fontFamily: "system-ui, sans-serif" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#111827", margin: "0 0 4px" }}>Aperçu avant création</h2>
+        <p style={{ color: "#6b7280", fontSize: "14px", margin: "0 0 24px" }}>Vérifiez les informations avant de lancer l&apos;import.</p>
+
+        <div style={{ display: "grid", gap: "16px", marginBottom: "24px" }}>
+          <div style={{ padding: "16px", background: "#f9fafb", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Titre</span><p style={{ fontSize: "15px", fontWeight: "600", color: "#111827", margin: "4px 0 0" }}>{titre}</p></div>
+              <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Niveau</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0", textTransform: "capitalize" }}>{niveau}</p></div>
+              {categorie && <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Catégorie</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{categorie}</p></div>}
+              <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Fichier</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{file?.name}</p></div>
+            </div>
+          </div>
+          {(tags.length > 0 || objectifs.length > 0) && (
+            <div style={{ padding: "16px", background: "#f9fafb", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+              {tags.length > 0 && <div style={{ marginBottom: "10px" }}><span style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>Tags</span><div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px" }}>{tags.map((t, i) => <span key={i} style={{ background: "#ede9fe", color: "#5b21b6", fontSize: "11px", padding: "1px 8px", borderRadius: "20px" }}>{t}</span>)}</div></div>}
+              {objectifs.length > 0 && <div><span style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>Objectifs ({objectifs.length})</span>{objectifs.map((o, i) => <p key={i} style={{ fontSize: "12px", color: "#374151", margin: "4px 0 0" }}>✓ {o}</p>)}</div>}
+            </div>
+          )}
+          {prerequisIds.length > 0 && (
+            <div style={{ padding: "12px 16px", background: "#fefce8", borderRadius: "10px", border: "1px solid #fef08a" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#713f12" }}>⚠️ {prerequisIds.length} prérequis obligatoire{prerequisIds.length > 1 ? "s" : ""}</span>
+            </div>
+          )}
+          {validQs.length > 0 && (
+            <div style={{ padding: "12px 16px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#15803d" }}>✓ Questionnaire : {validQs.length} question{validQs.length > 1 ? "s" : ""}, seuil {seuilReussite}%</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <button type="button" onClick={() => setShowPreview(false)} style={btnSecStyle}>← Modifier</button>
+          <button type="button" onClick={handleSubmit} style={{ ...btnStyle, background: "#7c3aed", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }}>
+            📊 Confirmer et créer
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto", padding: "32px 20px", fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-        <Link href="/admin/formations" style={{
-          display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px",
-          background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none",
-          fontSize: "14px", fontWeight: "500",
-        }}>← Retour</Link>
+        <Link href="/admin/formations" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>← Retour</Link>
         <div>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#111827", margin: 0 }}>
-            Créer depuis un PowerPoint
-          </h1>
-          <p style={{ color: "#6b7280", fontSize: "14px", margin: "4px 0 0 0" }}>
-            Importez un fichier .ppt ou .pptx pour générer une formation
-          </p>
+          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#111827", margin: 0 }}>Créer depuis un PowerPoint</h1>
+          <p style={{ color: "#6b7280", fontSize: "14px", margin: "4px 0 0 0" }}>Importez un fichier .ppt ou .pptx pour générer une formation</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handlePreview}>
         {/* Zone upload */}
         <div
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: "2px dashed " + (isDragging ? "#7c3aed" : file ? "#16a34a" : "#d1d5db"),
-            borderRadius: "16px", padding: "48px 32px", textAlign: "center", cursor: "pointer",
-            background: isDragging ? "#f5f3ff" : file ? "#f0fdf4" : "#fafafa",
-            transition: "all 0.2s", marginBottom: "28px",
-          }}
+          style={{ border: "2px dashed " + (isDragging ? "#7c3aed" : file ? "#16a34a" : "#d1d5db"), borderRadius: "16px", padding: "48px 32px", textAlign: "center", cursor: "pointer", background: isDragging ? "#f5f3ff" : file ? "#f0fdf4" : "#fafafa", transition: "all 0.2s", marginBottom: "28px" }}
         >
-          <input ref={fileInputRef} type="file"
-            accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          <input ref={fileInputRef} type="file" accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
             style={{ display: "none" }} onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)} />
           {file ? (
             <div>
@@ -259,20 +320,17 @@ export default function DepuisPPPage() {
               <div style={{ fontSize: "48px", marginBottom: "12px" }}>📂</div>
               <p style={{ fontWeight: "600", color: "#374151", fontSize: "16px", margin: "0 0 8px" }}>Glissez votre fichier PowerPoint ici</p>
               <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 16px" }}>ou cliquez pour parcourir vos fichiers</p>
-              <span style={{ display: "inline-block", padding: "6px 14px", background: "#7c3aed", color: "#fff", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}>
-                Choisir un fichier .ppt / .pptx
-              </span>
+              <span style={{ display: "inline-block", padding: "6px 14px", background: "#7c3aed", color: "#fff", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}>Choisir un fichier .ppt / .pptx</span>
             </div>
           )}
         </div>
 
-        {/* Informations de la formation */}
+        {/* Informations */}
         <div style={{ background: "#fff", borderRadius: "16px", border: "1px solid #e5e7eb", padding: "28px", marginBottom: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <h2 style={{ fontSize: "16px", fontWeight: "600", color: "#111827", margin: "0 0 20px" }}>Informations de la formation</h2>
           <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Titre de la formation *</label>
-            <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Sécurité au travail — Niveau 1"
-              style={{ ...inputStyle, borderColor: !titre.trim() ? "#ef4444" : "#d1d5db" }} />
+            <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Sécurité au travail — Niveau 1" style={{ ...inputStyle, borderColor: !titre.trim() ? "#ef4444" : "#d1d5db" }} />
             {!titre.trim() && <p style={{ color: "#dc2626", fontSize: "11px", margin: "2px 0 0" }}>Titre requis</p>}
           </div>
           <div style={{ marginBottom: "16px" }}>
@@ -293,7 +351,6 @@ export default function DepuisPPPage() {
         <div style={{ background: "#fff", borderRadius: "16px", border: "1px solid #e5e7eb", padding: "28px", marginBottom: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <h2 style={{ fontSize: "16px", fontWeight: "600", color: "#111827", margin: "0 0 20px" }}>Enrichissement (optionnel)</h2>
           <div style={{ display: "grid", gap: "20px" }}>
-
             {/* Image couverture */}
             <div>
               <label style={labelStyle}>Image de couverture</label>
@@ -309,7 +366,6 @@ export default function DepuisPPPage() {
                 </label>
               )}
             </div>
-
             {/* Tags */}
             <div>
               <label style={labelStyle}>Tags / mots-clés</label>
@@ -327,7 +383,6 @@ export default function DepuisPPPage() {
                 <button type="button" onClick={() => { if (tagInput.trim()) { setTags(p => [...p, tagInput.trim()]); setTagInput("") } }} style={{ ...btnSecStyle, padding: "6px 12px" }}>+</button>
               </div>
             </div>
-
             {/* Objectifs */}
             <div>
               <label style={labelStyle}>Objectifs pédagogiques</label>
@@ -346,7 +401,6 @@ export default function DepuisPPPage() {
                 <button type="button" onClick={() => { if (objectifInput.trim()) { setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput("") } }} style={{ ...btnSecStyle, padding: "6px 12px" }}>+</button>
               </div>
             </div>
-
             {/* Prérequis */}
             <div>
               <label style={labelStyle}>Prérequis (formations obligatoires avant)</label>
@@ -364,11 +418,8 @@ export default function DepuisPPPage() {
                   ))}
                 </div>
               )}
-              {prerequisIds.length > 0 && (
-                <p style={{ fontSize: "11px", color: "#7c3aed", margin: "4px 0 0" }}>✓ {prerequisIds.length} prérequis sélectionné{prerequisIds.length > 1 ? "s" : ""}</p>
-              )}
+              {prerequisIds.length > 0 && <p style={{ fontSize: "11px", color: "#7c3aed", margin: "4px 0 0" }}>✓ {prerequisIds.length} prérequis sélectionné{prerequisIds.length > 1 ? "s" : ""}</p>}
             </div>
-
           </div>
         </div>
 
@@ -388,22 +439,16 @@ export default function DepuisPPPage() {
                 <span style={{ fontSize: "13px", fontWeight: "600", color: "#6b7280" }}>Question {qi + 1}</span>
                 <button type="button" onClick={() => removeQuestion(qi)} style={btnDangerStyle}>Supprimer</button>
               </div>
-              <input
-                style={{ ...inputStyle, marginBottom: "8px" }}
-                value={q.texte}
+              <input style={{ ...inputStyle, marginBottom: "8px" }} value={q.texte}
                 onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
-                placeholder="Texte de la question..."
-              />
+                placeholder="Texte de la question..." />
               {q.reponses.map((r, ri) => (
                 <div key={ri} style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
                   <input type="radio" checked={r.est_correcte}
                     onChange={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => ({ ...r2, est_correcte: j === ri })) }))} />
-                  <input
-                    style={{ ...inputStyle, flex: 1 }}
-                    value={r.texte}
+                  <input style={{ ...inputStyle, flex: 1 }} value={r.texte}
                     onChange={e => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => j === ri ? { ...r2, texte: e.target.value } : r2) }))}
-                    placeholder={"Réponse " + (ri + 1) + (r.est_correcte ? " (correcte)" : "")}
-                  />
+                    placeholder={"Réponse " + (ri + 1) + (r.est_correcte ? " (correcte)" : "")} />
                   {q.reponses.length > 2 && (
                     <button type="button" onClick={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.filter((_, j) => j !== ri) }))} style={btnDangerStyle}>✕</button>
                   )}
@@ -424,17 +469,9 @@ export default function DepuisPPPage() {
 
         {/* Boutons */}
         <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-          <Link href="/admin/formations" style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>
-            Annuler
-          </Link>
-          <button type="submit" disabled={isLoading || !file} style={{
-            padding: "10px 24px",
-            background: isLoading || !file ? "#c4b5fd" : "#7c3aed",
-            color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "600",
-            cursor: isLoading || !file ? "not-allowed" : "pointer",
-            boxShadow: isLoading || !file ? "none" : "0 2px 8px rgba(124,58,237,0.35)",
-          }}>
-            {isLoading ? "Création en cours..." : "📊 Créer la formation"}
+          <Link href="/admin/formations" style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>Annuler</Link>
+          <button type="submit" disabled={!file} style={{ padding: "10px 24px", background: !file ? "#c4b5fd" : "#7c3aed", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "600", cursor: !file ? "not-allowed" : "pointer", boxShadow: !file ? "none" : "0 2px 8px rgba(124,58,237,0.35)" }}>
+            Aperçu avant création →
           </button>
         </div>
       </form>
