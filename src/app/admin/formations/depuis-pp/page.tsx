@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function DepuisPPPage() {
   const router = useRouter()
@@ -62,14 +63,26 @@ export default function DepuisPPPage() {
     setError([])
 
     try {
+      const supabase = createClient()
+      const { data: formation, error: errF } = await supabase
+        .from("formations")
+        .insert({
+          titre,
+          categorie,
+          niveau,
+          duree_heures: 1,
+          est_publiee: false,
+          tags: tags || [],
+          objectifs: objectifs || [],
+          image_couverture: imageCouverture || null,
+        })
+        .select()
+        .single()
+      if (errF || !formation) throw new Error(errF?.message || "Erreur creation formation")
+
       const formData = new FormData()
       formData.append("file", file!)
-      formData.append("titre", titre)
-      formData.append("categorie", categorie)
-      formData.append("niveau", niveau)
-      formData.append("tags", JSON.stringify(tags))
-      formData.append("objectifs", JSON.stringify(objectifs))
-      if (imageCouverture) formData.append("image_couverture", imageCouverture)
+      formData.append("formationId", formation.id)
 
       const res = await fetch("/api/import-pptx", {
         method: "POST",
@@ -78,11 +91,10 @@ export default function DepuisPPPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Erreur lors de la création de la formation")
+        throw new Error(data.error || "Erreur import PowerPoint")
       }
 
-      const data = await res.json()
-      router.push("/admin/formations/" + data.id)
+      router.push("/admin/formations/" + formation.id)
     } catch (err: any) {
       setError([err.message])
       setIsLoading(false)
