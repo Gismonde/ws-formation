@@ -17,7 +17,7 @@ const CATEGORIES = [
 
 interface LeconInput {
   titre: string
-  contenu: string
+  description: string
 }
 
 interface ModuleInput {
@@ -106,14 +106,14 @@ export async function POST(req: NextRequest) {
       return m.lecons.map((l, j) => ({
         module_id: moduleId,
         titre: l.titre?.trim() || `Leçon ${j + 1}`,
-        contenu: l.contenu?.trim() || '',
+        description: l.contenu?.trim() || '',
         ordre: j + 1,
       }))
     })
 
     if (leconsToInsert.length > 0) {
       const { error: leconsError } = await adminClient
-        .from('lecons')
+        .from('lessons')
         .insert(leconsToInsert)
       if (leconsError) {
         console.error('Leçons insert error (non-fatal):', leconsError.message)
