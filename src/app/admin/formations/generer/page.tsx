@@ -26,6 +26,7 @@ interface LeconData {
   description: string
   image_url?: string
   blocs?: BlocData[]
+  duree_minutes?: number
 }
 
 interface ModuleData {
@@ -790,6 +791,21 @@ export default function GenererFormationPage() {
                           }}
                           placeholder="Titre de la leçon *"
                         />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                          <input
+                            type="number"
+                            min={0}
+                            style={{ ...inputStyle, width: '80px', fontSize: '12px', padding: '4px 8px' }}
+                            value={lecon.duree_minutes || ''}
+                            onChange={e => {
+                              const updated = [...modules]
+                              updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], duree_minutes: parseInt(e.target.value) || 0 }
+                              setModules(updated)
+                            }}
+                            placeholder="min"
+                          />
+                          <span style={{ fontSize: '11px', color: '#6b7280' }}>min / leçon</span>
+                        </div>
                         {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 6px' }}>Titre requis</p>}
                         <textarea
                           style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
