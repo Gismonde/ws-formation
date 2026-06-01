@@ -49,12 +49,16 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       /^\d+\.\s+.{3,}/.test(line) ||
       /^[A-Z][A-Z\s]{4,}:?$/.test(line) ||
       /^={3,}|-{3,}/.test(line) ||
-      /^(Section|Chapitre|Partie|Module|Étape|Step|Article)\s+\d+/i.test(line)
+      /^(Section|Chapitre|Partie|Module|Étape|Step|Article)\s+\d+/i.test(line) ||
+      /^===\s*(Diapositive|Slide|Page)\s+\d+/i.test(line) ||
+      /^(Diapositive|Slide)\s+\d+\s*\/\s*\d+\s*$/i.test(line)
     )
   }
 
   const cleanHeading = (line: string) =>
-    line.replace(/^#{1,3}\s+/, '').replace(/^\d+\.\s+/, '').replace(/:$/, '').trim()
+    line
+      .replace(/^={3,}\s*/, '').replace(/\s*={3,}$/, '')
+      .replace(/^#{1,3}\s+/, '').replace(/^\d+\.\s+/, '').replace(/:$/, '').trim()
 
   let currentModule: ModuleData | null = null
   let firstHeadingFound = false
@@ -237,9 +241,10 @@ export default function GenererFormationPage() {
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
-          fullText += content.items
+          const pageText = content.items
             .map((item: { str?: string }) => item.str ?? '')
-            .join(' ') + '\n'
+            .join(' ')
+          fullText += '\n=== Diapositive ' + i + ' / ' + pdf.numPages + ' ===\n' + pageText + '\n'
         }
 
         const parsed = parseDocumentIntoModules(fullText)
