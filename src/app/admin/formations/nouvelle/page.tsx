@@ -16,10 +16,16 @@ const CATEGORIES = [
   'Communication',
 ]
 
+interface BlocData {
+  type: 'video' | 'file' | 'code' | 'link'
+  contenu: string
+}
+
 interface LeconData {
   titre: string
   description: string
   image_url?: string
+  blocs?: BlocData[]
 }
 
 interface ModuleForm {
@@ -172,7 +178,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false })
+        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
@@ -215,7 +221,17 @@ export default function NouvelleFormationPage() {
                 })
                 .filter(Boolean)
               if (blocsToInsert.length > 0) {
-                await supabase.from('blocs_contenu').insert(blocsToInsert)
+                await supabase.from('content_blocks').insert(blocsToInsert)
+              }
+
+              // Enriched blocs (video, file, code, link)
+              for (let lIdx2 = 0; lIdx2 < (mod.lecons || []).length; lIdx2++) {
+                const leconData = mod.lecons[lIdx2]
+                if (!leconData.blocs || leconData.blocs.length === 0) continue
+                const leconRow = insertedLecons?.[lIdx2]
+                if (!leconRow) continue
+                const extraBlocs = leconData.blocs.filter((b: any) => b.contenu?.trim()).map((b: any, bi: number) => ({ lesson_id: leconRow.id, type: b.type, contenu: b.contenu, ordre: bi + 2 }))
+                if (extraBlocs.length > 0) await supabase.from('content_blocks').insert(extraBlocs)
               }
             }
           }
@@ -507,6 +523,21 @@ export default function NouvelleFormationPage() {
                         }}
                         placeholder="Description de la leçon..."
                       />
+                      {/* Enriched blocs */}
+                      {(lecon.blocs || []).length > 0 && (lecon.blocs || []).map((bloc: any, bi: number) => (
+                        <div key={bi} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '5px', padding: '6px 8px', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px' }}>{bloc.type === 'video' ? '🎬' : bloc.type === 'file' ? '📎' : bloc.type === 'code' ? '💻' : '🔗'}</span>
+                          <input style={{ ...inputStyle, flex: 1, fontSize: '11px' }} value={bloc.contenu} onChange={e => { const up = [...modules]; const b = [...(up[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL PDF' : bloc.type === 'link' ? 'URL lien' : 'Code'} />
+                          <button onClick={() => { const up = [...modules]; const b = (up[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 5px' }}>×</button>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', gap: '3px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        {(['video', 'file', 'code', 'link'] as const).map(type => (
+                          <button key={type} onClick={() => { const up = [...modules]; const blocs = [...(up[idx].lecons[leconIdx].blocs || []), { type, contenu: '' }]; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs }; setModules(up) }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}>
+                            + {type === 'video' ? '🎬' : type === 'file' ? '📎' : type === 'code' ? '💻' : '🔗'}
+                          </button>
+                        ))}
+                      </div>
                       <div style={{ marginTop: '6px' }}>
                         {lecon.image_url ? (
                           <div>
@@ -547,6 +578,64 @@ export default function NouvelleFormationPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Enrichissement */}
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>Enrichissement</h2>
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {/* Image couverture */}
+          <div>
+            <label style={labelStyle}>Image de couverture</label>
+            {imageCouverture ? (
+              <div>
+                <img src={imageCouverture} alt="Couverture" style={{ maxWidth: '220px', maxHeight: '130px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '6px' }} />
+                <button onClick={() => setImageCouverture(null)} style={{ ...btnDangerStyle, fontSize: '11px' }}>Retirer</button>
+              </div>
+            ) : (
+              <label htmlFor="cover-img-nv" style={{ ...btnSecStyle, display: 'inline-block', cursor: 'pointer', fontSize: '12px' }}>
+                + Image de couverture
+                <input id="cover-img-nv" type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                  const f = e.target.files?.[0]; if (!f) return
+                  const fd = new FormData(); fd.append('file', f)
+                  const res = await fetch('/api/upload-lesson-image', { method: 'POST', body: fd })
+                  const d = await res.json(); if (d.url) setImageCouverture(d.url)
+                }} />
+              </label>
+            )}
+          </div>
+          {/* Tags */}
+          <div>
+            <label style={labelStyle}>Tags / mots-clés</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '6px' }}>
+              {tags.map((tag, ti) => (
+                <span key={ti} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  {tag}<button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '13px', padding: 0 }}>×</button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input style={{ ...inputStyle, flex: 1 }} value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); setTags(p => [...p, tagInput.trim()]); setTagInput('') } }} placeholder="Tag (Entrée ou virgule)" />
+              <button onClick={() => { if (tagInput.trim()) { setTags(p => [...p, tagInput.trim()]); setTagInput('') } }} style={{ ...btnSecStyle, padding: '6px 12px' }}>+</button>
+            </div>
+          </div>
+          {/* Objectifs */}
+          <div>
+            <label style={labelStyle}>Objectifs pédagogiques</label>
+            <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>À la fin de cette formation, l&apos;apprenant saura...</p>
+            {objectifs.map((obj, oi) => (
+              <div key={oi} style={{ display: 'flex', gap: '6px', marginBottom: '4px', alignItems: 'center' }}>
+                <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
+                <span style={{ flex: 1, fontSize: '13px', color: '#374151' }}>{obj}</span>
+                <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 6px' }}>×</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input style={{ ...inputStyle, flex: 1 }} value={objectifInput} onChange={e => setObjectifInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && objectifInput.trim()) { e.preventDefault(); setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput('') } }} placeholder="Ex: utiliser le logiciel X..." />
+              <button onClick={() => { if (objectifInput.trim()) { setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput('') } }} style={{ ...btnSecStyle, padding: '6px 12px' }}>+</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Questionnaire */}
