@@ -71,6 +71,10 @@ export async function POST(req: NextRequest) {
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
       duree_heures: duree_heures || 1,
       est_publiee: false,
+      tags: tags || [],
+      objectifs: objectifs || [],
+      prerequis_ids: prerequis_ids || [],
+      image_couverture: image_couverture || null,
     })
     .select()
     .single()
@@ -105,8 +109,8 @@ export async function POST(req: NextRequest) {
 
     // 3a. Insert module content as bloc if contenu exists
     if (m.contenu?.trim()) {
-      await adminClient.from('blocs_contenu').insert({
-        lecon_id: null,
+      await adminClient.from('content_blocks').insert({
+        lesson_id: null,
         module_id: insertedModule.id,
         type: 'texte',
         contenu: m.contenu.trim(),
@@ -143,7 +147,7 @@ export async function POST(req: NextRequest) {
           const desc = m.lecons![j]?.description?.trim()
           if (!desc) return null
           return {
-            lecon_id: lecon.id,
+            lesson_id: lecon.id,
             type: 'texte',
             contenu: desc,
             ordre: 1,
@@ -153,10 +157,24 @@ export async function POST(req: NextRequest) {
 
       if (blocsToInsert.length > 0) {
         const { error: blocsError } = await adminClient
-          .from('blocs_contenu')
+          .from('content_blocks')
           .insert(blocsToInsert)
         if (blocsError) {
           console.error('Blocs contenu insert error (non-fatal):', blocsError.message)
+        }
+      }
+
+      // Insert enriched blocs (video, file, code, link) per lecon
+      for (let lIdx2 = 0; lIdx2 < (l.lecons || []).length; lIdx2++) {
+        const leconData = l.lecons[lIdx2]
+        if (!leconData.blocs || leconData.blocs.length === 0) continue
+        const leconRow = insertedLecons?.[lIdx2]
+        if (!leconRow) continue
+        const extraBlocs = leconData.blocs
+          .filter((b: any) => b.contenu?.trim())
+          .map((b: any, bi: number) => ({ lesson_id: leconRow.id, type: b.type, contenu: b.contenu, ordre: bi + 2 }))
+        if (extraBlocs.length > 0) {
+          await adminClient.from('content_blocks').insert(extraBlocs)
         }
       }
     }
