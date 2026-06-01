@@ -520,7 +520,7 @@ export default function GenererFormationPage() {
                     <button
                       onClick={() => {
                         const updated = [...modules]
-                        updated[idx] = { ...updated[idx], lecons: [...(updated[idx].lecons || []), { titre: '', description: '', image_url: undefined }] }
+                        updated[idx] = { ...updated[idx], lecons: [...(updated[idx].lecons || []), { titre: '', description: '' }] }
                         setModules(updated)
                       }}
                       style={{ ...btnSecondaryStyle, fontSize: '12px', padding: '4px 10px' }}
@@ -567,44 +567,6 @@ export default function GenererFormationPage() {
                         }}
                         placeholder="Contenu de la leçon..."
                       />
-                    </div>
-                    {/* Image de la leçon */}
-                    <div>
-                      <label style={{ ...labelStyle, fontSize: '13px' }}>Image (optionnel)</label>
-                      {lecon.image_url ? (
-                        <div style={{ position: 'relative', display: 'inline-block', marginBottom: '6px' }}>
-                          <img src={lecon.image_url} alt="Aperçu" style={{ maxWidth: '100%', maxHeight: '120px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-                          <button
-                            onClick={() => {
-                              const updated = [...modules]
-                              updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], image_url: undefined }
-                              setModules(updated)
-                            }}
-                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}
-                          >
-                            ✕ Retirer
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/gif,image/webp"
-                            id={`img-lecon-${idx}-${leconIdx}`}
-                            style={{ display: 'none' }}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleLeconImageUpload(file, idx, leconIdx)
-                            }}
-                          />
-                          <label
-                            htmlFor={`img-lecon-${idx}-${leconIdx}`}
-                            style={{ ...btnSecondaryStyle, display: 'inline-block', cursor: 'pointer', fontSize: '12px', padding: '4px 10px' }}
-                          >
-                            📷 Ajouter une image
-                          </label>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
