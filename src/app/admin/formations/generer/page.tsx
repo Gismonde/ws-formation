@@ -39,6 +39,67 @@ interface ModuleData {
 function parseDocumentIntoModules(text: string): { titre: string; description: string; modules: ModuleData[] } {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
 
+  // --- Detect PowerPoint PDF format (markers added by our PDF extractor) ---
+  const isPptPdf = lines.some(l => /^===\s*Diapositive\s+\d+/i.test(l))
+
+  if (isPptPdf) {
+    type SlideData = { num: number; total: number; content: string[] }
+    const slides: SlideData[] = []
+    let currentSlide: SlideData | null = null
+
+    for (const line of lines) {
+      const slideMatch = line.match(/^===\s*Diapositive\s+(\d+)\s*\/\s*(\d+)\s*===$/i)
+      if (slideMatch) {
+        if (currentSlide) slides.push(currentSlide)
+        currentSlide = { num: parseInt(slideMatch[1]), total: parseInt(slideMatch[2]), content: [] }
+      } else if (currentSlide) {
+        if (!line.match(/^Narration$/i) && !line.match(/^Diapositive\s+\d+/i)) {
+          currentSlide.content.push(line)
+        }
+      }
+    }
+    if (currentSlide) slides.push(currentSlide)
+
+    if (slides.length === 0) {
+      return { titre: 'Formation sans titre', description: '', modules: [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }] }
+    }
+
+    const firstSlideContent = slides[0]?.content || []
+    const docTitle = firstSlideContent[0]?.substring(0, 100) || 'Formation'
+    const docDescription = firstSlideContent.slice(1, 4).join(' ').substring(0, 300)
+
+    // Group slides into modules of ~5 slides
+    const totalSlides = slides.length
+    const numModules = Math.max(1, Math.round(totalSlides / 5))
+    const slidesPerModule = Math.ceil(totalSlides / numModules)
+    const modules: ModuleData[] = []
+
+    for (let i = 0; i < slides.length; i += slidesPerModule) {
+      const moduleSlides = slides.slice(i, i + slidesPerModule)
+      const moduleNum = Math.floor(i / slidesPerModule) + 1
+      const firstContent = moduleSlides[0]?.content || []
+      const moduleTitre = firstContent[0]?.substring(0, 80) || ('Module ' + moduleNum)
+
+      const lecons: LeconData[] = moduleSlides.map(slide => {
+        const sc = slide.content
+        const leconTitre = sc[0]?.substring(0, 80) || ('Diapositive ' + slide.num)
+        const leconDesc = sc.slice(1).join('\n').substring(0, 500)
+        return { titre: leconTitre, description: leconDesc, duree_minutes: 5 }
+      })
+
+      const contenu = moduleSlides.map(s => s.content.join('\n')).join('\n\n')
+      modules.push({
+        titre: moduleTitre,
+        contenu: contenu.substring(0, 1000),
+        duree_minutes: Math.max(15, lecons.length * 5),
+        lecons,
+      })
+    }
+
+    return { titre: docTitle, description: docDescription, modules }
+  }
+
+  // --- Standard document parsing (txt, md, etc.) ---
   let docTitle = ''
   let docDescription = ''
   const modules: ModuleData[] = []
