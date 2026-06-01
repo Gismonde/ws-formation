@@ -540,11 +540,12 @@ export default function GenererFormationPage() {
             <div>
               <label style={labelStyle}>Description</label>
               <textarea
-                style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Description courte de la formation..."
+                placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer, ex: \n\n- Point 1\n- Point 2)"
               />
+              <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <div>
