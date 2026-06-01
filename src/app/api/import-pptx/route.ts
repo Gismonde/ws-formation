@@ -83,6 +83,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Fichier et formationId requis' }, { status: 400 })
     }
 
+    // Limite de taille: 50 MB max (Vercel timeout ~60s)
+    const MAX_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: 'Fichier trop volumineux. La taille maximale est 50 MB.' },
+        { status: 413 }
+      )
+    }
+
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
