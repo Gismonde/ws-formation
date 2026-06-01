@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         const slide = slides[i]
         const { data: lecon } = await supabase
           .from('lecons')
-          .insert({ module_id: module.id, titre: slide.title, ordre: i + 1 })
+          .insert({ module_id: module.id, titre: slide.title, description: slide.texts.join(' ').substring(0, 1000), image_url: null, ordre: i + 1 })
           .select()
           .single()
 
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
 
         const { data: lecon } = await supabase
           .from('lecons')
-          .insert({ module_id: module.id, titre: slide.title, ordre: 1 })
+          .insert({ module_id: module.id, titre: slide.title, description: slide.texts.join(' ').substring(0, 1000), image_url: null, ordre: 1 })
           .select()
           .single()
 
