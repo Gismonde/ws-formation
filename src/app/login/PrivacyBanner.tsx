@@ -75,10 +75,10 @@ export default function PrivacyBanner() {
             <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <li><strong>Données collectées :</strong> Nom, prénom, e-mail professionnel, rôle, progression dans les formations.</li>
               <li><strong>Finalité :</strong> Gestion des formations, suivi pédagogique, certificats, conformité RGPD.</li>
-              <li><strong>Conservation :</strong> Données conservées pendant la durée du contrat puis supprimées sous 12 mois.</li>
+              <li><strong>Conservation :</strong> Données conservées pendant 5 ans conformément à la réglementation en vigueur.</li>
               <li><strong>Partage :</strong> Vos données ne sont jamais vendues ni partagées avec des tiers.</li>
               <li><strong>Vos droits :</strong> Accès, rectification, suppression sur demande auprès de votre administrateur.</li>
-              <li><strong>Hébergement :</strong> Serveurs sécurisés en Europe (Supabase EU, Vercel).</li>
+              <li><strong>Hébergement :</strong> Serveurs sécurisés en Europe (Vercel).</li>
             </ul>
             <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#bfdbfe' }}>
               Consultez notre <a href="/confidentialite" style={{ color: '#93c5fd' }}>politique complète</a>.
