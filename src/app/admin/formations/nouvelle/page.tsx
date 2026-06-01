@@ -56,6 +56,8 @@ export default function NouvelleFormationPage() {
   const [seuilReussite, setSeuilReussite] = useState(70)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [prerequisIds, setPrerequisIds] = useState<string[]>([])
+  const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -178,7 +180,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null })
+        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: false, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
@@ -636,7 +638,35 @@ export default function NouvelleFormationPage() {
             </div>
           </div>
         </div>
-      </div>
+      
+          {/* Prérequis */}
+          <div>
+            <label style={labelStyle}>Prérequis (formations obligatoires avant)</label>
+            <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>Sélectionnez les formations que l&apos;apprenant doit avoir terminées avant d&apos;accéder à celle-ci.</p>
+            {formationsDisponibles.length === 0 ? (
+              <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Aucune formation publiée disponible.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
+                {formationsDisponibles.map(f => (
+                  <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={prerequisIds.includes(f.id)}
+                      onChange={e => {
+                        if (e.target.checked) setPrerequisIds(prev => [...prev, f.id])
+                        else setPrerequisIds(prev => prev.filter(id => id !== f.id))
+                      }}
+                    />
+                    <span style={{ color: '#374151' }}>{f.titre}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {prerequisIds.length > 0 && (
+              <p style={{ fontSize: '11px', color: '#7c3aed', margin: '4px 0 0' }}>✓ {prerequisIds.length} prérequis sélectionné{prerequisIds.length > 1 ? 's' : ''}</p>
+            )}
+          </div>
+          </div>
 
       {/* Questionnaire */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '24px' }}>
