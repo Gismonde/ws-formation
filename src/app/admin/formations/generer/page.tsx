@@ -148,6 +148,7 @@ export default function GenererFormationPage() {
   const [prerequisIds, setPrerequisIds] = useState<string[]>([])
   const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
   const [showPreview, setShowPreview] = useState(false)
+  const [publierImmediatement, setPublierImmediatement] = useState(false)
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -332,7 +333,7 @@ export default function GenererFormationPage() {
       const res = await fetch('/api/generer-formation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture }),
+        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture, publier_immediatement: publierImmediatement }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -1065,6 +1066,10 @@ export default function GenererFormationPage() {
             </div>
           )}
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#374151', marginBottom: '16px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={publierImmediatement} onChange={e => setPublierImmediatement(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+          <span>Publier immédiatement (visible par les apprenants)</span>
+        </label>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>← Modifier</button>
           <button onClick={handleSubmit} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>✓ Confirmer et créer</button>
