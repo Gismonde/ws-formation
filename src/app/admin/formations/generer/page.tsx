@@ -76,7 +76,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     // ---- Extract doc title and description from first slide ----
     const firstContent = slides[0]?.content ?? []
     const docTitle = firstContent[0]?.substring(0, 100) ?? 'Formation'
-    const docDescription = firstContent.slice(1, 4).join(' ').substring(0, 300)
+    let docDescription = firstContent.slice(1, 4).join(' ').substring(0, 200)
 
     // ---- Detect section-title slides as module boundaries ----
     // A "title slide" has short content (≤3 lines) AND first line is ≤60 chars
@@ -156,6 +156,12 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       }
     })
 
+    // Enrich description with module titles
+    const modulesTitles = pptModules.map(m => m.titre).filter(t => t).slice(0, 6).join(', ')
+    if (modulesTitles) {
+      const intro = docDescription ? docDescription + ' ' : ''
+      docDescription = (intro + 'Cette formation aborde ' + pptModules.length + ' module' + (pptModules.length > 1 ? 's' : '') + ' : ' + modulesTitles + '.').substring(0, 600)
+    }
     return { titre: docTitle, description: docDescription, modules: pptModules }
   }
 
@@ -240,6 +246,12 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     m.duree_minutes = Math.max(15, Math.min(120, Math.round(wordCount / 10) * 5))
   })
 
+  // Enrich description with module titles for standard docs
+  const stdModuleTitles = modules.map(m => m.titre).filter(t => t).slice(0, 6).join(', ')
+  if (stdModuleTitles && modules.length > 1) {
+    const intro2 = docDescription ? docDescription + ' ' : ''
+    docDescription = (intro2 + 'Cette formation aborde ' + modules.length + ' module' + (modules.length > 1 ? 's' : '') + ' : ' + stdModuleTitles + '.').substring(0, 600)
+  }
   return { titre: docTitle || 'Formation sans titre', description: docDescription, modules }
 }
 
