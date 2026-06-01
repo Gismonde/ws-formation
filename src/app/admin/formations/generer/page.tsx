@@ -39,21 +39,21 @@ interface ModuleData {
 function parseDocumentIntoModules(text: string): { titre: string; description: string; modules: ModuleData[] } {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
 
-  // --- Detect PowerPoint PDF format (markers added by our PDF extractor) ---
-  const isPptPdf = lines.some(l => /^===\s*Diapositive\s+\d+/i.test(l))
+  // --- Detect PowerPoint PDF format (=== Diapositive markers added by PDF extractor) ---
+  const slidePattern = /^===\s*Diapositive\s+(\d+)\s*\/\s*(\d+)\s*===$/i
+  const isPptPdf = lines.some(l => slidePattern.test(l))
 
   if (isPptPdf) {
-    type SlideData = { num: number; total: number; content: string[] }
-    const slides: SlideData[] = []
-    let currentSlide: SlideData | null = null
+    const slides: Array<{ num: number; total: number; content: string[] }> = []
+    let currentSlide: { num: number; total: number; content: string[] } | null = null
 
     for (const line of lines) {
-      const slideMatch = line.match(/^===\s*Diapositive\s+(\d+)\s*\/\s*(\d+)\s*===$/i)
-      if (slideMatch) {
+      const m = slidePattern.exec(line)
+      if (m) {
         if (currentSlide) slides.push(currentSlide)
-        currentSlide = { num: parseInt(slideMatch[1]), total: parseInt(slideMatch[2]), content: [] }
+        currentSlide = { num: parseInt(m[1]), total: parseInt(m[2]), content: [] }
       } else if (currentSlide) {
-        if (!line.match(/^Narration$/i) && !line.match(/^Diapositive\s+\d+/i)) {
+        if (!line.match(/^Narration$/i) && !line.match(/^Diapositive\s+\d+\s*\/\s*\d+$/i)) {
           currentSlide.content.push(line)
         }
       }
@@ -68,11 +68,10 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     const docTitle = firstSlideContent[0]?.substring(0, 100) || 'Formation'
     const docDescription = firstSlideContent.slice(1, 4).join(' ').substring(0, 300)
 
-    // Group slides into modules of ~5 slides
     const totalSlides = slides.length
     const numModules = Math.max(1, Math.round(totalSlides / 5))
     const slidesPerModule = Math.ceil(totalSlides / numModules)
-    const modules: ModuleData[] = []
+    const pptModules: ModuleData[] = []
 
     for (let i = 0; i < slides.length; i += slidesPerModule) {
       const moduleSlides = slides.slice(i, i + slidesPerModule)
@@ -88,7 +87,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       })
 
       const contenu = moduleSlides.map(s => s.content.join('\n')).join('\n\n')
-      modules.push({
+      pptModules.push({
         titre: moduleTitre,
         contenu: contenu.substring(0, 1000),
         duree_minutes: Math.max(15, lecons.length * 5),
@@ -96,7 +95,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       })
     }
 
-    return { titre: docTitle, description: docDescription, modules }
+    return { titre: docTitle, description: docDescription, modules: pptModules }
   }
 
   // --- Standard document parsing (txt, md, etc.) ---
@@ -110,16 +109,12 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       /^\d+\.\s+.{3,}/.test(line) ||
       /^[A-Z][A-Z\s]{4,}:?$/.test(line) ||
       /^={3,}|-{3,}/.test(line) ||
-      /^(Section|Chapitre|Partie|Module|Étape|Step|Article)\s+\d+/i.test(line) ||
-      /^===\s*(Diapositive|Slide|Page)\s+\d+/i.test(line) ||
-      /^(Diapositive|Slide)\s+\d+\s*\/\s*\d+\s*$/i.test(line)
+      /^(Section|Chapitre|Partie|Module|Étape|Step|Article)\s+\d+/i.test(line)
     )
   }
 
   const cleanHeading = (line: string) =>
-    line
-      .replace(/^={3,}\s*/, '').replace(/\s*={3,}$/, '')
-      .replace(/^#{1,3}\s+/, '').replace(/^\d+\.\s+/, '').replace(/:$/, '').trim()
+    line.replace(/^#{1,3}\s+/, '').replace(/^\d+\.\s+/, '').replace(/:$/, '').trim()
 
   let currentModule: ModuleData | null = null
   let firstHeadingFound = false
