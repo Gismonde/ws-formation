@@ -12,6 +12,39 @@ interface QuestionForm {
 
 const DRAFT_KEY = "depuis-pp-draft"
 
+
+// ---- Auto-inference of formation metadata from filename/title ----
+function inferFromTitle(nameText: string): { categorie: string; niveau: string; tags: string[] } {
+  const text = nameText.toLowerCase()
+  const categoryKeywords: Record<string, string[]> = {
+    'Hygiène et sécurité': ['hygiène', 'hygiene', 'sécurité', 'securite', 'nettoyage', 'désinfection', 'risque', 'accident', 'incendie'],
+    'Gestion des soins': ['soin', 'patient', 'infirmier', 'médecin', 'clinique', 'traitement', 'médicament', 'diagnostic', 'soignant'],
+    'Communication': ['communication', 'communiquer', 'écoute', 'message', 'relation', 'verbal', 'empathie', 'feedback'],
+    'Ressources humaines': ['ressources humaines', 'recrutement', 'congé', 'compétence', 'évaluation', 'onboarding'],
+    'Qualité et conformité': ['qualité', 'conformité', 'iso', 'audit', 'certification', 'norme', 'protocole', 'accréditation'],
+    'Informatique et systèmes': ['informatique', 'logiciel', 'numérique', 'excel', 'erp', 'réseau', 'cybersécurité', 'rgpd'],
+    'Administration médicale': ['administration', 'dossier', 'facturation', 'codification', 'assurance', 'admission'],
+    'Gestion des risques': ['danger', 'prévention', 'vigilance', 'incident'],
+    'Formation du personnel': ['habilitation', 'tutorat', 'stagiaire'],
+  }
+  let bestCategorie = ''
+  let bestScore = 0
+  for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+    const score = keywords.reduce((acc, kw) => acc + (text.split(kw).length - 1), 0)
+    if (score > bestScore) { bestScore = score; bestCategorie = cat }
+  }
+  let niveau = 'debutant'
+  if (/avancé|expert|spécialis|niveau\s*3|senior/i.test(text)) niveau = 'avance'
+  else if (/intermédiaire|confirmé|niveau\s*2|perfectionnement/i.test(text)) niveau = 'intermediaire'
+  const stopWords = new Set(['de','du','des','le','la','les','un','une','et','ou','pour','dans','sur','par'])
+  const wordFreq: Record<string, number> = {}
+  text.replace(/[^a-zàâäéèêëîïôöùûüç\s]/gi, ' ').split(/\s+/).forEach(w => {
+    if (w.length >= 4 && !stopWords.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1
+  })
+  const tags = Object.entries(wordFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w]) => w.charAt(0).toUpperCase() + w.slice(1))
+  return { categorie: bestCategorie, niveau, tags }
+}
+
 export default function DepuisPPPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -91,6 +124,12 @@ export default function DepuisPPPage() {
     if (!description) {
       const cleanName = selectedFile.name.replace(/\.(pptx?|ppt)$/i, "").replace(/[-_]/g, " ")
       setDescription("Formation basée sur la présentation PowerPoint \"" + cleanName + "\". Les modules et leçons seront générés automatiquement à partir des diapositives.")
+    // Auto-infer metadata from filename
+    const cleanTitle = selectedFile.name.replace(/\.(pptx?|ppt)$/i, "").replace(/[-_]/g, " ")
+    const inferred = inferFromTitle(cleanTitle)
+    if (!categorie && inferred.categorie) setCategorie(inferred.categorie)
+    setNiveau(inferred.niveau)
+    if (inferred.tags.length > 0) setTags(inferred.tags)
     }
   }
 
