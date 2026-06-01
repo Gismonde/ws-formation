@@ -26,6 +26,7 @@ interface LeconData {
   description: string
   image_url?: string
   blocs?: BlocData[]
+  duree_minutes?: number
 }
 
 interface ModuleForm {
@@ -65,6 +66,11 @@ export default function NouvelleFormationPage() {
   const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [publierImmediatement, setPublierImmediatement] = useState(false)
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [objectifs, setObjectifs] = useState<string[]>([])
+  const [objectifInput, setObjectifInput] = useState('')
+  const [imageCouverture, setImageCouverture] = useState('')
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -204,7 +210,7 @@ export default function NouvelleFormationPage() {
           const createdMod = modulesCreated[mIdx]
           if (!createdMod || !mod.lecons || mod.lecons.length === 0) continue
           const { error: errL } = await supabase
-            .from('lecons')
+            .from('lessons')
             .insert(mod.lecons.map((l, lIdx) => ({
               module_id: createdMod.id,
               titre: l.titre || ('Leçon ' + (lIdx + 1)),
@@ -212,12 +218,13 @@ export default function NouvelleFormationPage() {
               image_url: l.image_url || null,
               ordre: lIdx + 1,
               est_obligatoire: true,
+              duree_minutes: l.duree_minutes || 0,
             })))
           if (errL) console.error('Erreur insert leçons:', errL.message)
 
           if (!errL) {
             const { data: insertedLecons } = await supabase
-              .from('lecons')
+              .from('lessons')
               .select('id, ordre')
               .eq('module_id', createdMod.id)
               .order('ordre')
@@ -226,7 +233,7 @@ export default function NouvelleFormationPage() {
                 .map((lecon, lIdx) => {
                   const desc = mod.lecons[lIdx]?.description?.trim()
                   if (!desc) return null
-                  return { lecon_id: lecon.id, type: 'texte', contenu: desc, ordre: 1 }
+                  return { lesson_id: lecon.id, type: 'texte', contenu: desc, ordre: 1 }
                 })
                 .filter(Boolean)
               if (blocsToInsert.length > 0) {
@@ -567,6 +574,21 @@ export default function NouvelleFormationPage() {
                         }}
                         placeholder="Titre de la leçon *"
                       />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                        <input
+                          type="number"
+                          min={0}
+                          style={{ ...inputStyle, width: '80px', fontSize: '12px', padding: '4px 8px' }}
+                          value={lecon.duree_minutes || ''}
+                          onChange={e => {
+                            const updated = [...modules]
+                            updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], duree_minutes: parseInt(e.target.value) || 0 }
+                            setModules(updated)
+                          }}
+                          placeholder="min"
+                        />
+                        <span style={{ fontSize: '11px', color: '#6b7280' }}>min / leçon</span>
+                      </div>
                       {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '-2px 0 4px' }}>Titre requis</p>}
                       <textarea
                         style={{ ...inputStyle, minHeight: '55px', resize: 'vertical', fontSize: '12px' }}
