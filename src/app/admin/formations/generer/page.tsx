@@ -15,10 +15,16 @@ const CATEGORIES = [
   'Communication',
 ]
 
+interface LeconData {
+  titre: string
+  contenu: string
+}
+
 interface ModuleData {
   titre: string
   contenu: string
   duree_minutes: number
+  lecons: LeconData[]
 }
 
 function parseDocumentIntoModules(text: string): { titre: string; description: string; modules: ModuleData[] } {
@@ -54,7 +60,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
         if (!docTitle) {
           docTitle = cleanHeading(line)
         } else {
-          currentModule = { titre: cleanHeading(line), contenu: '', duree_minutes: 30 }
+          currentModule = { titre: cleanHeading(line), contenu: '', duree_minutes: 30, lecons: [] }
         }
         docDescription = preambleLines.join(' ').substring(0, 300)
         preambleLines = []
@@ -72,10 +78,10 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
       if (currentModule && (currentModule.titre || currentModule.contenu)) {
         modules.push(currentModule)
       }
-      currentModule = { titre: cleanHeading(line), contenu: '', duree_minutes: 30 }
+      currentModule = { titre: cleanHeading(line), contenu: '', duree_minutes: 30, lecons: [] }
     } else {
       if (!currentModule) {
-        currentModule = { titre: 'Introduction', contenu: '', duree_minutes: 30 }
+        currentModule = { titre: 'Introduction', contenu: '', duree_minutes: 30, lecons: [] }
       }
       currentModule.contenu += (currentModule.contenu ? '\n' : '') + line
     }
@@ -149,7 +155,7 @@ export default function GenererFormationPage() {
         const parsed = parseDocumentIntoModules(fullText)
         setTitre(parsed.titre)
         setDescription(parsed.description)
-        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
+        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }])
         setStep('review')
       } catch (err) {
         console.error('PDF error:', err)
@@ -162,7 +168,7 @@ export default function GenererFormationPage() {
         const parsed = parseDocumentIntoModules(text)
         setTitre(parsed.titre)
         setDescription(parsed.description)
-        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30 }])
+        setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }])
         setStep('review')
       }
       reader.onerror = () => setError('Erreur lors de la lecture du fichier.')
@@ -489,6 +495,63 @@ export default function GenererFormationPage() {
                     value={mod.duree_minutes}
                     onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))}
                   />
+                </div>
+                {/* Leçons du module */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{ ...labelStyle, fontSize: '13px' }}>Leçons</label>
+                    <button
+                      onClick={() => {
+                        const updated = [...modules]
+                        updated[idx] = { ...updated[idx], lecons: [...(updated[idx].lecons || []), { titre: '', contenu: '' }] }
+                        setModules(updated)
+                      }}
+                      style={{ ...btnSecondaryStyle, fontSize: '12px', padding: '4px 10px' }}
+                    >
+                      + Ajouter une leçon
+                    </button>
+                  </div>
+                  {(mod.lecons || []).length === 0 && (
+                    <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Aucune leçon — cliquez sur &quot;+ Ajouter une leçon&quot;</p>
+                  )}
+                  {(mod.lecons || []).map((lecon, leconIdx) => (
+                    <div key={leconIdx} style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px', marginBottom: '8px', background: '#fff' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                        <button
+                          onClick={() => {
+                            const updated = [...modules]
+                            const newLecons = updated[idx].lecons.filter((_, i) => i !== leconIdx)
+                            updated[idx] = { ...updated[idx], lecons: newLecons }
+                            setModules(updated)
+                          }}
+                          style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 8px' }}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                      <input
+                        style={{ ...inputStyle, marginBottom: '6px', fontSize: '13px' }}
+                        value={lecon.titre}
+                        onChange={e => {
+                          const updated = [...modules]
+                          updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
+                          setModules(updated)
+                        }}
+                        placeholder="Titre de la leçon"
+                      />
+                      <textarea
+                        style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
+                        value={lecon.contenu}
+                        onChange={e => {
+                          const updated = [...modules]
+                          updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], contenu: e.target.value }
+                          setModules(updated)
+                        }}
+                        placeholder="Contenu de la leçon..."
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
