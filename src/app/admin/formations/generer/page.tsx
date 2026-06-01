@@ -201,6 +201,22 @@ export default function GenererFormationPage() {
     setModules(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m))
   }
 
+  const handleLeconImageUpload = async (file: File, moduleIdx: number, leconIdx: number) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/api/upload-lesson-image', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.url) {
+        const updated = [...modules]
+        updated[moduleIdx].lecons[leconIdx] = { ...updated[moduleIdx].lecons[leconIdx], image_url: data.url }
+        setModules(updated)
+      }
+    } catch (err) {
+      console.error('Image upload error:', err)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!titre.trim()) { setError('Le titre de la formation est requis.'); return }
     if (modules.length === 0) { setError('Au moins un module est requis.'); return }
@@ -576,20 +592,9 @@ export default function GenererFormationPage() {
                             accept="image/jpeg,image/png,image/gif,image/webp"
                             id={`img-lecon-${idx}-${leconIdx}`}
                             style={{ display: 'none' }}
-                            onChange={async (e) => {
+                            onChange={(e) => {
                               const file = e.target.files?.[0]
-                              if (!file) return
-                              const formData = new FormData()
-                              formData.append('file', file)
-                              try {
-                                const res = await fetch('/api/upload-lesson-image', { method: 'POST', body: formData })
-                                const data = await res.json()
-                                if (data.url) {
-                                  const updated = [...modules]
-                                  updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], image_url: data.url }
-                                  setModules(updated)
-                                }
-                              } catch {}
+                              if (file) handleLeconImageUpload(file, idx, leconIdx)
                             }}
                           />
                           <label
