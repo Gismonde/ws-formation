@@ -18,6 +18,7 @@ interface LeconInput {
   titre: string
   description: string
   image_url?: string
+  duree_minutes?: number
 }
 
 interface ModuleInput {
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
       image_url: l.image_url || null,
       ordre: j + 1,
       est_obligatoire: true,
+      duree_minutes: l.duree_minutes || 0,
     }))
 
     const { data: insertedLecons, error: leconsError } = await adminClient
