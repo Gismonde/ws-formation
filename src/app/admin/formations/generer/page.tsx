@@ -98,7 +98,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
     chunks.forEach((chunk, i) => {
       const chunkLines = chunk.split('\n').map(l => l.trim()).filter(Boolean)
       modules.push({
-        titre: chunkLines[0].substring(0, 80) || `Section ${i + 1}`,
+        titre: chunkLines[0].substring(0, 80) || ('Section ' + (i + 1)),
         contenu: chunkLines.slice(1).join('\n').substring(0, 1000),
         duree_minutes: 30,
       })
@@ -140,7 +140,7 @@ export default function GenererFormationPage() {
       try {
         const arrayBuffer = await file.arrayBuffer()
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@' + pdfjsLib.version + '/build/pdf.worker.min.mjs'
 
         const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) })
         const pdf = await loadingTask.promise
@@ -190,7 +190,7 @@ export default function GenererFormationPage() {
   }
 
   const addModule = () => {
-    setModules(prev => [...prev, { titre: `Module ${prev.length + 1}`, contenu: '', duree_minutes: 30 }])
+    setModules(prev => [...prev, { titre: 'Module ' + (prev.length + 1), contenu: '', duree_minutes: 30, lecons: [] }])
   }
 
   const removeModule = (idx: number) => {
@@ -339,7 +339,7 @@ export default function GenererFormationPage() {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             style={{
-              border: `2px dashed ${dragging ? '#2563eb' : '#d1d5db'}`,
+              border: '2px dashed ' + (dragging ? '#2563eb' : '#d1d5db'),
               borderRadius: '12px',
               padding: '48px 32px',
               textAlign: 'center',
@@ -531,44 +531,88 @@ export default function GenererFormationPage() {
                   {(mod.lecons || []).length === 0 && (
                     <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Aucune leçon — cliquez sur &quot;+ Ajouter une leçon&quot;</p>
                   )}
-                  {(mod.lecons || []).map((lecon, leconIdx) => (
-                    <div key={leconIdx} style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px', marginBottom: '8px', background: '#fff' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
-                        <button
-                          onClick={() => {
+                  {(mod.lecons || []).map((lecon, leconIdx) => {
+                    const leconImgId = 'img-lecon-' + idx + '-' + leconIdx
+                    return (
+                      <div key={leconIdx} style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px', marginBottom: '8px', background: '#fff' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                          <button
+                            onClick={() => {
+                              const updated = [...modules]
+                              const newLecons = updated[idx].lecons.filter((_, i) => i !== leconIdx)
+                              updated[idx] = { ...updated[idx], lecons: newLecons }
+                              setModules(updated)
+                            }}
+                            style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 8px' }}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                        <input
+                          style={{ ...inputStyle, marginBottom: '6px', fontSize: '13px' }}
+                          value={lecon.titre}
+                          onChange={e => {
                             const updated = [...modules]
-                            const newLecons = updated[idx].lecons.filter((_, i) => i !== leconIdx)
-                            updated[idx] = { ...updated[idx], lecons: newLecons }
+                            updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
                             setModules(updated)
                           }}
-                          style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 8px' }}
-                        >
-                          Supprimer
-                        </button>
+                          placeholder="Titre de la leçon"
+                        />
+                        <textarea
+                          style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
+                          value={lecon.description}
+                          onChange={e => {
+                            const updated = [...modules]
+                            updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], description: e.target.value }
+                            setModules(updated)
+                          }}
+                          placeholder="Description de la leçon..."
+                        />
+                        {/* Image de la leçon */}
+                        <div style={{ marginTop: '8px' }}>
+                          {lecon.image_url ? (
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <img
+                                src={lecon.image_url}
+                                alt="Aperçu"
+                                style={{ maxWidth: '200px', maxHeight: '120px', borderRadius: '4px', border: '1px solid #d1d5db', display: 'block' }}
+                              />
+                              <button
+                                onClick={() => {
+                                  const updated = [...modules]
+                                  const lec = { ...updated[idx].lecons[leconIdx] }
+                                  delete lec.image_url
+                                  updated[idx].lecons[leconIdx] = lec
+                                  setModules(updated)
+                                }}
+                                style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 8px', marginTop: '4px' }}
+                              >
+                                Retirer l&apos;image
+                              </button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor={leconImgId}
+                              style={{ ...btnSecondaryStyle, fontSize: '12px', padding: '4px 10px', cursor: 'pointer', display: 'inline-block' }}
+                            >
+                              + Ajouter une image
+                              <input
+                                id={leconImgId}
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={e => {
+                                  const f = e.target.files?.[0]
+                                  if (f) handleLeconImageUpload(f, idx, leconIdx)
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
                       </div>
-                      <input
-                        style={{ ...inputStyle, marginBottom: '6px', fontSize: '13px' }}
-                        value={lecon.titre}
-                        onChange={e => {
-                          const updated = [...modules]
-                          updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
-                          setModules(updated)
-                        }}
-                        placeholder="Titre de la leçon"
-                      />
-                      <textarea
-                        style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
-                        value={lecon.description}
-                        onChange={e => {
-                          const updated = [...modules]
-                          updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], description: e.target.value }
-                          setModules(updated)
-                        }}
-                        placeholder="Contenu de la leçon..."
-                      />
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -611,7 +655,7 @@ export default function GenererFormationPage() {
           Elle est en brouillon — vous pouvez maintenant l&apos;éditer et la publier.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => router.push(`/admin/formations/${formationId}`)} style={btnPrimaryStyle}>
+          <button onClick={() => router.push('/admin/formations/' + formationId)} style={btnPrimaryStyle}>
             Voir la formation
           </button>
           <button onClick={() => router.push('/admin/formations')} style={btnSecondaryStyle}>
