@@ -9,7 +9,7 @@ const CATEGORIES = [
   'Hygiène et sécurité',
   'Ressources humaines',
   'Qualité et conformité',
-  'Informatique et systèmes'
+  'Informatique et systèmes',
   'Formation du personnel',
   'Gestion des risques',
   'Communication',
