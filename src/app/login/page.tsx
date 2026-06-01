@@ -1,3 +1,5 @@
+import PrivacyBanner from './PrivacyBanner'
+
 export default function LoginPage({
   searchParams,
 }: {
@@ -10,6 +12,8 @@ export default function LoginPage({
     : null
 
   return (
+    <>
+      <PrivacyBanner />
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -111,5 +115,6 @@ export default function LoginPage({
         </form>
       </div>
     </div>
+    </>
   )
 }
