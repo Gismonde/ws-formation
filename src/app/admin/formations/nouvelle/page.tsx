@@ -412,7 +412,8 @@ export default function NouvelleFormationPage() {
           </div>
           <div>
             <label style={labelStyle}>Description</label>
-            <textarea style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Description..." />
+            <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)" />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             <div>
