@@ -9,7 +9,7 @@ const CATEGORIES = [
   'Hygiène et sécurité',
   'Ressources humaines',
   'Qualité et conformité',
-  'Informatique et systèmes',
+  'Informatique et systèmes'
   'Formation du personnel',
   'Gestion des risques',
   'Communication',
@@ -133,7 +133,7 @@ export default function GenererFormationPage() {
       try {
         const arrayBuffer = await file.arrayBuffer()
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         let fullText = ''
