@@ -24,6 +24,7 @@ export default function DepuisPPPage() {
   const [loadingStep, setLoadingStep] = useState(0) // 0=idle, 1=creation, 2=import, 3=questionnaire
   const [error, setError] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
+  const [publierImmediatement, setPublierImmediatement] = useState(false)
   // Enrichissement
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -134,7 +135,7 @@ export default function DepuisPPPage() {
           categorie,
           niveau,
           duree_heures: 1,
-          est_publiee: false,
+          est_publiee: publierImmediatement === true,
           tags: tags || [],
           objectifs: objectifs || [],
           image_couverture: imageCouverture || null,
@@ -278,6 +279,10 @@ export default function DepuisPPPage() {
           )}
         </div>
 
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#374151", marginBottom: "16px", cursor: "pointer" }}>
+          <input type="checkbox" checked={publierImmediatement} onChange={e => setPublierImmediatement(e.target.checked)} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
+          <span>Publier immédiatement (visible par les apprenants)</span>
+        </label>
         <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
           <button type="button" onClick={() => setShowPreview(false)} style={btnSecStyle}>← Modifier</button>
           <button type="button" onClick={handleSubmit} style={{ ...btnStyle, background: "#7c3aed", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }}>
