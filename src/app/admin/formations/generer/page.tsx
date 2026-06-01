@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const CATEGORIES = [
@@ -113,7 +113,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
   return { titre: docTitle || 'Formation sans titre', description: docDescription, modules }
 }
 
-type Step = 'upload' | 'review' | 'creating' | 'done'
+type Step = 'upload' | 'review' | 'quiz' | 'creating' | 'done'
 
 export default function GenererFormationPage() {
   const router = useRouter()
@@ -128,8 +128,37 @@ export default function GenererFormationPage() {
   const [modules, setModules] = useState<ModuleData[]>([])
   const [error, setError] = useState('')
   const [formationId, setFormationId] = useState('')
+  const [questions, setQuestions] = useState<{ texte: string; reponses: { texte: string; est_correcte: boolean }[] }[]>([])
+  const [seuilReussite, setSeuilReussite] = useState(70)
 
-  const processFile = useCallback(async (file: File) => {
+  // Restore draft from localStorage
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('generer-formation-draft')
+      if (draft) {
+        const saved = JSON.parse(draft)
+        if (saved.titre) setTitre(saved.titre)
+        if (saved.description) setDescription(saved.description)
+        if (saved.categorie) setCategorie(saved.categorie)
+        if (saved.niveau) setNiveau(saved.niveau)
+        if (saved.dureeHeures) setDureeHeures(saved.dureeHeures)
+        if (saved.modules && saved.modules.length > 0) { setModules(saved.modules); setStep('review') }
+        if (saved.questions) setQuestions(saved.questions)
+        if (saved.seuilReussite) setSeuilReussite(saved.seuilReussite)
+      }
+    } catch {}
+  }, [])
+
+  // Auto-save draft
+  useEffect(() => {
+    if (modules.length > 0 || titre) {
+      try {
+        localStorage.setItem('generer-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite }))
+      } catch {}
+    }
+  }, [titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite])
+
+    const processFile = useCallback(async (file: File) => {
     if (!file) return
     setFileName(file.name)
     setError('')
@@ -229,7 +258,7 @@ export default function GenererFormationPage() {
       const res = await fetch('/api/generer-formation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules }),
+        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -238,6 +267,7 @@ export default function GenererFormationPage() {
         return
       }
       setFormationId(data.formation_id)
+        localStorage.removeItem('generer-formation-draft')
       setStep('done')
     } catch {
       setError('Erreur réseau.')
@@ -623,6 +653,122 @@ export default function GenererFormationPage() {
           <button onClick={() => setStep('upload')} style={btnSecondaryStyle}>
             Annuler
           </button>
+          <button onClick={() => setStep('quiz')} style={btnPrimaryStyle}>
+            → Questionnaire & Créer
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+
+  // STEP: Quiz
+  if (step === 'quiz') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ marginBottom: '24px' }}>
+          <button onClick={() => setStep('review')} style={{ ...btnSecondaryStyle, padding: '6px 14px', fontSize: '13px' }}>
+            ← Retour aux modules
+          </button>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
+            Questionnaire d&apos;évaluation
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+            Optionnel — ajoutez des questions QCM pour évaluer les apprenants à la fin de la formation.
+          </p>
+        </div>
+
+        <div style={{ ...cardStyle, marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
+              Questions ({questions.length})
+            </h2>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <label style={{ fontSize: '13px', color: '#374151' }}>Seuil réussite :</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={seuilReussite}
+                onChange={e => setSeuilReussite(Number(e.target.value))}
+                style={{ width: '70px', padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+              />
+              <span style={{ fontSize: '13px', color: '#374151' }}>%</span>
+              <button
+                onClick={() => setQuestions(prev => [...prev, { texte: '', reponses: [{ texte: '', est_correcte: true }, { texte: '', est_correcte: false }, { texte: '', est_correcte: false }] }])}
+                style={{ ...btnPrimaryStyle, padding: '6px 12px', fontSize: '13px' }}
+              >
+                + Question
+              </button>
+            </div>
+          </div>
+
+          {questions.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af', fontSize: '14px' }}>
+              <p style={{ margin: '0 0 8px' }}>Aucune question — la formation sera créée sans questionnaire.</p>
+              <p style={{ margin: 0, fontSize: '12px' }}>Vous pourrez en ajouter plus tard depuis la page de la formation.</p>
+            </div>
+          )}
+
+          {questions.map((q, qi) => (
+            <div key={qi} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '14px', marginBottom: '10px', background: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Question {qi + 1}</span>
+                <button
+                  onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
+                  style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', cursor: 'pointer' }}
+                >
+                  Supprimer
+                </button>
+              </div>
+              <input
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '8px' }}
+                value={q.texte}
+                onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
+                placeholder="Texte de la question..."
+              />
+              {q.reponses.map((r, ri) => (
+                <div key={ri} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                  <input
+                    type="radio"
+                    checked={r.est_correcte}
+                    onChange={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => ({ ...r2, est_correcte: j === ri })) }))}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <input
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+                    value={r.texte}
+                    onChange={e => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => j === ri ? { ...r2, texte: e.target.value } : r2) }))}
+                    placeholder={'Réponse ' + (ri + 1) + (r.est_correcte ? ' ✓ correcte' : '')}
+                  />
+                  {q.reponses.length > 2 && (
+                    <button
+                      onClick={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.filter((_, j) => j !== ri) }))}
+                      style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '3px 6px', fontSize: '11px', cursor: 'pointer' }}
+                    >✕</button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: [...q2.reponses, { texte: '', est_correcte: false }] }))}
+                style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', marginTop: '4px' }}
+              >
+                + Réponse
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <p style={{ color: '#dc2626', fontSize: '14px', marginBottom: '16px', background: '#fee2e2', padding: '10px', borderRadius: '6px' }}>
+            {error}
+          </p>
+        )}
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button onClick={() => setStep('review')} style={btnSecondaryStyle}>
+            Annuler
+          </button>
           <button onClick={handleSubmit} style={btnPrimaryStyle}>
             ✓ Créer la formation
           </button>
@@ -631,7 +777,7 @@ export default function GenererFormationPage() {
     )
   }
 
-  // STEP: Creating
+    // STEP: Creating
   if (step === 'creating') {
     return (
       <div style={{ ...containerStyle, textAlign: 'center', paddingTop: '80px' }}>
