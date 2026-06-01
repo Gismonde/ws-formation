@@ -18,6 +18,7 @@ const CATEGORIES = [
 interface LeconInput {
   titre: string
   description: string
+  image_url?: string
 }
 
 interface ModuleInput {
@@ -61,7 +62,6 @@ export async function POST(req: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Create the formation
     const { data: formation, error: formationError } = await adminClient
       .from('formations')
       .insert({
@@ -79,7 +79,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: formationError?.message || 'Erreur création formation' }, { status: 500 })
     }
 
-    // Create modules
     const modulesToInsert = modules.map((m, i) => ({
       formation_id: formation.id,
       titre: m.titre?.trim() || `Module ${i + 1}`,
@@ -94,19 +93,18 @@ export async function POST(req: NextRequest) {
       .select('id, ordre')
 
     if (modulesError || !insertedModules) {
-      // Rollback: delete the formation
       await adminClient.from('formations').delete().eq('id', formation.id)
       return NextResponse.json({ error: modulesError?.message || 'Erreur modules' }, { status: 500 })
     }
 
-    // Create lecons for each module
     const leconsToInsert = modules.flatMap((m, i) => {
       const moduleId = insertedModules.find(mod => mod.ordre === i + 1)?.id
       if (!moduleId || !m.lecons || m.lecons.length === 0) return []
       return m.lecons.map((l, j) => ({
         module_id: moduleId,
         titre: l.titre?.trim() || `Leçon ${j + 1}`,
-        description: l.contenu?.trim() || '',
+        description: l.description?.trim() || '',
+        image_url: l.image_url || null,
         ordre: j + 1,
       }))
     })
@@ -120,7 +118,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Log audit
     await logAudit({
       acteur_id: user.id,
       type_action: 'FORMATION_CREEE',
