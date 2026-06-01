@@ -78,7 +78,7 @@ export default function PrivacyBanner() {
               <li><strong>Conservation :</strong> Données conservées pendant 5 ans conformément à la réglementation en vigueur.</li>
               <li><strong>Partage :</strong> Vos données ne sont jamais vendues ni partagées avec des tiers.</li>
               <li><strong>Vos droits :</strong> Accès, rectification, suppression sur demande auprès de votre administrateur.</li>
-              <li><strong>Hébergement :</strong> Serveurs sécurisés en Europe (Vercel).</li>
+              <li><strong>Hébergement :</strong> Serveurs sécurisés au Canada (Vercel).</li>
             </ul>
             <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#bfdbfe' }}>
               Consultez notre <a href="/confidentialite" style={{ color: '#93c5fd' }}>politique complète</a>.
