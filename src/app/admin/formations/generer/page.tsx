@@ -101,6 +101,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
         titre: chunkLines[0].substring(0, 80) || ('Section ' + (i + 1)),
         contenu: chunkLines.slice(1).join('\n').substring(0, 1000),
         duree_minutes: 30,
+        lecons: [],
       })
     })
   }
@@ -125,11 +126,21 @@ export default function GenererFormationPage() {
   const [categorie, setCategorie] = useState(CATEGORIES[0])
   const [niveau, setNiveau] = useState('debutant')
   const [dureeHeures, setDureeHeures] = useState(1)
+  const [dureeManuelle, setDureeManuelle] = useState(false)
   const [modules, setModules] = useState<ModuleData[]>([])
   const [error, setError] = useState('')
   const [formationId, setFormationId] = useState('')
   const [questions, setQuestions] = useState<{ texte: string; reponses: { texte: string; est_correcte: boolean }[] }[]>([])
   const [seuilReussite, setSeuilReussite] = useState(70)
+
+  // Durée auto-calculée depuis les modules
+  useEffect(() => {
+    if (!dureeManuelle && modules.length > 0) {
+      const totalMinutes = modules.reduce((sum, m) => sum + (m.duree_minutes || 0), 0)
+      const heures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+      setDureeHeures(heures)
+    }
+  }, [modules, dureeManuelle])
 
   // Restore draft from localStorage
   useEffect(() => {
@@ -142,6 +153,7 @@ export default function GenererFormationPage() {
         if (saved.categorie) setCategorie(saved.categorie)
         if (saved.niveau) setNiveau(saved.niveau)
         if (saved.dureeHeures) setDureeHeures(saved.dureeHeures)
+        if (saved.dureeManuelle) setDureeManuelle(saved.dureeManuelle)
         if (saved.modules && saved.modules.length > 0) { setModules(saved.modules); setStep('review') }
         if (saved.questions) setQuestions(saved.questions)
         if (saved.seuilReussite) setSeuilReussite(saved.seuilReussite)
@@ -153,12 +165,35 @@ export default function GenererFormationPage() {
   useEffect(() => {
     if (modules.length > 0 || titre) {
       try {
-        localStorage.setItem('generer-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite }))
+        localStorage.setItem('generer-formation-draft', JSON.stringify({ titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite }))
       } catch {}
     }
-  }, [titre, description, categorie, niveau, dureeHeures, modules, questions, seuilReussite])
+  }, [titre, description, categorie, niveau, dureeHeures, dureeManuelle, modules, questions, seuilReussite])
 
-    const processFile = useCallback(async (file: File) => {
+  // Reorder modules
+  const moveModule = (idx: number, dir: -1 | 1) => {
+    setModules(prev => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
+
+  // Reorder leçons within a module
+  const moveLecon = (moduleIdx: number, leconIdx: number, dir: -1 | 1) => {
+    setModules(prev => {
+      const next = prev.map(m => ({ ...m, lecons: [...m.lecons] }))
+      const lecons = next[moduleIdx].lecons
+      const target = leconIdx + dir
+      if (target < 0 || target >= lecons.length) return prev
+      ;[lecons[leconIdx], lecons[target]] = [lecons[target], lecons[leconIdx]]
+      return next
+    })
+  }
+
+  const processFile = useCallback(async (file: File) => {
     if (!file) return
     setFileName(file.name)
     setError('')
@@ -247,9 +282,25 @@ export default function GenererFormationPage() {
   }
 
   const handleSubmit = async () => {
-    if (!titre.trim()) { setError('Le titre de la formation est requis.'); return }
-    if (modules.length === 0) { setError('Au moins un module est requis.'); return }
-    if (modules.some(m => !m.titre.trim())) { setError('Chaque module doit avoir un titre.'); return }
+    // Validation renforcée
+    const errors: string[] = []
+    if (!titre.trim()) errors.push('Le titre de la formation est requis.')
+    if (modules.length === 0) errors.push('Au moins un module est requis.')
+    const emptyModules = modules.filter(m => !m.titre.trim())
+    if (emptyModules.length > 0) errors.push('Chaque module doit avoir un titre.')
+    const invalidDurations = modules.filter(m => !m.duree_minutes || m.duree_minutes <= 0)
+    if (invalidDurations.length > 0) errors.push('Chaque module doit avoir une durée supérieure à 0.')
+    const emptyLecons = modules.flatMap(m => m.lecons || []).filter(l => !l.titre.trim())
+    if (emptyLecons.length > 0) errors.push('Chaque leçon doit avoir un titre.')
+    if (questions.length > 0) {
+      const emptyQ = questions.filter(q => !q.texte.trim())
+      if (emptyQ.length > 0) errors.push('Chaque question du questionnaire doit avoir un texte.')
+      const noCorrect = questions.filter(q => !q.reponses.some(r => r.est_correcte))
+      if (noCorrect.length > 0) errors.push('Chaque question doit avoir au moins une réponse correcte.')
+      const emptyR = questions.filter(q => q.reponses.some(r => !r.texte.trim()))
+      if (emptyR.length > 0) errors.push('Chaque réponse doit avoir un texte.')
+    }
+    if (errors.length > 0) { setError(errors.join(' | ')); return }
 
     setStep('creating')
     setError('')
@@ -267,7 +318,7 @@ export default function GenererFormationPage() {
         return
       }
       setFormationId(data.formation_id)
-        localStorage.removeItem('generer-formation-draft')
+      localStorage.removeItem('generer-formation-draft')
       setStep('done')
     } catch {
       setError('Erreur réseau.')
@@ -346,6 +397,17 @@ export default function GenererFormationPage() {
     cursor: 'pointer',
   }
 
+  const btnMoveStyle: React.CSSProperties = {
+    background: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '4px',
+    padding: '2px 7px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    lineHeight: '1.2',
+  }
+
   // STEP: Upload
   if (step === 'upload') {
     return (
@@ -418,6 +480,9 @@ export default function GenererFormationPage() {
 
   // STEP: Review
   if (step === 'review') {
+    const totalMinutes = modules.reduce((s, m) => s + (m.duree_minutes || 0), 0)
+    const autoHeures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+
     return (
       <div style={containerStyle}>
         <div style={{ marginBottom: '24px' }}>
@@ -472,15 +537,34 @@ export default function GenererFormationPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Durée (heures)</label>
-                <input
-                  style={inputStyle}
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={dureeHeures}
-                  onChange={e => setDureeHeures(Number(e.target.value))}
-                />
+                <label style={labelStyle}>
+                  Durée (heures)
+                  {!dureeManuelle && (
+                    <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginLeft: '6px' }}>
+                      (auto: {autoHeures}h)
+                    </span>
+                  )}
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <input
+                    style={{ ...inputStyle, flex: 1 }}
+                    type="number"
+                    min={0.5}
+                    max={40}
+                    step={0.5}
+                    value={dureeHeures}
+                    onChange={e => { setDureeManuelle(true); setDureeHeures(Number(e.target.value)) }}
+                  />
+                  {dureeManuelle && (
+                    <button
+                      onClick={() => { setDureeManuelle(false); setDureeHeures(autoHeures) }}
+                      style={{ ...btnSecondaryStyle, padding: '8px 10px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                      title="Recalculer automatiquement"
+                    >
+                      🔄 Auto
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -489,7 +573,7 @@ export default function GenererFormationPage() {
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
-              Modules ({modules.length})
+              Modules ({modules.length}) — Durée totale: {totalMinutes} min
             </h2>
             <button onClick={addModule} style={{ ...btnPrimaryStyle, padding: '6px 14px', fontSize: '13px' }}>
               + Ajouter un module
@@ -508,7 +592,13 @@ export default function GenererFormationPage() {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title="Monter">▲</button>
+                    <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title="Descendre">▼</button>
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+                </div>
                 <button onClick={() => removeModule(idx)} style={btnDangerStyle}>
                   Supprimer
                 </button>
@@ -517,11 +607,12 @@ export default function GenererFormationPage() {
                 <div>
                   <label style={{ ...labelStyle, fontSize: '13px' }}>Titre *</label>
                   <input
-                    style={inputStyle}
+                    style={{ ...inputStyle, borderColor: !mod.titre.trim() ? '#ef4444' : '#d1d5db' }}
                     value={mod.titre}
                     onChange={e => updateModule(idx, 'titre', e.target.value)}
                     placeholder="Titre du module"
                   />
+                  {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '2px 0 0' }}>Le titre est requis</p>}
                 </div>
                 <div>
                   <label style={{ ...labelStyle, fontSize: '13px' }}>Contenu</label>
@@ -533,20 +624,21 @@ export default function GenererFormationPage() {
                   />
                 </div>
                 <div style={{ maxWidth: '180px' }}>
-                  <label style={{ ...labelStyle, fontSize: '13px' }}>Durée (minutes)</label>
+                  <label style={{ ...labelStyle, fontSize: '13px' }}>Durée (minutes) *</label>
                   <input
-                    style={inputStyle}
+                    style={{ ...inputStyle, borderColor: (!mod.duree_minutes || mod.duree_minutes <= 0) ? '#ef4444' : '#d1d5db' }}
                     type="number"
                     min={5}
                     max={480}
                     value={mod.duree_minutes}
                     onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))}
                   />
+                  {(!mod.duree_minutes || mod.duree_minutes <= 0) && <p style={{ color: '#dc2626', fontSize: '12px', margin: '2px 0 0' }}>Durée requise &gt; 0</p>}
                 </div>
                 {/* Leçons du module */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label style={{ ...labelStyle, fontSize: '13px' }}>Leçons</label>
+                    <label style={{ ...labelStyle, fontSize: '13px', marginBottom: 0 }}>Leçons ({(mod.lecons || []).length})</label>
                     <button
                       onClick={() => {
                         const updated = [...modules]
@@ -566,7 +658,13 @@ export default function GenererFormationPage() {
                     return (
                       <div key={leconIdx} style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px', marginBottom: '8px', background: '#fff' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === 0} title="Monter">▲</button>
+                              <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title="Descendre">▼</button>
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                          </div>
                           <button
                             onClick={() => {
                               const updated = [...modules]
@@ -580,15 +678,16 @@ export default function GenererFormationPage() {
                           </button>
                         </div>
                         <input
-                          style={{ ...inputStyle, marginBottom: '6px', fontSize: '13px' }}
+                          style={{ ...inputStyle, marginBottom: '6px', fontSize: '13px', borderColor: !lecon.titre.trim() ? '#ef4444' : '#d1d5db' }}
                           value={lecon.titre}
                           onChange={e => {
                             const updated = [...modules]
                             updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
                             setModules(updated)
                           }}
-                          placeholder="Titre de la leçon"
+                          placeholder="Titre de la leçon *"
                         />
+                        {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 6px' }}>Titre requis</p>}
                         <textarea
                           style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
                           value={lecon.description}
@@ -654,13 +753,12 @@ export default function GenererFormationPage() {
             Annuler
           </button>
           <button onClick={() => setStep('quiz')} style={btnPrimaryStyle}>
-            → Questionnaire & Créer
+            → Questionnaire &amp; Créer
           </button>
         </div>
       </div>
     )
   }
-
 
   // STEP: Quiz
   if (step === 'quiz') {
@@ -722,11 +820,12 @@ export default function GenererFormationPage() {
                 </button>
               </div>
               <input
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '8px' }}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid ' + (!q.texte.trim() ? '#ef4444' : '#d1d5db'), borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '8px' }}
                 value={q.texte}
                 onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
-                placeholder="Texte de la question..."
+                placeholder="Texte de la question... *"
               />
+              {!q.texte.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 8px' }}>Le texte est requis</p>}
               {q.reponses.map((r, ri) => (
                 <div key={ri} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                   <input
@@ -736,7 +835,7 @@ export default function GenererFormationPage() {
                     style={{ cursor: 'pointer' }}
                   />
                   <input
-                    style={{ flex: 1, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid ' + (!r.texte.trim() ? '#ef4444' : '#d1d5db'), borderRadius: '6px', fontSize: '13px' }}
                     value={r.texte}
                     onChange={e => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: q2.reponses.map((r2, j) => j === ri ? { ...r2, texte: e.target.value } : r2) }))}
                     placeholder={'Réponse ' + (ri + 1) + (r.est_correcte ? ' ✓ correcte' : '')}
@@ -777,7 +876,7 @@ export default function GenererFormationPage() {
     )
   }
 
-    // STEP: Creating
+  // STEP: Creating
   if (step === 'creating') {
     return (
       <div style={{ ...containerStyle, textAlign: 'center', paddingTop: '80px' }}>
