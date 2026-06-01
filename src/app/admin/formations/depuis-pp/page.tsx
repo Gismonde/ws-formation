@@ -25,6 +25,7 @@ export default function DepuisPPPage() {
   const [error, setError] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [publierImmediatement, setPublierImmediatement] = useState(false)
+  const [description, setDescription] = useState("")
   // Enrichissement
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -132,6 +133,7 @@ export default function DepuisPPPage() {
         .from("formations")
         .insert({
           titre,
+          description: description || null,
           categorie,
           niveau,
           duree_heures: 1,
@@ -256,6 +258,7 @@ export default function DepuisPPPage() {
           <div style={{ padding: "16px", background: "#f9fafb", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Titre</span><p style={{ fontSize: "15px", fontWeight: "600", color: "#111827", margin: "4px 0 0" }}>{titre}</p></div>
+              {description && <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{description}</p></div>}
               <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Niveau</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0", textTransform: "capitalize" }}>{niveau}</p></div>
               {categorie && <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Catégorie</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{categorie}</p></div>}
               <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Fichier</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{file?.name}</p></div>
@@ -337,6 +340,16 @@ export default function DepuisPPPage() {
             <label style={labelStyle}>Titre de la formation *</label>
             <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Sécurité au travail — Niveau 1" style={{ ...inputStyle, borderColor: !titre.trim() ? "#ef4444" : "#d1d5db" }} />
             {!titre.trim() && <p style={{ color: "#dc2626", fontSize: "11px", margin: "2px 0 0" }}>Titre requis</p>}
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Description (optionnelle)</label>
+            <textarea
+              style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Description de la formation..."
+            />
+            <span style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px", display: "block" }}>Mise en forme: **gras**, *italique*, - liste</span>
           </div>
           <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Catégorie</label>
