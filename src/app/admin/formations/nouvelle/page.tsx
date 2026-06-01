@@ -41,6 +41,11 @@ interface QuestionForm {
   reponses: { texte: string; est_correcte: boolean }[]
 }
 
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+  return match ? match[1] : null
+}
+
 export default function NouvelleFormationPage() {
   const router = useRouter()
   const [titre, setTitre] = useState('')
@@ -577,6 +582,16 @@ export default function NouvelleFormationPage() {
                         <div key={bi} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '5px', padding: '6px 8px', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <span style={{ fontSize: '13px' }}>{bloc.type === 'video' ? '🎬' : bloc.type === 'file' ? '📎' : bloc.type === 'code' ? '💻' : '🔗'}</span>
                           <input style={{ ...inputStyle, flex: 1, fontSize: '11px' }} value={bloc.contenu} onChange={e => { const up = [...modules]; const b = [...(up[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL PDF' : bloc.type === 'link' ? 'URL lien' : 'Code'} />
+                          {bloc.type === 'video' && extractYouTubeId(bloc.contenu) && (
+                            <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                              <img
+                                src={'https://img.youtube.com/vi/' + extractYouTubeId(bloc.contenu) + '/mqdefault.jpg'}
+                                alt="YouTube preview"
+                                style={{ width: '100%', display: 'block', maxHeight: '120px', objectFit: 'cover' }}
+                              />
+                              <div style={{ padding: '4px 8px', background: '#f9fafb', fontSize: '12px', color: '#6b7280' }}>YouTube</div>
+                            </div>
+                          )}
                           <button onClick={() => { const up = [...modules]; const b = (up[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 5px' }}>×</button>
                         </div>
                       ))}
