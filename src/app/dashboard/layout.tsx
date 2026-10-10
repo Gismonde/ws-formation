@@ -2,10 +2,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { CliniqueLogos } from '@/components/CliniqueBadge'
+import { serviceClient } from '@/lib/permissions'
+import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
+  { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
   { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
@@ -20,10 +23,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, nom, prenom, role, clinique')
+    .select('id, nom, prenom, role, clinique, departement_id')
     .eq('auth_user_id', user.id)
     .single()
 
+  const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe) : 0
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
   // L'admin global (sans clinique) voit les deux logos
   const cliniqueAffichee = employe?.clinique ?? (employe?.role === 'super_admin' ? 'LES_DEUX' : null)
@@ -49,6 +53,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link key={item.href} href={item.href} className="sidebar-nav-item">
               <span className="sidebar-emoji">{item.emoji}</span>
               <span>{item.label}</span>
+              {item.href === '/dashboard/politiques' && politiquesEnAttente > 0 && (
+                <span style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{politiquesEnAttente}</span>
+              )}
             </Link>
           ))}
         </nav>
