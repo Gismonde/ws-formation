@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       formation: formationRes.data,
       employes,
-      departements: departementsListe.map(d => ({ id: d.id, nom: d.clinique ? `${d.nom} (${d.clinique})` : d.nom })),
+      departements: departementsListe.map(d => ({ id: d.id, nom: d.nom })),
       userRole: moi.role,
       userDeptId: moi.departement_id
     })
