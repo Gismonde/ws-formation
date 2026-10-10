@@ -93,7 +93,10 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
     return query.in('clinique', [...cl, 'LES_DEUX'])
   }
   if (a.role === 'gestionnaire' && a.departement_id) {
-    return query.eq('departement_id', a.departement_id)
+    // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
+    const cl = cliniquesDe(a.clinique)
+    if (cl.length === 0) return query.eq('id', AUCUN_ID)
+    return query.eq('departement_id', a.departement_id).in('clinique', [...cl, 'LES_DEUX'])
   }
   return query.eq('id', AUCUN_ID)
 }
@@ -102,7 +105,10 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
 export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
   if (a.role === 'super_admin') return true
   if (a.role === 'admin') return intersecte(cliniquesDe(c.clinique), cliniquesAdministrees(a))
-  if (a.role === 'gestionnaire') return !!a.departement_id && c.departement_id === a.departement_id
+  if (a.role === 'gestionnaire') {
+    return !!a.departement_id && c.departement_id === a.departement_id
+      && intersecte(cliniquesDe(c.clinique), cliniquesDe(a.clinique))
+  }
   return false
 }
 
@@ -113,12 +119,11 @@ export async function idsEmployesDansPortee(a: Acteur, sb = serviceClient()): Pr
   return (data ?? []).map((e: { id: string }) => e.id)
 }
 
-/** Départements visibles par l'acteur. */
+/** Départements visibles par l'acteur (liste commune aux deux cliniques). */
 export async function departementsVisibles(a: Acteur, sb = serviceClient()): Promise<DepartementRow[]> {
   let q = sb.from('departements').select('id, nom, clinique').order('nom')
   if (a.role === 'admin') {
-    const cl = cliniquesAdministrees(a)
-    q = cl.length ? q.in('clinique', cl) : q.eq('id', AUCUN_ID)
+    if (cliniquesAdministrees(a).length === 0) q = q.eq('id', AUCUN_ID)
   } else if (a.role === 'gestionnaire') {
     q = q.eq('id', a.departement_id ?? AUCUN_ID)
   } else if (a.role !== 'super_admin') {
@@ -130,7 +135,7 @@ export async function departementsVisibles(a: Acteur, sb = serviceClient()): Pro
 
 export function peutVoirDepartement(a: Acteur, d: { id: string; clinique: string | null }): boolean {
   if (a.role === 'super_admin') return true
-  if (a.role === 'admin') return !!d.clinique && cliniquesAdministrees(a).includes(d.clinique as Clinique)
+  if (a.role === 'admin') return cliniquesAdministrees(a).length > 0
   if (a.role === 'gestionnaire') return d.id === a.departement_id
   return false
 }
@@ -150,9 +155,7 @@ export function peutGererEmploye(a: Acteur, c: CibleEmploye): boolean {
     if (c.role === 'admin') return inclus(cliniquesDe(c.clinique), cliniquesAdministrees(a))
     return true
   }
-  if (a.role === 'gestionnaire') {
-    return c.role === 'employe' && !!a.departement_id && c.departement_id === a.departement_id
-  }
+  if (a.role === 'gestionnaire') return c.role === 'employe' && peutVoirEmploye(a, c)
   return false
 }
 
@@ -169,7 +172,8 @@ export function cliniquesAttribuables(a: Acteur): CliniqueEmploye[] {
     const cl = cliniquesAdministrees(a)
     return cl.length ? [...cl, 'LES_DEUX'] : []
   }
-  return [] // gestionnaire : clinique déduite de son département
+  if (a.role === 'gestionnaire') return a.clinique ? [a.clinique] : []
+  return []
 }
 
 export type Attribution = {
@@ -201,17 +205,12 @@ export async function validerAttribution(
     if (!peutVoirDepartement(a, dept)) return { erreur: 'Ce département est hors de votre périmètre.' }
   }
 
-  // Gestionnaire : employé de son propre département, clinique = celle du département
+  // Gestionnaire : employé de son propre département, dans sa propre clinique
   if (a.role === 'gestionnaire') {
-    if (!a.departement_id) return { erreur: "Aucun département ne vous est attribué. Contactez un administrateur." }
-    const { data: monDept } = await sb.from('departements').select('id, nom, clinique').eq('id', a.departement_id).single()
-    return {
-      valeurs: {
-        role: 'employe',
-        departement_id: a.departement_id,
-        clinique: (monDept?.clinique as Clinique | null) ?? a.clinique,
-      },
+    if (!a.departement_id || !a.clinique) {
+      return { erreur: "Aucun département ou aucune clinique ne vous est attribué. Contactez un administrateur." }
     }
+    return { valeurs: { role: 'employe', departement_id: a.departement_id, clinique: a.clinique } }
   }
 
   const clinique = demande.clinique === '' || demande.clinique == null ? null : demande.clinique
@@ -227,10 +226,6 @@ export async function validerAttribution(
     if (role === 'admin' && !inclus(cliniquesDe(clinique), cliniquesAdministrees(a))) {
       return { erreur: "Vous ne pouvez nommer un administrateur que pour votre propre clinique." }
     }
-  }
-
-  if (dept?.clinique && clinique && !cliniquesDe(clinique).includes(dept.clinique)) {
-    return { erreur: `Le département « ${dept.nom} » appartient à ${dept.clinique}, qui ne correspond pas à la clinique choisie.` }
   }
 
   return { valeurs: { role, clinique: clinique as CliniqueEmploye | null, departement_id } }

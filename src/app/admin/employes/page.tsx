@@ -41,11 +41,11 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const nbAssign = (id: string) => assignations?.filter((a: any) => a.employe_id === id).length ?? 0
   const nbCerts = (id: string) => certificats?.filter((c: any) => c.employe_id === id).length ?? 0
   const peutGerer = (emp: any) => peutGererEmploye(acteur, emp)
-  const peutCreer = !isGestionnaire || !!acteur.departement_id
+  const peutCreer = !isGestionnaire || (!!acteur.departement_id && !!acteur.clinique)
 
   const sousTitre = acteur.role === 'super_admin' ? 'dans les deux cliniques'
     : acteur.role === 'admin' ? 'à ' + mesCliniques.join(' et ')
-    : 'dans votre département'
+    : `dans votre département${acteur.clinique ? ' (' + acteur.clinique.replace('LES_DEUX', 'CMC + WSSC') + ')' : ''}`
 
   const actifs = employes?.filter((e: any) => e.actif !== false) ?? []
   const archives = employes?.filter((e: any) => e.actif === false) ?? []

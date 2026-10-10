@@ -1,69 +1,64 @@
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
-import { getActeur, serviceClient, cliniquesAdministrees, peutVoirDepartement, ipEtAgent } from '@/lib/permissions'
-import { estAdministrateur, Clinique } from '@/lib/cliniques'
+import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
+import { estAdministrateur } from '@/lib/cliniques'
 
-function cliniqueValide(v: unknown): v is Clinique {
-  return v === 'CMC' || v === 'WSSC'
-}
+// Les départements sont communs aux deux cliniques : un seul nom par département.
 
-// Créer un département (admin global : n'importe quelle clinique ; admin de clinique : la sienne)
+// Créer un département (administrateurs)
 export async function POST(request: Request) {
   const acteur = await getActeur()
   if (!acteur || !estAdministrateur(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
 
-  const { nom, clinique } = await request.json()
-  if (!nom || typeof nom !== 'string' || !nom.trim()) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
-  if (!cliniqueValide(clinique) || !cliniquesAdministrees(acteur).includes(clinique)) {
-    return NextResponse.json({ error: 'Clinique hors de votre perimetre' }, { status: 403 })
+  const { nom } = await request.json()
+  const propre = typeof nom === 'string' ? nom.trim() : ''
+  if (!propre) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
+
+  const sb = serviceClient()
+  const { data: existants } = await sb.from('departements').select('id, nom')
+  if ((existants ?? []).some((d: { nom: string }) => d.nom.trim().toLowerCase() === propre.toLowerCase())) {
+    return NextResponse.json({ error: `Le département « ${propre} » existe déjà.` }, { status: 400 })
   }
 
-  const { data, error } = await serviceClient()
-    .from('departements')
-    .insert({ nom: nom.trim(), clinique })
-    .select('id, nom, clinique')
-    .single()
+  const { data, error } = await sb.from('departements').insert({ nom: propre }).select('id, nom').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'PARAMETRE_MODIFIE',
-    description: `Departement cree : ${data.nom} (${clinique})`,
-    metadata: { departement_id: data.id, clinique },
+    description: `Departement cree : ${data.nom}`,
+    metadata: { departement_id: data.id },
     ...ipEtAgent(request),
   })
   return NextResponse.json({ success: true, departement: data })
 }
 
-// Renommer un département ou (admin global seulement) changer sa clinique
+// Renommer un département (administrateur global seulement)
 export async function PATCH(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !estAdministrateur(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur || acteur.role !== 'super_admin') return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
 
-  const { id, nom, clinique } = await request.json()
+  const { id, nom } = await request.json()
+  const propre = typeof nom === 'string' ? nom.trim() : ''
+  if (!id || !propre) return NextResponse.json({ error: 'Parametres invalides' }, { status: 400 })
+
   const sb = serviceClient()
-  const { data: dept } = await sb.from('departements').select('id, nom, clinique').eq('id', id).single()
-  if (!dept || !peutVoirDepartement(acteur, dept)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  const { data: dept } = await sb.from('departements').select('id, nom').eq('id', id).single()
+  if (!dept) return NextResponse.json({ error: 'Departement introuvable' }, { status: 404 })
 
-  const maj: Record<string, unknown> = {}
-  if (typeof nom === 'string' && nom.trim()) maj.nom = nom.trim()
-  if (clinique !== undefined && clinique !== dept.clinique) {
-    if (acteur.role !== 'super_admin') {
-      return NextResponse.json({ error: "Seul l'administrateur global peut changer la clinique d'un departement" }, { status: 403 })
-    }
-    if (!cliniqueValide(clinique)) return NextResponse.json({ error: 'Clinique invalide' }, { status: 400 })
-    maj.clinique = clinique
+  const { data: existants } = await sb.from('departements').select('id, nom')
+  if ((existants ?? []).some((d: { id: string; nom: string }) => d.id !== id && d.nom.trim().toLowerCase() === propre.toLowerCase())) {
+    return NextResponse.json({ error: `Le département « ${propre} » existe déjà.` }, { status: 400 })
   }
-  if (Object.keys(maj).length === 0) return NextResponse.json({ success: true })
 
-  const { error } = await sb.from('departements').update(maj).eq('id', id)
+  const { error } = await sb.from('departements').update({ nom: propre }).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'PARAMETRE_MODIFIE',
-    description: `Departement modifie : ${dept.nom}`,
-    metadata: { departement_id: id, avant: dept, apres: maj },
+    description: `Departement renomme : ${dept.nom} -> ${propre}`,
+    metadata: { departement_id: id },
     ...ipEtAgent(request),
   })
   return NextResponse.json({ success: true })

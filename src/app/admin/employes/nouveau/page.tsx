@@ -7,7 +7,7 @@ export default async function NouvelEmployePage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
-  if (acteur.role === 'gestionnaire' && !acteur.departement_id) redirect('/admin/employes')
+  if (acteur.role === 'gestionnaire' && (!acteur.departement_id || !acteur.clinique)) redirect('/admin/employes')
 
   const departements = await departementsVisibles(acteur)
   const cliniques = cliniquesAttribuables(acteur)
@@ -26,7 +26,7 @@ export default async function NouvelEmployePage() {
         rolesPossibles={rolesAttribuables(acteur)}
         cliniquesPossibles={cliniques}
         estGestionnaire={acteur.role === 'gestionnaire'}
-        cliniqueParDefaut={cliniques.length === 2 ? cliniques[0] : ''}
+        cliniqueParDefaut={acteur.role === 'gestionnaire' ? acteur.clinique ?? '' : cliniques.length === 2 ? cliniques[0] : ''}
         departementParDefaut={acteur.role === 'gestionnaire' ? acteur.departement_id ?? '' : ''}
       />
     </div>
