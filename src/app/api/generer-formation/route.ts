@@ -52,6 +52,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
+  // Seuls les admins et les gestionnaires autorisés peuvent créer des formations
+  const { data: createur } = await adminClient.from('employes').select('*').eq('auth_user_id', user.id).single()
+  const autorise = !!createur && createur.actif !== false && (
+    ['super_admin', 'admin'].includes(createur.role) ||
+    (createur.role === 'gestionnaire' && createur.peut_creer_formations === true))
+  if (!autorise) {
+    return NextResponse.json({ error: 'Vous n\'êtes pas autorisé à créer des formations' }, { status: 403 })
+  }
+
   const body = await req.json()
   const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, publier_immediatement } = body
 
@@ -167,8 +176,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Insert enriched blocs (video, file, code, link) per lecon
-      for (let lIdx2 = 0; lIdx2 < (l.lecons || []).length; lIdx2++) {
-        const leconData = l.lecons[lIdx2]
+      for (let lIdx2 = 0; lIdx2 < (m.lecons || []).length; lIdx2++) {
+        const leconData = m.lecons[lIdx2] as any
         if (!leconData.blocs || leconData.blocs.length === 0) continue
         const leconRow = insertedLecons?.[lIdx2]
         if (!leconRow) continue
