@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, validerAttribution, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin, ROLE_LABEL } from '@/lib/cliniques'
+import { inviterEmploye } from '@/lib/invitations'
+import { origineDepuis } from '@/lib/courriels'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
@@ -9,9 +11,10 @@ export async function POST(request: Request) {
   if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
 
   const body = await request.json()
-  const { prenom, nom, email, password, poste } = body
+  const { prenom, nom, poste } = body
+  const email = String(body.email ?? '').trim().toLowerCase()
 
-  if (!prenom || !nom || !email || !password) {
+  if (!prenom || !nom || !email) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
   }
 
@@ -20,18 +23,18 @@ export async function POST(request: Request) {
   if ('erreur' in attribution) return NextResponse.json({ error: attribution.erreur }, { status: 403 })
   const { role, clinique, departement_id } = attribution.valeurs
 
-  const { data: newUser, error: authError } = await sb.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { prenom, nom },
-  })
-  if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
+  // Compte de connexion créé sans mot de passe : l'employé le choisit via le lien d'invitation
+  const invitation = await inviterEmploye(sb, { email, prenom, nom, clinique, origine: origineDepuis(request), nouveau: true })
+  if (!invitation.authUserId) {
+    const msg = /already|registered|exists/i.test(invitation.erreur ?? '') ? 'Un compte existe déjà avec ce courriel.' : (invitation.erreur ?? 'Création du compte impossible')
+    return NextResponse.json({ error: msg }, { status: 400 })
+  }
+  const authUserId = invitation.authUserId
 
   const { data: newEmp, error: empError } = await sb
     .from('employes')
     .insert({
-      auth_user_id: newUser.user.id,
+      auth_user_id: authUserId,
       prenom,
       nom,
       email,
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
     .single()
 
   if (empError) {
-    await sb.auth.admin.deleteUser(newUser.user.id)
+    await sb.auth.admin.deleteUser(authUserId)
     return NextResponse.json({ error: empError.message }, { status: 400 })
   }
 
@@ -55,9 +58,15 @@ export async function POST(request: Request) {
     type_action: 'EMPLOYE_CREE',
     description: `Nouvel employe cree : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
     cible_employe_id: newEmp?.id ?? null,
-    metadata: { role, clinique, departement_id },
+    metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye },
     ...ipEtAgent(request),
   })
 
-  return NextResponse.json({ success: true, userId: newUser.user.id })
+  return NextResponse.json({
+    success: true,
+    userId: authUserId,
+    employeId: newEmp?.id ?? null,
+    courrielEnvoye: invitation.courrielEnvoye,
+    lienInvitation: invitation.lien,
+  })
 }
