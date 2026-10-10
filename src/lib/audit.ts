@@ -29,6 +29,10 @@ export type AuditActionType =
   | 'PREUVE_REFUSEE'
   | 'ATTESTATION_LECTURE'
   | 'LECON_TERMINEE'
+  | 'INVITATION_ENVOYEE'
+  | 'POLITIQUE_PUBLIEE'
+  | 'POLITIQUE_MODIFIEE'
+  | 'POLITIQUE_CONFIRMEE'
 
 export interface LogAuditParams {
     acteur_id: string
