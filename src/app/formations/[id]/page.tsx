@@ -17,7 +17,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
   if (!employe) redirect('/login')
 
   // Admins/gestionnaires peuvent accéder sans assignation
-  const isAdmin = employe.role === 'admin' || employe.role === 'gestionnaire'
+  const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe.role)
 
   if (!isAdmin) {
     const { data: assignation } = await supabase

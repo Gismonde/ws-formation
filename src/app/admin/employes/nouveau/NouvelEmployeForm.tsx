@@ -2,17 +2,26 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface Departement { id: string; nom: string }
-interface Props { departements: Departement[] }
+import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
+import { CliniqueEmploye, Role } from '@/lib/cliniques'
 
-export default function NouvelEmployeForm({ departements }: Props) {
+interface Props {
+  departements: DepartementOption[]
+  rolesPossibles: Role[]
+  cliniquesPossibles: CliniqueEmploye[]
+  estGestionnaire: boolean
+  cliniqueParDefaut: string
+  departementParDefaut: string
+}
+
+export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [form, setForm] = useState({
     prenom: '', nom: '', email: '', password: '',
-    role: 'employe', departement_id: '', poste: ''
+    role: 'employe', departement_id: departementParDefaut, poste: '', clinique: cliniqueParDefaut
   })
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -75,29 +84,19 @@ export default function NouvelEmployeForm({ departements }: Props) {
       </div>
       <div>
         <label className={labelCls}>Mot de passe temporaire *</label>
-        <input type="password" className={inputCls} value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Minimum 8 caractères" />
+        <input type="password" className={inputCls} value={form.password} onChange={e => set('password', e.target.value)} required minLength={10} placeholder="Minimum 10 caractères" />
       </div>
       <div>
         <label className={labelCls}>Poste / Titre</label>
         <input className={inputCls} value={form.poste} onChange={e => set('poste', e.target.value)} placeholder="Ex : Infirmier(e), Technicien(ne)..." />
       </div>
-      <div>
-        <label className={labelCls}>Département</label>
-        <select className={inputCls} value={form.departement_id} onChange={e => set('departement_id', e.target.value)}>
-          <option value="">-- Aucun département --</option>
-          {departements.map(d => (
-            <option key={d.id} value={d.id}>{d.nom}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className={labelCls}>Rôle</label>
-        <select className={inputCls} value={form.role} onChange={e => set('role', e.target.value)}>
-          <option value="employe">Employé</option>
-          <option value="gestionnaire">Gestionnaire</option>
-          <option value="admin">Administrateur</option>
-        </select>
-      </div>
+      <ChampsAcces
+        role={form.role} clinique={form.clinique} departementId={form.departement_id}
+        setRole={v => set('role', v)} setClinique={v => set('clinique', v)} setDepartementId={v => set('departement_id', v)}
+        rolesPossibles={rolesPossibles} cliniquesPossibles={cliniquesPossibles}
+        departements={departements} estGestionnaire={estGestionnaire}
+        inputCls={inputCls} labelCls={labelCls}
+      />
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">

@@ -1,57 +1,64 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { logAudit } from '@/lib/audit'
+import { getActeur, serviceClient, peutGererEmploye, validerAttribution, ipEtAgent } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 export async function PUT(request: Request) {
   try {
-    // Verify the requesting user is an admin
-    const serverSupabase = await createServerClient()
-    const { data: { user } } = await serverSupabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-    }
-
-    // Use service role client to bypass RLS for role check (avoids 42P17 recursion)
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
-
-    const { data: emp } = await adminSupabase
-      .from('employes')
-      .select('role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!emp || (emp.role !== 'admin' && emp.role !== 'gestionnaire')) {
-      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
-    }
+    const acteur = await getActeur()
+    if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
 
     const body = await request.json()
-    const { id, prenom, nom, poste, departement_id, role, actif } = body
+    const { id, prenom, nom, poste, actif } = body
+    if (!id) return NextResponse.json({ error: 'ID employe manquant' }, { status: 400 })
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID employe manquant' }, { status: 400 })
+    const sb = serviceClient()
+    const { data: cible } = await sb
+      .from('employes')
+      .select('id, auth_user_id, role, clinique, departement_id, actif')
+      .eq('id', id)
+      .single()
+
+    if (!cible || !peutGererEmploye(acteur, cible)) {
+      return NextResponse.json({ error: 'Acces refuse - employe hors de votre perimetre' }, { status: 403 })
     }
 
-    const updateData: Record<string, unknown> = {}
+    // Rôle, clinique et département : on valide la combinaison finale
+    const attribution = await validerAttribution(acteur, {
+      role: body.role ?? cible.role,
+      clinique: body.clinique !== undefined ? body.clinique : cible.clinique,
+      departement_id: body.departement_id !== undefined ? body.departement_id : cible.departement_id,
+    }, sb)
+    if ('erreur' in attribution) return NextResponse.json({ error: attribution.erreur }, { status: 403 })
+
+    const updateData: Record<string, unknown> = { ...attribution.valeurs }
     if (prenom !== undefined) updateData.prenom = prenom
     if (nom !== undefined) updateData.nom = nom
     if (poste !== undefined) updateData.poste = poste
-    if (departement_id !== undefined) updateData.departement_id = departement_id || null
-    if (role !== undefined) updateData.role = role
-    if (actif !== undefined) updateData.actif = actif
+    if (typeof actif === 'boolean') updateData.actif = actif
 
-    const { error } = await adminSupabase
-      .from('employes')
-      .update(updateData)
-      .eq('id', id)
-
+    const { error } = await sb.from('employes').update(updateData).eq('id', id)
     if (error) {
       console.error('Supabase update error:', error)
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
+
+    if (actif === false && cible.actif !== false && cible.auth_user_id) {
+      await sb.auth.admin.signOut(cible.auth_user_id)
+    }
+
+    await logAudit({
+      acteur_id: acteur.id,
+      type_action: 'EMPLOYE_MODIFIE',
+      description: 'Dossier employe modifie',
+      cible_employe_id: id,
+      metadata: {
+        avant: { role: cible.role, clinique: cible.clinique, departement_id: cible.departement_id, actif: cible.actif },
+        apres: updateData,
+      },
+      ...ipEtAgent(request),
+    })
 
     return NextResponse.json({ success: true })
   } catch (err) {

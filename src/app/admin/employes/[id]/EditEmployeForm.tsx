@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-interface Departement { id: string; nom: string }
+import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
+import { CliniqueEmploye, Role } from '@/lib/cliniques'
 
 interface Props {
   employe: {
@@ -14,11 +14,16 @@ interface Props {
     role: string
     actif: boolean
     departement_id: string | null
+    clinique: string | null
   }
-  departements: Departement[]
+  departements: DepartementOption[]
+  modifiable: boolean
+  rolesPossibles: Role[]
+  cliniquesPossibles: CliniqueEmploye[]
+  estGestionnaire: boolean
 }
 
-export default function EditEmployeForm({ employe, departements }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +33,7 @@ export default function EditEmployeForm({ employe, departements }: Props) {
   const [poste, setPoste] = useState(employe.poste || '')
   const [role, setRole] = useState(employe.role || 'employe')
   const [departementId, setDepartementId] = useState(employe.departement_id || '')
+  const [clinique, setClinique] = useState(employe.clinique || '')
   const [actif, setActif] = useState(employe.actif)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,8 +49,7 @@ export default function EditEmployeForm({ employe, departements }: Props) {
           prenom,
           nom,
           poste: poste || null,
-          departement_id: departementId || null,
-          role,
+          ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           actif
         })
       })
@@ -77,6 +82,12 @@ export default function EditEmployeForm({ employe, departements }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      {!modifiable && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600">
+          Consultation seulement : ce dossier est hors de ce que vous pouvez modifier.
+        </div>
+      )}
+      <fieldset disabled={!modifiable} className="space-y-5">
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
       )}
@@ -99,36 +110,27 @@ export default function EditEmployeForm({ employe, departements }: Props) {
         <label className={labelCls}>Poste</label>
         <input className={inputCls} value={poste} onChange={e => setPoste(e.target.value)} placeholder="Ex : Infirmier(e)..." />
       </div>
-      <div>
-        <label className={labelCls}>Département</label>
-        <select className={inputCls} value={departementId} onChange={e => setDepartementId(e.target.value)}>
-          <option value="">-- Aucun département --</option>
-          {departements.map(d => (
-            <option key={d.id} value={d.id}>{d.nom}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className={labelCls}>Rôle</label>
-        <select className={inputCls} value={role} onChange={e => setRole(e.target.value)}>
-          <option value="employe">Employé</option>
-          <option value="gestionnaire">Gestionnaire</option>
-          <option value="admin">Administrateur</option>
-        </select>
-      </div>
+      <ChampsAcces
+        role={role} clinique={clinique} departementId={departementId}
+        setRole={setRole} setClinique={setClinique} setDepartementId={setDepartementId}
+        rolesPossibles={rolesPossibles} cliniquesPossibles={cliniquesPossibles}
+        departements={departements} estGestionnaire={estGestionnaire}
+        disabled={!modifiable} inputCls={inputCls} labelCls={labelCls}
+      />
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-blue-600 rounded border-gray-300" />
         <label htmlFor="actif" className="text-sm font-medium text-gray-700">Employé actif</label>
       </div>
+      </fieldset>
       <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={loading}
+        {modifiable && <button type="submit" disabled={loading}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
           {loading ? 'Enregistrement...' : 'Enregistrer les modifications'}
-        </button>
+        </button>}
         <a href="/admin/employes"
           className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-          Annuler
+          {modifiable ? 'Annuler' : 'Retour'}
         </a>
       </div>
     </form>

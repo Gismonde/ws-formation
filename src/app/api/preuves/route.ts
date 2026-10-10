@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getActeur, idsEmployesDansPortee, peutVoirEmploye } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -30,11 +32,27 @@ export async function GET(request: NextRequest) {
     .select('*')
     .order('soumis_le', { ascending: false })
 
-  // If not admin/gestionnaire, only show own proofs
-  if (!['admin', 'gestionnaire'].includes(employe.role)) {
+  const acteur = await getActeur()
+  if (!acteur) return NextResponse.json({ error: 'Employé non trouvé' }, { status: 404 })
+
+  if (!aAccesAdmin(acteur.role)) {
+    // Employé : uniquement ses propres preuves
     query = query.eq('employe_id', employe.id)
   } else if (employeId) {
+    if (employeId !== acteur.id) {
+      const { data: cible } = await serviceClient
+        .from('employes').select('id, clinique, departement_id').eq('id', employeId).single()
+      if (!cible || !peutVoirEmploye(acteur, cible)) {
+        return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+      }
+    }
     query = query.eq('employe_id', employeId)
+  } else {
+    const ids = await idsEmployesDansPortee(acteur, serviceClient)
+    if (ids) {
+      if (ids.length === 0) return NextResponse.json({ preuves: [] })
+      query = query.in('employe_id', ids)
+    }
   }
 
   if (formationId) {

@@ -15,7 +15,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   if (!user) redirect('/login')
 
   const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || (emp.role !== 'admin' && emp.role !== 'gestionnaire')) redirect('/dashboard')
+  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) redirect('/dashboard')
 
   const res = await getFormationWithModules(id)
   if (!res.success || !res.data) notFound()

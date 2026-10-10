@@ -1,40 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
+import { getActeur, serviceClient, filtrerEmployes, cliniquesAdministrees } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 export default async function AdminRapportsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const adminSupabase = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
-  const { data: moi } = await adminSupabase
-    .from('employes')
-    .select('role, departement_id')
-    .eq('auth_user_id', user!.id)
-    .single()
-
-  const isGestionnaire = moi?.role === 'gestionnaire'
-  const monDeptId = moi?.departement_id
+  const acteur = await getActeur()
+  if (!acteur) redirect('/login')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  const adminSupabase = serviceClient()
+  const isGestionnaire = acteur.role === 'gestionnaire'
+  const perimetre = acteur.role === 'super_admin' ? null
+    : isGestionnaire ? 'Vous consultez les données de votre département uniquement.'
+    : `Vous consultez les données de ${cliniquesAdministrees(acteur).join(' et ')} uniquement.`
 
   const { data: formations } = await adminSupabase.from('formations').select('id, titre, categorie').eq('publiee', true)
 
-  let empQuery = adminSupabase.from('employes').select('id').eq('actif', true)
-  if (isGestionnaire && monDeptId) empQuery = empQuery.eq('departement_id', monDeptId)
-  const { data: employes } = await empQuery
+  const { data: employes } = await filtrerEmployes(adminSupabase.from('employes').select('id').eq('actif', true), acteur)
+  const ids = new Set((employes ?? []).map((e: any) => e.id))
 
-  const { data: certificats } = await adminSupabase.from('certificats').select('*').eq('valide', true)
+  const { data: certificatsTous } = await adminSupabase.from('certificats').select('*').eq('valide', true)
   const { data: progressions } = await adminSupabase.from('vue_formations_employe').select('*')
 
-  // Filtrer progressions par département si gestionnaire
-  const progsFiltrees = (isGestionnaire && monDeptId)
-    ? progressions?.filter((p: any) => employes?.some((e: any) => e.id === p.employe_id)) ?? []
-    : progressions ?? []
+  const certificats = (certificatsTous ?? []).filter((c: any) => ids.has(c.employe_id))
+  const progsFiltrees = (progressions ?? []).filter((p: any) => ids.has(p.employe_id))
 
   const totalFormations = formations?.length ?? 0
   const totalEmployes = employes?.length ?? 0
@@ -53,9 +40,9 @@ export default async function AdminRapportsPage() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Tableau de bord</h1>
-      {isGestionnaire && monDeptId && (
+      {perimetre && (
         <p className="text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 mb-6">
-          Vous consultez les données de votre département uniquement.
+          {perimetre}
         </p>
       )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
