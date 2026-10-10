@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getLessonWithBlocks, getLessonsWithBlocks } from '@/lib/actions/lessons'
 import { upsertLessonProgression } from '@/lib/actions/progressions'
 import AudioReader from '@/components/AudioReader'
+import QuizInteractif from '@/components/lecon/QuizInteractif'
+import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
+import { signerUrlsMedias } from '@/lib/medias-serveur'
+import { lireQuiz } from '@/lib/quiz'
+import { TexteRiche, STYLES_ENCADRE } from '@/lib/texte-riche'
 
 type ContentBlock = {
   id: string
@@ -11,6 +16,7 @@ type ContentBlock = {
   titre: string | null
   contenu: string | null
   url: string | null
+  metadata?: Record<string, unknown> | null
   ordre: number
 }
 
@@ -23,93 +29,91 @@ type Lesson = {
   blocs: ContentBlock[]
 }
 
+type Urls = Record<string, string>
+
+/** Adresse affichable d'un bloc : média privé → adresse temporaire signée. */
+function source(bloc: ContentBlock, urls: Urls): string {
+  const brut = bloc.url || bloc.contenu || ''
+  return estMediaPrive(brut) ? urls[brut] ?? '' : brut
+}
+
+function estVide(bloc: ContentBlock): boolean {
+  if (bloc.type === 'quiz') return lireQuiz(bloc.contenu).questions.length === 0
+  if (bloc.type === 'text') return !bloc.contenu?.trim() && !bloc.titre?.trim()
+  return !(bloc.url || bloc.contenu)
+}
+
 function BlocTexte({ bloc }: { bloc: ContentBlock }) {
+  const style = String(bloc.metadata?.style ?? 'normal')
+  const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      {bloc.titre && <h3 className="text-lg font-semibold text-gray-900 mb-3">{bloc.titre}</h3>}
-      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
-        {bloc.contenu}
+    <div className="rounded-xl p-6" style={{ background: s.fond, border: `1px solid ${s.bord}`, borderLeftWidth: style === 'normal' ? 1 : 4 }}>
+      {bloc.titre && (
+        <h3 className="text-lg font-semibold mb-3" style={{ color: s.titre }}>
+          {style !== 'normal' && <span className="mr-2">{s.icone}</span>}{bloc.titre}
+        </h3>
+      )}
+      <div className="text-gray-700 leading-relaxed">
+        <TexteRiche texte={bloc.contenu ?? ''} />
       </div>
     </div>
   )
 }
 
-function BlocVideo({ bloc }: { bloc: ContentBlock }) {
-  const url = bloc.url || bloc.contenu || ''
-  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be')
-  const isYouTubeEmbed = url.includes('youtube.com/embed')
-
-  let embedUrl = url
-  if (isYouTube && !isYouTubeEmbed) {
-    const videoId = url.match(/(?:v=|youtu.be\/)([^&?]+)/)?.[1]
-    if (videoId) embedUrl = 'https://www.youtube.com/embed/' + videoId
-  }
-
+function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+  const brut = bloc.url || bloc.contenu || ''
+  const enLigne = estMediaPrive(brut) ? null : analyserVideoEnLigne(brut)
+  const src = source(bloc, urls)
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {bloc.titre && (
         <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">{bloc.titre}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">🎬 {bloc.titre}</h3>
         </div>
       )}
       <div className="aspect-video bg-black">
-        {(isYouTube || isYouTubeEmbed) ? (
-          <iframe
-            src={embedUrl}
-            className="w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
+        {enLigne ? (
+          <iframe src={enLigne.embed} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Vidéo'}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
         ) : (
-          <video
-            src={url}
-            controls
-            className="w-full h-full"
-          />
+          <video src={src} controls controlsList="nodownload" preload="metadata" className="w-full h-full" />
         )}
       </div>
     </div>
   )
 }
 
-function BlocImage({ bloc }: { bloc: ContentBlock }) {
-  const url = bloc.url || bloc.contenu || ''
+function BlocImage({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+  const alt = String(bloc.metadata?.alt ?? '') || bloc.titre || 'Image'
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {bloc.titre && (
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">{bloc.titre}</h3>
-        </div>
-      )}
-      <div className="p-4">
-        <img src={url} alt={bloc.titre || 'Image'} className="w-full rounded-lg object-contain max-h-96" />
+    <figure className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="p-4 bg-gray-50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={source(bloc, urls)} alt={alt} className="w-full rounded-lg object-contain max-h-[32rem]" />
       </div>
-    </div>
+      {bloc.titre && <figcaption className="px-6 py-3 text-sm text-gray-600 border-t border-gray-100">{bloc.titre}</figcaption>}
+    </figure>
   )
 }
 
-function BlocFichier({ bloc }: { bloc: ContentBlock }) {
-  const url = bloc.url || bloc.contenu || ''
+function BlocFichier({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+  const nom = String(bloc.metadata?.nom_fichier ?? '')
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      {bloc.titre && <h3 className="text-lg font-semibold text-gray-900 mb-3">{bloc.titre}</h3>}
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Telecharger le fichier
+    <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+      <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">📎</div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900 truncate">{bloc.titre || nom || 'Document'}</p>
+        {nom && bloc.titre && <p className="text-xs text-gray-500 truncate">{nom}</p>}
+      </div>
+      <a href={source(bloc, urls)} target="_blank" rel="noopener noreferrer"
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex-shrink-0">
+        Ouvrir
       </a>
     </div>
   )
 }
 
-function BlocSlide({ bloc }: { bloc: ContentBlock }) {
-  const url = bloc.url || bloc.contenu || ''
+function BlocSlide({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {bloc.titre && (
@@ -118,58 +122,21 @@ function BlocSlide({ bloc }: { bloc: ContentBlock }) {
         </div>
       )}
       <div className="aspect-video">
-        <iframe
-          src={url}
-          className="w-full h-full"
-          allowFullScreen
-        />
+        <iframe src={source(bloc, urls)} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Présentation'} />
       </div>
     </div>
   )
 }
 
-function BlocQuiz({ bloc }: { bloc: ContentBlock }) {
-  let quiz: { questions: { question: string; reponses: string[]; bonne_reponse: number }[] } | null = null
-  try {
-    if (bloc.contenu) quiz = JSON.parse(bloc.contenu)
-  } catch { /* ignore */ }
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      {bloc.titre && <h3 className="text-lg font-semibold text-gray-900 mb-4">{bloc.titre}</h3>}
-      {quiz ? (
-        <div className="space-y-6">
-          {quiz.questions.map((q, i) => (
-            <div key={i} className="bg-gray-50 rounded-lg p-4">
-              <p className="font-medium text-gray-800 mb-3">{i + 1}. {q.question}</p>
-              <div className="space-y-2">
-                {q.reponses.map((r, j) => (
-                  <label key={j} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                    <input type="radio" name={"q" + i} className="text-blue-600" />
-                    <span className="text-sm text-gray-700">{r}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-gray-600 text-sm">{bloc.contenu}</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function RenduBloc({ bloc }: { bloc: ContentBlock }) {
+function RenduBloc({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+  if (estVide(bloc)) return null
   switch (bloc.type) {
     case 'text': return <BlocTexte bloc={bloc} />
-    case 'video': return <BlocVideo bloc={bloc} />
-    case 'image': return <BlocImage bloc={bloc} />
-    case 'file': return <BlocFichier bloc={bloc} />
-    case 'slide': return <BlocSlide bloc={bloc} />
-    case 'quiz': return <BlocQuiz bloc={bloc} />
+    case 'video': return <BlocVideo bloc={bloc} urls={urls} />
+    case 'image': return <BlocImage bloc={bloc} urls={urls} />
+    case 'file': return <BlocFichier bloc={bloc} urls={urls} />
+    case 'slide': return <BlocSlide bloc={bloc} urls={urls} />
+    case 'quiz': return <QuizInteractif quiz={lireQuiz(bloc.contenu)} titre={bloc.titre} />
     default: return null
   }
 }
@@ -188,6 +155,7 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
   const resLecon = await getLessonWithBlocks(leconId)
   if (!resLecon.success || !resLecon.data) notFound()
   const lecon = resLecon.data as Lesson
+  const urlsMedias = await signerUrlsMedias((lecon.blocs ?? []).map(b => b.url || b.contenu))
 
   // Charger la formation pour le contexte
   const { data: formation } = await supabase.from('formations').select('id, titre').eq('id', formationId).single()
@@ -202,7 +170,7 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
 
   // Marquer la lecon comme vue automatiquement (si employe)
   if (emp.role === 'employe') {
-    await upsertLessonProgression({ lecon_id: leconId, statut: 'en_cours' })
+    await upsertLessonProgression({ lesson_id: leconId, statut: 'en_cours' })
   }
 
   const baseUrl = '/formations/' + formationId
@@ -273,7 +241,7 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
         ) : (
           <div className="space-y-6">
             {lecon.blocs.sort((a, b) => a.ordre - b.ordre).map(bloc => (
-              <RenduBloc key={bloc.id} bloc={bloc} />
+              <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} />
             ))}
           </div>
         )}
