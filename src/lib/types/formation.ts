@@ -42,6 +42,8 @@ export interface Lesson {
   ordre: number
   duree_minutes: number | null
   obligatoire: boolean
+  attestation_requise?: boolean
+  texte_attestation?: string | null
   created_at: string
 }
 
