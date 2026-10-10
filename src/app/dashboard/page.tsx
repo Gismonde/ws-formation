@@ -60,18 +60,28 @@ export default async function DashboardPage() {
 
   const { data: certificats } = await supabase
     .from('certificats')
-    .select('formation_id, numero_certificat, created_at')
+    .select('formation_id, numero_certificat, date_emission')
     .eq('employe_id', employe.id)
 
   const certMap = new Map(certificats?.map((c: any) => [c.formation_id, c]) ?? [])
 
   // Récupérer les résultats de questionnaire pour les formations terminées
-  const { data: resultats } = await supabase
-    .from('resultats_questionnaire')
-    .select('formation_id, score, reussi, created_at')
+  // Dernier résultat de questionnaire par formation
+  const { data: questionnairesF } = await supabase
+    .from('questionnaires').select('id, formation_id').eq('actif', true)
+  const formationDuQ = new Map((questionnairesF ?? []).map((q: any) => [q.id, q.formation_id]))
+  const { data: tentativesBrutes } = await supabase
+    .from('tentatives_questionnaire')
+    .select('*')
     .eq('employe_id', employe.id)
-    .order('created_at', { ascending: false })
-
+    .order('date_fin', { ascending: false })
+  const resultats = (tentativesBrutes ?? [])
+    .filter((t: any) => t.annulee !== true && formationDuQ.has(t.questionnaire_id))
+    .map((t: any) => ({
+      formation_id: formationDuQ.get(t.questionnaire_id),
+      score: t.note_maximale ? Math.round((Number(t.note_obtenue ?? 0) / Number(t.note_maximale)) * 100) : 0,
+      reussi: t.reussi === true,
+    }))
   const resultatMap = new Map<string, any>()
   resultats?.forEach((r: any) => {
     if (!resultatMap.has(r.formation_id)) resultatMap.set(r.formation_id, r)
