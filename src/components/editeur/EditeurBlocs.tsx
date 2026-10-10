@@ -1,0 +1,627 @@
+'use client'
+
+// Éditeur visuel des blocs d'une leçon :
+//  - bouton « + » entre les blocs, menu illustré
+//  - modification sur place avec sauvegarde automatique
+//  - glisser-déposer pour réordonner
+//  - images : glisser un fichier, choisir, ou coller une capture (Ctrl+V)
+//  - vidéos : lien YouTube/Vimeo reconnu automatiquement, ou envoi d'un fichier
+//  - quiz construit à la souris
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import {
+  createContentBlock, updateContentBlock, deleteContentBlock, reorderContentBlocks, getLessonWithBlocks,
+} from '@/lib/actions/lessons'
+import type { ContentBlock, ContentBlockType } from '@/lib/types/formation'
+import { analyserVideoEnLigne, estMediaPrive, REGLES_MEDIAS, GenreMedia } from '@/lib/medias'
+import { lireQuiz, nouvelleQuestion, Quiz } from '@/lib/quiz'
+import { STYLES_ENCADRE } from '@/lib/texte-riche'
+
+type Bloc = ContentBlock
+type EtatSauvegarde = 'ok' | 'en_cours' | 'erreur'
+
+const TYPES_MENU: { type: ContentBlockType; style?: string; icone: string; libelle: string; aide: string }[] = [
+  { type: 'text', icone: '📝', libelle: 'Texte', aide: 'Paragraphes, listes, gras' },
+  { type: 'image', icone: '🖼️', libelle: 'Image', aide: 'Glisser, choisir ou coller' },
+  { type: 'video', icone: '🎬', libelle: 'Vidéo', aide: 'YouTube, Vimeo ou fichier' },
+  { type: 'quiz', icone: '❓', libelle: 'Quiz', aide: 'Questions à choix' },
+  { type: 'text', style: 'a_retenir', icone: '💡', libelle: 'À retenir', aide: 'Encadré bleu' },
+  { type: 'text', style: 'attention', icone: '⚠️', libelle: 'Attention', aide: 'Encadré orange' },
+  { type: 'text', style: 'procedure', icone: '✅', libelle: 'Procédure', aide: 'Étapes numérotées' },
+  { type: 'file', icone: '📎', libelle: 'Document', aide: 'PDF, Word, Excel…' },
+]
+
+const LIBELLE_TYPE: Record<string, string> = {
+  text: 'Texte', image: 'Image', video: 'Vidéo', quiz: 'Quiz', file: 'Document', slide: 'Présentation',
+}
+
+const supabaseNavigateur = () => createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+/** Envoie un fichier directement dans l'espace privé et renvoie sa référence « media:… ». */
+async function envoyerMedia(fichier: File, genre: GenreMedia): Promise<string> {
+  const regle = REGLES_MEDIAS[genre]
+  if (!regle.types.includes(fichier.type)) throw new Error(`Format non accepté (${regle.libelle})`)
+  if (fichier.size > regle.tailleMaxMo * 1024 * 1024) throw new Error(`Fichier trop volumineux (${regle.libelle})`)
+  const res = await fetch('/api/formations/medias', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ genre, type: fichier.type, taille: fichier.size }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error ?? 'Envoi refusé')
+  const { error } = await supabaseNavigateur().storage.from(data.bucket).uploadToSignedUrl(data.chemin, data.jeton, fichier, {
+    contentType: fichier.type,
+  })
+  if (error) throw new Error('Envoi échoué : ' + error.message)
+  return data.reference as string
+}
+
+function meta(b: Bloc): Record<string, unknown> {
+  return (b.metadata && typeof b.metadata === 'object') ? b.metadata as Record<string, unknown> : {}
+}
+
+// ---------------------------------------------------------------------------
+
+export default function EditeurBlocs({ leconId, formationId, blocsInitiaux }: {
+  leconId: string
+  formationId: string
+  blocsInitiaux: Bloc[]
+}) {
+  const [blocs, setBlocs] = useState<Bloc[]>(() => [...blocsInitiaux].sort((a, b) => a.ordre - b.ordre))
+  const [etat, setEtat] = useState<EtatSauvegarde>('ok')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [menuOuvert, setMenuOuvert] = useState<number | null>(null)
+  const [glisse, setGlisse] = useState<string | null>(null)
+  const [survol, setSurvol] = useState<number | null>(null)
+  const [urlsMedias, setUrlsMedias] = useState<Record<string, string>>({})
+  const minuteries = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const enAttente = useRef<Record<string, Partial<Bloc>>>({})
+
+  // À l'ouverture d'une leçon, on recharge ses blocs à jour depuis la base
+  useEffect(() => {
+    setMenuOuvert(null)
+    let actif = true
+    getLessonWithBlocks(leconId).then(res => {
+      if (actif && res.success) {
+        const frais = (res.data.blocs ?? []) as Bloc[]
+        setBlocs([...frais].sort((a, b) => a.ordre - b.ordre))
+      }
+    })
+    return () => { actif = false }
+  }, [leconId])
+
+  // Adresses temporaires pour afficher les médias privés
+  const refsMedias = useMemo(() => blocs.map(b => b.url).filter(estMediaPrive), [blocs])
+  useEffect(() => {
+    const manquants = refsMedias.filter(r => !urlsMedias[r])
+    if (manquants.length === 0) return
+    const q = manquants.map(r => 'ref=' + encodeURIComponent(r)).join('&')
+    fetch('/api/formations/medias?' + q).then(r => r.json()).then(d => {
+      if (d.urls) setUrlsMedias(u => ({ ...u, ...d.urls }))
+    }).catch(() => {})
+  }, [refsMedias]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sauvegarde automatique (regroupée par bloc, 0,7 s après la dernière frappe)
+  const enregistrer = useCallback(async (id: string) => {
+    const changes = enAttente.current[id]
+    delete enAttente.current[id]
+    if (!changes) return
+    setEtat('en_cours')
+    const res = await updateContentBlock(id, changes as Parameters<typeof updateContentBlock>[1])
+    if (res.success) setEtat(Object.keys(enAttente.current).length ? 'en_cours' : 'ok')
+    else { setEtat('erreur'); setErreur(res.error) }
+  }, [])
+
+  const modifier = useCallback((id: string, changes: Partial<Bloc>, immediat = false) => {
+    setBlocs(bs => bs.map(b => b.id === id ? { ...b, ...changes } : b))
+    enAttente.current[id] = { ...enAttente.current[id], ...changes }
+    setEtat('en_cours')
+    clearTimeout(minuteries.current[id])
+    if (immediat) enregistrer(id)
+    else minuteries.current[id] = setTimeout(() => enregistrer(id), 700)
+  }, [enregistrer])
+
+  // Avant de quitter la page, on enregistre ce qui reste
+  useEffect(() => {
+    const avantDepart = (e: BeforeUnloadEvent) => {
+      if (Object.keys(enAttente.current).length) { e.preventDefault(); e.returnValue = '' }
+    }
+    window.addEventListener('beforeunload', avantDepart)
+    const timers = minuteries.current
+    return () => {
+      window.removeEventListener('beforeunload', avantDepart)
+      Object.keys(enAttente.current).forEach(id => { clearTimeout(timers[id]); enregistrer(id) })
+    }
+  }, [enregistrer])
+
+  const renumeroter = useCallback(async (liste: Bloc[]) => {
+    const numerotes = liste.map((b, i) => ({ ...b, ordre: i + 1 }))
+    setBlocs(numerotes)
+    setEtat('en_cours')
+    const res = await reorderContentBlocks(leconId, numerotes.map(b => ({ id: b.id, ordre: b.ordre })))
+    setEtat(res.success ? 'ok' : 'erreur')
+    if (!res.success) setErreur(res.error)
+  }, [leconId])
+
+  const ajouter = useCallback(async (position: number, type: ContentBlockType, style?: string, valeurs: Partial<Bloc> = {}) => {
+    setMenuOuvert(null)
+    setEtat('en_cours')
+    const contenuInitial = type === 'quiz' ? JSON.stringify({ questions: [nouvelleQuestion()] })
+      : style === 'procedure' ? '1. ' : undefined
+    const res = await createContentBlock({
+      lesson_id: leconId,
+      type,
+      ordre: position + 1,
+      contenu: (valeurs.contenu as string | undefined) ?? contenuInitial,
+      url: (valeurs.url as string | undefined) ?? undefined,
+      titre: (valeurs.titre as string | undefined) ?? (style ? STYLES_ENCADRE[style]?.libelle : undefined),
+      metadata: style ? { style } : (valeurs.metadata as Record<string, unknown> | undefined) ?? null,
+    })
+    if (!res.success) { setEtat('erreur'); setErreur(res.error); return null }
+    const nouveau = res.data
+    const liste = [...blocs]
+    liste.splice(position, 0, nouveau)
+    await renumeroter(liste)
+    return nouveau
+  }, [blocs, leconId, renumeroter])
+
+  const supprimer = useCallback(async (id: string) => {
+    if (!confirm('Supprimer ce bloc ?')) return
+    clearTimeout(minuteries.current[id]); delete enAttente.current[id]
+    setEtat('en_cours')
+    const res = await deleteContentBlock(id)
+    if (!res.success) { setEtat('erreur'); setErreur(res.error); return }
+    await renumeroter(blocs.filter(b => b.id !== id))
+  }, [blocs, renumeroter])
+
+  const dupliquer = useCallback(async (b: Bloc) => {
+    const i = blocs.findIndex(x => x.id === b.id)
+    await ajouter(i + 1, b.type, undefined, { titre: b.titre, contenu: b.contenu, url: b.url, metadata: b.metadata })
+  }, [blocs, ajouter])
+
+  const deplacer = useCallback((id: string, vers: number) => {
+    const liste = [...blocs]
+    const de = liste.findIndex(b => b.id === id)
+    if (de < 0) return
+    const [b] = liste.splice(de, 1)
+    liste.splice(vers > de ? vers - 1 : vers, 0, b)
+    renumeroter(liste)
+  }, [blocs, renumeroter])
+
+  // Coller une capture d'écran n'importe où dans l'éditeur (hors champ de texte) → nouveau bloc image
+  useEffect(() => {
+    const coller = async (e: ClipboardEvent) => {
+      const cible = e.target as HTMLElement | null
+      if (cible && (cible.tagName === 'TEXTAREA' || cible.tagName === 'INPUT') && !cible.dataset.zoneImage) return
+      const fichier = Array.from(e.clipboardData?.files ?? []).find(f => f.type.startsWith('image/'))
+      if (!fichier || cible?.dataset.zoneImage) return
+      e.preventDefault()
+      try {
+        setEtat('en_cours')
+        const ref = await envoyerMedia(fichier, 'image')
+        await ajouter(blocs.length, 'image', undefined, { url: ref })
+      } catch (err) { setEtat('erreur'); setErreur((err as Error).message) }
+    }
+    window.addEventListener('paste', coller)
+    return () => window.removeEventListener('paste', coller)
+  }, [ajouter, blocs.length])
+
+  const props = { modifier, urlsMedias, setErreur, setEtat }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          Contenu de la leçon <span className="text-gray-400 font-normal normal-case">({blocs.length} bloc{blocs.length > 1 ? 's' : ''})</span>
+        </h3>
+        <div className="flex items-center gap-3">
+          <span className={'text-xs ' + (etat === 'erreur' ? 'text-red-600' : etat === 'en_cours' ? 'text-amber-600' : 'text-green-600')}>
+            {etat === 'erreur' ? '⚠️ Erreur d’enregistrement' : etat === 'en_cours' ? 'Enregistrement…' : '✓ Enregistré'}
+          </span>
+          <a href={`/formations/${formationId}/lecon/${leconId}`} target="_blank" rel="noopener noreferrer"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+            👁️ Aperçu employé
+          </a>
+        </div>
+      </div>
+
+      {erreur && (
+        <div className="mb-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 flex justify-between gap-2">
+          <span>{erreur}</span>
+          <button onClick={() => setErreur(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400 mb-3">
+        Astuce : collez une capture d’écran (Ctrl+V) pour l’ajouter en image. Glissez les blocs par la poignée ⋮⋮ pour les réordonner.
+      </p>
+
+      <ZoneInsertion index={0} ouvert={menuOuvert === 0} setOuvert={setMenuOuvert} onChoisir={ajouter}
+        actif={glisse !== null && survol === 0} onDragOver={() => setSurvol(0)} onDrop={() => glisse && deplacer(glisse, 0)} vide={blocs.length === 0} />
+
+      {blocs.map((b, i) => (
+        <div key={b.id}>
+          <div
+            className={'bg-white rounded-xl border shadow-sm transition-opacity ' + (glisse === b.id ? 'opacity-40 border-blue-300' : 'border-gray-200')}
+          >
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+              <span
+                draggable
+                onDragStart={e => { setGlisse(b.id); e.dataTransfer.effectAllowed = 'move' }}
+                onDragEnd={() => { setGlisse(null); setSurvol(null) }}
+                title="Glisser pour déplacer"
+                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 select-none px-1"
+              >⋮⋮</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                {b.type === 'text' && meta(b).style && meta(b).style !== 'normal'
+                  ? STYLES_ENCADRE[String(meta(b).style)]?.libelle ?? 'Texte'
+                  : LIBELLE_TYPE[b.type] ?? b.type}
+              </span>
+              <div className="ml-auto flex items-center gap-1">
+                <BoutonIcone titre="Monter" disabled={i === 0} onClick={() => deplacer(b.id, i - 1)}>↑</BoutonIcone>
+                <BoutonIcone titre="Descendre" disabled={i === blocs.length - 1} onClick={() => deplacer(b.id, i + 2)}>↓</BoutonIcone>
+                <BoutonIcone titre="Dupliquer" onClick={() => dupliquer(b)}>⧉</BoutonIcone>
+                <BoutonIcone titre="Supprimer" danger onClick={() => supprimer(b.id)}>✕</BoutonIcone>
+              </div>
+            </div>
+            <div className="p-4">
+              {b.type === 'text' && <EditeurTexte bloc={b} {...props} />}
+              {b.type === 'image' && <EditeurImage bloc={b} {...props} />}
+              {b.type === 'video' && <EditeurVideo bloc={b} {...props} />}
+              {b.type === 'quiz' && <EditeurQuiz bloc={b} {...props} />}
+              {b.type === 'file' && <EditeurFichier bloc={b} {...props} />}
+              {b.type === 'slide' && <EditeurLien bloc={b} {...props} />}
+            </div>
+          </div>
+          <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter}
+            actif={glisse !== null && survol === i + 1} onDragOver={() => setSurvol(i + 1)} onDrop={() => glisse && deplacer(glisse, i + 1)} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Insertion
+
+function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, actif, onDragOver, onDrop, vide }: {
+  index: number
+  ouvert: boolean
+  setOuvert: (i: number | null) => void
+  onChoisir: (position: number, type: ContentBlockType, style?: string) => void
+  actif: boolean
+  onDragOver: () => void
+  onDrop: () => void
+  vide?: boolean
+}) {
+  return (
+    <div
+      onDragOver={e => { e.preventDefault(); onDragOver() }}
+      onDrop={e => { e.preventDefault(); onDrop() }}
+      className={'relative py-2 ' + (actif ? 'py-4' : '')}
+    >
+      {actif && <div className="h-1 rounded bg-blue-500" />}
+      {!actif && (
+        <div className="flex items-center gap-2 group">
+          <div className="flex-1 h-px bg-transparent group-hover:bg-gray-200" />
+          <button
+            onClick={() => setOuvert(ouvert ? null : index)}
+            className={vide
+              ? 'px-4 py-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 text-sm font-semibold hover:bg-blue-50 w-full'
+              : 'w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 text-lg leading-none shadow-sm'}
+            title="Ajouter un bloc ici"
+          >
+            {vide ? '+ Ajouter le premier bloc' : '+'}
+          </button>
+          <div className="flex-1 h-px bg-transparent group-hover:bg-gray-200" />
+        </div>
+      )}
+      {ouvert && (
+        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white border border-gray-200 rounded-xl p-3 shadow-lg">
+          {TYPES_MENU.map(t => (
+            <button key={t.libelle} onClick={() => onChoisir(index, t.type, t.style)}
+              className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 text-left">
+              <span className="text-xl">{t.icone}</span>
+              <span className="text-sm font-semibold text-gray-800">{t.libelle}</span>
+              <span className="text-xs text-gray-500">{t.aide}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BoutonIcone({ children, titre, onClick, disabled, danger }: {
+  children: React.ReactNode; titre: string; onClick: () => void; disabled?: boolean; danger?: boolean
+}) {
+  return (
+    <button title={titre} aria-label={titre} onClick={onClick} disabled={disabled}
+      className={'w-7 h-7 rounded-md text-sm disabled:opacity-30 ' + (danger ? 'text-red-400 hover:bg-red-50 hover:text-red-600' : 'text-gray-500 hover:bg-gray-200')}>
+      {children}
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Éditeurs par type
+
+type PropsBloc = {
+  bloc: Bloc
+  modifier: (id: string, changes: Partial<Bloc>, immediat?: boolean) => void
+  urlsMedias: Record<string, string>
+  setErreur: (e: string | null) => void
+  setEtat: (e: EtatSauvegarde) => void
+}
+
+const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+function ZoneTexteAuto(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const t = ref.current
+    if (t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px' }
+  }, [props.value])
+  return <textarea ref={ref} rows={3} {...props} className={champ + ' resize-none leading-relaxed ' + (props.className ?? '')} />
+}
+
+function EditeurTexte({ bloc, modifier }: PropsBloc) {
+  const style = String(meta(bloc).style ?? 'normal')
+  const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1">
+        {Object.entries(STYLES_ENCADRE).map(([cle, st]) => (
+          <button key={cle} onClick={() => modifier(bloc.id, { metadata: { ...meta(bloc), style: cle } }, true)}
+            className={'text-xs px-2 py-1 rounded-md border ' + (style === cle ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
+            {st.icone} {st.libelle}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-lg p-3" style={{ background: s.fond, border: `1px solid ${s.bord}` }}>
+        {style !== 'normal' && (
+          <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value })}
+            placeholder="Titre de l'encadré" className="w-full bg-transparent font-semibold text-sm mb-2 focus:outline-none" style={{ color: s.titre }} />
+        )}
+        {style === 'normal' && (
+          <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
+            placeholder="Sous-titre (optionnel)" className="w-full bg-transparent font-semibold text-base text-gray-900 mb-2 focus:outline-none" />
+        )}
+        <ZoneTexteAuto value={bloc.contenu ?? ''} onChange={e => modifier(bloc.id, { contenu: e.target.value })}
+          placeholder={style === 'procedure' ? '1. Première étape\n2. Deuxième étape' : 'Écrivez ici… (**gras**, *italique*, « - » pour une liste, « 1. » pour une liste numérotée)'}
+          className="bg-white/70" />
+      </div>
+    </div>
+  )
+}
+
+function ZoneDepot({ genre, onFichier, texte, enCours }: {
+  genre: GenreMedia; onFichier: (f: File) => void; texte: string; enCours: boolean
+}) {
+  const [dessus, setDessus] = useState(false)
+  const input = useRef<HTMLInputElement>(null)
+  return (
+    <div
+      tabIndex={0}
+      data-zone-image={genre === 'image' ? '1' : undefined}
+      onDragOver={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDessus(true) } }}
+      onDragLeave={() => setDessus(false)}
+      onDrop={e => {
+        const f = e.dataTransfer.files?.[0]
+        if (f) { e.preventDefault(); e.stopPropagation(); setDessus(false); onFichier(f) }
+      }}
+      onPaste={e => {
+        const f = Array.from(e.clipboardData.files).find(x => REGLES_MEDIAS[genre].types.includes(x.type))
+        if (f) { e.preventDefault(); onFichier(f) }
+      }}
+      onClick={() => input.current?.click()}
+      className={'rounded-xl border-2 border-dashed p-6 text-center cursor-pointer outline-none focus:ring-2 focus:ring-blue-400 ' +
+        (dessus ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50')}
+    >
+      <input ref={input} type="file" hidden accept={REGLES_MEDIAS[genre].types.join(',')}
+        onChange={e => { const f = e.target.files?.[0]; if (f) onFichier(f); e.target.value = '' }} />
+      {enCours ? (
+        <p className="text-sm text-blue-700 font-medium">Envoi en cours…</p>
+      ) : (
+        <>
+          <p className="text-sm text-gray-700 font-medium">{texte}</p>
+          <p className="text-xs text-gray-400 mt-1">{REGLES_MEDIAS[genre].libelle}</p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function useEnvoi({ bloc, modifier, setErreur, setEtat }: PropsBloc, genre: GenreMedia) {
+  const [enCours, setEnCours] = useState(false)
+  const envoyer = async (f: File, autres: Partial<Bloc> = {}) => {
+    setEnCours(true); setEtat('en_cours')
+    try {
+      const ref = await envoyerMedia(f, genre)
+      modifier(bloc.id, { url: ref, ...autres }, true)
+    } catch (e) { setErreur((e as Error).message); setEtat('erreur') }
+    finally { setEnCours(false) }
+  }
+  return { enCours, envoyer }
+}
+
+function adresse(url: string | null, urlsMedias: Record<string, string>) {
+  if (!url) return null
+  return estMediaPrive(url) ? urlsMedias[url] ?? null : url
+}
+
+function EditeurImage(p: PropsBloc) {
+  const { bloc, modifier, urlsMedias } = p
+  const { enCours, envoyer } = useEnvoi(p, 'image')
+  const src = adresse(bloc.url ?? bloc.contenu, urlsMedias)
+  return (
+    <div className="space-y-3">
+      {bloc.url || bloc.contenu ? (
+        <div className="relative group">
+          {src
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={src} alt={String(meta(bloc).alt ?? bloc.titre ?? '')} className="w-full max-h-80 object-contain rounded-lg bg-gray-50" />
+            : <div className="h-40 rounded-lg bg-gray-100 animate-pulse" />}
+          <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)}
+            className="absolute top-2 right-2 text-xs bg-white/90 border border-gray-300 rounded-md px-2 py-1 opacity-0 group-hover:opacity-100">
+            Remplacer
+          </button>
+        </div>
+      ) : (
+        <ZoneDepot genre="image" enCours={enCours} onFichier={f => envoyer(f)}
+          texte="Glissez une image ici, cliquez pour choisir, ou collez une capture (Ctrl+V)" />
+      )}
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
+        placeholder="Légende (affichée sous l'image)" className={champ} />
+      <input value={String(meta(bloc).alt ?? '')} onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), alt: e.target.value } })}
+        placeholder="Description pour l'accessibilité (lecteurs d'écran)" className={champ + ' text-xs'} />
+    </div>
+  )
+}
+
+function EditeurVideo(p: PropsBloc) {
+  const { bloc, modifier, urlsMedias } = p
+  const { enCours, envoyer } = useEnvoi(p, 'video')
+  const source = bloc.url ?? bloc.contenu ?? ''
+  const enLigne = source && !estMediaPrive(source) ? analyserVideoEnLigne(source) : null
+  const [mode, setMode] = useState<'lien' | 'fichier'>(estMediaPrive(source) ? 'fichier' : 'lien')
+  const src = estMediaPrive(source) ? urlsMedias[source] : null
+
+  return (
+    <div className="space-y-3">
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
+        placeholder="Titre de la vidéo" className={champ + ' font-medium'} />
+
+      {source ? (
+        <div className="space-y-2">
+          <div className="aspect-video rounded-lg overflow-hidden bg-black">
+            {enLigne ? (
+              <iframe src={enLigne.embed} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Vidéo'}
+                allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" />
+            ) : src ? (
+              <video src={src} controls className="w-full h-full" />
+            ) : estMediaPrive(source) ? (
+              <div className="w-full h-full animate-pulse bg-gray-800" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-300 p-4 text-center">
+                Lien non reconnu. Collez un lien YouTube ou Vimeo, ou envoyez un fichier vidéo.
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>{enLigne ? (enLigne.plateforme === 'youtube' ? '▶ YouTube' : '▶ Vimeo') : estMediaPrive(source) ? '🔒 Vidéo privée hébergée' : ''}</span>
+            <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)} className="text-blue-600 hover:underline">Changer de vidéo</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-1 text-xs">
+            {(['lien', 'fichier'] as const).map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                className={'px-3 py-1.5 rounded-md border ' + (mode === m ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600')}>
+                {m === 'lien' ? '🔗 Lien YouTube / Vimeo' : '⬆️ Envoyer un fichier'}
+              </button>
+            ))}
+          </div>
+          {mode === 'lien' ? (
+            <input autoFocus placeholder="Collez le lien de la vidéo (ex. https://youtu.be/…)" className={champ}
+              onChange={e => { const v = e.target.value.trim(); if (analyserVideoEnLigne(v)) modifier(bloc.id, { url: v, contenu: null }, true) }} />
+          ) : (
+            <ZoneDepot genre="video" enCours={enCours} onFichier={f => envoyer(f, { contenu: null })}
+              texte="Glissez une vidéo ici ou cliquez pour choisir (reste privée, visible seulement dans WS Formation)" />
+          )}
+          <p className="text-xs text-gray-400">Pour une vidéo de plus de 50 Mo, publiez-la sur YouTube en « non répertoriée » et collez le lien.</p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function EditeurFichier(p: PropsBloc) {
+  const { bloc, modifier } = p
+  const { enCours, envoyer } = useEnvoi(p, 'fichier')
+  const nom = String(meta(bloc).nom_fichier ?? '')
+  return (
+    <div className="space-y-3">
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
+        placeholder="Nom affiché (ex. Politique de confidentialité 2026)" className={champ + ' font-medium'} />
+      {bloc.url || bloc.contenu ? (
+        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <span className="truncate">📎 {nom || (estMediaPrive(bloc.url) ? 'Document privé' : bloc.url ?? bloc.contenu)}</span>
+          <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">Remplacer</button>
+        </div>
+      ) : (
+        <ZoneDepot genre="fichier" enCours={enCours}
+          onFichier={f => envoyer(f, { metadata: { ...meta(bloc), nom_fichier: f.name }, titre: bloc.titre || f.name.replace(/\.[^.]+$/, '') })}
+          texte="Glissez un document ici ou cliquez pour choisir" />
+      )}
+    </div>
+  )
+}
+
+function EditeurLien({ bloc, modifier }: PropsBloc) {
+  return (
+    <div className="space-y-2">
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })} placeholder="Titre" className={champ} />
+      <input value={bloc.url ?? bloc.contenu ?? ''} onChange={e => modifier(bloc.id, { url: e.target.value, contenu: null })}
+        placeholder="Lien de la présentation (Google Slides, Canva…)" className={champ} />
+    </div>
+  )
+}
+
+function EditeurQuiz({ bloc, modifier }: PropsBloc) {
+  const quiz = lireQuiz(bloc.contenu)
+  const maj = (q: Quiz) => modifier(bloc.id, { contenu: JSON.stringify(q) })
+  const majQuestion = (i: number, changes: Partial<Quiz['questions'][number]>) =>
+    maj({ questions: quiz.questions.map((q, j) => j === i ? { ...q, ...changes } : q) })
+
+  return (
+    <div className="space-y-4">
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
+        placeholder="Titre du quiz (ex. Vérifiez vos connaissances)" className={champ + ' font-medium'} />
+      {quiz.questions.map((q, i) => (
+        <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-1.5">{i + 1}</span>
+            <ZoneTexteAuto rows={1} value={q.question} onChange={e => majQuestion(i, { question: e.target.value })} placeholder="Écrivez la question…" />
+            <button title="Supprimer la question" onClick={() => maj({ questions: quiz.questions.filter((_, j) => j !== i) })}
+              className="text-red-400 hover:text-red-600 px-1 mt-1.5" disabled={quiz.questions.length === 1}>✕</button>
+          </div>
+          <div className="space-y-2 pl-8">
+            {q.reponses.map((r, j) => (
+              <div key={j} className="flex items-center gap-2">
+                <input type="radio" name={`bonne-${bloc.id}-${i}`} checked={q.bonne_reponse === j}
+                  onChange={() => majQuestion(i, { bonne_reponse: j })} title="Bonne réponse" className="w-4 h-4 accent-green-600" />
+                <input value={r} onChange={e => majQuestion(i, { reponses: q.reponses.map((x, k) => k === j ? e.target.value : x) })}
+                  placeholder={`Réponse ${j + 1}`}
+                  className={champ + (q.bonne_reponse === j ? ' border-green-400 bg-green-50' : '')} />
+                <button title="Retirer" disabled={q.reponses.length <= 2}
+                  onClick={() => majQuestion(i, {
+                    reponses: q.reponses.filter((_, k) => k !== j),
+                    bonne_reponse: q.bonne_reponse === j ? 0 : q.bonne_reponse > j ? q.bonne_reponse - 1 : q.bonne_reponse,
+                  })}
+                  className="text-gray-400 hover:text-red-500 disabled:opacity-20 px-1">✕</button>
+              </div>
+            ))}
+            {q.reponses.length < 6 && (
+              <button onClick={() => majQuestion(i, { reponses: [...q.reponses, ''] })} className="text-xs text-blue-600 hover:underline">
+                + Ajouter une réponse
+              </button>
+            )}
+            <p className="text-xs text-gray-400">Cochez le rond de la bonne réponse.</p>
+            <input value={q.explication ?? ''} onChange={e => majQuestion(i, { explication: e.target.value })}
+              placeholder="Explication affichée après la réponse (optionnel)" className={champ + ' text-xs'} />
+          </div>
+        </div>
+      ))}
+      <button onClick={() => maj({ questions: [...quiz.questions, nouvelleQuestion()] })}
+        className="w-full text-sm font-medium text-blue-600 border border-dashed border-blue-300 rounded-lg py-2 hover:bg-blue-50">
+        + Ajouter une question
+      </button>
+    </div>
+  )
+}
