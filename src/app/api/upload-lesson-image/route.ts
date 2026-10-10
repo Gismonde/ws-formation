@@ -1,3 +1,4 @@
+import { getCreateurFormations } from '@/lib/permissions'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -6,6 +7,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+    if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorise - creation de formations non permise' }, { status: 403 })
 
     const serviceClient = createServiceClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
