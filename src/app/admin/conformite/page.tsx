@@ -3,6 +3,7 @@ import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
 import Link from 'next/link'
+import { chargerSuiviFormations, suiviDe, type SuiviFormationEmploye } from '@/lib/suivi-formations'
 
 type StatutFormation = 'non_commence' | 'en_cours' | 'termine'
 
@@ -13,6 +14,7 @@ type AssignationDetail = {
   progression: number
   certificat_valide: boolean
   certificat_date: string | null
+  suivi: SuiviFormationEmploye | null
 }
 
 type EmployeConformite = {
@@ -49,6 +51,10 @@ export default async function ConformitePage() {
   const progressions_ = progressions ?? []
   const certificats_ = certificats ?? []
 
+  // Suivi détaillé : leçons terminées, attestations « J'ai lu et compris », vidéos obligatoires
+  const idsAssignes = Array.from(new Set(assignations_.map((a: any) => a.formation_id)))
+  const suivi = await chargerSuiviFormations(adminSupabase, employes_.map((e: any) => e.id), idsAssignes as string[])
+
   const data: EmployeConformite[] = employes_.map((emp: any) => {
     const empAssignations = assignations_.filter((a: any) => a.employe_id === emp.id)
     const details: AssignationDetail[] = empAssignations.map((a: any) => {
@@ -62,6 +68,7 @@ export default async function ConformitePage() {
         progression: prog?.progression ?? 0,
         certificat_valide: !!cert,
         certificat_date: cert?.issued_at ?? null,
+        suivi: suiviDe(suivi, emp.id, a.formation_id),
       }
     })
     return {
@@ -80,6 +87,8 @@ export default async function ConformitePage() {
   const totalEnCours = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'en_cours').length, 0)
   const totalCerts = data.reduce((s, e) => s + e.assignations.filter(a => a.certificat_valide).length, 0)
   const taux = totalAssign > 0 ? Math.round((totalTermines / totalAssign) * 100) : 0
+  const attRequises = data.reduce((s, e) => s + e.assignations.reduce((x, a) => x + (a.suivi?.attestations_requises ?? 0), 0), 0)
+  const attSignees = data.reduce((s, e) => s + e.assignations.reduce((x, a) => x + (a.suivi?.attestations_signees ?? 0), 0), 0)
 
   const statutConfig: Record<StatutFormation, { bg: string; color: string; label: string }> = {
     non_commence: { bg: '#f3f4f6', color: '#6b7280', label: 'Non commence' },
@@ -96,12 +105,13 @@ export default async function ConformitePage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px', marginBottom: '32px' }}>
         {[
           { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b' },
           { label: 'Formations assignees', value: String(totalAssign), color: '#1a1f36' },
           { label: 'Terminees', value: String(totalTermines), color: '#065f46' },
           { label: 'Certificats obtenus', value: String(totalCerts), color: '#4338ca' },
+          { label: "Attestations « lu et compris »", value: attRequises ? `${attSignees}/${attRequises}` : '—', color: attRequises && attSignees === attRequises ? '#065f46' : '#92400e' },
         ].map(stat => (
           <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
             <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
@@ -166,6 +176,8 @@ export default async function ConformitePage() {
                         <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Formation</th>
                         <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Statut</th>
                         <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Progression</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Leçons</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Lu et compris</th>
                         <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Certificat</th>
                       </tr>
                     </thead>
@@ -187,6 +199,27 @@ export default async function ConformitePage() {
                                 </div>
                                 <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>{a.progression}%</span>
                               </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              {a.suivi ? (
+                                <span style={{ fontWeight: 600, color: a.suivi.lecons_terminees === a.suivi.lecons_total ? '#065f46' : '#374151' }}>
+                                  {a.suivi.lecons_terminees}/{a.suivi.lecons_total}
+                                </span>
+                              ) : <span style={{ color: '#d1d5db' }}>-</span>}
+                              {a.suivi && a.suivi.videos_obligatoires > 0 && (
+                                <div style={{ fontSize: '10px', color: '#9ca3af' }}>🎬 {a.suivi.videos_vues}/{a.suivi.videos_obligatoires} vidéos</div>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              {a.suivi && a.suivi.attestations_requises > 0 ? (
+                                <span style={{
+                                  padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
+                                  background: a.suivi.attestations_signees === a.suivi.attestations_requises ? '#d1fae5' : '#fef3c7',
+                                  color: a.suivi.attestations_signees === a.suivi.attestations_requises ? '#065f46' : '#92400e',
+                                }}>
+                                  ✍️ {a.suivi.attestations_signees}/{a.suivi.attestations_requises}
+                                </span>
+                              ) : <span style={{ color: '#d1d5db' }}>-</span>}
                             </td>
                             <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                               {a.certificat_valide ? (
