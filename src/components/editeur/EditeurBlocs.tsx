@@ -17,6 +17,7 @@ import type { ContentBlock, ContentBlockType } from '@/lib/types/formation'
 import { analyserVideoEnLigne, estMediaPrive, REGLES_MEDIAS, GenreMedia } from '@/lib/medias'
 import { lireQuiz, nouvelleQuestion, Quiz } from '@/lib/quiz'
 import { STYLES_ENCADRE } from '@/lib/texte-riche'
+import { MODELES_LECON, ModeleLecon } from '@/lib/modeles-lecon'
 
 type Bloc = ContentBlock
 type EtatSauvegarde = 'ok' | 'en_cours' | 'erreur'
@@ -66,10 +67,12 @@ function meta(b: Bloc): Record<string, unknown> {
 
 // ---------------------------------------------------------------------------
 
-export default function EditeurBlocs({ leconId, formationId, blocsInitiaux }: {
+export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onModeleAttestation }: {
   leconId: string
   formationId: string
   blocsInitiaux: Bloc[]
+  /** Un modèle demande « J'ai lu et compris » : la page active l'option de la leçon */
+  onModeleAttestation?: () => void
 }) {
   const [blocs, setBlocs] = useState<Bloc[]>(() => [...blocsInitiaux].sort((a, b) => a.ordre - b.ordre))
   const [etat, setEtat] = useState<EtatSauvegarde>('ok')
@@ -212,6 +215,24 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux }: {
 
   const props = { modifier, urlsMedias, setErreur, setEtat }
 
+  // Partir d'un modèle : crée tous les blocs du modèle d'un coup
+  const appliquerModele = async (modele: ModeleLecon) => {
+    setEtat('en_cours')
+    const crees: Bloc[] = []
+    for (let i = 0; i < modele.blocs.length; i++) {
+      const b = modele.blocs[i]
+      const res = await createContentBlock({
+        lesson_id: leconId, type: b.type, ordre: i + 1,
+        titre: b.titre, contenu: b.contenu, metadata: b.metadata ?? null,
+      })
+      if (!res.success) { setEtat('erreur'); setErreur(res.error); break }
+      crees.push(res.data)
+    }
+    setBlocs(crees)
+    setEtat('ok')
+    if (modele.attestation) onModeleAttestation?.()
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
@@ -222,7 +243,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux }: {
           <span className={'text-xs ' + (etat === 'erreur' ? 'text-red-600' : etat === 'en_cours' ? 'text-amber-600' : 'text-green-600')}>
             {etat === 'erreur' ? '⚠️ Erreur d’enregistrement' : etat === 'en_cours' ? 'Enregistrement…' : '✓ Enregistré'}
           </span>
-          <a href={`/formations/${formationId}/lecon/${leconId}`} target="_blank" rel="noopener noreferrer"
+          <a href={`/formations/${formationId}/lecon/${leconId}?apercu=1`} target="_blank" rel="noopener noreferrer"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
             👁️ Aperçu employé
           </a>
@@ -239,6 +260,23 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux }: {
       <p className="text-xs text-gray-400 mb-3">
         Astuce : collez une capture d’écran (Ctrl+V) pour l’ajouter en image. Glissez les blocs par la poignée ⋮⋮ pour les réordonner.
       </p>
+
+      {blocs.length === 0 && (
+        <div className="mb-4">
+          <p className="text-sm font-semibold text-gray-700 mb-2">Partir d’un modèle</p>
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
+            {MODELES_LECON.map(m => (
+              <button key={m.id} onClick={() => appliquerModele(m)} disabled={etat === 'en_cours'}
+                className="text-left p-3 rounded-xl border border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50">
+                <span className="text-xl">{m.icone}</span>
+                <span className="block text-sm font-semibold text-gray-800 mt-1">{m.nom}</span>
+                <span className="block text-xs text-gray-500">{m.description}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">…ou commencez avec un bloc vide :</p>
+        </div>
+      )}
 
       <ZoneInsertion index={0} ouvert={menuOuvert === 0} setOuvert={setMenuOuvert} onChoisir={ajouter}
         actif={glisse !== null && survol === 0} onDragOver={() => setSurvol(0)} onDrop={() => glisse && deplacer(glisse, 0)} vide={blocs.length === 0} />
@@ -321,7 +359,7 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, actif, onDragOver,
         </div>
       )}
       {ouvert && (
-        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white border border-gray-200 rounded-xl p-3 shadow-lg">
+        <div className="mt-2 grid gap-2 bg-white border border-gray-200 rounded-xl p-3 shadow-lg" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
           {TYPES_MENU.map(t => (
             <button key={t.libelle} onClick={() => onChoisir(index, t.type, t.style)}
               className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 text-left">
@@ -537,6 +575,14 @@ function EditeurVideo(p: PropsBloc) {
           <p className="text-xs text-gray-400">Pour une vidéo de plus de 50 Mo, publiez-la sur YouTube en « non répertoriée » et collez le lien.</p>
         </>
       )}
+      <label className="flex items-start gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
+        <input type="checkbox" className="mt-0.5 w-4 h-4" checked={meta(bloc).obligatoire === true}
+          onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), obligatoire: e.target.checked } }, true)} />
+        <span>
+          <strong>Visionnement obligatoire</strong>
+          <span className="block text-xs text-gray-500">L’employé doit regarder au moins 90 % de la vidéo (sans avancer rapidement) pour pouvoir terminer la leçon.</span>
+        </span>
+      </label>
     </div>
   )
 }
