@@ -18,7 +18,7 @@ export default async function CertificatsPage() {
     .from('certificats')
     .select('*, formations(titre, categorie)')
     .eq('employe_id', employe.id)
-    .order('date_obtention', { ascending: false })
+    .order('date_emission', { ascending: false })
 
   return (
     <div>
@@ -44,7 +44,7 @@ export default async function CertificatsPage() {
                 <div>
                   <p style={{ fontWeight: '600', color: '#1a1f36', fontSize: '15px', margin: 0 }}>{cert.formations?.titre ?? 'Formation'}</p>
                   <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px' }}>
-                    Obtenu le {cert.date_obtention ? new Date(cert.date_obtention).toLocaleDateString('fr-FR') : '—'}
+                    Obtenu le {cert.date_emission ? new Date(cert.date_emission).toLocaleDateString('fr-CA') : '—'}{cert.date_expiration ? ` · valide jusqu’au ${new Date(cert.date_expiration + 'T12:00:00').toLocaleDateString('fr-CA')}` : ''}
                   </p>
                 </div>
               </div>
@@ -52,6 +52,9 @@ export default async function CertificatsPage() {
                 <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '12px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
                   {cert.numero_certificat}
                 </span>
+                <div style={{ marginTop: '8px' }}>
+                  <a href={'/certificat/' + cert.id} style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none' }}>Voir / imprimer →</a>
+                </div>
               </div>
             </div>
           ))}
