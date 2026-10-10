@@ -15,7 +15,7 @@ export default async function CertificatPage({ params }: PageProps) {
 
   const { data: employe } = await supabase
       .from('employes')
-      .select('id, prenom, nom, departement')
+      .select('id, prenom, nom, departement, clinique, departements(nom)')
       .eq('auth_user_id', user.id)
       .single()
 
@@ -35,7 +35,14 @@ export default async function CertificatPage({ params }: PageProps) {
   return (
         <CertificatPDF
                 certificat={cert as any}
-                employe={employe as any}
+                employe={{
+                  id: employe.id,
+                  prenom: employe.prenom,
+                  nom: employe.nom,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  departement: (employe as any).departements?.nom ?? employe.departement ?? null,
+                }}
+                clinique={employe.clinique ?? null}
               />
       )
 }
