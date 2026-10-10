@@ -12,9 +12,10 @@ interface Props {
   estGestionnaire: boolean
   cliniqueParDefaut: string
   departementParDefaut: string
+  afficherAutorisationCreation: boolean
 }
 
-export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut }: Props) {
+export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,6 +26,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
   })
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const [peutCreer, setPeutCreer] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,7 +36,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       const res = await fetch('/api/admin/create-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, peut_creer_formations: afficherAutorisationCreation && form.role === 'gestionnaire' && peutCreer })
       })
       const data = await res.json()
       if (data.error) {
@@ -96,6 +98,8 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
         rolesPossibles={rolesPossibles} cliniquesPossibles={cliniquesPossibles}
         departements={departements} estGestionnaire={estGestionnaire}
         inputCls={inputCls} labelCls={labelCls}
+        afficherAutorisationCreation={afficherAutorisationCreation}
+        peutCreerFormations={peutCreer} setPeutCreerFormations={setPeutCreer}
       />
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}

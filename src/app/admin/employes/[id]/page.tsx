@@ -57,6 +57,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
         rolesPossibles={rolesAttribuables(acteur)}
         cliniquesPossibles={cliniquesAttribuables(acteur)}
         estGestionnaire={acteur.role === "gestionnaire"}
+        afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
       />
     </div>
   )

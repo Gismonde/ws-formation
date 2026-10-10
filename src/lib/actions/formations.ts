@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getCreateurFormations } from '@/lib/permissions'
 import type { Formation, Module, FormationComplete } from '@/lib/types/formation'
 
 export type ActionResult<T = void> =
@@ -40,8 +41,7 @@ export async function createFormation(payload: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   const { data, error } = await supabase.from('formations').insert({ ...payload, publiee: false }).select().single()
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as Formation }
@@ -54,15 +54,15 @@ export async function updateFormation(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   const { data, error } = await supabase.from('formations').update(payload).eq('id', formationId).select().single()
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as Formation }
 }
 
 export async function togglePublierFormation(formationId: string, publiee: boolean): Promise<ActionResult> {
-  return updateFormation(formationId, { publiee })
+  const res = await updateFormation(formationId, { publiee })
+  return res.success ? { success: true, data: undefined } : res
 }
 
 export async function deleteFormation(formationId: string): Promise<ActionResult> {
@@ -86,8 +86,7 @@ export async function createModule(payload: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   const { data, error } = await supabase.from('modules').insert(payload).select().single()
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as Module }
@@ -100,8 +99,7 @@ export async function updateModule(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   const { data, error } = await supabase.from('modules').update(payload).eq('id', moduleId).select().single()
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as Module }
@@ -111,8 +109,7 @@ export async function deleteModule(moduleId: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   const { error } = await supabase.from('modules').delete().eq('id', moduleId)
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }
@@ -125,8 +122,7 @@ export async function reorderModules(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifie' }
-  const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) return { success: false, error: 'Non autorise' }
+  if (!await getCreateurFormations()) return { success: false, error: 'Non autorise - creation de formations non permise' }
   await Promise.all(ordre.map(({ id, ordre: o }) =>
     supabase.from('modules').update({ ordre: o }).eq('id', id).eq('formation_id', formationId)
   ))

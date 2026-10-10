@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFormationWithModules } from '@/lib/actions/formations'
-import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock, updateContentBlock, deleteContentBlock, reorderContentBlocks } from '@/lib/actions/lessons'
+import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons } from '@/lib/actions/lessons'
 import { createModule, updateModule, deleteModule, reorderModules } from '@/lib/actions/formations'
 import type { Formation, Module, Lesson, ContentBlock } from '@/lib/types/formation'
+import EditeurBlocs from '@/components/editeur/EditeurBlocs'
 
 type ModuleAvecLecons = Module & { lecons: (Lesson & { blocs: ContentBlock[] })[] }
 type FormationAvecModules = Formation & { modules: ModuleAvecLecons[] }
@@ -32,9 +33,6 @@ export default function EditeurFormationPage() {
   const [descModule, setDescModule] = useState('')
   const [titreLecon, setTitreLecon] = useState('')
   const [descLecon, setDescLecon] = useState('')
-  const [typeBloc, setTypeBloc] = useState<'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image'>('text')
-  const [contenuBloc, setContenuBloc] = useState('')
-  const [titreBloc, setTitreBloc] = useState('')
   const [showImportPptx, setShowImportPptx] = useState(false)
   const [importPptxFile, setImportPptxFile] = useState<File | null>(null)
   const [importPptxMode, setImportPptxMode] = useState<'one' | 'many'>('one')
@@ -202,29 +200,6 @@ export default function EditeurFormationPage() {
     })
     await reorderLessons(moduleId, ordre)
     chargerFormation()
-  }
-
-  // Actions blocs de contenu
-  const ajouterBloc = async (leconId: string, nbBlocs: number) => {
-    setSauvegarde(true)
-    const res = await createContentBlock({
-      lesson_id: leconId,
-      type: typeBloc,
-      titre: titreBloc || undefined,
-      contenu: contenuBloc || undefined,
-      ordre: nbBlocs + 1
-    })
-    setSauvegarde(false)
-    if (res.success) { chargerFormation(); setTitreBloc(''); setContenuBloc('') }
-    else setErreur(res.error)
-  }
-
-  const supprimerBloc = async (blocId: string) => {
-    setSauvegarde(true)
-    const res = await deleteContentBlock(blocId)
-    setSauvegarde(false)
-    if (res.success) chargerFormation()
-    else setErreur(res.error)
   }
 
   const iconeBloc = (type: string) => {
@@ -537,7 +512,7 @@ export default function EditeurFormationPage() {
 
           {/* Edition lecon */}
           {panneau.type === 'lecon' && leconActive && (
-            <div className="max-w-2xl">
+            <div className="max-w-3xl">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Modifier la lecon</h2>
                 <button
@@ -582,96 +557,13 @@ export default function EditeurFormationPage() {
                 </button>
               </div>
 
-              {/* Blocs de contenu */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                  Blocs de contenu ({leconActive.blocs?.length || 0})
-                </h3>
-
-                {leconActive.blocs?.map((bloc, i) => (
-                  <div key={bloc.id} className="bg-white rounded-lg border border-gray-200 p-4 mb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">{iconeBloc(bloc.type)}</span>
-                        <span className="text-xs font-semibold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded">{bloc.type}</span>
-                        {bloc.titre && <span className="text-sm font-medium text-gray-800">{bloc.titre}</span>}
-                      </div>
-                      <button
-                        onClick={() => supprimerBloc(bloc.id)}
-                        className="text-red-400 hover:text-red-600 p-1"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    {bloc.contenu && (
-                      <p className="text-sm text-gray-600 bg-gray-50 rounded p-2 max-h-24 overflow-y-auto whitespace-pre-wrap">{bloc.contenu}</p>
-                    )}
-                    {bloc.url && (
-                      <a href={bloc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate block mt-1">{bloc.url}</a>
-                    )}
-                  </div>
-                ))}
-
-                {/* Formulaire ajouter bloc */}
-                <div className="bg-blue-50 rounded-xl border border-blue-200 p-5">
-                  <h4 className="text-sm font-semibold text-blue-800 mb-3">Ajouter un bloc de contenu</h4>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-                      <select
-                        value={typeBloc}
-                        onChange={e => setTypeBloc(e.target.value as typeof typeBloc)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      >
-                        <option value="text">📝 Texte</option>
-                        <option value="video">🎬 Video</option>
-                        <option value="quiz">❓ Quiz</option>
-                        <option value="slide">🖼️ Slide</option>
-                        <option value="file">📎 Fichier</option>
-                        <option value="image">🖼️ Image</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Titre (optionnel)</label>
-                      <input
-                        type="text"
-                        value={titreBloc}
-                        onChange={e => setTitreBloc(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Titre du bloc..."
-                      />
-                    </div>
-                  </div>
-                  <div className="mb-3">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      {typeBloc === 'video' ? 'URL de la video' :
-                       typeBloc === 'file' ? 'URL du fichier' :
-                       typeBloc === 'image' ? 'URL de l&apos;image' :
-                       typeBloc === 'quiz' ? 'JSON du quiz (questions/reponses)' :
-                       'Contenu (texte, HTML ou URL)'}
-                    </label>
-                    <textarea
-                      value={contenuBloc}
-                      onChange={e => setContenuBloc(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      placeholder={typeBloc === 'video' ? 'https://www.youtube.com/embed/...' :
-                                   typeBloc === 'text' ? 'Entrez votre texte ici...' :
-                                   typeBloc === 'quiz' ? '{"questions":[{"question":"...","reponses":["A","B","C"],"bonne_reponse":0}]}' :
-                                   'URL ou contenu...'}
-                    />
-                  </div>
-                  <button
-                    onClick={() => ajouterBloc(panneau.leconId, leconActive.blocs?.length || 0)}
-                    disabled={sauvegarde || (!contenuBloc && !titreBloc)}
-                    className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
-                  >
-                    {sauvegarde ? 'Ajout...' : 'Ajouter le bloc'}
-                  </button>
-                </div>
-              </div>
+              {/* Blocs de contenu : éditeur visuel */}
+              <EditeurBlocs
+                key={panneau.leconId}
+                leconId={panneau.leconId}
+                formationId={formationId}
+                blocsInitiaux={leconActive.blocs || []}
+              />
             </div>
           )}
         </div>
