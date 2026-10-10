@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getActeur, idsEmployesDansPortee } from '@/lib/permissions'
+import { estAdministrateur } from '@/lib/cliniques'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -13,15 +15,13 @@ export async function GET(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  const { data: admin } = await serviceClient
-    .from('employes')
-    .select('id, role')
-    .eq('auth_user_id', user.id)
-    .single()
-
-  if (!admin || !['admin', 'gestionnaire'].includes(admin.role)) {
+  // Journal d'audit : administrateurs seulement, limité à leur périmètre
+  const acteur = await getActeur()
+  if (!acteur || !estAdministrateur(acteur.role)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
+  const idsPortee = await idsEmployesDansPortee(acteur, serviceClient)
+  if (idsPortee && idsPortee.length === 0) return NextResponse.json({ logs: [], count: 0 })
 
   const { searchParams } = new URL(request.url)
   const employe_id = searchParams.get('employe_id')
@@ -45,6 +45,10 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
+  if (idsPortee) {
+    const liste = idsPortee.join(',')
+    query = query.or(`acteur_id.in.(${liste}),cible_employe_id.in.(${liste})`)
+  }
   if (employe_id) query = query.or(`acteur_id.eq.${employe_id},cible_employe_id.eq.${employe_id}`)
   if (formation_id) query = query.eq('formation_id', formation_id)
   if (type_action) query = query.eq('type_action', type_action)
