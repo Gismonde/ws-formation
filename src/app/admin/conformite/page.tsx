@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
+import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
+import { CliniqueBadge } from '@/components/CliniqueBadge'
 import Link from 'next/link'
 
 type StatutFormation = 'non_commence' | 'en_cours' | 'termine'
@@ -20,36 +21,20 @@ type EmployeConformite = {
   prenom: string
   email: string
   departement: string
+  clinique: string | null
   assignations: AssignationDetail[]
 }
 
 export default async function ConformitePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const acteur = await getActeur()
+  if (!acteur) redirect('/login')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  const adminSupabase = serviceClient()
 
-  const adminSupabase = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
-  const { data: moi } = await adminSupabase
+  const employesQuery = filtrerEmployes(adminSupabase
     .from('employes')
-    .select('role, departement_id')
-    .eq('auth_user_id', user!.id)
-    .single()
-
-  const isGestionnaire = moi?.role === 'gestionnaire'
-
-  let employesQuery = adminSupabase
-    .from('employes')
-    .select('id, nom, prenom, email, departement, actif, departements(nom)')
-    .order('nom')
-
-  if (isGestionnaire && moi?.departement_id) {
-    employesQuery = employesQuery.eq('departement_id', moi.departement_id)
-  }
+    .select('id, nom, prenom, email, departement, clinique, actif, departements(nom)')
+    .order('nom'), acteur)
 
   const { data: employes } = await employesQuery
   const { data: formations } = await adminSupabase.from('formations').select('id, titre')
@@ -85,6 +70,7 @@ export default async function ConformitePage() {
       prenom: emp.prenom ?? '',
       email: emp.email ?? '',
       departement: (emp as any).departements?.nom ?? emp.departement ?? '',
+      clinique: emp.clinique ?? null,
       assignations: details,
     }
   })
@@ -144,6 +130,7 @@ export default async function ConformitePage() {
                     <div style={{ fontWeight: '700', color: '#1a1f36', fontSize: '14px' }}>{emp.prenom} {emp.nom}</div>
                     <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.email}</div>
                   </div>
+                  <CliniqueBadge clinique={emp.clinique} />
                   {emp.departement && (
                     <span style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
                       {emp.departement}
