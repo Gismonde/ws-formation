@@ -1,46 +1,51 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import ToggleActifButton from './ToggleActifButton'
+import { getActeur, serviceClient, filtrerEmployes, peutGererEmploye, cliniquesAdministrees } from '@/lib/permissions'
+import { aAccesAdmin, ROLE_LABEL, CLINIQUE_INFO, Clinique } from '@/lib/cliniques'
+import { CliniqueBadge } from '@/components/CliniqueBadge'
 
 const roleStyles: Record<string, { bg: string; color: string; border: string }> = {
+  super_admin: { bg: '#faf5ff', color: '#7c3aed', border: '#e9d5ff' },
   admin: { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
   gestionnaire: { bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' },
   employe: { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
 }
-const roleLabel: Record<string, string> = { admin: 'Admin', gestionnaire: 'Gestionnaire', employe: 'Employé' }
+const roleLabel: Record<string, string> = ROLE_LABEL
 
-export default async function AdminEmployesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+export default async function AdminEmployesPage({ searchParams }: { searchParams: Promise<{ clinique?: string }> }) {
+  const acteur = await getActeur()
+  if (!acteur) redirect('/login')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
 
-  const adminSupabase = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-  const { data: moi } = await adminSupabase
-    .from('employes')
-    .select('role, departement_id')
-    .eq('auth_user_id', user.id)
-    .single()
+  const { clinique: filtreClinique } = await searchParams
+  const sb = serviceClient()
+  const isGestionnaire = acteur.role === 'gestionnaire'
+  const mesCliniques = cliniquesAdministrees(acteur)
+  const afficherFiltre = mesCliniques.length > 1
 
-  const isGestionnaire = moi?.role === 'gestionnaire'
-  const monDeptId = moi?.departement_id
-
-  let query = adminSupabase.from('employes').select('*, departements(nom)').order('nom')
-  if (isGestionnaire && monDeptId) {
-    query = query.eq('departement_id', monDeptId)
+  let query = filtrerEmployes(sb.from('employes').select('*, departements(nom)').order('nom'), acteur)
+  if (afficherFiltre && (filtreClinique === 'CMC' || filtreClinique === 'WSSC')) {
+    query = query.in('clinique', [filtreClinique, 'LES_DEUX'])
   }
   const { data: employes } = await query
+  const ids = (employes ?? []).map((e: any) => e.id)
 
-  const { data: assignations } = await adminSupabase.from('assignations').select('employe_id, formation_id')
-  const { data: certificats } = await adminSupabase.from('certificats').select('employe_id').eq('valide', true)
+  const { data: assignations } = ids.length
+    ? await sb.from('assignations').select('employe_id, formation_id').in('employe_id', ids)
+    : { data: [] as any[] }
+  const { data: certificats } = ids.length
+    ? await sb.from('certificats').select('employe_id').eq('valide', true).in('employe_id', ids)
+    : { data: [] as any[] }
 
   const nbAssign = (id: string) => assignations?.filter((a: any) => a.employe_id === id).length ?? 0
   const nbCerts = (id: string) => certificats?.filter((c: any) => c.employe_id === id).length ?? 0
+  const peutGerer = (emp: any) => peutGererEmploye(acteur, emp)
+  const peutCreer = !isGestionnaire || !!acteur.departement_id
+
+  const sousTitre = acteur.role === 'super_admin' ? 'dans les deux cliniques'
+    : acteur.role === 'admin' ? 'à ' + mesCliniques.join(' et ')
+    : 'dans votre département'
 
   const actifs = employes?.filter((e: any) => e.actif !== false) ?? []
   const archives = employes?.filter((e: any) => e.actif === false) ?? []
@@ -74,10 +79,10 @@ export default async function AdminEmployesPage() {
             Employés
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', margin: '4px 0 0 0' }}>
-            {actifs.length} employé(s) actif(s){isGestionnaire && monDeptId ? ' dans votre département' : ''}
+            {actifs.length} employé(s) actif(s) {sousTitre}
           </p>
         </div>
-        {!isGestionnaire && (
+        {peutCreer && (
           <Link href="/admin/employes/nouveau" style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -96,6 +101,20 @@ export default async function AdminEmployesPage() {
         )}
       </div>
 
+      {afficherFiltre && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+          {[{ v: '', l: 'Toutes les cliniques' }, ...(['CMC', 'WSSC'] as Clinique[]).map(c => ({ v: c, l: CLINIQUE_INFO[c].nom }))].map(f => {
+            const actif = (filtreClinique ?? '') === f.v
+            return (
+              <Link key={f.v} href={f.v ? `/admin/employes?clinique=${f.v}` : '/admin/employes'} style={{
+                padding: '7px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
+                background: actif ? '#1a1f36' : '#fff', color: actif ? '#fff' : '#374151', border: '1px solid #e5e7eb',
+              }}>{f.l}</Link>
+            )
+          })}
+        </div>
+      )}
+
       {/* Active employees table */}
       <div style={{ ...tableStyle, marginBottom: '32px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
@@ -103,6 +122,7 @@ export default async function AdminEmployesPage() {
             <tr>
               <th style={thStyle}>Nom</th>
               <th style={thStyle}>Email</th>
+              <th style={thStyle}>Clinique</th>
               <th style={thStyle}>Département</th>
               <th style={thStyle}>Rôle</th>
               <th style={{ ...thStyle, textAlign: 'center' as const }}>Formations</th>
@@ -121,6 +141,7 @@ export default async function AdminEmployesPage() {
                     {emp.poste && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.poste}</div>}
                   </td>
                   <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
+                  <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} /></td>
                   <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
                   <td style={tdStyle}>
                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
@@ -135,12 +156,12 @@ export default async function AdminEmployesPage() {
                   <td style={{ ...tdStyle, textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                       <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                        Modifier
+                        {peutGerer(emp) ? 'Modifier' : 'Dossier'}
                       </Link>
                       <Link href={`/admin/employes/${emp.id}/preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
                         Preuves
                       </Link>
-                      <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />
+                      {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />}
                     </div>
                   </td>
                 </tr>
@@ -163,7 +184,8 @@ export default async function AdminEmployesPage() {
                 <tr>
                   <th style={thStyle}>Nom</th>
                   <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Département</th>
+                  <th style={thStyle}>Clinique</th>
+              <th style={thStyle}>Département</th>
                   <th style={thStyle}>Rôle</th>
                   <th style={{ ...thStyle, textAlign: 'center' as const }}>Formations</th>
                   <th style={{ ...thStyle, textAlign: 'center' as const }}>Certificats</th>
@@ -179,6 +201,7 @@ export default async function AdminEmployesPage() {
                       {emp.poste && <div style={{ fontSize: '12px' }}>{emp.poste}</div>}
                     </td>
                     <td style={tdStyle}>{emp.email}</td>
+                    <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} /></td>
                     <td style={{ ...tdStyle, fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
                     <td style={tdStyle}>{roleLabel[emp.role] ?? emp.role}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>{nbAssign(emp.id)}</td>
@@ -191,7 +214,7 @@ export default async function AdminEmployesPage() {
                         <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#f3f4f6', color: '#6b7280', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #e5e7eb' }}>
                           Dossier
                         </Link>
-                        {!isGestionnaire && <ToggleActifButton id={emp.id} actif={false} nom={`${emp.prenom} ${emp.nom}`} />}
+                        {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={false} nom={`${emp.prenom} ${emp.nom}`} />}
                       </div>
                     </td>
                   </tr>

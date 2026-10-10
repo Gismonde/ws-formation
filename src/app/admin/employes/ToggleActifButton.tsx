@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
 export default function ToggleActifButton({
@@ -21,15 +20,13 @@ export default function ToggleActifButton({
     if (!confirm(`Voulez-vous vraiment ${action} ${nom} ?`)) return
     setLoading(true)
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { error } = await supabase
-      .from('employes')
-      .update({ actif: !actif })
-      .eq('id', id)
+    const res = await fetch('/api/admin/toggle-employe-actif', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, actif: !actif }),
+    })
+    const data = await res.json().catch(() => ({}))
+    const error = res.ok ? null : { message: data.error ?? 'Erreur inconnue' }
 
     setLoading(false)
     if (error) {
