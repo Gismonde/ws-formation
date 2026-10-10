@@ -16,6 +16,10 @@ interface Props {
   departements: DepartementOption[]
   estGestionnaire: boolean
   disabled?: boolean
+  /** Case « peut créer des formations » (visible pour les admins quand le rôle est gestionnaire) */
+  afficherAutorisationCreation?: boolean
+  peutCreerFormations?: boolean
+  setPeutCreerFormations?: (v: boolean) => void
   inputCls: string
   labelCls: string
 }
@@ -80,6 +84,18 @@ export default function ChampsAcces(p: Props) {
         </select>
         {AIDE_ROLE[p.role as Role] && <p className="text-xs text-gray-400 mt-1">{AIDE_ROLE[p.role as Role]}</p>}
       </div>
+      {p.afficherAutorisationCreation && p.role === 'gestionnaire' && (
+        <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
+          <input type="checkbox" className="mt-0.5 w-4 h-4" disabled={p.disabled}
+            checked={!!p.peutCreerFormations} onChange={e => p.setPeutCreerFormations?.(e.target.checked)} />
+          <span className="text-sm text-gray-700">
+            <strong>Peut créer et modifier des formations</strong>
+            <span className="block text-xs text-gray-500 mt-0.5">
+              Sans cette autorisation, le gestionnaire peut assigner des formations et gérer ses employés, mais pas en créer.
+            </span>
+          </span>
+        </label>
+      )}
     </>
   )
 }
