@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { CliniqueLogos } from '@/components/CliniqueBadge'
 
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
@@ -19,11 +20,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, nom, prenom, role')
+    .select('id, nom, prenom, role, clinique')
     .eq('auth_user_id', user.id)
     .single()
 
-  const isAdmin = employe?.role === 'admin' || employe?.role === 'super_admin'
+  const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
   const displayName = employe?.prenom && employe?.nom
     ? employe.prenom + ' ' + employe.nom
     : (user.email?.split('@')[0] || 'Utilisateur')
@@ -34,6 +35,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
           <div className="sidebar-subtitle">Espace employe</div>
+          {employe?.clinique && (
+            <div style={{ marginTop: '14px', background: '#fff', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
+              <CliniqueLogos clinique={employe.clinique} hauteur={34} />
+            </div>
+          )}
         </div>
 
         <nav className="sidebar-nav">
