@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       clinique,
       departement_id,
       poste: poste || null,
+      peut_creer_formations: (acteur.role === 'super_admin' || acteur.role === 'admin') && role === 'gestionnaire' && body.peut_creer_formations === true,
       actif: true,
     })
     .select('id')
