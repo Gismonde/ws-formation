@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdmin } from "@supabase/supabase-js"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { getActeur, peutCreerFormations } from "@/lib/permissions"
 
 const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
   debutant: { bg: "#f0fdf4", color: "#16a34a", label: "Débutant" },
@@ -26,7 +27,7 @@ export default async function AdminFormationsPage() {
     .eq("auth_user_id", user.id)
     .single()
 
-  const isAdmin = moi?.role === "admin" || moi?.role === "super_admin"
+  const isAdmin = peutCreerFormations(await getActeur())
 
   const { data: formations } = await adminSupabase
     .from("formations")
