@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ChangePasswordForm from '@/components/ChangePasswordForm'
 
 type Factor = {
   id: string
@@ -119,7 +120,7 @@ export default function SecuritePage() {
           Sécurité du compte
         </h1>
         <p style={{ color: '#6b7280', marginTop: '8px', fontSize: '14px' }}>
-          Gérez la double authentification (2FA) pour protéger votre compte.
+          Gérez votre mot de passe et la double authentification (2FA) pour protéger votre compte.
         </p>
       </div>
 
@@ -208,6 +209,8 @@ export default function SecuritePage() {
           </div>
         ))}
       </div>
+
+      <ChangePasswordForm />
 
       {step === 'enroll' && qrCode && (
         <div style={{
