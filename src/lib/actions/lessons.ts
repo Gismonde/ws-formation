@@ -6,7 +6,7 @@ import type { ActionResult } from './formations'
 
 async function checkAdminRole(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase.from('employes').select('role').eq('auth_user_id', userId).single()
-  return !!data && ['admin', 'gestionnaire'].includes(data.role)
+  return !!data && ['super_admin', 'admin', 'gestionnaire'].includes(data.role)
 }
 
 export async function getLessonsWithBlocks(moduleId: string): Promise<ActionResult<LessonAvecBlocs[]>> {
