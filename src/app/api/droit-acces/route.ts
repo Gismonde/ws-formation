@@ -69,11 +69,17 @@ export async function GET() {
       .select('titre, type, statut, created_at')
       .eq('employe_id', employeId)
 
-    // 7. Audit logs (actions de l'employe uniquement)
+    // 6b. Preuves de lecture (vidéos obligatoires vues, attestations « J'ai lu et compris »)
+    const { data: preuvesLecture } = await adminSupabase
+      .from('preuves_lecture')
+      .select('lesson_id, type, texte, created_at, ip_address')
+      .eq('employe_id', employeId)
+
+    // 7. Audit logs (actions de l'employe et actions le concernant)
     const { data: auditLogs } = await adminSupabase
       .from('audit_logs')
       .select('type_action, description, created_at, ip_address')
-      .eq('employe_id', employeId)
+      .or(`acteur_id.eq.${employeId},cible_employe_id.eq.${employeId}`)
       .order('created_at', { ascending: false })
       .limit(500)
 
@@ -101,6 +107,7 @@ export async function GET() {
         progressions_par_lecon: lessonProgressions ?? [],
         certificats: certificats ?? [],
         preuves_externes: preuves ?? [],
+        preuves_de_lecture: preuvesLecture ?? [],
       },
       journal_audit: {
         note: 'Les 500 derniers evenements vous concernant (connexions, formations, certificats)',

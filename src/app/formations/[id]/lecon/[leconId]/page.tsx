@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getLessonWithBlocks, getLessonsWithBlocks } from '@/lib/actions/lessons'
 import { upsertLessonProgression } from '@/lib/actions/progressions'
+import { getEtatSuivi } from '@/lib/actions/suivi'
+import { FournisseurSuivi, VideoSuivie, FinDeLecon } from '@/components/lecon/SuiviLecon'
+import { TEXTE_ATTESTATION_DEFAUT } from '@/lib/suivi-constantes'
 import AudioReader from '@/components/AudioReader'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
@@ -27,6 +30,8 @@ type Lesson = {
   description: string | null
   ordre: number
   blocs: ContentBlock[]
+  attestation_requise?: boolean
+  texte_attestation?: string | null
 }
 
 type Urls = Record<string, string>
@@ -63,23 +68,15 @@ function BlocTexte({ bloc }: { bloc: ContentBlock }) {
 function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
   const brut = bloc.url || bloc.contenu || ''
   const enLigne = estMediaPrive(brut) ? null : analyserVideoEnLigne(brut)
-  const src = source(bloc, urls)
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {bloc.titre && (
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">🎬 {bloc.titre}</h3>
-        </div>
-      )}
-      <div className="aspect-video bg-black">
-        {enLigne ? (
-          <iframe src={enLigne.embed} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Vidéo'}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
-        ) : (
-          <video src={src} controls controlsList="nodownload" preload="metadata" className="w-full h-full" />
-        )}
-      </div>
-    </div>
+    <VideoSuivie
+      blocId={bloc.id}
+      titre={bloc.titre}
+      src={enLigne ? enLigne.embed : source(bloc, urls)}
+      plateforme={enLigne ? enLigne.plateforme : 'fichier'}
+      idEnLigne={enLigne?.id}
+      obligatoire={bloc.metadata?.obligatoire === true}
+    />
   )
 }
 
@@ -141,8 +138,13 @@ function RenduBloc({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
   }
 }
 
-export default async function LecteurLeconPage({ params }: { params: Promise<{ id: string; leconId: string }> }) {
+export default async function LecteurLeconPage({ params, searchParams }: {
+  params: Promise<{ id: string; leconId: string }>
+  searchParams: Promise<{ apercu?: string }>
+}) {
   const { id: formationId, leconId } = await params
+  // ?apercu=1 : ouverture depuis l'éditeur, rien n'est enregistré
+  const suiviActif = (await searchParams).apercu !== '1'
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -163,13 +165,14 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
 
   // Charger toutes les lecons du module pour la navigation
   const resLecons = await getLessonsWithBlocks(lecon.module_id)
-  const toutesLecons: Lesson[] = resLecon.success ? (resLecons.data as Lesson[] || []) : []
+  const toutesLecons: Lesson[] = resLecons.success ? (resLecons.data as Lesson[] || []) : []
   const indexCourant = toutesLecons.findIndex(l => l.id === leconId)
   const leconPrecedente = indexCourant > 0 ? toutesLecons[indexCourant - 1] : null
   const leconSuivante = indexCourant < toutesLecons.length - 1 ? toutesLecons[indexCourant + 1] : null
 
   // Marquer la lecon comme vue automatiquement (si employe)
-  if (emp.role === 'employe') {
+  const etatSuivi = await getEtatSuivi(leconId)
+  if (suiviActif && !etatSuivi.termineeLe) {
     await upsertLessonProgression({ lesson_id: leconId, statut: 'en_cours' })
   }
 
@@ -233,6 +236,7 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
           title={lecon.titre}
         />
         {/* Blocs de contenu */}
+        <FournisseurSuivi etat={etatSuivi} suiviActif={suiviActif}>
         {lecon.blocs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-3">📄</div>
@@ -245,6 +249,16 @@ export default async function LecteurLeconPage({ params }: { params: Promise<{ i
             ))}
           </div>
         )}
+
+          <FinDeLecon
+            lessonId={leconId}
+            attestationRequise={lecon.attestation_requise === true}
+            texteAttestation={lecon.texte_attestation?.trim() || TEXTE_ATTESTATION_DEFAUT}
+            videosObligatoires={lecon.blocs.filter(b => b.type === 'video' && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre }))}
+            etat={etatSuivi}
+            suiviActif={suiviActif}
+          />
+        </FournisseurSuivi>
 
         {/* Navigation bas de page */}
         <div className="mt-10 pt-6 border-t border-gray-200 flex items-center justify-between">

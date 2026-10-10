@@ -33,6 +33,8 @@ export default function EditeurFormationPage() {
   const [descModule, setDescModule] = useState('')
   const [titreLecon, setTitreLecon] = useState('')
   const [descLecon, setDescLecon] = useState('')
+  const [attestationLecon, setAttestationLecon] = useState(false)
+  const [texteAttestation, setTexteAttestation] = useState('')
   const [showImportPptx, setShowImportPptx] = useState(false)
   const [importPptxFile, setImportPptxFile] = useState<File | null>(null)
   const [importPptxMode, setImportPptxMode] = useState<'one' | 'many'>('one')
@@ -94,6 +96,8 @@ export default function EditeurFormationPage() {
     setPanneau({ type: 'lecon', leconId: lecon.id, moduleId })
     setTitreLecon(lecon.titre)
     setDescLecon(lecon.description || '')
+    setAttestationLecon(lecon.attestation_requise === true)
+    setTexteAttestation(lecon.texte_attestation || '')
   }
 
   // Actions modules
@@ -165,7 +169,10 @@ export default function EditeurFormationPage() {
   const sauvegarderLecon = async () => {
     if (panneau.type !== 'lecon') return
     setSauvegarde(true)
-    const res = await updateLesson(panneau.leconId, { titre: titreLecon, description: descLecon })
+    const res = await updateLesson(panneau.leconId, {
+      titre: titreLecon, description: descLecon,
+      attestation_requise: attestationLecon, texte_attestation: texteAttestation.trim() || null,
+    })
     setSauvegarde(false)
     if (res.success) chargerFormation()
     else setErreur(res.error)
@@ -548,6 +555,23 @@ export default function EditeurFormationPage() {
                     placeholder="Description de la lecon..."
                   />
                 </div>
+                <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
+                  <input type="checkbox" className="mt-0.5 w-4 h-4" checked={attestationLecon}
+                    onChange={e => setAttestationLecon(e.target.checked)} />
+                  <span className="text-sm text-gray-700">
+                    <strong>Exiger « J’ai lu et compris » à la fin de la leçon</strong>
+                    <span className="block text-xs text-gray-500 mt-0.5">L’employé doit cocher la case pour terminer la leçon. La date et le texte accepté sont conservés comme preuve.</span>
+                  </span>
+                </label>
+                {attestationLecon && (
+                  <textarea
+                    value={texteAttestation}
+                    onChange={e => setTexteAttestation(e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                    placeholder="Texte de l'attestation (laisser vide pour : J'ai lu et compris le contenu de cette leçon et je m'engage à l'appliquer.)"
+                  />
+                )}
                 <button
                   onClick={sauvegarderLecon}
                   disabled={sauvegarde}
@@ -563,6 +587,10 @@ export default function EditeurFormationPage() {
                 leconId={panneau.leconId}
                 formationId={formationId}
                 blocsInitiaux={leconActive.blocs || []}
+                onModeleAttestation={async () => {
+                  setAttestationLecon(true)
+                  await updateLesson(panneau.leconId, { attestation_requise: true })
+                }}
               />
             </div>
           )}
