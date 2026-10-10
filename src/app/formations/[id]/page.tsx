@@ -1,6 +1,8 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { serviceClient } from '@/lib/permissions'
+import { chargerEtatQuestionnaire } from '@/lib/questionnaire-serveur'
 
 export default async function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -44,39 +46,21 @@ export default async function FormationDetailPage({ params }: { params: Promise<
     .eq('formation_id', id)
     .order('ordre')
 
-  const { data: questionnaire } = await supabase
-    .from('questionnaires')
-    .select('*')
-    .eq('formation_id', id)
-    .eq('actif', true)
-    .maybeSingle()
-
   const { data: progressions } = await supabase
     .from('progressions')
     .select('module_id, statut')
     .eq('employe_id', employe.id)
     .eq('formation_id', id)
 
-  const { data: certificat } = await supabase
-    .from('certificats')
-    .select('numero_certificat, created_at')
-    .eq('employe_id', employe.id)
-    .eq('formation_id', id)
-    .maybeSingle()
-
-  // Résultat du questionnaire (le plus récent)
-  const { data: resultatsQ } = await supabase
-    .from('resultats_questionnaire')
-    .select('score, reussi, created_at')
-    .eq('employe_id', employe.id)
-    .eq('formation_id', id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-
-  const resultatQ = resultatsQ?.[0] ?? null
+  // Questionnaire, tentatives et certificat : calculés côté serveur
+  const etatQ = await chargerEtatQuestionnaire(serviceClient(), employe.id, id)
+  const questionnaire = etatQ.questionnaire
+  const certificat = etatQ.certificat
+  const derniere = etatQ.tentatives[0] ?? null
+  const resultatQ = derniere ? { score: etatQ.reussi ? (etatQ.meilleure ?? derniere.pourcentage) : derniere.pourcentage, reussi: etatQ.reussi, created_at: derniere.date } : null
 
   const modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
-  const progressionPct = modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0
+  const progressionPct = Math.max(etatQ.progressionPct, modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0)
   const estTerminee = progressionPct === 100
 
   const formatDate = (iso: string) =>
@@ -101,7 +85,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
                 <p style={{ fontWeight: '700', color: '#065f46', fontSize: '16px', margin: 0 }}>Formation complétée !</p>
                 {certificat && (
                   <p style={{ color: '#047857', fontSize: '13px', margin: '2px 0 0' }}>
-                    Certifié le {formatDate(certificat.created_at)} — N° {certificat.numero_certificat}
+                    Certifié le {certificat.date_emission ? formatDate(certificat.date_emission) : '—'} — N° {certificat.numero_certificat}
                   </p>
                 )}
               </div>
@@ -114,7 +98,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
                 </div>
               )}
               {certificat && (
-                <Link href={'/certificat/' + id} style={{ background: '#fbbf24', color: '#78350f', fontWeight: '700', fontSize: '13px', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none' }}>
+                <Link href={'/certificat/' + certificat.id} style={{ background: '#fbbf24', color: '#78350f', fontWeight: '700', fontSize: '13px', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none' }}>
                   🏆 Voir le certificat
                 </Link>
               )}
@@ -183,17 +167,20 @@ export default async function FormationDetailPage({ params }: { params: Promise<
                       {resultatQ.reussi ? 'Questionnaire réussi !' : 'Questionnaire non réussi'}
                     </p>
                     <p style={{ color: resultatQ.reussi ? '#047857' : '#b91c1c', margin: '2px 0 0', fontSize: '13px' }}>
-                      Score obtenu : <strong>{resultatQ.score}%</strong> — Seuil requis : {questionnaire.seuil_reussite}%
+                      Score obtenu : <strong>{resultatQ.score}%</strong> — Seuil requis : {questionnaire.note_passage}%
                     </p>
                     <p style={{ color: '#6b7280', margin: '2px 0 0', fontSize: '12px' }}>
-                      Passé le {formatDate(resultatQ.created_at)}
+                      {resultatQ.created_at ? 'Passé le ' + formatDate(resultatQ.created_at) : ''}
                     </p>
                   </div>
                 </div>
-                {!resultatQ.reussi && (
+                {!resultatQ.reussi && etatQ.tentativesRestantes === 0 && (
+                  <p className="text-sm text-red-700">Vous avez utilisé toutes vos tentatives. Contactez votre gestionnaire.</p>
+                )}
+                {!resultatQ.reussi && etatQ.tentativesRestantes !== 0 && (
                   <Link href={'/formations/' + id + '/questionnaire'}>
                     <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm">
-                      Repasser le questionnaire
+                      Repasser le questionnaire{etatQ.tentativesRestantes !== null ? ` (${etatQ.tentativesRestantes} tentative(s) restante(s))` : ''}
                     </button>
                   </Link>
                 )}
