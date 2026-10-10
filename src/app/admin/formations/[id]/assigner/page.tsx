@@ -101,9 +101,9 @@ export default function AssignerFormationPage({ params }: PageProps) {
       } else {
         setMessage({
           type: 'success',
-          text: `${data.assigned} assignation(s) créée(s)${data.skipped > 0 ? `, ${data.skipped} déjà assignée(s)` : ''}`
+          text: `${data.assigned} assignation(s) créée(s)${data.skipped > 0 ? `, ${data.skipped} déjà assignée(s)` : ''}${data.courriels > 0 ? ` — ${data.courriels} courriel(s) envoyé(s)` : ''}`
         })
-        setTimeout(() => router.push('/admin/formations'), 1500)
+        setTimeout(() => router.push('/admin/formations'), 2500)
       }
     } catch (err) {
       setMessage({ type: 'error', text: 'Erreur réseau' })

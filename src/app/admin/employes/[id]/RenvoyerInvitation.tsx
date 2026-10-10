@@ -1,0 +1,48 @@
+'use client'
+import { useState } from 'react'
+
+export default function RenvoyerInvitation({ employeId, email }: { employeId: string; email: string }) {
+  const [etat, setEtat] = useState<'repos' | 'envoi' | 'ok' | 'lien' | 'erreur'>('repos')
+  const [lien, setLien] = useState<string | null>(null)
+  const [msg, setMsg] = useState('')
+  const [copie, setCopie] = useState(false)
+
+  async function envoyer() {
+    if (!confirm(`Envoyer à ${email} un lien pour créer ou réinitialiser son mot de passe ?`)) return
+    setEtat('envoi')
+    const res = await fetch('/api/admin/renvoyer-invitation', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeId }),
+    })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { setMsg(d.error ?? 'Erreur'); setEtat('erreur'); return }
+    if (d.courrielEnvoye) setEtat('ok')
+    else { setLien(d.lienInvitation); setEtat('lien') }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 mt-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[200px]">
+          <p className="text-sm font-semibold text-gray-900">Accès au portail</p>
+          <p className="text-xs text-gray-500">L’employé n’a pas reçu son invitation ou a oublié son mot de passe ?</p>
+        </div>
+        <button type="button" onClick={envoyer} disabled={etat === 'envoi'}
+          className="px-4 py-2 border border-blue-600 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 disabled:opacity-50">
+          {etat === 'envoi' ? 'Envoi…' : '📧 Renvoyer l’invitation'}
+        </button>
+      </div>
+      {etat === 'ok' && <p className="text-sm text-green-700 mt-3">Courriel envoyé à {email}.</p>}
+      {etat === 'erreur' && <p className="text-sm text-red-600 mt-3">{msg}</p>}
+      {etat === 'lien' && lien && (
+        <div className="mt-3">
+          <p className="text-xs text-amber-800 mb-2">Envoi de courriels non configuré — transmettez ce lien personnel à l’employé :</p>
+          <div className="flex gap-2">
+            <input readOnly value={lien} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs" onFocus={e => e.target.select()} />
+            <button type="button" onClick={() => { navigator.clipboard.writeText(lien); setCopie(true) }}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">{copie ? 'Copié ✓' : 'Copier'}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

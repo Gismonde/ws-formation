@@ -1,0 +1,119 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import ChoixDocument, { DocumentEnvoye } from '@/components/politiques/ChoixDocument'
+import ChampsCiblage, { Ciblage } from '@/components/politiques/ChampsCiblage'
+import { CliniqueEmploye } from '@/lib/cliniques'
+
+type Props = {
+  id: string
+  titre: string
+  description: string | null
+  clinique: CliniqueEmploye
+  departementsChoisis: string[]
+  actif: boolean
+  enAttente: number
+  peutGerer: boolean
+  courrielsActifs: boolean
+  cliniques: CliniqueEmploye[]
+  departements: { id: string; nom: string }[]
+}
+
+export default function ActionsPolitique(p: Props) {
+  const router = useRouter()
+  const [panneau, setPanneau] = useState<null | 'version' | 'modifier'>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; texte: string } | null>(null)
+  const [enCours, setEnCours] = useState(false)
+  // Nouvelle version
+  const [doc, setDoc] = useState<DocumentEnvoye | null>(null)
+  const [note, setNote] = useState('')
+  const [notifier, setNotifier] = useState(true)
+  // Modifier
+  const [titre, setTitre] = useState(p.titre)
+  const [description, setDescription] = useState(p.description ?? '')
+  const [ciblage, setCiblage] = useState<Ciblage>({ clinique: p.clinique, tous: p.departementsChoisis.length === 0, departements: p.departementsChoisis })
+
+  async function appeler(corps: Record<string, unknown>, succes: (d: Record<string, unknown>) => string) {
+    setEnCours(true); setMsg(null)
+    const res = await fetch(`/api/politiques/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) })
+    const d = await res.json().catch(() => ({}))
+    setEnCours(false)
+    if (!res.ok) { setMsg({ ok: false, texte: d.error ?? 'Erreur' }); return false }
+    setMsg({ ok: true, texte: succes(d) }); setPanneau(null); router.refresh()
+    return true
+  }
+
+  const btn = 'px-4 py-2 rounded-lg text-sm font-medium border disabled:opacity-50'
+  return (
+    <div className="mb-6">
+      <div className="flex flex-wrap gap-2">
+        {p.actif && p.enAttente > 0 && (
+          <button className={btn + ' border-amber-500 text-amber-800 bg-amber-50 hover:bg-amber-100'} disabled={enCours || !p.courrielsActifs}
+            title={p.courrielsActifs ? '' : 'Envoi de courriels pas encore configuré'}
+            onClick={() => confirm(`Envoyer un rappel par courriel aux ${p.enAttente} employé(s) en attente ?`) &&
+              appeler({ action: 'rappel' }, d => `Rappel envoyé à ${d.courriels} employé(s).`)}>
+            📧 Relancer les {p.enAttente} en attente
+          </button>
+        )}
+        {p.peutGerer && p.actif && (
+          <>
+            <button className={btn + ' border-blue-600 text-blue-700 bg-white hover:bg-blue-50'} onClick={() => setPanneau(panneau === 'version' ? null : 'version')}>⬆ Publier une nouvelle version</button>
+            <button className={btn + ' border-gray-300 text-gray-700 bg-white hover:bg-gray-50'} onClick={() => setPanneau(panneau === 'modifier' ? null : 'modifier')}>✏️ Modifier titre / public</button>
+            <button className={btn + ' border-gray-300 text-gray-500 bg-white hover:bg-gray-50'} disabled={enCours}
+              onClick={() => confirm('Archiver cette politique ? Elle ne sera plus affichée aux employés (les confirmations sont conservées).') &&
+                appeler({ action: 'archiver' }, () => 'Politique archivée.')}>🗄 Archiver</button>
+          </>
+        )}
+        {p.peutGerer && !p.actif && (
+          <button className={btn + ' border-green-600 text-green-700 bg-white'} disabled={enCours}
+            onClick={() => appeler({ action: 'reactiver' }, () => 'Politique réactivée.')}>↩ Réactiver</button>
+        )}
+      </div>
+
+      {msg && <p className={'text-sm mt-3 ' + (msg.ok ? 'text-green-700' : 'text-red-600')}>{msg.texte}</p>}
+
+      {panneau === 'version' && (
+        <div className="bg-white border border-blue-200 rounded-xl p-5 mt-4 space-y-4">
+          <p className="text-sm text-gray-700">
+            La nouvelle version remplace le document actuel. <b>Tous les employés visés devront confirmer à nouveau</b> « J’ai lu et compris ».
+            Les confirmations des versions précédentes restent dans l’historique.
+          </p>
+          <ChoixDocument valeur={doc} onChange={setDoc} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ce qui change (facultatif)</label>
+            <input className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm" value={note} onChange={e => setNote(e.target.value)} placeholder="Ex : ajout de la section sur le télétravail" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={notifier && p.courrielsActifs} disabled={!p.courrielsActifs} onChange={e => setNotifier(e.target.checked)} />
+            Avertir les employés par courriel {!p.courrielsActifs && <span className="text-xs text-gray-400">(courriels non configurés)</span>}
+          </label>
+          <button className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50" disabled={!doc || enCours}
+            onClick={() => appeler({ action: 'nouvelle_version', fichier: doc?.reference, nom_fichier: doc?.nom, note_version: note, notifier },
+              d => `Version ${d.version} publiée${Number(d.courriels) > 0 ? ` — ${d.courriels} courriel(s) envoyé(s)` : ''}.`)}>
+            {enCours ? 'Publication…' : 'Publier la nouvelle version'}
+          </button>
+        </div>
+      )}
+
+      {panneau === 'modifier' && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+            <input className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm" value={titre} onChange={e => setTitre(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Résumé</label>
+            <textarea className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+          </div>
+          <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.departements} />
+          <p className="text-xs text-gray-500">Les employés ajoutés au public devront confirmer ; les confirmations déjà faites sont conservées.</p>
+          <button className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            disabled={enCours || (!ciblage.tous && ciblage.departements.length === 0)}
+            onClick={() => appeler({ action: 'modifier', titre, description, clinique: ciblage.clinique, departements: ciblage.tous ? [] : ciblage.departements }, () => 'Modifications enregistrées.')}>
+            Enregistrer
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
