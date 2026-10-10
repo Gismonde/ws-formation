@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation"
 import { headers } from "next/headers"
 import EditEmployeForm from "./EditEmployeForm"
 import SuiviFormationsEmploye from "./SuiviFormationsEmploye"
+import RenvoyerInvitation from "./RenvoyerInvitation"
 import {
   getActeur, serviceClient, peutVoirEmploye, peutGererEmploye,
   departementsVisibles, rolesAttribuables, cliniquesAttribuables,
@@ -60,6 +61,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
         estGestionnaire={acteur.role === "gestionnaire"}
         afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
       />
+      {modifiable && employe.actif !== false && <RenvoyerInvitation employeId={id} email={employe.email} />}
       <SuiviFormationsEmploye sb={sb} employeId={id} />
     </div>
   )
