@@ -25,6 +25,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .single()
 
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
+  // L'admin global (sans clinique) voit les deux logos
+  const cliniqueAffichee = employe?.clinique ?? (employe?.role === 'super_admin' ? 'LES_DEUX' : null)
   const displayName = employe?.prenom && employe?.nom
     ? employe.prenom + ' ' + employe.nom
     : (user.email?.split('@')[0] || 'Utilisateur')
@@ -35,9 +37,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
           <div className="sidebar-subtitle">Espace employe</div>
-          {employe?.clinique && (
+          {cliniqueAffichee && (
             <div style={{ marginTop: '14px', background: '#fff', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
-              <CliniqueLogos clinique={employe.clinique} hauteur={34} />
+              <CliniqueLogos clinique={cliniqueAffichee} hauteur={34} />
             </div>
           )}
         </div>
