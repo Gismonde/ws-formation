@@ -147,6 +147,11 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
                       {roleLabel[emp.role] ?? emp.role}
                     </span>
+                    {emp.role === 'gestionnaire' && emp.peut_creer_formations && (
+                      <span title="Peut créer des formations" style={{ display: 'inline-block', marginLeft: '6px', padding: '2px 8px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>
+                        ✏️ Formations
+                      </span>
+                    )}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbAssign(emp.id)}</td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbCerts(emp.id)}</td>
