@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { logAudit } from '@/lib/audit'
+import { getActeur, peutVoirEmploye } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 export async function PATCH(request: NextRequest) {
     const supabase = await createClient()
@@ -14,14 +16,8 @@ export async function PATCH(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
       )
 
-  // Verify the user is admin or gestionnaire
-  const { data: admin } = await serviceClient
-      .from('employes')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-  if (!admin || !['admin', 'gestionnaire'].includes(admin.role)) {
+  const admin = await getActeur()
+  if (!admin || !aAccesAdmin(admin.role)) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 
@@ -33,6 +29,19 @@ export async function PATCH(request: NextRequest) {
 
   if (!['valide', 'refuse'].includes(statut)) {
         return NextResponse.json({ error: 'Statut invalide. Utilisez valide ou refuse.' }, { status: 400 })
+  }
+
+  // La preuve doit appartenir à un employé du périmètre (et pas à soi-même)
+  const { data: existante } = await serviceClient
+      .from('preuves_externes')
+      .select('id, employe_id')
+      .eq('id', preuve_id)
+      .single()
+  const { data: proprietaire } = existante
+    ? await serviceClient.from('employes').select('id, clinique, departement_id').eq('id', existante.employe_id).single()
+    : { data: null }
+  if (!existante || !proprietaire || existante.employe_id === admin.id || !peutVoirEmploye(admin, proprietaire)) {
+        return NextResponse.json({ error: 'Accès refusé - preuve hors de votre périmètre' }, { status: 403 })
   }
 
   const { data: preuve, error } = await serviceClient
