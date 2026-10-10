@@ -81,6 +81,15 @@ export default function LoginPage({
             />
           </div>
 
+          {searchParams?.bienvenue && !errorMsg && (
+            <div style={{
+              backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d',
+              padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px'
+            }}>
+              Votre mot de passe est enregistré. Connectez-vous pour accéder à votre portail.
+            </div>
+          )}
+
           {errorMsg && (
             <div style={{
               backgroundColor: '#fef2f2',
