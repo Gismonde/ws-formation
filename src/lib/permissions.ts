@@ -23,6 +23,8 @@ export type Acteur = {
   role: Role
   clinique: CliniqueEmploye | null
   departement_id: string | null
+  /** Gestionnaire autorisé à créer/modifier des formations (les admins le sont toujours) */
+  peut_creer_formations: boolean
 }
 
 export type CibleEmploye = {
@@ -52,7 +54,7 @@ export async function getActeur(): Promise<Acteur | null> {
 
   const { data } = await serviceClient()
     .from('employes')
-    .select('id, auth_user_id, prenom, nom, email, role, clinique, departement_id, actif')
+    .select('*')
     .eq('auth_user_id', user.id)
     .single()
 
@@ -66,7 +68,25 @@ export async function getActeur(): Promise<Acteur | null> {
     role: data.role,
     clinique: estCliniqueEmploye(data.clinique) ? data.clinique : null,
     departement_id: data.departement_id ?? null,
+    peut_creer_formations: data.peut_creer_formations === true,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Création de formations
+// ---------------------------------------------------------------------------
+
+/** Admins : toujours. Gestionnaires : seulement si l'autorisation leur a été donnée. */
+export function peutCreerFormations(a: Acteur | null): boolean {
+  if (!a) return false
+  if (a.role === 'super_admin' || a.role === 'admin') return true
+  return a.role === 'gestionnaire' && a.peut_creer_formations
+}
+
+/** Acteur connecté s'il peut créer/modifier des formations, sinon null. */
+export async function getCreateurFormations(): Promise<Acteur | null> {
+  const a = await getActeur()
+  return peutCreerFormations(a) ? a : null
 }
 
 /** Cliniques administrées par l'acteur (vide si gestionnaire/employé). */
