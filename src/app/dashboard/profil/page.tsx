@@ -19,7 +19,9 @@ export default async function ProfilPage() {
   if (!employe) redirect('/login')
 
   const initiales = ((employe.prenom?.[0] ?? '') + (employe.nom?.[0] ?? '')).toUpperCase()
-  const cliniques = cliniquesDe(employe.clinique)
+  // L'admin global (sans clinique) voit les deux cliniques
+  const cliniqueAffichee = employe.clinique ?? (employe.role === 'super_admin' ? 'LES_DEUX' : null)
+  const cliniques = cliniquesDe(cliniqueAffichee)
   const nomDepartement = (employe as any).departements?.nom ?? employe.departement ?? '-'
 
   return (
@@ -40,7 +42,7 @@ export default async function ProfilPage() {
               <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1f36', margin: '0 0 4px 0' }}>{employe.prenom} {employe.nom}</h2>
               <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>{employe.poste ?? 'Employe'}</p>
             </div>
-            <CliniqueLogos clinique={employe.clinique} hauteur={56} />
+            <CliniqueLogos clinique={cliniqueAffichee} hauteur={56} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {([
