@@ -37,6 +37,16 @@ export async function PUT(request: Request) {
     if (nom !== undefined) updateData.nom = nom
     if (poste !== undefined) updateData.poste = poste
     if (typeof actif === 'boolean') updateData.actif = actif
+    // Autorisation de créer des formations : réservée aux administrateurs, et seulement pour un gestionnaire
+    if (acteur.role === 'super_admin' || acteur.role === 'admin') {
+      if (typeof body.peut_creer_formations === 'boolean') {
+        updateData.peut_creer_formations = attribution.valeurs.role === 'gestionnaire' && body.peut_creer_formations
+      } else if (attribution.valeurs.role !== 'gestionnaire') {
+        updateData.peut_creer_formations = false
+      }
+    } else if (attribution.valeurs.role !== 'gestionnaire') {
+      updateData.peut_creer_formations = false
+    }
 
     const { error } = await sb.from('employes').update(updateData).eq('id', id)
     if (error) {
