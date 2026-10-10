@@ -26,7 +26,7 @@ export default async function AdminFormationsPage() {
     .eq("auth_user_id", user.id)
     .single()
 
-  const isAdmin = moi?.role === "admin"
+  const isAdmin = moi?.role === "admin" || moi?.role === "super_admin"
 
   const { data: formations } = await adminSupabase
     .from("formations")
