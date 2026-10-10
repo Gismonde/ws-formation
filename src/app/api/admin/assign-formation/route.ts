@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
+import { envoyerCourriels, gabarit, origineDepuis, courrielsActifs } from '@/lib/courriels'
 
 const serviceRole = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -109,9 +110,38 @@ export async function POST(req: NextRequest) {
       })
     ))
 
+    // Courriel « Nouvelle formation disponible » (si l'envoi est configuré et non désactivé)
+    let courriels = 0
+    if (body.notifier !== false && courrielsActifs()) {
+      const [{ data: formation }, { data: dest }] = await Promise.all([
+        serviceRole.from('formations').select('titre, description').eq('id', formationId).single(),
+        serviceRole.from('employes').select('id, prenom, email, clinique, actif').in('id', toAssign),
+      ])
+      const origine = origineDepuis(req)
+      const echeance = dateEcheance
+        ? new Date(dateEcheance + (String(dateEcheance).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('fr-CA', { dateStyle: 'long' })
+        : null
+      const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email).map((e: any) => {
+        const { html, texte } = gabarit({
+          origine, clinique: e.clinique,
+          titre: 'Nouvelle formation disponible',
+          paragraphes: [
+            `Bonjour ${e.prenom},`,
+            `La formation « ${formation?.titre ?? 'Formation'} » vous a été assignée dans votre portail.`,
+            ...(formation?.description ? [String(formation.description).slice(0, 300)] : []),
+            echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.',
+          ],
+          bouton: { libelle: 'Commencer la formation', lien: `${origine}/formations/${formationId}` },
+        })
+        return { a: e.email, sujet: `Nouvelle formation : ${formation?.titre ?? ''}`.trim(), html, texte }
+      }))
+      courriels = envoi.envoyes
+    }
+
     return NextResponse.json({
       assigned: toAssign.length,
       skipped: alreadyAssigned.size,
+      courriels,
       message: `${toAssign.length} assignation(s) creee(s)`
     })
   } catch (err: any) {
