@@ -15,15 +15,17 @@ interface Props {
     actif: boolean
     departement_id: string | null
     clinique: string | null
+    peut_creer_formations?: boolean | null
   }
   departements: DepartementOption[]
   modifiable: boolean
   rolesPossibles: Role[]
   cliniquesPossibles: CliniqueEmploye[]
   estGestionnaire: boolean
+  afficherAutorisationCreation: boolean
 }
 
-export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,6 +37,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
   const [departementId, setDepartementId] = useState(employe.departement_id || '')
   const [clinique, setClinique] = useState(employe.clinique || '')
   const [actif, setActif] = useState(employe.actif)
+  const [peutCreer, setPeutCreer] = useState(employe.peut_creer_formations === true)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -50,6 +53,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
           nom,
           poste: poste || null,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
+          ...(afficherAutorisationCreation ? { peut_creer_formations: role === 'gestionnaire' && peutCreer } : {}),
           actif
         })
       })
@@ -116,6 +120,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
         rolesPossibles={rolesPossibles} cliniquesPossibles={cliniquesPossibles}
         departements={departements} estGestionnaire={estGestionnaire}
         disabled={!modifiable} inputCls={inputCls} labelCls={labelCls}
+        afficherAutorisationCreation={afficherAutorisationCreation}
+        peutCreerFormations={peutCreer} setPeutCreerFormations={setPeutCreer}
       />
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
