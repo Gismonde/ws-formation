@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { chargerSuiviFormations, suiviDe } from '@/lib/suivi-formations'
+import { chargerEtatQuestionnaire, EtatQuestionnaire } from '@/lib/questionnaire-serveur'
+import { getActeur, peutGererEmploye } from '@/lib/permissions'
+import ReinitialiserTentatives from './ReinitialiserTentatives'
 
 const date = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' }) : null
@@ -12,6 +15,13 @@ export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: Su
     ? await sb.from('formations').select('id, titre').in('id', formationIds)
     : { data: [] as { id: string; titre: string }[] }
   const suivi = await chargerSuiviFormations(sb, [employeId], formationIds)
+  const etatsQ: Record<string, EtatQuestionnaire> = Object.fromEntries(await Promise.all(
+    formationIds.map(async fid => [fid, await chargerEtatQuestionnaire(sb, employeId, fid)] as const)))
+  const [acteur, { data: cible }] = await Promise.all([
+    getActeur(),
+    sb.from('employes').select('id, role, clinique, departement_id').eq('id', employeId).single(),
+  ])
+  const peutGerer = !!acteur && !!cible && peutGererEmploye(acteur, cible)
 
   return (
     <section className="mt-8">
@@ -44,6 +54,21 @@ export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: Su
                       )}
                     </>
                   ) : <span className="text-xs text-gray-400">Aucune leçon</span>}
+                  {(() => {
+                    const e = etatsQ[f.id]
+                    if (!e?.questionnaire) return null
+                    if (e.certificatValide) return <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">🏆 Certifié ({e.certificat?.note_finale != null ? Math.round(Number(e.certificat.note_finale)) + ' %' : ''})</span>
+                    if (e.tentatives.length === 0) return <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">📝 Questionnaire non passé</span>
+                    const bloque = e.tentativesRestantes === 0 && !e.reussi
+                    return (
+                      <>
+                        <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (bloque ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800')}>
+                          📝 {e.tentatives.length} tentative(s){e.questionnaire.nb_tentatives_max ? ` / ${e.questionnaire.nb_tentatives_max}` : ''} · meilleur {e.meilleure ?? 0} % (seuil {e.questionnaire.note_passage} %)
+                        </span>
+                        {bloque && peutGerer && <ReinitialiserTentatives employeId={employeId} formationId={f.id} />}
+                      </>
+                    )
+                  })()}
                 </summary>
                 {s && (
                   <table className="w-full text-sm border-t border-gray-100">

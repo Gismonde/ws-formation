@@ -1,0 +1,30 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function ReinitialiserTentatives({ employeId, formationId }: { employeId: string; formationId: string }) {
+  const router = useRouter()
+  const [etat, setEtat] = useState<'repos' | 'envoi' | 'erreur'>('repos')
+  const [msg, setMsg] = useState('')
+
+  async function go() {
+    if (!confirm('Redonner toutes ses tentatives à cet employé ? Les tentatives échouées restent conservées dans l’historique.')) return
+    setEtat('envoi')
+    const res = await fetch('/api/admin/reinitialiser-tentatives', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeId, formationId }),
+    })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { setEtat('erreur'); setMsg(d.error ?? 'Erreur'); return }
+    setEtat('repos'); router.refresh()
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button type="button" onClick={e => { e.preventDefault(); go() }} disabled={etat === 'envoi'}
+        className="text-xs font-medium px-2.5 py-1 rounded-md border border-blue-600 text-blue-700 hover:bg-blue-50 disabled:opacity-50">
+        {etat === 'envoi' ? '…' : '↺ Redonner des tentatives'}
+      </button>
+      {etat === 'erreur' && <span className="text-xs text-red-600">{msg}</span>}
+    </span>
+  )
+}
