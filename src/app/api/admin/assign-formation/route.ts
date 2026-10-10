@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { logAudit } from '@/lib/audit'
+import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 const serviceRole = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,14 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
     }
 
-    // Get current user role from employes table (service role to avoid RLS recursion)
-    const { data: moi } = await serviceRole
-      .from('employes')
-      .select('id, role, departement_id')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!moi || !['admin', 'gestionnaire'].includes(moi.role)) {
+    const moi = await getActeur()
+    if (!moi || !aAccesAdmin(moi.role)) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
     }
 
@@ -37,31 +33,31 @@ export async function POST(req: NextRequest) {
     let employeIds: string[] = []
 
     if (type === 'employe') {
-      // Assign to a specific employee
-      // If gestionnaire, verify the employee belongs to their department
-      if (moi.role === 'gestionnaire') {
-        const { data: emp } = await serviceRole
-          .from('employes')
-          .select('id, departement_id')
-          .eq('id', cibleId)
-          .single()
-        if (!emp || emp.departement_id !== moi.departement_id) {
-          return NextResponse.json({ error: 'Acces refuse - hors de votre departement' }, { status: 403 })
-        }
+      const { data: emp } = await serviceRole
+        .from('employes')
+        .select('id, role, clinique, departement_id')
+        .eq('id', cibleId)
+        .single()
+      // Un acteur peut s'assigner une formation à lui-même
+      if (!emp || (emp.id !== moi.id && !peutVoirEmploye(moi, emp))) {
+        return NextResponse.json({ error: 'Acces refuse - employe hors de votre perimetre' }, { status: 403 })
       }
       employeIds = [cibleId]
     } else if (type === 'departement') {
-      // Assign to all active employees in the department
-      // If gestionnaire, verify it's their own department
-      if (moi.role === 'gestionnaire' && cibleId !== moi.departement_id) {
-        return NextResponse.json({ error: 'Acces refuse - hors de votre departement' }, { status: 403 })
+      const { data: dept } = await serviceRole
+        .from('departements')
+        .select('id, clinique')
+        .eq('id', cibleId)
+        .single()
+      if (!dept || !peutVoirDepartement(moi, dept)) {
+        return NextResponse.json({ error: 'Acces refuse - departement hors de votre perimetre' }, { status: 403 })
       }
 
-      const { data: emps } = await serviceRole
+      const { data: emps } = await filtrerEmployes(serviceRole
         .from('employes')
-        .select('id')
+        .select('id, role, clinique, departement_id')
         .eq('departement_id', cibleId)
-        .eq('actif', true)
+        .eq('actif', true), moi)
       employeIds = (emps ?? []).map((e: any) => e.id)
     } else {
       return NextResponse.json({ error: 'Type invalide' }, { status: 400 })
