@@ -1,14 +1,16 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getActeur } from '@/lib/permissions'
+import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO } from '@/lib/cliniques'
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { href: '/admin/employes', label: 'Employes', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
   { href: '/admin/conformite', label: 'Conformite', icon: 'verified' },
-  { href: '/admin/rapports', label: 'Rpports', icon: 'bar_chart' },
+  { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
+  { href: '/admin/departements', label: 'Departements', icon: 'apartment', adminOnly: true },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
   { href: '/admin/parametres', label: 'Parametres', icon: 'settings', adminOnly: true },
@@ -19,22 +21,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  let employe = null
-  try {
-    const serviceClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    const { data } = await serviceClient
-      .from('employes')
-      .select('id, nom, prenom, role')
-      .eq('auth_user_id', user.id)
-      .single()
-    employe = data
-  } catch {}
+  const employe = await getActeur()
+  if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard')
 
-  const role = employe?.role ?? 'employe'
-  const isAdmin = role === 'admin'
+  const isAdmin = estAdministrateur(employe.role)
+  const perimetre = employe.role === 'super_admin'
+    ? 'CMC + WSSC'
+    : cliniquesDe(employe.clinique).map(c => CLINIQUE_INFO[c].court).join(' + ')
   const visibleNav = adminNav.filter(item => !item.adminOnly || isAdmin)
 
   return (
@@ -66,6 +59,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {employe && (
             <div style={{ marginBottom: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
               {employe.prenom} {employe.nom}
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
+                {ROLE_LABEL[employe.role]}{perimetre ? ' · ' + perimetre : ''}
+              </div>
             </div>
           )}
           <Link href='/dashboard' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
