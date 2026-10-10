@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation"
 import { headers } from "next/headers"
 import EditEmployeForm from "./EditEmployeForm"
+import SuiviFormationsEmploye from "./SuiviFormationsEmploye"
 import {
   getActeur, serviceClient, peutVoirEmploye, peutGererEmploye,
   departementsVisibles, rolesAttribuables, cliniquesAttribuables,
@@ -44,7 +45,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
   })
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
+    <div className="max-w-3xl mx-auto py-10 px-4">
       <div className="mb-6">
         <a href="/admin/employes" className="text-sm text-blue-600 hover:underline">← Retour aux employes</a>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">{modifiable ? "Modifier l'employe" : "Dossier employe"}</h1>
@@ -59,6 +60,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
         estGestionnaire={acteur.role === "gestionnaire"}
         afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
       />
+      <SuiviFormationsEmploye sb={sb} employeId={id} />
     </div>
   )
 }
