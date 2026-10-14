@@ -1,19 +1,20 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
+import { CLINIQUE_INFO, cliniquesDe } from '@/lib/cliniques'
 
 interface Certificat {
   id: string
   numero_certificat: string
   date_emission: string
+  date_expiration?: string | null
   note_finale: number | null
   valide: boolean
   formations: {
     titre: string
-    categorie: string
-    niveau: string
-    description: string
+    categorie: string | null
+    niveau: string | null
+    description: string | null
   } | null
 }
 
@@ -27,294 +28,162 @@ interface Employe {
 interface Props {
   certificat: Certificat
   employe: Employe
+  /** CMC, WSSC, LES_DEUX (ou null : les deux cliniques) */
+  clinique: string | null
 }
 
-export default function CertificatPDF({ certificat, employe }: Props) {
-  const printRef = useRef<HTMLDivElement>(null)
+// Couleurs du certificat selon la clinique
+const THEMES = {
+  CMC: { principale: '#7a6a5b', claire: '#efe8df', accent: '#b29a6d' },
+  WSSC: { principale: '#1e3a6e', claire: '#e8edf6', accent: '#b8963e' },
+  LES_DEUX: { principale: '#2f3f5c', claire: '#ece9e4', accent: '#a88d5a' },
+}
 
-  const handlePrint = () => {
-    window.print()
-  }
+const dateLongue = (iso: string) =>
+  new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })
 
-  const dateEmission = new Date(certificat.date_emission).toLocaleDateString('fr-CA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+export default function CertificatPDF({ certificat, employe, clinique }: Props) {
+  const cliniques = cliniquesDe(clinique ?? 'LES_DEUX')
+  const liste = cliniques.length ? cliniques : cliniquesDe('LES_DEUX')
+  const theme = liste.length === 1 ? THEMES[liste[0]] : THEMES.LES_DEUX
+  const noms = liste.map(c => CLINIQUE_INFO[c].nom)
 
-  const annee = new Date(certificat.date_emission).getFullYear()
+  const f = certificat.formations
+  const sousTitre = [f?.categorie, f?.niveau ? `Niveau ${f.niveau}` : null].filter(Boolean).join(' — ')
 
   return (
     <>
-      {/* Styles d impression - masquer l interface, afficher seulement le certificat */}
-      <style>{
-        `@media print {
-          .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          body { margin: 0; padding: 0; background: white; }
-          @page { size: landscape; margin: 0; }
+      <style>{`
+        .cert-cadre { container-type: inline-size; width: 100%; }
+        .cert {
+          position: relative; width: 100%; aspect-ratio: 297 / 210; box-sizing: border-box;
+          background: #fdfbf7; color: #1f2937; font-family: Georgia, 'Times New Roman', serif;
+          padding: 3.2cqw 4.5cqw; display: flex; flex-direction: column; justify-content: space-between;
+          overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
-        @media screen {
-          .print-only { display: none; }
-        }`
-      }</style>
+        @media screen { .cert { box-shadow: 0 20px 50px rgba(0,0,0,.18); border-radius: 6px; } }
+        @media print {
+          .no-print, body > footer { display: none !important; }
+          body { min-height: 0 !important; display: block !important; }
+          .cert-page { min-height: 0 !important; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          @page { size: A4 landscape; margin: 0; }
+          .cert-page { padding: 0 !important; max-width: none !important; }
+          .cert-cadre { width: 297mm; }
+          .cert { width: 297mm; height: 210mm; aspect-ratio: auto; }
+        }
+      `}</style>
 
-      {/* Barre de navigation - masquee a l impression */}
-      <div className="no-print min-h-screen bg-gray-50">
-        <nav className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/certificats" className="text-gray-500 hover:text-gray-900 text-sm">
-                Mes certificats
-              </Link>
-              <span className="text-gray-300">›</span>
-              <span className="text-sm font-medium text-gray-900">{certificat.formations?.titre}</span>
-            </div>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Telecharger en PDF
-            </button>
+      <div className="no-print bg-gray-50 border-b border-gray-200">
+        <nav className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-sm min-w-0">
+            <Link href="/dashboard/certificats" className="text-gray-500 hover:text-gray-900">Mes certificats</Link>
+            <span className="text-gray-300">›</span>
+            <span className="font-medium text-gray-900 truncate">{f?.titre}</span>
           </div>
+          <button onClick={() => window.print()}
+            className="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-opacity hover:opacity-90"
+            style={{ background: theme.principale }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Télécharger en PDF
+          </button>
         </nav>
-
-        {/* Apercu du certificat */}
-        <div className="max-w-5xl mx-auto px-6 py-10">
-          <p className="text-sm text-gray-500 mb-4 text-center">
-            Apercu du certificat — Cliquez sur &laquo; Telecharger en PDF &raquo; pour sauvegarder
-          </p>
-
-          {/* Le certificat lui-meme */}
-          <div
-            ref={printRef}
-            style={{
-              width: '100%',
-              aspectRatio: '1.414 / 1',
-              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
-              borderRadius: '16px',
-              padding: '60px 80px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-              position: 'relative',
-              overflow: 'hidden',
-              fontFamily: 'Georgia, serif',
-              color: 'white',
-            }}
-          >
-            {/* Decorations de fond */}
-            <div style={{
-              position: 'absolute', top: -100, right: -100,
-              width: 400, height: 400,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{
-              position: 'absolute', bottom: -80, left: -80,
-              width: 300, height: 300,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              pointerEvents: 'none',
-            }} />
-
-            {/* Bordure decorative */}
-            <div style={{
-              position: 'absolute', inset: 20,
-              border: '2px solid rgba(255,255,255,0.15)',
-              borderRadius: 10,
-              pointerEvents: 'none',
-            }} />
-
-            {/* En-tete */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 1 }}>
-              <div>
-                <div style={{ fontSize: 13, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(196,181,253,0.9)', marginBottom: 4 }}>
-                  WS Formation
-                </div>
-                <div style={{ fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
-                  Plateforme de formation professionnelle
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
-                  No.
-                </div>
-                <div style={{ fontSize: 13, fontFamily: 'monospace', color: 'rgba(196,181,253,0.9)', letterSpacing: 2 }}>
-                  {certificat.numero_certificat}
-                </div>
-              </div>
-            </div>
-
-            {/* Corps principal */}
-            <div style={{ textAlign: 'center', zIndex: 1 }}>
-              <div style={{
-                fontSize: 11, letterSpacing: 6, textTransform: 'uppercase',
-                color: 'rgba(196,181,253,0.8)', marginBottom: 24,
-              }}>
-                Certificat de competence
-              </div>
-
-              <div style={{
-                fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 16, fontStyle: 'italic',
-              }}>
-                Ce certificat est decerne a
-              </div>
-
-              <div style={{
-                fontSize: 48, fontWeight: 'bold', letterSpacing: 2,
-                color: 'white', marginBottom: 8,
-                textShadow: '0 2px 20px rgba(255,255,255,0.2)',
-              }}>
-                {employe.prenom} {employe.nom}
-              </div>
-
-              {employe.departement && (
-                <div style={{ fontSize: 14, color: 'rgba(196,181,253,0.7)', marginBottom: 28 }}>
-                  {employe.departement}
-                </div>
-              )}
-
-              <div style={{
-                width: 120, height: 2,
-                background: 'linear-gradient(to right, transparent, rgba(196,181,253,0.6), transparent)',
-                margin: '0 auto 28px',
-              }} />
-
-              <div style={{
-                fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 12,
-              }}>
-                pour avoir complete avec succes la formation
-              </div>
-
-              <div style={{
-                fontSize: 26, fontWeight: 'bold', color: 'white',
-                marginBottom: 8, lineHeight: 1.3,
-              }}>
-                {certificat.formations?.titre}
-              </div>
-
-              {certificat.formations?.categorie && (
-                <div style={{ fontSize: 13, color: 'rgba(196,181,253,0.7)' }}>
-                  {certificat.formations.categorie}
-                  {certificat.formations.niveau ? ` — Niveau ${certificat.formations.niveau}` : ''}
-                </div>
-              )}
-
-              {certificat.note_finale != null && (
-                <div style={{
-                  display: 'inline-block', marginTop: 20,
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 999,
-                  padding: '6px 20px',
-                  fontSize: 13, color: 'rgba(196,181,253,1)',
-                }}>
-                  Note finale : {Math.round(certificat.note_finale)}%
-                </div>
-              )}
-            </div>
-
-            {/* Pied */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 1 }}>
-              <div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
-                  Date de delivrance
-                </div>
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
-                  {dateEmission}
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: 60, height: 60, borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '2px solid rgba(255,255,255,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 28, margin: '0 auto 6px',
-                }}>
-                  🏆
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>
-                  Valide
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  borderTop: '1px solid rgba(255,255,255,0.3)',
-                  paddingTop: 6,
-                  fontSize: 11, color: 'rgba(255,255,255,0.4)',
-                }}>
-                  WS Formation — {annee}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="no-print text-xs text-gray-500 text-center pb-3">
+          Dans la fenêtre d’impression, choisissez « Enregistrer en PDF ».
+        </p>
       </div>
 
-      {/* Version impression uniquement */}
-      <div
-        className="print-only"
-        style={{
-          width: '100vw', height: '100vh',
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
-          padding: '40px 60px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          fontFamily: 'Georgia, serif',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Meme contenu pour impression */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(196,181,253,0.9)', marginBottom: 4 }}>WS Formation</div>
-            <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Plateforme de formation professionnelle</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>No.</div>
-            <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(196,181,253,0.9)', letterSpacing: 2 }}>{certificat.numero_certificat}</div>
-          </div>
-        </div>
+      <div className="cert-page bg-gray-50 min-h-screen px-6 py-10">
+        <div className="cert-page max-w-5xl mx-auto">
+          <div className="cert-cadre">
+            <div className="cert">
+              {/* Double bordure aux couleurs de la clinique */}
+              <div style={{ position: 'absolute', inset: '1.4cqw', border: `0.35cqw solid ${theme.principale}`, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: '2cqw', border: `0.1cqw solid ${theme.accent}`, pointerEvents: 'none' }} />
+              {/* Coins décoratifs */}
+              {[{ top: '2.6cqw', left: '2.6cqw' }, { top: '2.6cqw', right: '2.6cqw' }, { bottom: '2.6cqw', left: '2.6cqw' }, { bottom: '2.6cqw', right: '2.6cqw' }].map((pos, i) => (
+                <div key={i} style={{ position: 'absolute', ...pos, width: '1.4cqw', height: '1.4cqw', background: theme.accent, transform: 'rotate(45deg)', pointerEvents: 'none' }} />
+              ))}
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, letterSpacing: 6, textTransform: 'uppercase', color: 'rgba(196,181,253,0.8)', marginBottom: 20 }}>Certificat de competence</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 12, fontStyle: 'italic' }}>Ce certificat est decerne a</div>
-          <div style={{ fontSize: 42, fontWeight: 'bold', color: 'white', marginBottom: 6 }}>{employe.prenom} {employe.nom}</div>
-          {employe.departement && <div style={{ fontSize: 13, color: 'rgba(196,181,253,0.7)', marginBottom: 24 }}>{employe.departement}</div>}
-          <div style={{ width: 100, height: 1, background: 'rgba(255,255,255,0.3)', margin: '0 auto 24px' }} />
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>pour avoir complete avec succes la formation</div>
-          <div style={{ fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 6 }}>{certificat.formations?.titre}</div>
-          {certificat.formations?.categorie && <div style={{ fontSize: 12, color: 'rgba(196,181,253,0.7)' }}>{certificat.formations.categorie}{certificat.formations.niveau ? ` — Niveau ${certificat.formations.niveau}` : ''}</div>}
-          {certificat.note_finale != null && <div style={{ marginTop: 16, fontSize: 12, color: 'rgba(196,181,253,1)' }}>Note finale : {Math.round(certificat.note_finale)}%</div>}
-        </div>
+              {/* En-tête : logos + nom de la clinique */}
+              <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingTop: '1cqw' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '3cqw' }}>
+                  {liste.map(c => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={c} src={CLINIQUE_INFO[c].logo} alt={CLINIQUE_INFO[c].nom}
+                      style={{ height: '6cqw', width: 'auto', borderRadius: c === 'WSSC' ? '0.4cqw' : 0 }} />
+                  ))}
+                </div>
+                <div style={{ marginTop: '1.1cqw', fontSize: '1.05cqw', letterSpacing: '0.35cqw', textTransform: 'uppercase', color: theme.principale }}>
+                  {noms.join('  ·  ')}
+                </div>
+              </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>Date de delivrance</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{dateEmission}</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 24, marginBottom: 4 }}>🏆</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>Valide</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', paddingTop: 6, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>WS Formation — {annee}</div>
+              {/* Corps */}
+              <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                <div style={{ fontSize: '3.4cqw', letterSpacing: '0.5cqw', textTransform: 'uppercase', color: theme.principale, fontWeight: 'bold' }}>
+                  Certificat de formation
+                </div>
+                <div style={{ width: '14cqw', height: '0.18cqw', background: theme.accent, margin: '1.2cqw auto 1.6cqw' }} />
+                <div style={{ fontSize: '1.4cqw', fontStyle: 'italic', color: '#6b7280' }}>Ce certificat est décerné à</div>
+                <div style={{ fontSize: '4.2cqw', fontWeight: 'bold', color: '#111827', margin: '0.6cqw 0 0.2cqw' }}>
+                  {employe.prenom} {employe.nom}
+                </div>
+                {employe.departement && (
+                  <div style={{ fontSize: '1.3cqw', color: theme.principale, letterSpacing: '0.1cqw' }}>{employe.departement}</div>
+                )}
+                <div style={{ fontSize: '1.4cqw', color: '#6b7280', marginTop: '1.8cqw' }}>
+                  pour avoir complété avec succès la formation
+                </div>
+                <div style={{ fontSize: '2.5cqw', fontWeight: 'bold', color: theme.principale, margin: '0.6cqw auto 0', lineHeight: 1.25, maxWidth: '75cqw' }}>
+                  {f?.titre}
+                </div>
+                {sousTitre && <div style={{ fontSize: '1.2cqw', color: '#6b7280', marginTop: '0.4cqw' }}>{sousTitre}</div>}
+                {certificat.note_finale != null && (
+                  <div style={{
+                    display: 'inline-block', marginTop: '1.2cqw', padding: '0.4cqw 1.6cqw', borderRadius: '99cqw',
+                    background: theme.claire, color: theme.principale, fontSize: '1.2cqw', fontFamily: 'Arial, sans-serif', fontWeight: 600,
+                  }}>
+                    Note obtenue : {Math.round(Number(certificat.note_finale))} %
+                  </div>
+                )}
+              </div>
+
+              {/* Pied : date, sceau, numéro */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'end', position: 'relative', zIndex: 1, fontFamily: 'Arial, sans-serif', paddingBottom: '0.6cqw' }}>
+                <div>
+                  <div style={{ fontSize: '0.95cqw', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1cqw' }}>Date de délivrance</div>
+                  <div style={{ fontSize: '1.35cqw', color: '#111827', marginTop: '0.2cqw' }}>{dateLongue(certificat.date_emission)}</div>
+                  {certificat.date_expiration && (
+                    <div style={{ fontSize: '1.05cqw', color: '#6b7280', marginTop: '0.3cqw' }}>Valide jusqu’au {dateLongue(certificat.date_expiration)}</div>
+                  )}
+                </div>
+
+                <div style={{
+                  width: '8.5cqw', height: '8.5cqw', borderRadius: '50%', margin: '0 auto',
+                  background: theme.principale, border: `0.35cqw solid ${theme.accent}`,
+                  boxShadow: `0 0 0 0.25cqw ${theme.claire}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                }}>
+                  <div style={{ fontSize: '2.6cqw', lineHeight: 1 }}>✓</div>
+                  <div style={{ fontSize: '0.75cqw', letterSpacing: '0.12cqw', textTransform: 'uppercase', marginTop: '0.3cqw' }}>Certifié</div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ width: '18cqw', marginLeft: 'auto', borderTop: '0.1cqw solid #9ca3af', paddingTop: '0.4cqw', fontSize: '1cqw', color: '#6b7280' }}>
+                    Responsable de la formation
+                  </div>
+                  <div style={{ fontSize: '0.95cqw', color: '#9ca3af', marginTop: '0.9cqw' }}>
+                    N° <span style={{ fontFamily: 'monospace', color: theme.principale, letterSpacing: '0.08cqw' }}>{certificat.numero_certificat}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </>
   )
-      }
+}
