@@ -99,7 +99,7 @@ export default function ModulePage() {
             onClick={() => prevModule ? router.push(`/formations/${formation.id}/module/${prevModule.id}`) : router.push(`/formations/${formation.id}`)}
             className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 transition"
           >
-            {prevModule ? prevModule.titre : 'Retour a la formation'}
+            {prevModule ? prevModule.titre : 'Retour à la formation'}
           </button>
           {isLastModule ? (
             <button onClick={() => router.push(`/formations/${formation.id}/questionnaire`)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">

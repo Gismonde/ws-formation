@@ -5,7 +5,7 @@ import { getEspace } from "@/lib/espace"
 
 export async function GET() {
   const moi = await getActeur()
-  if (!moi) return NextResponse.json({ error: "Non authentifie" }, { status: 401 })
+  if (!moi) return NextResponse.json({ error: "Non authentifié" }, { status: 401 })
 
   const sb = serviceClient()
   const espace = await getEspace(moi)

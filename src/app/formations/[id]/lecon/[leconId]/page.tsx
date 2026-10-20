@@ -167,7 +167,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const resLecons = await getLessonsWithBlocks(lecon.module_id)
   const toutesLecons: Lesson[] = resLecons.success ? (resLecons.data as Lesson[] || []) : []
   const indexCourant = toutesLecons.findIndex(l => l.id === leconId)
-  const leconPrecedente = indexCourant > 0 ? toutesLecons[indexCourant - 1] : null
+  const leconPrécédente = indexCourant > 0 ? toutesLecons[indexCourant - 1] : null
   const leconSuivante = indexCourant < toutesLecons.length - 1 ? toutesLecons[indexCourant + 1] : null
 
   // Marquer la lecon comme vue automatiquement (si employe)
@@ -195,15 +195,15 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {leconPrecedente && (
+            {leconPrécédente && (
               <Link
-                href={baseUrl + '/lecon/' + leconPrecedente.id}
+                href={baseUrl + '/lecon/' + leconPrécédente.id}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                <span className="hidden sm:inline">Precedente</span>
+                <span className="hidden sm:inline">Précédente</span>
               </Link>
             )}
             {leconSuivante && (
@@ -240,7 +240,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {lecon.blocs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-3">📄</div>
-            <p className="text-gray-500">Cette lecon n&apos;a pas encore de contenu.</p>
+            <p className="text-gray-500">Cette leçon n&apos;a pas encore de contenu.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -263,17 +263,17 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {/* Navigation bas de page */}
         <div className="mt-10 pt-6 border-t border-gray-200 flex items-center justify-between">
           <div>
-            {leconPrecedente ? (
+            {leconPrécédente ? (
               <Link
-                href={baseUrl + '/lecon/' + leconPrecedente.id}
+                href={baseUrl + '/lecon/' + leconPrécédente.id}
                 className="group flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <span>
-                  <span className="block text-xs text-gray-400">Lecon precedente</span>
-                  <span className="font-medium">{leconPrecedente.titre}</span>
+                  <span className="block text-xs text-gray-400">Leçon précédente</span>
+                  <span className="font-medium">{leconPrécédente.titre}</span>
                 </span>
               </Link>
             ) : (
@@ -281,7 +281,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour a la formation
+                Retour à la formation
               </Link>
             )}
           </div>
@@ -292,7 +292,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 className="group flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <span className="text-right">
-                  <span className="block text-xs text-gray-400">Lecon suivante</span>
+                  <span className="block text-xs text-gray-400">Leçon suivante</span>
                   <span className="font-medium">{leconSuivante.titre}</span>
                 </span>
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +307,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Module termine
+                Module terminé
               </Link>
             )}
           </div>
@@ -316,7 +316,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {/* Navigation lecons du module */}
         {toutesLecons.length > 1 && (
           <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Lecons de ce module</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Leçons de ce module</h3>
             <div className="space-y-1">
               {toutesLecons.map((l, i) => (
                 <Link

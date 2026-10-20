@@ -15,11 +15,11 @@ const EXTENSIONS: Record<string, string> = {
 /** Autorisation d'envoi direct du document d'une politique vers l'espace privé. */
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !peutPublierPolitiques(acteur)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur || !peutPublierPolitiques(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { type, taille } = await request.json() as { type: string; taille: number }
   const regle = REGLES_MEDIAS.fichier
-  if (!regle.types.includes(type)) return NextResponse.json({ error: `Format non accepte (${regle.libelle})` }, { status: 400 })
+  if (!regle.types.includes(type)) return NextResponse.json({ error: `Format non accepté (${regle.libelle})` }, { status: 400 })
   if (typeof taille !== 'number' || taille <= 0 || taille > regle.tailleMaxMo * 1024 * 1024) {
     return NextResponse.json({ error: `Fichier trop volumineux (${regle.libelle})` }, { status: 400 })
   }

@@ -6,12 +6,12 @@ import { aAccesAdmin } from '@/lib/cliniques'
 export async function PUT(request: Request) {
   try {
     const acteur = await getActeur()
-    if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+    if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
     const body = await request.json()
     const { id, prenom, nom, poste, actif } = body
-    if (!id) return NextResponse.json({ error: 'ID employe manquant' }, { status: 400 })
+    if (!id) return NextResponse.json({ error: 'ID employé manquant' }, { status: 400 })
 
     const sb = serviceClient()
     const { data: cible } = await sb
@@ -21,7 +21,7 @@ export async function PUT(request: Request) {
       .single()
 
     if (!cible || !peutGererEmploye(acteur, cible)) {
-      return NextResponse.json({ error: 'Acces refuse - employe hors de votre perimetre' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès refusé : employé hors de votre périmètre' }, { status: 403 })
     }
 
     // Rôle, clinique et département : on valide la combinaison finale
@@ -61,7 +61,7 @@ export async function PUT(request: Request) {
     await logAudit({
       acteur_id: acteur.id,
       type_action: 'EMPLOYE_MODIFIE',
-      description: 'Dossier employe modifie',
+      description: 'Dossier employé modifié',
       cible_employe_id: id,
       metadata: {
         avant: { role: cible.role, clinique: cible.clinique, departement_id: cible.departement_id, actif: cible.actif },

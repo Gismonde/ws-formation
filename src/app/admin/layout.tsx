@@ -6,17 +6,17 @@ import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO 
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
-  { href: '/admin/employes', label: 'Employes', icon: 'people' },
+  { href: '/admin/employes', label: 'Employés', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
-  { href: '/admin/conformite', label: 'Conformite', icon: 'verified' },
+  { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
   { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
   { href: '/admin/sondages', label: 'Sondages', icon: 'reviews' },
-  { href: '/admin/departements', label: 'Departements', icon: 'apartment', adminOnly: true },
+  { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
   { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
-  { href: '/admin/parametres', label: 'Parametres', icon: 'settings', adminOnly: true },
+  { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -74,7 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <form action='/api/auth/signout' method='POST'>
             <button type='submit' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', width: '100%' }}>
               <span className='material-icons' style={{ fontSize: '16px' }}>logout</span>
-              Deconnexion
+              Déconnexion
             </button>
           </form>
         </div>
@@ -86,7 +86,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '14px', color: '#6b7280' }}>{user.email}</span>
             <form action='/api/auth/signout' method='POST'>
-              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Deconnexion</button>
+              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Déconnexion</button>
             </form>
           </div>
         </header>

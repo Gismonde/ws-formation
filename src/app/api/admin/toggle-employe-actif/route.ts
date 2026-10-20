@@ -6,12 +6,12 @@ import { aAccesAdmin } from '@/lib/cliniques'
 export async function PATCH(request: Request) {
   try {
     const acteur = await getActeur()
-    if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+    if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
     const { id, actif } = await request.json()
     if (!id || typeof actif !== 'boolean') {
-      return NextResponse.json({ error: 'Parametres invalides' }, { status: 400 })
+      return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 })
     }
 
     const sb = serviceClient()
@@ -22,7 +22,7 @@ export async function PATCH(request: Request) {
       .single()
 
     if (!cible || !peutGererEmploye(acteur, cible)) {
-      return NextResponse.json({ error: 'Acces refuse - employe hors de votre perimetre' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès refusé : employé hors de votre périmètre' }, { status: 403 })
     }
 
     // Archivage : fermer les sessions de l'employé
@@ -36,7 +36,7 @@ export async function PATCH(request: Request) {
     await logAudit({
       acteur_id: acteur.id,
       type_action: 'EMPLOYE_MODIFIE',
-      description: actif ? 'Employe reactive' : 'Employe archive',
+      description: actif ? 'Employé réactivé' : 'Employé archivé',
       cible_employe_id: id,
       metadata: { actif },
       ...ipEtAgent(request),

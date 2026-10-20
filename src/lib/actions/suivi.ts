@@ -46,10 +46,10 @@ export async function getEtatSuivi(lessonId: string): Promise<EtatSuivi> {
 /** Une vidéo obligatoire a été regardée en entier. */
 export async function enregistrerVideoVue(blocId: string): Promise<Resultat> {
   const ctx = await contexte()
-  if (!ctx) return { ok: false, erreur: 'Non authentifie' }
+  if (!ctx) return { ok: false, erreur: 'Non authentifié' }
   const sb = serviceClient()
   const { data: bloc } = await sb.from('content_blocks').select('id, lesson_id, type').eq('id', blocId).single()
-  if (!bloc || bloc.type !== 'video') return { ok: false, erreur: 'Video introuvable' }
+  if (!bloc || bloc.type !== 'video') return { ok: false, erreur: 'Vidéo introuvable' }
   const { error } = await sb.from('preuves_lecture').insert({
     employe_id: ctx.acteur.id, lesson_id: bloc.lesson_id, bloc_id: blocId, type: 'video_complete',
     ip_address: ctx.ip, user_agent: ctx.ua,
@@ -62,10 +62,10 @@ export async function enregistrerVideoVue(blocId: string): Promise<Resultat> {
 /** « J'ai lu et compris » : horodaté, avec le texte exact accepté, et inscrit au journal d'audit. */
 export async function attesterLecture(lessonId: string): Promise<Resultat<string>> {
   const ctx = await contexte()
-  if (!ctx) return { ok: false, erreur: 'Non authentifie' }
+  if (!ctx) return { ok: false, erreur: 'Non authentifié' }
   const sb = serviceClient()
   const { data: lecon } = await sb.from('lessons').select('id, titre, attestation_requise, texte_attestation').eq('id', lessonId).single()
-  if (!lecon) return { ok: false, erreur: 'Lecon introuvable' }
+  if (!lecon) return { ok: false, erreur: 'Leçon introuvable' }
   const texte = lecon.texte_attestation?.trim() || TEXTE_ATTESTATION_DEFAUT
 
   const { data: existante } = await sb.from('preuves_lecture').select('created_at')
@@ -93,10 +93,10 @@ export async function attesterLecture(lessonId: string): Promise<Resultat<string
 /** Termine la leçon si toutes les exigences sont remplies (vidéos obligatoires, attestation). */
 export async function terminerLecon(lessonId: string): Promise<Resultat<string> & { manquants?: string[] }> {
   const ctx = await contexte()
-  if (!ctx) return { ok: false, erreur: 'Non authentifie' }
+  if (!ctx) return { ok: false, erreur: 'Non authentifié' }
   const sb = serviceClient()
   const { data: lecon } = await sb.from('lessons').select('id, titre, attestation_requise').eq('id', lessonId).single()
-  if (!lecon) return { ok: false, erreur: 'Lecon introuvable' }
+  if (!lecon) return { ok: false, erreur: 'Leçon introuvable' }
 
   // Prérequis bloquants (l'équipe garde l'accès pour prévisualiser)
   if (!aAccesAdmin(ctx.acteur.role)) {
@@ -130,7 +130,7 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
   await logAudit({
     acteur_id: ctx.acteur.id,
     type_action: 'LECON_TERMINEE',
-    description: `Lecon terminee : ${lecon.titre}`,
+    description: `Leçon terminée : ${lecon.titre}`,
     cible_employe_id: ctx.acteur.id,
     metadata: { lesson_id: lessonId },
     ip_address: ctx.ip,

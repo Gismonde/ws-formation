@@ -8,7 +8,7 @@ import { estAdministrateur } from '@/lib/cliniques'
 // Créer un département (administrateurs)
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !estAdministrateur(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur || !estAdministrateur(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { nom } = await request.json()
   const propre = typeof nom === 'string' ? nom.trim() : ''
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'PARAMETRE_MODIFIE',
-    description: `Departement cree : ${data.nom}`,
+    description: `Département créé : ${data.nom}`,
     metadata: { departement_id: data.id },
     ...ipEtAgent(request),
   })
@@ -36,15 +36,15 @@ export async function POST(request: Request) {
 // Renommer un département (administrateur global seulement)
 export async function PATCH(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || acteur.role !== 'super_admin') return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur || acteur.role !== 'super_admin') return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { id, nom } = await request.json()
   const propre = typeof nom === 'string' ? nom.trim() : ''
-  if (!id || !propre) return NextResponse.json({ error: 'Parametres invalides' }, { status: 400 })
+  if (!id || !propre) return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 })
 
   const sb = serviceClient()
   const { data: dept } = await sb.from('departements').select('id, nom').eq('id', id).single()
-  if (!dept) return NextResponse.json({ error: 'Departement introuvable' }, { status: 404 })
+  if (!dept) return NextResponse.json({ error: 'Département introuvable' }, { status: 404 })
 
   const { data: existants } = await sb.from('departements').select('id, nom')
   if ((existants ?? []).some((d: { id: string; nom: string }) => d.id !== id && d.nom.trim().toLowerCase() === propre.toLowerCase())) {
@@ -57,7 +57,7 @@ export async function PATCH(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'PARAMETRE_MODIFIE',
-    description: `Departement renomme : ${dept.nom} -> ${propre}`,
+    description: `Département renommé : ${dept.nom} -> ${propre}`,
     metadata: { departement_id: id },
     ...ipEtAgent(request),
   })

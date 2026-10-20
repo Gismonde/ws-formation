@@ -48,10 +48,10 @@ export default async function ProfilPage() {
             {([
               ['Email', employe.email],
               ['Clinique', cliniques.length ? cliniques.map(c => CLINIQUE_INFO[c].nom).join(' + ') : '-'],
-              ['Role', ROLE_LABEL[employe.role as Role] ?? employe.role],
-              ['Departement', nomDepartement],
+              ['Rôle', ROLE_LABEL[employe.role as Role] ?? employe.role],
+              ['Département', nomDepartement],
               ['Poste', employe.poste ?? '-'],
-              ['Date embauche', employe.date_embauche ? new Date(employe.date_embauche).toLocaleDateString('fr-CA') : '-'],
+              ['Date d’embauche', employe.date_embauche ? new Date(employe.date_embauche).toLocaleDateString('fr-CA') : '-'],
             ] as [string, string][]).map(([label, value]) => (
               <div key={label} style={{ background: '#f9fafb', borderRadius: '8px', padding: '14px 16px' }}>
                 <p style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', margin: '0 0 4px 0' }}>{label}</p>

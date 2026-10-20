@@ -14,12 +14,12 @@ export async function GET(req: NextRequest) {
     const serverClient = await createServerClient()
     const { data: { user } } = await serverClient.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const moi = await getActeur()
     if (!moi || !aAccesAdmin(moi.role)) {
-      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)

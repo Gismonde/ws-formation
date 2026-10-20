@@ -121,7 +121,7 @@ export default function ModifierFormationPage() {
         }
       }
 
-      setSuccess('Formation mise à jour avec succès!')
+      setSuccess('Formation mise à jour avec succès !')
       setSaving(false)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur inattendue')

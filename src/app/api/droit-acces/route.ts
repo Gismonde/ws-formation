@@ -17,7 +17,7 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const adminSupabase = createAdmin(
@@ -34,7 +34,7 @@ export async function GET() {
       .single()
 
     if (!employe) {
-      return NextResponse.json({ error: 'Employe introuvable' }, { status: 404 })
+      return NextResponse.json({ error: 'Employé introuvable' }, { status: 404 })
     }
 
     const employeId = employe.id
@@ -87,8 +87,8 @@ export async function GET() {
     const dossier = {
       export_info: {
         date_export: new Date().toISOString(),
-        loi: 'Loi 25 - Loi modernisant des dispositions legislatives en matiere de protection des renseignements personnels (Quebec)',
-        articles: 'Art. 27 (acces), Art. 28 (portabilite)',
+        loi: 'Loi 25 - Loi modernisant des dispositions législatives en matière de protection des renseignements personnels (Québec)',
+        articles: 'Art. 27 (accès), Art. 28 (portabilité)',
         plateforme: 'WS Formation',
         rpp_contact: 'confidentialite@wssurgical.com',
       },
@@ -110,7 +110,7 @@ export async function GET() {
         preuves_de_lecture: preuvesLecture ?? [],
       },
       journal_audit: {
-        note: 'Les 500 derniers evenements vous concernant (connexions, formations, certificats)',
+        note: 'Les 500 derniers événements vous concernant (connexions, formations, certificats)',
         evenements: auditLogs ?? [],
       },
     }
@@ -120,7 +120,7 @@ export async function GET() {
       acteur_id: employeId,
       cible_employe_id: employeId,
       type_action: 'EXPORT_DONNEES',
-      description: "Export dossier personnel (droit acces Loi 25) par l'employe",
+      description: "Export du dossier personnel (droit d'accès, Loi 25) par l'employé",
       metadata: { source: 'api/droit-acces', articles: '27-28 Loi 25' },
     })
 
@@ -147,7 +147,7 @@ export async function DELETE() {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
     const adminSupabase = createAdmin(
@@ -163,7 +163,7 @@ export async function DELETE() {
       .single()
 
     if (!employe) {
-      return NextResponse.json({ error: 'Employe introuvable' }, { status: 404 })
+      return NextResponse.json({ error: 'Employé introuvable' }, { status: 404 })
     }
 
     // Enregistrer la demande d'effacement dans les audit logs
@@ -171,11 +171,11 @@ export async function DELETE() {
       acteur_id: employe.id,
       cible_employe_id: employe.id,
       type_action: 'EMPLOYE_MODIFIE',
-      description: `Demande d'effacement des donnees personnelles par ${employe.prenom} ${employe.nom} (${employe.email})`,
+      description: `Demande d'effacement des données personnelles par ${employe.prenom} ${employe.nom} (${employe.email})`,
       metadata: {
         source: 'api/droit-acces',
         article: '28.1 Loi 25',
-        action_requise: 'Le RPP doit traiter cette demande dans un delai de 30 jours',
+        action_requise: 'Le RPP doit traiter cette demande dans un délai de 30 jours',
         rpp: 'confidentialite@wssurgical.com',
       },
     })
@@ -186,7 +186,7 @@ export async function DELETE() {
     }
 
     return NextResponse.json({
-      message: "Demande d'effacement enregistree. Le RPP vous contactera dans un delai de 30 jours.",
+      message: "Demande d'effacement enregistrée. Le RPP vous contactera dans un délai de 30 jours.",
       rpp: 'confidentialite@wssurgical.com',
       article: 'Art. 28.1 Loi 25 Quebec',
     })
