@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n/client'
 
 export default function MfaVerifyPage() {
   const [code, setCode] = useState('')
@@ -10,6 +11,7 @@ export default function MfaVerifyPage() {
   const [loading, setLoading] = useState(false)
   const [factorId, setFactorId] = useState<string | null>(null)
   const router = useRouter()
+  const { t } = useT()
   const supabase = createClient()
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function MfaVerifyPage() {
 
     const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId })
     if (challengeError || !challengeData) {
-      setError('Erreur lors de la vérification. Veuillez réessayer.')
+      setError(t('Erreur lors de la vérification. Veuillez réessayer.'))
       setLoading(false)
       return
     }
@@ -41,7 +43,7 @@ export default function MfaVerifyPage() {
     })
 
     if (verifyError) {
-      setError('Code incorrect. Vérifiez votre application et réessayez.')
+      setError(t('Code incorrect. Vérifiez votre application et réessayez.'))
       setLoading(false)
       return
     }
@@ -55,16 +57,16 @@ export default function MfaVerifyPage() {
       backgroundColor: '#f0f4ff', fontFamily: 'sans-serif',
     }}>
       <div style={{
-        backgroundColor: 'white', borderRadius: '16px', padding: '40px',
+        backgroundColor: 'white', borderRadius: '16px', padding: 'clamp(24px, 6vw, 40px)',
         width: '100%', maxWidth: '400px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ fontSize: '36px', marginBottom: '12px' }}>🛡️</div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>
-            Vérification en deux étapes
+            {t('Vérification en deux étapes')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
-            Saisissez le code à 6 chiffres de votre application d&apos;authentification.
+            {t('Saisissez le code à 6 chiffres de votre application d’authentification.')}
           </p>
         </div>
 
@@ -108,11 +110,11 @@ export default function MfaVerifyPage() {
             fontWeight: '600', fontSize: '15px', marginBottom: '16px',
           }}
         >
-          {loading ? 'Vérification...' : 'Confirmer'}
+          {loading ? t('Vérification…') : t('Confirmer')}
         </button>
 
         <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
-          Problème d&apos;accès ? Contactez votre administrateur.
+          {t('Problème d’accès ? Contactez votre administrateur.')}
         </p>
       </div>
     </div>

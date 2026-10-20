@@ -21,7 +21,7 @@ type Params = { clinique?: string; departement?: string; vue?: string }
 export default async function ConformitePage({ searchParams }: { searchParams: Promise<Params> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const sp = await searchParams
 

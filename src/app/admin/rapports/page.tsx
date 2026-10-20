@@ -7,7 +7,7 @@ import { chargerConformite, synthese, rapportParFormation, formationsDuRapport }
 export default async function AdminRapportsPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const perimetre = acteur.role === 'super_admin' && !acteur.vue ? null
     : acteur.role === 'gestionnaire' ? 'Vous consultez les données de votre département uniquement.'

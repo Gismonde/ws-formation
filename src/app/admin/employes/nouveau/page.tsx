@@ -6,7 +6,7 @@ import { aAccesAdmin } from '@/lib/cliniques'
 export default async function NouvelEmployePage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
   if (acteur.role === 'gestionnaire' && (!acteur.departement_id || !acteur.clinique)) redirect('/admin/employes')
 
   const departements = await departementsVisibles(acteur)

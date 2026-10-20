@@ -1,14 +1,17 @@
 import PrivacyBanner from './PrivacyBanner'
+import { i18n } from '@/lib/i18n/serveur'
+import { ChoixLangue } from '@/components/ChoixLangue'
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: any
 }) {
+  const { t } = await i18n()
   const errorMsg = searchParams?.error === 'archived'
-    ? 'Votre compte a été désactivé. Contactez votre administrateur.'
+    ? t('Votre compte a été désactivé. Contactez votre administrateur.')
     : searchParams?.error
-    ? 'Email ou mot de passe incorrect'
+    ? t('Courriel ou mot de passe incorrect')
     : null
 
   return (
@@ -24,22 +27,23 @@ export default function LoginPage({
     }}>
       <div style={{
         backgroundColor: 'white',
-        padding: '40px',
+        padding: 'clamp(24px, 6vw, 40px)',
         borderRadius: '12px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
         width: '100%',
         maxWidth: '400px'
       }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}><ChoixLangue /></div>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏥</div>
           <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#1e40af' }}>WS Formation</h1>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Plateforme de formations en ligne</p>
+          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{t('Plateforme de formations en ligne')}</p>
         </div>
 
         <form method="POST" action="/api/auth/login">
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
-              Email
+              {t('Courriel')}
             </label>
             <input
               type="email"
@@ -55,13 +59,13 @@ export default function LoginPage({
                 boxSizing: 'border-box',
                 outline: 'none'
               }}
-              placeholder="votre@email.com"
+              placeholder={t('votre@courriel.com')}
             />
           </div>
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
-              Mot de passe
+              {t('Mot de passe')}
             </label>
             <input
               type="password"
@@ -86,7 +90,7 @@ export default function LoginPage({
               backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d',
               padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px'
             }}>
-              Votre mot de passe est enregistré. Connectez-vous pour accéder à votre portail.
+              {t('Votre mot de passe est enregistré. Connectez-vous pour accéder à votre portail.')}
             </div>
           )}
 
@@ -119,7 +123,7 @@ export default function LoginPage({
               transition: 'background-color 0.2s'
             }}
           >
-            Se connecter
+            {t('Se connecter')}
           </button>
         </form>
       </div>

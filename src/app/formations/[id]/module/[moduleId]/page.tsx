@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AudioReader from '@/components/AudioReader'
+import { useT } from '@/lib/i18n/client'
 
 interface Module {
   id: string
@@ -27,6 +28,7 @@ export default function ModulePage() {
   const [modules, setModules] = useState<Module[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const { t } = useT()
 
   useEffect(() => {
     async function loadData() {
@@ -64,7 +66,7 @@ export default function ModulePage() {
   }, [params.id, params.moduleId])
 
   if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>
-  if (!module || !formation) return <div className="p-8 text-center text-gray-500">Module introuvable.</div>
+  if (!module || !formation) return <div className="p-8 text-center text-gray-500">{t('Module introuvable.')}</div>
 
   const currentIndex = modules.findIndex(m => m.id === module.id)
   const prevModule = currentIndex > 0 ? modules[currentIndex - 1] : null
@@ -74,8 +76,8 @@ export default function ModulePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 text-sm">
-          <button onClick={() => router.push('/formations')} className="text-blue-600 hover:underline">Formations</button>
+        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
+          <button onClick={() => router.push('/formations')} className="text-blue-600 hover:underline">{t('Formations')}</button>
           <span className="text-gray-400">&#x203A;</span>
           <button onClick={() => router.push(`/formations/${formation.id}`)} className="text-blue-600 hover:underline">{formation.titre}</button>
           <span className="text-gray-400">&#x203A;</span>
@@ -83,10 +85,10 @@ export default function ModulePage() {
         </div>
       </nav>
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm border p-8 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border p-5 sm:p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
-            <span className="text-sm text-gray-500">Module {module.ordre} • {module.duree_minutes} min</span>
-            <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium">Complété</span>
+            <span className="text-sm text-gray-500">{t('Module {n} • {duree} min', { n: module.ordre, duree: module.duree_minutes })}</span>
+            <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium">{t('Complété')}</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-6">{module.titre}</h1>
           <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">{module.contenu}</div>
@@ -94,20 +96,20 @@ export default function ModulePage() {
         <div className="mb-6">
           <AudioReader text={module.contenu || ''} title={module.titre} />
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => prevModule ? router.push(`/formations/${formation.id}/module/${prevModule.id}`) : router.push(`/formations/${formation.id}`)}
             className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 transition"
           >
-            {prevModule ? prevModule.titre : 'Retour à la formation'}
+            {prevModule ? prevModule.titre : t('Retour à la formation')}
           </button>
           {isLastModule ? (
             <button onClick={() => router.push(`/formations/${formation.id}/questionnaire`)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-              Passer le questionnaire
+              {t('Passer le questionnaire')}
             </button>
           ) : nextModule ? (
             <button onClick={() => router.push(`/formations/${formation.id}/module/${nextModule.id}`)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-              Module suivant
+              {t('Module suivant')}
             </button>
           ) : null}
         </div>

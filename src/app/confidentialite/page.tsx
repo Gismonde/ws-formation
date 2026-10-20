@@ -1,19 +1,26 @@
 import Link from 'next/link'
 import React from 'react'
+import { i18n } from '@/lib/i18n/serveur'
 
 export const metadata = {
   title: 'Politique de confidentialité | WS Formation',
   description: 'Politique de confidentialité conforme à la Loi 25 du Québec.',
 }
 
-export default function ConfidentialitePage() {
+export default async function ConfidentialitePage() {
+  const { t, langue } = await i18n()
   const today = '29 mai 2026'
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto', padding: '48px 24px', fontFamily: 'system-ui, sans-serif', color: '#1a1f36', lineHeight: '1.7' }}>
+    <div style={{ maxWidth: '860px', margin: '0 auto', padding: 'clamp(24px, 6vw, 48px) 16px', fontFamily: 'system-ui, sans-serif', color: '#1a1f36', lineHeight: '1.7' }}>
 
       <div style={{ marginBottom: '40px' }}>
-        <Link href="/dashboard" style={{ fontSize: '13px', color: '#6366f1', textDecoration: 'none' }}>&larr; Retour au tableau de bord</Link>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '16px 0 8px' }}>Politique de confidentialité</h1>
+        <Link href="/dashboard/accueil" style={{ fontSize: '13px', color: '#6366f1', textDecoration: 'none' }}>{t('← Retour à l’accueil')}</Link>
+        {langue === 'en' && (
+          <p lang="en" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', margin: '16px 0 0' }}>
+            {t('Cette politique est rédigée en français.')}
+          </p>
+        )}
+        <h1 lang="fr" style={{ fontSize: '28px', fontWeight: '700', margin: '16px 0 8px' }}>Politique de confidentialité</h1>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
           Conforme à la <strong>Loi 25</strong> &mdash; Loi modernisant des dispositions législatives en matière de protection des renseignements personnels (Québec)<br />
           Dernière mise à jour : <strong>{today}</strong>

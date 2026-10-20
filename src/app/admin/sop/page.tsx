@@ -17,7 +17,7 @@ export default async function SopAdminPage() {
     .single()
 
   if (!employe || !['admin', 'super_admin'].includes(employe.role ?? '')) {
-    redirect('/dashboard')
+    redirect('/dashboard/accueil')
   }
 
   // Utiliser le service client pour lire TOUTES les SOPs (bypass RLS)

@@ -78,6 +78,50 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
   },
 }
 
+// Version anglaise par défaut (mêmes photos et liens)
+const traduireDefaut = (c: ContenuAccueil, t: Record<string, string>): ContenuAccueil => ({
+  banniere: { ...c.banniere, titre: t[c.banniere.titre] ?? c.banniere.titre, texte: t[c.banniere.texte] ?? c.banniere.texte },
+  cartes: c.cartes.map(k => ({ ...k, titre: t[k.titre] ?? k.titre, texte: t[k.texte] ?? k.texte })),
+  visite: { titre: t[c.visite.titre] ?? c.visite.titre, texte: t[c.visite.texte] ?? c.visite.texte, photos: c.visite.photos.map(p => ({ ...p, legende: t[p.legende] ?? p.legende })) },
+  infos: c.infos,
+})
+const ACCUEIL_EN: Record<string, string> = {
+  'Bienvenue au Centre Métropolitain de Chirurgie': 'Welcome to the Centre Métropolitain de Chirurgie',
+  'Bienvenue au Westmount Square Surgical Center': 'Welcome to the Westmount Square Surgical Center',
+  'Votre portail de formation : retrouvez vos formations, les politiques et les procédures de la clinique, et découvrez nos installations.':
+    'Your training portal: find your trainings, the clinic’s policies and procedures, and discover our facilities.',
+  'Visite virtuelle': 'Virtual tour',
+  'Découvrez nos installations en photos.': 'Discover our facilities in pictures.',
+  'Nos installations': 'Our facilities',
+  'Le Centre Métropolitain de Chirurgie sur le site de GrS Montréal.': 'The Centre Métropolitain de Chirurgie on the GrS Montréal website.',
+  'Bibliothèque': 'Library',
+  'Procédures (SOP) et documents de référence.': 'Procedures (SOPs) and reference documents.',
+  'Blogue Transavenue': 'Transavenue blog',
+  'Articles et actualités sur l’affirmation de genre.': 'Articles and news about gender affirmation.',
+  'Site du WSSC': 'WSSC website',
+  'Chirurgies, informations aux patients et articles.': 'Surgeries, patient information and articles.',
+  'À propos': 'About us',
+  'Notre équipe et nos salles d’opération.': 'Our team and our operating rooms.',
+  'Un aperçu des lieux où vous travaillez.': 'A look at the place where you work.',
+  'Hall d’entrée et information': 'Entrance hall and information',
+  'Consultation': 'Consultation',
+  'Unité de soins': 'Care unit',
+  'Salle d’opération': 'Operating room',
+  'Chambre': 'Patient room',
+  'Extérieur': 'Exterior',
+  'Salon': 'Lounge',
+  'Entrée': 'Entrance',
+  'Salle de réveil': 'Recovery room',
+}
+export const ACCUEIL_PAR_DEFAUT_EN: Record<Clinique, ContenuAccueil> = {
+  CMC: traduireDefaut(ACCUEIL_PAR_DEFAUT.CMC, ACCUEIL_EN),
+  WSSC: { ...traduireDefaut(ACCUEIL_PAR_DEFAUT.WSSC, ACCUEIL_EN), infos: '1 Westmount Square, Suite C190, Westmount, Quebec H3Z 2P9 · 514 931-5055' },
+}
+
+export function accueilParDefaut(clinique: Clinique, langue: 'fr' | 'en'): ContenuAccueil {
+  return (langue === 'en' ? ACCUEIL_PAR_DEFAUT_EN : ACCUEIL_PAR_DEFAUT)[clinique]
+}
+
 // ---------------------------------------------------------------------------
 // Validation (contenu envoyé par l'éditeur)
 

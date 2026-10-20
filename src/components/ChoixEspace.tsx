@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CLINIQUE_INFO, type Clinique } from '@/lib/cliniques'
+import { useT } from '@/lib/i18n/client'
 
 /** Sélecteur « Espace CMC / Espace WSSC » (employés rattachés aux deux cliniques). */
 export function ChoixEspace({ actif, possibles }: { actif: Clinique | null; possibles: Clinique[] }) {
   const router = useRouter()
   const [enCours, setEnCours] = useState<Clinique | null>(null)
+  const { t } = useT()
   if (possibles.length < 2) return null
 
   async function choisir(c: Clinique) {
@@ -24,7 +26,7 @@ export function ChoixEspace({ actif, possibles }: { actif: Clinique | null; poss
   }
 
   return (
-    <div role="group" aria-label="Choisir l'espace clinique" style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', padding: '4px', marginTop: '12px' }}>
+    <div role="group" aria-label={t('Choisir l’espace clinique')} style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', padding: '4px', marginTop: '12px' }}>
       {possibles.map(c => {
         const estActif = c === actif
         return (
@@ -42,7 +44,7 @@ export function ChoixEspace({ actif, possibles }: { actif: Clinique | null; poss
               opacity: enCours && enCours !== c ? 0.6 : 1,
             }}
           >
-            {enCours === c ? '…' : `Espace ${CLINIQUE_INFO[c].court}`}
+            {enCours === c ? '…' : t('Espace {clinique}', { clinique: CLINIQUE_INFO[c].court })}
           </button>
         )
       })}

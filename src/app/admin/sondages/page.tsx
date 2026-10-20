@@ -10,7 +10,7 @@ const couleur = (m: number | null) => (m === null ? '#9ca3af' : m >= 4 ? '#04785
 export default async function SondagesPage({ searchParams }: { searchParams: Promise<{ formation?: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
   const { formation } = await searchParams
   const { actif, lignes } = await chargerResultatsSondages(serviceClient(), acteur)
   const choisie = lignes.find(l => l.formation_id === formation) ?? null

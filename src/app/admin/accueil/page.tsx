@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, cliniquesAdministrees } from '@/lib/permissions'
 import { estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
-import { ACCUEIL_PAR_DEFAUT } from '@/lib/accueil'
+import { accueilParDefaut } from '@/lib/accueil'
 import EditeurAccueil from './EditeurAccueil'
 
 export default async function AdminAccueilPage() {
@@ -11,6 +11,8 @@ export default async function AdminAccueilPage() {
   if (!estAdministrateur(acteur.role)) redirect('/admin')
   const sb = serviceClient()
   const cliniques = cliniquesAdministrees(acteur)
-  const pages = await Promise.all(cliniques.map(async c => ({ clinique: c, ...(await chargerAccueil(sb, c)), defaut: ACCUEIL_PAR_DEFAUT[c] })))
+  const pages = await Promise.all(cliniques.flatMap(c => (['fr', 'en'] as const).map(async langue => ({
+    clinique: c, langue, ...(await chargerAccueil(sb, c, langue)), defaut: accueilParDefaut(c, langue),
+  }))))
   return <EditeurAccueil pages={pages} />
 }

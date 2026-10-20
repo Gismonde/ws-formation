@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n/client'
 
 export type QuestionAffichee = { id: string; texte: string; reponses: { id: string; texte: string }[] }
 
@@ -23,6 +24,7 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
   questions: QuestionAffichee[]
 }) {
   const router = useRouter()
+  const { t } = useT()
   const debut = useMemo(() => new Date().toISOString(), [])
   const [reponses, setReponses] = useState<Record<string, string>>({})
   const [envoi, setEnvoi] = useState(false)
@@ -40,11 +42,11 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
         body: JSON.stringify({ reponses, debut }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setErreur(d.error ?? 'Erreur'); return }
+      if (!res.ok) { setErreur(d.error ?? t('Erreur')); return }
       setResultat(d)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
-      setErreur('Erreur réseau. Vos réponses n’ont pas été envoyées.')
+      setErreur(t('Erreur réseau. Vos réponses n’ont pas été envoyées.'))
     } finally {
       setEnvoi(false)
     }
@@ -57,7 +59,7 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
       <nav className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <h1 className="font-semibold text-gray-900 truncate">{titre}</h1>
-          <span className="text-sm text-gray-500 whitespace-nowrap">{repondues}/{questions.length} répondues</span>
+          <span className="text-sm text-gray-500 whitespace-nowrap">{t('{n}/{total} répondues', { n: repondues, total: questions.length })}</span>
         </div>
         <div className="h-1 bg-gray-200"><div className="h-1 bg-blue-600 transition-all" style={{ width: `${progression}%` }} /></div>
       </nav>
@@ -66,39 +68,39 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
         {resultat ? (
           <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
             <div className="text-5xl mb-3">{resultat.reussi ? '🎉' : '📚'}</div>
-            <h2 className="text-2xl font-bold mb-2">{resultat.reussi ? 'Félicitations !' : 'Questionnaire non réussi'}</h2>
+            <h2 className="text-2xl font-bold mb-2">{resultat.reussi ? t('Félicitations !') : t('Questionnaire non réussi')}</h2>
             <p className="text-gray-600">
-              Votre score : <span className={`font-bold text-2xl ${resultat.reussi ? 'text-green-600' : 'text-red-500'}`}>{resultat.score} %</span>
+              {t('Votre score :')} <span className={`font-bold text-2xl ${resultat.reussi ? 'text-green-600' : 'text-red-500'}`}>{resultat.score} %</span>
             </p>
-            <p className="text-gray-500 text-sm mt-1 mb-5">Seuil de réussite : {resultat.seuil} %</p>
+            <p className="text-gray-500 text-sm mt-1 mb-5">{t('Seuil de réussite : {seuil} %', { seuil: resultat.seuil })}</p>
             {resultat.reussi ? (
               resultat.certificatId ? (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-5">
-                  <p className="text-green-700 font-medium">Votre certificat a été émis.</p>
-                  <button onClick={() => router.push(`/certificat/${resultat.certificatId}`)} className="mt-2 text-green-700 underline text-sm">Voir mon certificat</button>
+                  <p className="text-green-700 font-medium">{t('Votre certificat a été émis.')}</p>
+                  <button onClick={() => router.push(`/certificat/${resultat.certificatId}`)} className="mt-2 text-green-700 underline text-sm">{t('Voir mon certificat')}</button>
                 </div>
               ) : (
-                <p className="text-amber-700 text-sm mb-5">Réussite enregistrée, mais le certificat n’a pas pu être émis. L’incident est noté dans le journal ; contactez votre gestionnaire.</p>
+                <p className="text-amber-700 text-sm mb-5">{t('Réussite enregistrée, mais le certificat n’a pas pu être émis. L’incident est noté dans le journal ; contactez votre gestionnaire.')}</p>
               )
             ) : (
               <p className="text-gray-600 text-sm mb-5">
-                Les questions en rouge ci-dessous sont à revoir.{' '}
-                {resultat.tentativesRestantes === null ? 'Vous pouvez réessayer.'
-                  : resultat.tentativesRestantes > 0 ? `Il vous reste ${resultat.tentativesRestantes} tentative(s).`
-                  : 'Vous n’avez plus de tentatives : contactez votre gestionnaire.'}
+                {t('Les questions en rouge ci-dessous sont à revoir.')}{' '}
+                {resultat.tentativesRestantes === null ? t('Vous pouvez réessayer.')
+                  : resultat.tentativesRestantes > 0 ? t('Il vous reste {n} tentative(s).', { n: resultat.tentativesRestantes })
+                  : t('Vous n’avez plus de tentatives : contactez votre gestionnaire.')}
               </p>
             )}
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => router.push(`/formations/${formationId}`)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Retour à la formation</button>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <button onClick={() => router.push(`/formations/${formationId}`)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">{t('Retour à la formation')}</button>
               {!resultat.reussi && (resultat.tentativesRestantes === null || resultat.tentativesRestantes > 0) && (
-                <button onClick={() => { setResultat(null); setReponses({}); router.refresh() }} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Recommencer</button>
+                <button onClick={() => { setResultat(null); setReponses({}); router.refresh() }} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{t('Recommencer')}</button>
               )}
             </div>
           </div>
         ) : (
           <div className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-sm text-blue-900">
-            Seuil de réussite : <b>{seuil} %</b>
-            {tentativesRestantes !== null && <> · Tentative {tentativesFaites + 1} sur {tentativesFaites + tentativesRestantes}</>}
+            {t('Seuil de réussite :')} <b>{seuil} %</b>
+            {tentativesRestantes !== null && <> · {t('Tentative {n} sur {total}', { n: tentativesFaites + 1, total: tentativesFaites + tentativesRestantes })}</>}
           </div>
         )}
 
@@ -134,7 +136,7 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
             {erreur && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{erreur}</div>}
             <button onClick={soumettre} disabled={repondues < questions.length || envoi}
               className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
-              {envoi ? 'Correction en cours…' : repondues < questions.length ? `Répondez à toutes les questions (${questions.length - repondues} restante(s))` : 'Soumettre mes réponses'}
+              {envoi ? t('Correction en cours…') : repondues < questions.length ? t('Répondez à toutes les questions ({n} restante(s))', { n: questions.length - repondues }) : t('Soumettre mes réponses')}
             </button>
           </>
         )}

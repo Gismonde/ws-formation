@@ -6,6 +6,13 @@ import { Clinique, CliniqueEmploye, cliniquesDe } from '@/lib/cliniques'
 
 export const TEXTE_CONFIRMATION_POLITIQUE =
   'J’ai lu et compris cette politique et je m’engage à la respecter.'
+export const TEXTE_CONFIRMATION_POLITIQUE_EN =
+  'I have read and understood this policy and I agree to comply with it.'
+
+/** Texte de l'engagement dans la langue de l'employé (celui affiché est celui conservé comme preuve). */
+export function texteConfirmationPolitique(langue: 'fr' | 'en'): string {
+  return langue === 'en' ? TEXTE_CONFIRMATION_POLITIQUE_EN : TEXTE_CONFIRMATION_POLITIQUE
+}
 
 export type Politique = {
   id: string

@@ -2,11 +2,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getEspace } from '@/lib/espace'
+import { i18n } from '@/lib/i18n/serveur'
 
 export default async function FormationsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const { t } = await i18n()
 
   const { data: employe } = await supabase
     .from('employes')
@@ -38,25 +40,25 @@ export default async function FormationsPage() {
   }
 
   const niveauLabel: any = {
-    debutant: '🟢 Débutant',
-    intermediaire: '🟡 Intermédiaire',
-    avance: '🔴 Avancé'
+    debutant: `🟢 ${t('Débutant')}`,
+    intermediaire: `🟡 ${t('Intermédiaire')}`,
+    avance: `🔴 ${t('Avancé')}`
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4">
+      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">← Tableau de bord</Link>
-          <h1 className="font-semibold text-gray-900">Mes formations</h1>
+          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">{t('← Tableau de bord')}</Link>
+          <h1 className="font-semibold text-gray-900">{t('Mes formations')}</h1>
         </div>
       </nav>
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {formations.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <p className="text-4xl mb-3">📚</p>
-            <p className="text-gray-500">Aucune formation ne vous a encore été assignée.</p>
-            <p className="text-gray-400 text-sm mt-1">Contactez votre administrateur pour en savoir plus.</p>
+            <p className="text-gray-500">{t('Aucune formation ne vous a encore été assignée.')}</p>
+            <p className="text-gray-400 text-sm mt-1">{t('Contactez votre administrateur pour en savoir plus.')}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">

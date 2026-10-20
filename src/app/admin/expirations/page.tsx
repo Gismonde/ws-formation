@@ -31,7 +31,7 @@ function libelleJours(j: number): string {
 export default async function ExpirationsPage({ searchParams }: { searchParams: Promise<{ statut?: string; horizon?: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
 
   const sp = await searchParams
   const horizon = HORIZONS.includes(Number(sp.horizon) as 30) ? Number(sp.horizon) : 60

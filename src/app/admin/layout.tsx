@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login')
 
   const employe = await getActeur()
-  if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard')
+  if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard/accueil')
 
   const isAdmin = estAdministrateur(employe.role)
   const perimetre = employe.vue
@@ -86,7 +86,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </div>
             </div>
           )}
-          <Link href='/dashboard' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
+          <Link href='/dashboard/accueil' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
             <span className='material-icons' style={{ fontSize: '16px' }}>person</span>
             Mon espace
           </Link>

@@ -6,7 +6,8 @@
 import { headers } from 'next/headers'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
-import { TEXTE_ATTESTATION_DEFAUT } from '@/lib/suivi-constantes'
+import { texteAttestationDefaut } from '@/lib/suivi-constantes'
+import { langueCourante } from '@/lib/i18n/serveur'
 import { prerequisManquants, messagePrerequis } from '@/lib/prerequis'
 import { aAccesAdmin } from '@/lib/cliniques'
 
@@ -66,7 +67,7 @@ export async function attesterLecture(lessonId: string): Promise<Resultat<string
   const sb = serviceClient()
   const { data: lecon } = await sb.from('lessons').select('id, titre, attestation_requise, texte_attestation').eq('id', lessonId).single()
   if (!lecon) return { ok: false, erreur: 'Leçon introuvable' }
-  const texte = lecon.texte_attestation?.trim() || TEXTE_ATTESTATION_DEFAUT
+  const texte = lecon.texte_attestation?.trim() || texteAttestationDefaut(await langueCourante())
 
   const { data: existante } = await sb.from('preuves_lecture').select('created_at')
     .eq('employe_id', ctx.acteur.id).eq('lesson_id', lessonId).eq('type', 'attestation').maybeSingle()

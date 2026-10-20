@@ -5,7 +5,9 @@ import { getLessonWithBlocks, getLessonsWithBlocks } from '@/lib/actions/lessons
 import { upsertLessonProgression } from '@/lib/actions/progressions'
 import { getEtatSuivi } from '@/lib/actions/suivi'
 import { FournisseurSuivi, VideoSuivie, FinDeLecon } from '@/components/lecon/SuiviLecon'
-import { TEXTE_ATTESTATION_DEFAUT } from '@/lib/suivi-constantes'
+import { texteAttestationDefaut } from '@/lib/suivi-constantes'
+import { i18n } from '@/lib/i18n/serveur'
+import type { Traducteur } from '@/lib/i18n/base'
 import AudioReader from '@/components/AudioReader'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
@@ -93,24 +95,24 @@ function BlocImage({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
   )
 }
 
-function BlocFichier({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+function BlocFichier({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Traducteur }) {
   const nom = String(bloc.metadata?.nom_fichier ?? '')
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
       <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">📎</div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 truncate">{bloc.titre || nom || 'Document'}</p>
+        <p className="font-semibold text-gray-900 truncate">{bloc.titre || nom || t('Document')}</p>
         {nom && bloc.titre && <p className="text-xs text-gray-500 truncate">{nom}</p>}
       </div>
       <a href={source(bloc, urls)} target="_blank" rel="noopener noreferrer"
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex-shrink-0">
-        Ouvrir
+        {t('Ouvrir')}
       </a>
     </div>
   )
 }
 
-function BlocSlide({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+function BlocSlide({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Traducteur }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {bloc.titre && (
@@ -119,20 +121,20 @@ function BlocSlide({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
         </div>
       )}
       <div className="aspect-video">
-        <iframe src={source(bloc, urls)} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Présentation'} />
+        <iframe src={source(bloc, urls)} className="w-full h-full" allowFullScreen title={bloc.titre ?? t('Présentation')} />
       </div>
     </div>
   )
 }
 
-function RenduBloc({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
+function RenduBloc({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Traducteur }) {
   if (estVide(bloc)) return null
   switch (bloc.type) {
     case 'text': return <BlocTexte bloc={bloc} />
     case 'video': return <BlocVideo bloc={bloc} urls={urls} />
     case 'image': return <BlocImage bloc={bloc} urls={urls} />
-    case 'file': return <BlocFichier bloc={bloc} urls={urls} />
-    case 'slide': return <BlocSlide bloc={bloc} urls={urls} />
+    case 'file': return <BlocFichier bloc={bloc} urls={urls} t={t} />
+    case 'slide': return <BlocSlide bloc={bloc} urls={urls} t={t} />
     case 'quiz': return <QuizInteractif quiz={lireQuiz(bloc.contenu)} titre={bloc.titre} />
     default: return null
   }
@@ -145,6 +147,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const { id: formationId, leconId } = await params
   // ?apercu=1 : ouverture depuis l'éditeur, rien n'est enregistré
   const suiviActif = (await searchParams).apercu !== '1'
+  const { t, langue } = await i18n()
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -203,7 +206,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                <span className="hidden sm:inline">Précédente</span>
+                <span className="hidden sm:inline">{t('Précédente')}</span>
               </Link>
             )}
             {leconSuivante && (
@@ -211,7 +214,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 href={baseUrl + '/lecon/' + leconSuivante.id}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
               >
-                <span className="hidden sm:inline">Suivante</span>
+                <span className="hidden sm:inline">{t('Suivante')}</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -240,12 +243,12 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {lecon.blocs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-3">📄</div>
-            <p className="text-gray-500">Cette leçon n&apos;a pas encore de contenu.</p>
+            <p className="text-gray-500">{t('Cette leçon n’a pas encore de contenu.')}</p>
           </div>
         ) : (
           <div className="space-y-6">
             {lecon.blocs.sort((a, b) => a.ordre - b.ordre).map(bloc => (
-              <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} />
+              <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} t={t} />
             ))}
           </div>
         )}
@@ -253,7 +256,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           <FinDeLecon
             lessonId={leconId}
             attestationRequise={lecon.attestation_requise === true}
-            texteAttestation={lecon.texte_attestation?.trim() || TEXTE_ATTESTATION_DEFAUT}
+            texteAttestation={lecon.texte_attestation?.trim() || texteAttestationDefaut(langue)}
             videosObligatoires={lecon.blocs.filter(b => b.type === 'video' && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre }))}
             etat={etatSuivi}
             suiviActif={suiviActif}
@@ -272,7 +275,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <span>
-                  <span className="block text-xs text-gray-400">Leçon précédente</span>
+                  <span className="block text-xs text-gray-400">{t('Leçon précédente')}</span>
                   <span className="font-medium">{leconPrécédente.titre}</span>
                 </span>
               </Link>
@@ -281,7 +284,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour à la formation
+                {t('Retour à la formation')}
               </Link>
             )}
           </div>
@@ -292,7 +295,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 className="group flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <span className="text-right">
-                  <span className="block text-xs text-gray-400">Leçon suivante</span>
+                  <span className="block text-xs text-gray-400">{t('Leçon suivante')}</span>
                   <span className="font-medium">{leconSuivante.titre}</span>
                 </span>
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +310,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Module terminé
+                {t('Module terminé')}
               </Link>
             )}
           </div>
@@ -316,7 +319,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {/* Navigation lecons du module */}
         {toutesLecons.length > 1 && (
           <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Leçons de ce module</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('Leçons de ce module')}</h3>
             <div className="space-y-1">
               {toutesLecons.map((l, i) => (
                 <Link
