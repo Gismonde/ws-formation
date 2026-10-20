@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { logAudit } from '@/lib/audit'
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         {
           cookies: {
                 getAll() { return [] },
-                setAll(cookies) {
+                setAll(cookies: { name: string; value: string; options: CookieOptions }[]) {
                   cookiesToSet.push(...cookies)
                 },
           },

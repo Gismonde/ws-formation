@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
             ordre: 1,
           }
         })
-        .filter(Boolean)
+        .filter((b): b is NonNullable<typeof b> => b !== null)
 
       if (blocsToInsert.length > 0) {
         const { error: blocsError } = await adminClient

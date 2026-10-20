@@ -245,7 +245,7 @@ export default function NouvelleFormationPage() {
                   if (!desc) return null
                   return { lesson_id: lecon.id, type: 'text', contenu: desc, ordre: 1 }
                 })
-                .filter(Boolean)
+                .filter((b): b is NonNullable<typeof b> => b !== null)
               if (blocsToInsert.length > 0) {
                 await supabase.from('content_blocks').insert(blocsToInsert)
               }
@@ -699,7 +699,7 @@ export default function NouvelleFormationPage() {
             {imageCouverture ? (
               <div>
                 <img src={imageCouverture} alt="Couverture" style={{ maxWidth: '220px', maxHeight: '130px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '6px' }} />
-                <button onClick={() => setImageCouverture(null)} style={{ ...btnDangerStyle, fontSize: '11px' }}>Retirer</button>
+                <button onClick={() => setImageCouverture('')} style={{ ...btnDangerStyle, fontSize: '11px' }}>Retirer</button>
               </div>
             ) : (
               <label htmlFor="cover-img-nv" style={{ ...btnSecStyle, display: 'inline-block', cursor: 'pointer', fontSize: '12px' }}>

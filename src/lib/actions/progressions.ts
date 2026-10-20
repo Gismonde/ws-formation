@@ -161,15 +161,15 @@ export async function syncModuleProgression(moduleId: string): Promise<ActionRes
     return upsertModuleProgression({ module_id: moduleId, statut: 'non_commence', pourcentage_complete: 0 })
   }
 
-  // Compter les lecons terminees
+  // Compter les lecons terminees (identifiants d'abord : .in() attend une liste, pas une requete)
+  const { data: leconsObligatoires } = await supabase
+    .from('lessons').select('id').eq('module_id', moduleId).eq('est_obligatoire', true)
   const { count: completedLessons } = await supabase
     .from('lesson_progressions')
     .select('id', { count: 'exact', head: true })
     .eq('employe_id', employe.id)
     .eq('statut', 'termine')
-    .in('lesson_id',
-      supabase.from('lessons').select('id').eq('module_id', moduleId).eq('est_obligatoire', true)
-    )
+    .in('lesson_id', (leconsObligatoires ?? []).map((l: { id: string }) => l.id))
 
   const pct = Math.round(((completedLessons ?? 0) / totalLessons) * 100)
   const statut = pct === 0 ? 'non_commence' : pct === 100 ? 'termine' : 'en_cours'
@@ -226,14 +226,14 @@ export async function getProgressionResume(formationId: string): Promise<ActionR
     .select('id', { count: 'exact', head: true })
     .in('module_id', moduleIds)
 
+  const { data: lecons } = await supabase
+    .from('lessons').select('id').in('module_id', moduleIds)
   const { count: lessonsTerminees } = await supabase
     .from('lesson_progressions')
     .select('id', { count: 'exact', head: true })
     .eq('employe_id', employe.id)
     .eq('statut', 'termine')
-    .in('lesson_id',
-      supabase.from('lessons').select('id').in('module_id', moduleIds)
-    )
+    .in('lesson_id', (lecons ?? []).map((l: { id: string }) => l.id))
 
   const pctGlobal = totalLessons
     ? Math.round(((lessonsTerminees ?? 0) / totalLessons) * 100)
@@ -243,12 +243,13 @@ export async function getProgressionResume(formationId: string): Promise<ActionR
     success: true,
     data: {
       formation_id: formationId,
-      formation_titre: formation.titre,
-      total_modules: totalModules,
+      titre: formation.titre,
+      statut: pctGlobal === 0 ? 'non_commence' : pctGlobal === 100 ? 'termine' : 'en_cours',
+      progression_pct: pctGlobal,
+      modules_total: totalModules,
       modules_termines: modulesTermines ?? 0,
-      total_lessons: totalLessons ?? 0,
+      lessons_total: totalLessons ?? 0,
       lessons_terminees: lessonsTerminees ?? 0,
-      pourcentage_global: pctGlobal,
     },
   }
 }
