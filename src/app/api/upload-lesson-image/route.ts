@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Image trop grande (max 10MB)' }, { status: 400 })
         }
 
-    const ext = file.name.split('.').pop() || 'jpg'
+    // Extension déduite du type réel (jamais du nom fourni par l'utilisateur)
+    const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp' } as Record<string, string>)[file.type]
     const fileName = `${user.id}/${Date.now()}.${ext}`
     const fileBuffer = await file.arrayBuffer()
 

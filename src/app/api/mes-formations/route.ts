@@ -1,48 +1,31 @@
-// api/mes-formations/route.ts - v3
-import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { createClient as createServiceClient } from "@supabase/supabase-js"
+// api/mes-formations/route.ts — formations proposées à l'employé connecté (ex. pour soumettre une preuve)
+import { NextResponse } from "next/server"
+import { getActeur, serviceClient } from "@/lib/permissions"
+import { getEspace } from "@/lib/espace"
 
-export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: "Non authentifie" }, { status: 401 })
+export async function GET() {
+  const moi = await getActeur()
+  if (!moi) return NextResponse.json({ error: "Non authentifie" }, { status: 401 })
 
-  const serviceClient = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const sb = serviceClient()
+  const espace = await getEspace(moi)
 
-  let employe: { id: string } | null = null
-  const { data: emp1 } = await serviceClient
-    .from("employes").select("id").eq("auth_user_id", user.id).maybeSingle()
-  if (emp1) {
-    employe = emp1
-  } else if (user.email) {
-    const { data: emp2 } = await serviceClient
-      .from("employes").select("id").eq("email", user.email).maybeSingle()
-    employe = emp2
+  // 1. Les formations qui lui sont assignées (dans l'espace actif)
+  const { data: assignations } = await sb.from("assignations").select("formation_id").eq("employe_id", moi.id)
+  const formationIds = (assignations ?? []).map((a: { formation_id: string }) => a.formation_id)
+
+  let formations: { id: string; titre: string; obligatoire: boolean | null }[] = []
+  if (formationIds.length > 0) {
+    const { data } = await sb.from("formations").select("id, titre, obligatoire")
+      .in("id", formationIds).in("clinique", espace.cliniquesContenu)
+    formations = data ?? []
   }
 
-  let formations: any[] = []
-
-  if (employe) {
-    const { data: assignations } = await serviceClient
-      .from("assignations").select("formation_id").eq("employe_id", employe.id)
-    const formationIds = assignations?.map((a: any) => a.formation_id) ?? []
-
-    if (formationIds.length > 0) {
-      const { data: assigned } = await serviceClient
-        .from("formations").select("id, titre, obligatoire").in("id", formationIds)
-      formations = assigned ?? []
-    }
-  }
-
+  // 2. Aucune assignation : seulement les formations PUBLIÉES de sa clinique (jamais celles de l'autre clinique ni les brouillons)
   if (formations.length === 0) {
-    const { data: all } = await serviceClient
-      .from("formations").select("id, titre, obligatoire")
-    formations = all ?? []
+    const { data } = await sb.from("formations").select("id, titre, obligatoire")
+      .eq("publiee", true).in("clinique", espace.cliniquesContenu).order("titre")
+    formations = data ?? []
   }
 
   return NextResponse.json({ formations })
