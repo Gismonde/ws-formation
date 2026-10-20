@@ -9,7 +9,7 @@ export default async function AdminRapportsPage() {
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
   const sb = serviceClient()
-  const perimetre = acteur.role === 'super_admin' ? null
+  const perimetre = acteur.role === 'super_admin' && !acteur.vue ? null
     : acteur.role === 'gestionnaire' ? 'Vous consultez les données de votre département uniquement.'
     : `Vous consultez les données de ${cliniquesAdministrees(acteur).join(' et ')} uniquement.`
 

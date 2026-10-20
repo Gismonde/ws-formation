@@ -43,7 +43,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const peutGerer = (emp: any) => peutGererEmploye(acteur, emp)
   const peutCreer = !isGestionnaire || (!!acteur.departement_id && !!acteur.clinique)
 
-  const sousTitre = acteur.role === 'super_admin' ? 'dans les deux cliniques'
+  const sousTitre = acteur.role === 'super_admin' && !acteur.vue ? 'dans les deux cliniques'
     : acteur.role === 'admin' ? 'à ' + mesCliniques.join(' et ')
     : `dans votre département${acteur.clinique ? ' (' + acteur.clinique.replace('LES_DEUX', 'CMC + WSSC') + ')' : ''}`
 

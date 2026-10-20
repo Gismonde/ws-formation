@@ -74,8 +74,7 @@ export function peutGererPolitique(a: Acteur, p: Pick<Politique, 'clinique'>): b
 
 /** Consulter la politique et ses statistiques (dans sa portée). */
 export function peutSuivrePolitique(a: Acteur, p: Pick<Politique, 'clinique' | 'departements'>): boolean {
-  if (a.role === 'super_admin') return true
-  if (a.role === 'admin') return intersecte(cliniquesDe(p.clinique), cliniquesAdministrees(a))
+  if (a.role === 'super_admin' || a.role === 'admin') return intersecte(cliniquesDe(p.clinique), cliniquesAdministrees(a))
   if (a.role === 'gestionnaire') {
     if (!a.departement_id) return false
     return estVise(p, { clinique: a.clinique, departement_id: a.departement_id })

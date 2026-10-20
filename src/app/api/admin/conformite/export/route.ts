@@ -1,6 +1,6 @@
 // Export de la conformité : Excel (synthèse + détail + attestations), CSV (détail) ou PDF (rapport / fiche employé).
 import { NextRequest, NextResponse } from 'next/server'
-import { getActeur, serviceClient, departementsVisibles, cliniquesAdministrees } from '@/lib/permissions'
+import { getActeur, serviceClient, libellePerimetre, departementsVisibles, cliniquesAdministrees } from '@/lib/permissions'
 import { aAccesAdmin, CLINIQUE_EMPLOYE_LABEL, CLINIQUE_INFO, estCliniqueEmploye, ROLE_LABEL, type Clinique } from '@/lib/cliniques'
 import { chargerConformite, synthese, type EmployeConformite, type AssignationConformite } from '@/lib/conformite'
 import { LIBELLE_STATUT, estComplete } from '@/lib/etat-formations'
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
   const attestations: LigneAtt[] = detail.flatMap(({ e, a }) => (a.suivi?.lecons ?? []).filter(l => l.attestation_requise).map(l => ({ e, a, l })))
 
   const perimetre = [
-    acteur.role === 'super_admin' ? 'CMC + WSSC' : acteur.role === 'gestionnaire' ? 'mon département' : cliniquesAdministrees(acteur).join(' + '),
+    libellePerimetre(acteur),
     cl ? `clinique ${CLINIQUE_INFO[cl].court}` : null,
     dep ? `département ${dep.nom}` : null,
     vue === 'retard' ? 'formations en retard' : vue === 'incomplet' ? 'formations à compléter' : null,

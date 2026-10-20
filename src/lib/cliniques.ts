@@ -78,6 +78,17 @@ export function cliniquesContenuDeLEspace(espace: Clinique | null): CliniqueCont
 // Espace employé (CMC / WSSC) et thème visuel
 // ---------------------------------------------------------------------------
 
+/** Cookie de la vue de l'espace Admin (CMC, WSSC ; absent = les deux). */
+export const VUE_ADMIN_COOKIE = 'ws_vue_admin'
+
+/** Vues Admin possibles : seulement pour l'équipe rattachée aux deux cliniques (ou l'admin global). */
+export function vuesAdminPossibles(cliniqueEmploye: string | null | undefined, role: string | null | undefined): Clinique[] {
+  if (role === 'super_admin') return ['CMC', 'WSSC']
+  if (!aAccesAdmin(role)) return []
+  const cl = cliniquesDe(cliniqueEmploye)
+  return cl.length > 1 ? cl : []
+}
+
 /** Cookie qui mémorise l'espace choisi par un employé rattaché aux deux cliniques. */
 export const ESPACE_COOKIE = 'ws_espace'
 

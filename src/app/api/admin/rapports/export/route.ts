@@ -1,6 +1,6 @@
 // Export de la page Rapports : progression par formation (Excel ou PDF).
 import { NextRequest, NextResponse } from 'next/server'
-import { getActeur, serviceClient, cliniquesAdministrees } from '@/lib/permissions'
+import { getActeur, serviceClient, libellePerimetre, cliniquesAdministrees } from '@/lib/permissions'
 import { aAccesAdmin, ROLE_LABEL } from '@/lib/cliniques'
 import { chargerConformite, synthese, rapportParFormation, formationsDuRapport, type LigneRapportFormation } from '@/lib/conformite'
 import { classeurExcel, nomFichier, reponseFichier, type Colonne } from '@/lib/export-tableur'
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   const pdf = genererPdf({
     titre: 'Rapport de progression des formations',
-    perimetre: acteur.role === 'super_admin' ? 'CMC + WSSC' : acteur.role === 'gestionnaire' ? 'mon département' : cliniquesAdministrees(acteur).join(' + '),
+    perimetre: libellePerimetre(acteur),
     genere_par: `${acteur.prenom ?? ''} ${acteur.nom ?? ''} (${ROLE_LABEL[acteur.role]})`.trim(),
     indicateurs: [
       ['Formations publiées', formations.length],
