@@ -7,6 +7,8 @@ import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 import { getEspace } from '@/lib/espace'
 import { ChoixEspace } from '@/components/ChoixEspace'
 import { TiroirMenu } from '@/components/TiroirMenu'
+import { ChoixLangue } from '@/components/ChoixLangue'
+import { i18n } from '@/lib/i18n/serveur'
 import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
 const employeNav = [
@@ -33,6 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .single()
 
   const espace = await getEspace(employe)
+  const { t } = await i18n()
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
@@ -40,7 +43,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const theme = espace.actif ? THEME_CLINIQUE[espace.actif] : THEME_NEUTRE
   const displayName = employe?.prenom && employe?.nom
     ? employe.prenom + ' ' + employe.nom
-    : (user.email?.split('@')[0] || 'Utilisateur')
+    : (user.email?.split('@')[0] || t('Utilisateur'))
 
   return (
     <div className="dashboard-shell coque-adaptative">
@@ -48,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
           <div className="sidebar-subtitle">
-            {cliniqueAffichee ? `Espace ${CLINIQUE_INFO[cliniqueAffichee].court} — ${CLINIQUE_INFO[cliniqueAffichee].nom}` : 'Espace employé'}
+            {cliniqueAffichee ? `${t('Espace {clinique}', { clinique: CLINIQUE_INFO[cliniqueAffichee].court })} — ${CLINIQUE_INFO[cliniqueAffichee].nom}` : t('Espace employé')}
           </div>
           {cliniqueAffichee && (
             <div style={{ marginTop: '14px', background: '#fff', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
@@ -56,13 +59,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
           )}
           <ChoixEspace actif={espace.actif} possibles={espace.possibles} />
+          <div style={{ marginTop: '10px' }}><ChoixLangue sombre /></div>
         </div>
 
         <nav className="sidebar-nav">
           {employeNav.map((item) => (
             <Link key={item.href} href={item.href} className="sidebar-nav-item">
               <span className="sidebar-emoji">{item.emoji}</span>
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
               {item.href === '/dashboard/politiques' && politiquesEnAttente > 0 && (
                 <span style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{politiquesEnAttente}</span>
               )}
@@ -72,18 +76,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         <div className="sidebar-footer">
           <div className="sidebar-user-info">
-            <div className="sidebar-user-label">Connecté en tant que</div>
+            <div className="sidebar-user-label">{t('Connecté en tant que')}</div>
             <div className="sidebar-user-name">{displayName}</div>
           </div>
           {isAdmin && (
             <Link href="/admin" className="sidebar-admin-btn">
               <span>⚙️</span>
-              <span>Espace Admin</span>
+              <span>{t('Espace Admin')}</span>
             </Link>
           )}
           <Link href="/logout" className="sidebar-logout-btn">
             <span>🚪</span>
-            <span>Déconnexion</span>
+            <span>{t('Déconnexion')}</span>
           </Link>
         </div>
       </TiroirMenu>

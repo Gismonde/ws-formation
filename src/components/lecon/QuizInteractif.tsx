@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import type { Quiz } from '@/lib/quiz'
+import { useT } from '@/lib/i18n/client'
 
 /** Quiz côté employé : choix, vérification, correction et explication. */
 export default function QuizInteractif({ quiz, titre }: { quiz: Quiz; titre: string | null }) {
   const [choix, setChoix] = useState<(number | null)[]>(() => quiz.questions.map(() => null))
   const [verifie, setVerifie] = useState(false)
+  const { t } = useT()
 
   const score = quiz.questions.reduce((s, q, i) => s + (choix[i] === q.bonne_reponse ? 1 : 0), 0)
   const complet = choix.every(c => c !== null)
@@ -14,7 +16,7 @@ export default function QuizInteractif({ quiz, titre }: { quiz: Quiz; titre: str
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4 gap-3">
-        <h3 className="text-lg font-semibold text-gray-900">❓ {titre || 'Vérifiez vos connaissances'}</h3>
+        <h3 className="text-lg font-semibold text-gray-900">❓ {titre || t('Vérifiez vos connaissances')}</h3>
         {verifie && (
           <span className={'text-sm font-bold px-3 py-1 rounded-full ' + (score === quiz.questions.length ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
             {score} / {quiz.questions.length}
@@ -25,7 +27,7 @@ export default function QuizInteractif({ quiz, titre }: { quiz: Quiz; titre: str
       <div className="space-y-5">
         {quiz.questions.map((q, i) => (
           <fieldset key={i} className="bg-gray-50 rounded-lg p-4">
-            <legend className="sr-only">Question {i + 1}</legend>
+            <legend className="sr-only">{t('Question {n}', { n: i + 1 })}</legend>
             <p className="font-medium text-gray-800 mb-3">{i + 1}. {q.question}</p>
             <div className="space-y-2">
               {q.reponses.map((r, j) => {
@@ -55,12 +57,12 @@ export default function QuizInteractif({ quiz, titre }: { quiz: Quiz; titre: str
         {!verifie ? (
           <button onClick={() => setVerifie(true)} disabled={!complet}
             className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-40">
-            Vérifier mes réponses
+            {t('Vérifier mes réponses')}
           </button>
         ) : (
           <button onClick={() => { setVerifie(false); setChoix(quiz.questions.map(() => null)) }}
             className="px-5 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50">
-            Recommencer
+            {t('Recommencer')}
           </button>
         )}
       </div>

@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { themeEmploye } from '@/lib/theme-employe'
 import { CLINIQUE_INFO } from '@/lib/cliniques'
+import { i18n } from '@/lib/i18n/serveur'
+import { ChoixLangue } from '@/components/ChoixLangue'
 
 export default async function EnveloppeEmploye({ children }: { children: React.ReactNode }) {
   const { espace, variables } = await themeEmploye()
   const c = espace.actif
+  const { t } = await i18n()
   return (
     <div className="espace-employe contenu-adaptatif" style={{ ...(variables as React.CSSProperties), background: 'var(--fond-clinique)', minHeight: '100vh' }}>
       <div className="bandeau-clinique" style={{ background: 'var(--barre-clinique)', color: '#fff' }}>
@@ -16,9 +19,10 @@ export default async function EnveloppeEmploye({ children }: { children: React.R
             <img src={CLINIQUE_INFO[c].logo} alt={CLINIQUE_INFO[c].nom} style={{ height: '26px', background: '#fff', borderRadius: '6px', padding: '2px 6px' }} />
           )}
           <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {c ? `Espace ${CLINIQUE_INFO[c].court} — ${CLINIQUE_INFO[c].nom}` : 'WS Formation'}
+            {c ? `${t('Espace {clinique}', { clinique: CLINIQUE_INFO[c].court })} — ${CLINIQUE_INFO[c].nom}` : 'WS Formation'}
           </span>
-          <Link href="/dashboard" style={{ marginLeft: 'auto', color: '#fff', textDecoration: 'none', opacity: 0.9, whiteSpace: 'nowrap' }}>Mon espace →</Link>
+          <span style={{ marginLeft: 'auto' }}><ChoixLangue sombre /></span>
+          <Link href="/dashboard/accueil" style={{ color: '#fff', textDecoration: 'none', opacity: 0.9, whiteSpace: 'nowrap' }}>{t('Mon espace')} →</Link>
         </div>
       </div>
       {children}

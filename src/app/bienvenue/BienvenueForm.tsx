@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { useT } from '@/lib/i18n/client'
+import type { Traducteur } from '@/lib/i18n/base'
 
 const MIN = 10
-function regle(pwd: string): string | null {
-  if (pwd.length < MIN) return `Le mot de passe doit contenir au moins ${MIN} caractères.`
-  if (!/[A-Z]/.test(pwd)) return 'Le mot de passe doit contenir au moins une lettre majuscule.'
-  if (!/[a-z]/.test(pwd)) return 'Le mot de passe doit contenir au moins une lettre minuscule.'
-  if (!/[0-9]/.test(pwd)) return 'Le mot de passe doit contenir au moins un chiffre.'
+function regle(pwd: string, t: Traducteur): string | null {
+  if (pwd.length < MIN) return t('Le mot de passe doit contenir au moins {n} caractères.', { n: MIN })
+  if (!/[A-Z]/.test(pwd)) return t('Le mot de passe doit contenir au moins une lettre majuscule.')
+  if (!/[a-z]/.test(pwd)) return t('Le mot de passe doit contenir au moins une lettre minuscule.')
+  if (!/[0-9]/.test(pwd)) return t('Le mot de passe doit contenir au moins un chiffre.')
   return null
 }
 
@@ -24,17 +26,18 @@ export default function BienvenueForm() {
   const [conf, setConf] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
+  const { t } = useT()
 
   if (!tokenHash) {
-    return <p style={{ color: '#dc2626', fontSize: '14px', textAlign: 'center' }}>Lien invalide. Demandez à votre gestionnaire de vous renvoyer l’invitation.</p>
+    return <p style={{ color: '#dc2626', fontSize: '14px', textAlign: 'center' }}>{t('Lien invalide. Demandez à votre gestionnaire de vous renvoyer l’invitation.')}</p>
   }
 
   async function soumettre(e: React.FormEvent) {
     e.preventDefault()
     setErreur(null)
-    const r = regle(mdp)
+    const r = regle(mdp, t)
     if (r) return setErreur(r)
-    if (mdp !== conf) return setErreur('Les deux mots de passe ne correspondent pas.')
+    if (mdp !== conf) return setErreur(t('Les deux mots de passe ne correspondent pas.'))
     setEnCours(true)
     try {
       // Client isolé : le lien n'est consommé qu'au moment de l'envoi du formulaire
@@ -43,14 +46,14 @@ export default function BienvenueForm() {
         { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
       const { error: errVerif } = await sb.auth.verifyOtp({ token_hash: tokenHash!, type })
       if (errVerif) {
-        setErreur('Ce lien a expiré ou a déjà été utilisé. Demandez à votre gestionnaire de vous renvoyer l’invitation.')
+        setErreur(t('Ce lien a expiré ou a déjà été utilisé. Demandez à votre gestionnaire de vous renvoyer l’invitation.'))
         return
       }
       const { error: errMaj } = await sb.auth.updateUser({ password: mdp })
       if (errMaj) {
         setErreur(/weak|pwned|leaked/i.test(errMaj.message)
-          ? 'Ce mot de passe est trop courant. Choisissez-en un autre.'
-          : 'Impossible d’enregistrer le mot de passe : ' + errMaj.message)
+          ? t('Ce mot de passe est trop courant. Choisissez-en un autre.')
+          : t('Impossible d’enregistrer le mot de passe : {detail}', { detail: errMaj.message }))
         return
       }
       await sb.auth.signOut({ scope: 'local' })
@@ -63,12 +66,12 @@ export default function BienvenueForm() {
   return (
     <form onSubmit={soumettre}>
       <div style={{ marginBottom: '14px' }}>
-        <label style={label}>Nouveau mot de passe</label>
+        <label style={label}>{t('Nouveau mot de passe')}</label>
         <input type="password" style={input} value={mdp} onChange={e => setMdp(e.target.value)} autoComplete="new-password" required />
-        <p style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0' }}>Au moins 10 caractères, avec une majuscule, une minuscule et un chiffre.</p>
+        <p style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0' }}>{t('Au moins {n} caractères, avec une majuscule, une minuscule et un chiffre.', { n: MIN })}</p>
       </div>
       <div style={{ marginBottom: '16px' }}>
-        <label style={label}>Confirmer le mot de passe</label>
+        <label style={label}>{t('Confirmer le mot de passe')}</label>
         <input type="password" style={input} value={conf} onChange={e => setConf(e.target.value)} autoComplete="new-password" required />
       </div>
       {erreur && (
@@ -76,7 +79,7 @@ export default function BienvenueForm() {
       )}
       <button type="submit" disabled={enCours}
         style={{ width: '100%', padding: '12px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', opacity: enCours ? 0.6 : 1 }}>
-        {enCours ? 'Enregistrement…' : 'Activer mon compte'}
+        {enCours ? t('Enregistrement…') : t('Activer mon compte')}
       </button>
     </form>
   )

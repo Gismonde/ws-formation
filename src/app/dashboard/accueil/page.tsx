@@ -6,6 +6,7 @@ import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import GalerieVisite from './GalerieVisite'
+import { i18n } from '@/lib/i18n/serveur'
 
 const externe = (lien: string) => /^https?:\/\//.test(lien)
 
@@ -14,6 +15,7 @@ export default async function AccueilPage() {
   if (!acteur) redirect('/login')
   const espace = await getEspace(acteur)
   const sb = serviceClient()
+  const { t, langue } = await i18n()
 
   // Formations à faire (dans l'espace actif)
   const { data: assignations } = await sb.from('assignations').select('formation_id').eq('employe_id', acteur.id)
@@ -27,14 +29,14 @@ export default async function AccueilPage() {
   if (!espace.actif) {
     return (
       <div style={{ maxWidth: '900px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#111827' }}>Bonjour {acteur.prenom} !</h1>
-        <p style={{ color: '#6b7280' }}>Aucune clinique n’est encore associée à votre compte. Votre administrateur pourra vous en attribuer une.</p>
-        <Link href="/dashboard" style={{ display: 'inline-block', marginTop: '12px', color: 'var(--accent-clinique)', fontWeight: 600 }}>Voir mes formations →</Link>
+        <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#111827' }}>{t('Bonjour {prenom} !', { prenom: acteur.prenom ?? '' })}</h1>
+        <p style={{ color: '#6b7280' }}>{t('Aucune clinique n’est encore associée à votre compte. Votre administrateur pourra vous en attribuer une.')}</p>
+        <Link href="/dashboard" style={{ display: 'inline-block', marginTop: '12px', color: 'var(--accent-clinique)', fontWeight: 600 }}>{t('Voir mes formations')} →</Link>
       </div>
     )
   }
 
-  const { contenu, disponible } = await chargerAccueil(sb, espace.actif)
+  const { contenu, disponible } = await chargerAccueil(sb, espace.actif, langue)
   const info = CLINIQUE_INFO[espace.actif]
   const { banniere, cartes, visite, infos } = contenu
 
@@ -49,10 +51,10 @@ export default async function AccueilPage() {
           <p style={{ color: '#4b5563', fontSize: '15px', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{banniere.texte}</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
             <Link href="/dashboard" style={{ padding: '10px 18px', borderRadius: '10px', background: 'var(--accent-clinique)', color: '#fff', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }}>
-              🎓 Mes formations{aFaire > 0 ? ` (${aFaire} à faire)` : ''}
+              🎓 {t('Mes formations')}{aFaire > 0 ? ` (${t('{n} à faire', { n: aFaire })})` : ''}
             </Link>
             {estAdministrateur(acteur.role) && (
-              <Link href="/admin/accueil" style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid #e5e7eb', color: '#374151', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }} title="Visible uniquement par les administrateurs et l’administrateur global">✏️ Modifier cette page · admin</Link>
+              <Link href="/admin/accueil" style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid #e5e7eb', color: '#374151', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }} title={t('Visible uniquement par les administrateurs et l’administrateur global')}>✏️ {t('Modifier cette page · admin')}</Link>
             )}
           </div>
         </div>
@@ -90,7 +92,7 @@ export default async function AccueilPage() {
       {/* Visite virtuelle */}
       {visite.photos.length > 0 && (
         <section id="visite" style={{ marginBottom: '32px', scrollMarginTop: '16px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{visite.titre || 'Visite virtuelle'}</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{visite.titre || t('Visite virtuelle')}</h2>
           {visite.texte && <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 14px' }}>{visite.texte}</p>}
           <GalerieVisite photos={visite.photos} />
         </section>

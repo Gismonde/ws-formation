@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import type { PhotoAccueil } from '@/lib/accueil'
+import { useT } from '@/lib/i18n/client'
 
 /** Galerie de la visite virtuelle, avec agrandissement (flèches du clavier et Échap). */
 export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
   const [ouverte, setOuverte] = useState<number | null>(null)
+  const { t } = useT()
 
   useEffect(() => {
     if (ouverte === null) return
@@ -22,7 +24,7 @@ export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
         {photos.map((p, i) => (
-          <button key={p.url + i} type="button" onClick={() => setOuverte(i)} aria-label={p.legende || `Photo ${i + 1}`}
+          <button key={p.url + i} type="button" onClick={() => setOuverte(i)} aria-label={p.legende || t('Photo {n}', { n: i + 1 })}
             style={{ position: 'relative', border: 'none', padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in', aspectRatio: '4 / 3', background: 'var(--accent-clinique-clair)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.legende} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -39,10 +41,10 @@ export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
           <img src={photos[ouverte].url} alt={photos[ouverte].legende} style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '8px' }} onClick={e => e.stopPropagation()} />
           {photos[ouverte].legende && <p style={{ position: 'absolute', bottom: '18px', color: '#fff', fontSize: '14px', margin: 0 }}>{photos[ouverte].legende}</p>}
           {photos.length > 1 && <>
-            <button type="button" aria-label="Photo précédente" onClick={e => { e.stopPropagation(); setOuverte((ouverte - 1 + photos.length) % photos.length) }} style={fleche('left')}>‹</button>
-            <button type="button" aria-label="Photo suivante" onClick={e => { e.stopPropagation(); setOuverte((ouverte + 1) % photos.length) }} style={fleche('right')}>›</button>
+            <button type="button" aria-label={t('Photo précédente')} onClick={e => { e.stopPropagation(); setOuverte((ouverte - 1 + photos.length) % photos.length) }} style={fleche('left')}>‹</button>
+            <button type="button" aria-label={t('Photo suivante')} onClick={e => { e.stopPropagation(); setOuverte((ouverte + 1) % photos.length) }} style={fleche('right')}>›</button>
           </>}
-          <button type="button" aria-label="Fermer" onClick={() => setOuverte(null)} style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', color: '#fff', fontSize: '32px', cursor: 'pointer' }}>×</button>
+          <button type="button" aria-label={t('Fermer')} onClick={() => setOuverte(null)} style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', color: '#fff', fontSize: '32px', cursor: 'pointer' }}>×</button>
         </div>
       )}
     </>

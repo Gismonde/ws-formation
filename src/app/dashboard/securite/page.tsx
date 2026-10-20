@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ChangePasswordForm from '@/components/ChangePasswordForm'
+import { useT } from '@/lib/i18n/client'
 
 type Factor = {
   id: string
@@ -24,6 +25,7 @@ export default function SecuritePage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const supabase = createClient()
+  const { t, loc } = useT()
 
   useEffect(() => {
     chargerFacteurs()
@@ -45,7 +47,7 @@ export default function SecuritePage() {
       friendlyName: 'Application Authenticator',
     })
     if (error || !data) {
-      setMessage({ type: 'error', text: 'Erreur lors de la configuration : ' + (error?.message || 'inconnue') })
+      setMessage({ type: 'error', text: t('Erreur lors de la configuration : {detail}', { detail: error?.message || t('inconnue') }) })
       return
     }
     setQrCode(data.totp.qr_code)
@@ -59,7 +61,7 @@ export default function SecuritePage() {
     setMessage(null)
     const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId })
     if (challengeError || !challengeData) {
-      setMessage({ type: 'error', text: 'Erreur challenge MFA : ' + (challengeError?.message || 'inconnue') })
+      setMessage({ type: 'error', text: t('Erreur de vérification : {detail}', { detail: challengeError?.message || t('inconnue') }) })
       return
     }
     const { error: verifyError } = await supabase.auth.mfa.verify({
@@ -68,10 +70,10 @@ export default function SecuritePage() {
       code: code.replace(/\s/g, ''),
     })
     if (verifyError) {
-      setMessage({ type: 'error', text: 'Code incorrect. Vérifiez votre application et réessayez.' })
+      setMessage({ type: 'error', text: t('Code incorrect. Vérifiez votre application et réessayez.') })
       return
     }
-    setMessage({ type: 'success', text: 'Double authentification activée avec succès !' })
+    setMessage({ type: 'success', text: t('Double authentification activée avec succès !') })
     setStep('liste')
     setCode('')
     setQrCode(null)
@@ -85,9 +87,9 @@ export default function SecuritePage() {
     setMessage(null)
     const { error } = await supabase.auth.mfa.unenroll({ factorId: id })
     if (error) {
-      setMessage({ type: 'error', text: 'Erreur lors de la désactivation : ' + error.message })
+      setMessage({ type: 'error', text: t('Erreur lors de la désactivation : {detail}', { detail: error.message }) })
     } else {
-      setMessage({ type: 'success', text: 'Double authentification désactivée.' })
+      setMessage({ type: 'success', text: t('Double authentification désactivée.') })
       await chargerFacteurs()
     }
     setDeleting(null)
@@ -108,7 +110,7 @@ export default function SecuritePage() {
   if (loading) {
     return (
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 16px' }}>
-        <p style={{ color: '#6b7280' }}>Chargement...</p>
+        <p style={{ color: '#6b7280' }}>{t('Chargement…')}</p>
       </div>
     )
   }
@@ -117,10 +119,10 @@ export default function SecuritePage() {
     <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 16px' }}>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>
-          Sécurité du compte
+          {t('Sécurité du compte')}
         </h1>
         <p style={{ color: '#6b7280', marginTop: '8px', fontSize: '14px' }}>
-          Gérez votre mot de passe et la double authentification (2FA) pour protéger votre compte.
+          {t('Gérez votre mot de passe et la double authentification (2FA) pour protéger votre compte.')}
         </p>
       </div>
 
@@ -151,10 +153,10 @@ export default function SecuritePage() {
             </div>
             <div>
               <div style={{ fontWeight: '600', color: '#1a1f36', fontSize: '15px' }}>
-                Double authentification (2FA)
+                {t('Double authentification (2FA)')}
               </div>
               <div style={{ fontSize: '13px', color: mfaActive ? '#16a34a' : '#6b7280', marginTop: '2px' }}>
-                {mfaActive ? 'Activée — votre compte est protégé' : "Désactivée — recommandé de l'activer"}
+                {mfaActive ? t('Activée — votre compte est protégé') : t('Désactivée — il est recommandé de l’activer')}
               </div>
             </div>
           </div>
@@ -163,7 +165,7 @@ export default function SecuritePage() {
             backgroundColor: mfaActive ? '#dcfce7' : '#f3f4f6',
             color: mfaActive ? '#16a34a' : '#6b7280',
           }}>
-            {mfaActive ? 'ACTIVE' : 'INACTIVE'}
+            {mfaActive ? t('ACTIVÉE') : t('DÉSACTIVÉE')}
           </span>
         </div>
 
@@ -176,7 +178,7 @@ export default function SecuritePage() {
               cursor: 'pointer', fontWeight: '600', fontSize: '14px',
             }}
           >
-            Activer la double authentification
+            {t('Activer la double authentification')}
           </button>
         )}
 
@@ -188,10 +190,10 @@ export default function SecuritePage() {
           }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: '500', color: '#1a1f36' }}>
-                {f.friendly_name || 'Application Authenticator'}
+                {f.friendly_name && f.friendly_name !== 'Application Authenticator' ? f.friendly_name : t('Application d’authentification')}
               </div>
               <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                Configurée le {new Date(f.created_at).toLocaleDateString('fr-CA')}
+                {t('Configurée le {date}', { date: new Date(f.created_at).toLocaleDateString(loc) })}
               </div>
             </div>
             <button
@@ -204,7 +206,7 @@ export default function SecuritePage() {
                 opacity: deleting === f.id ? 0.6 : 1,
               }}
             >
-              {deleting === f.id ? 'Désactivation...' : 'Désactiver'}
+              {deleting === f.id ? t('Désactivation…') : t('Désactiver')}
             </button>
           </div>
         ))}
@@ -218,18 +220,18 @@ export default function SecuritePage() {
           borderRadius: '12px', padding: '24px', marginBottom: '24px',
         }}>
           <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginTop: 0, marginBottom: '8px' }}>
-            Étape 1 — Scannez le QR code
+            {t('Étape 1 — Scannez le code QR')}
           </h2>
           <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '20px' }}>
-            Ouvrez votre application d&apos;authentification (Google Authenticator, Authy, etc.) et scannez ce code.
+            {t('Ouvrez votre application d’authentification (Google Authenticator, Authy, etc.) et scannez ce code.')}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-            <img src={qrCode} alt="QR Code 2FA" width={200} height={200} style={{ border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+            <img src={qrCode} alt={t('Code QR 2FA')} width={200} height={200} style={{ border: '1px solid #e5e7eb', borderRadius: '8px' }} />
           </div>
           {secret && (
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>
-                Ou entrez ce code manuellement :
+                {t('Ou entrez ce code manuellement :')}
               </p>
               <code style={{
                 fontSize: '13px', letterSpacing: '2px', backgroundColor: '#f3f4f6',
@@ -241,10 +243,10 @@ export default function SecuritePage() {
             </div>
           )}
           <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginBottom: '8px' }}>
-            Étape 2 — Entrez le code de vérification
+            {t('Étape 2 — Entrez le code de vérification')}
           </h2>
           <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
-            Saisissez le code à 6 chiffres affiché dans votre application.
+            {t('Saisissez le code à 6 chiffres affiché dans votre application.')}
           </p>
           <input
             type="text"
@@ -265,7 +267,7 @@ export default function SecuritePage() {
               backgroundColor: 'white', color: '#6b7280', border: '1px solid #e5e7eb',
               cursor: 'pointer', fontWeight: '500',
             }}>
-              Annuler
+              {t('Annuler')}
             </button>
             <button onClick={verifierCode} disabled={code.length !== 6} style={{
               flex: 2, padding: '10px', borderRadius: '8px', fontSize: '14px',
@@ -273,7 +275,7 @@ export default function SecuritePage() {
               color: code.length === 6 ? 'white' : '#9ca3af',
               border: 'none', cursor: code.length === 6 ? 'pointer' : 'not-allowed', fontWeight: '600',
             }}>
-              Confirmer et activer
+              {t('Confirmer et activer')}
             </button>
           </div>
         </div>
@@ -285,12 +287,12 @@ export default function SecuritePage() {
           borderRadius: '12px', padding: '16px',
         }}>
           <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#1e40af', marginTop: 0, marginBottom: '8px' }}>
-            Pourquoi activer la 2FA ?
+            {t('Pourquoi activer la 2FA ?')}
           </h3>
           <ul style={{ fontSize: '13px', color: '#1d4ed8', paddingLeft: '20px', margin: 0, lineHeight: '1.8' }}>
-            <li>Protège votre compte même si votre mot de passe est compromis</li>
-            <li>Un code unique est requis à chaque connexion</li>
-            <li>Compatible avec Google Authenticator, Authy, et autres</li>
+            <li>{t('Protège votre compte même si votre mot de passe est compromis')}</li>
+            <li>{t('Un code unique est requis à chaque connexion')}</li>
+            <li>{t('Compatible avec Google Authenticator, Authy et autres')}</li>
           </ul>
         </div>
       )}

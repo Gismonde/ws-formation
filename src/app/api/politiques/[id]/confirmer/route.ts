@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
-import { estVise, Politique, TEXTE_CONFIRMATION_POLITIQUE } from '@/lib/politiques'
+import { estVise, Politique, texteConfirmationPolitique } from '@/lib/politiques'
+import { langueCourante } from '@/lib/i18n/serveur'
 
 /** L'employé confirme avoir lu et compris la version en vigueur de la politique. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +24,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { ip_address, user_agent } = ipEtAgent(request)
   const { error } = await sb.from('politiques_confirmations').insert({
     politique_id: id, version: pol.version, employe_id: acteur.id,
-    texte: TEXTE_CONFIRMATION_POLITIQUE, ip_address, user_agent,
+    texte: texteConfirmationPolitique(await langueCourante()), ip_address, user_agent,
   })
   if (error && error.code !== '23505') return NextResponse.json({ error: error.message }, { status: 500 })
 

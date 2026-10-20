@@ -17,7 +17,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   if (!user) redirect('/login')
 
   const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) redirect('/dashboard')
+  if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) redirect('/dashboard/accueil')
 
   const peutCreer = peutCreerFormations(await getActeur())
 

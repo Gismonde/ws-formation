@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n/client'
 
 type StatutPreuve = 'en_attente' | 'validee' | 'refusee'
 
@@ -26,6 +26,7 @@ export default function MesPreuvesPage() {
   const [formations, setFormations] = useState<Formation[]>([])
   const [preuves, setPreuves] = useState<Preuve[]>([])
   const [loading, setLoading] = useState(true)
+  const { t, loc } = useT()
   const [uploading, setUploading] = useState(false)
   const [selectedFormationId, setSelectedFormationId] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -72,14 +73,14 @@ export default function MesPreuvesPage() {
     const data = await res.json()
 
     if (res.ok && data.success) {
-      setMessage({ type: 'success', text: 'Preuve envoyée ! Un administrateur va la valider.' })
+      setMessage({ type: 'success', text: t('Preuve envoyée ! Un administrateur va la valider.') })
       setSelectedFile(null)
       setSelectedFormationId('')
       setAutreMode(false)
       setAutreTitre('')
       await loadData()
     } else {
-      setMessage({ type: 'error', text: data.error || "Erreur lors de l'envoi" })
+      setMessage({ type: 'error', text: data.error || t('Erreur lors de l’envoi') })
     }
     setUploading(false)
   }
@@ -96,13 +97,13 @@ export default function MesPreuvesPage() {
 
   function getFormationTitle(p: Preuve): string {
     if (p.formations?.titre) return p.formations.titre
-    return 'Formation inconnue'
+    return t('Formation inconnue')
   }
 
   function getStatutLabel(s: StatutPreuve) {
-    if (s === 'en_attente') return { label: 'En attente', bg: '#fef3c7', color: '#92400e' }
-    if (s === 'validee') return { label: 'Validée', bg: '#d1fae5', color: '#065f46' }
-    return { label: 'Refusée', bg: '#fee2e2', color: '#991b1b' }
+    if (s === 'en_attente') return { label: t('En attente'), bg: '#fef3c7', color: '#92400e' }
+    if (s === 'validee') return { label: t('Validée'), bg: '#d1fae5', color: '#065f46' }
+    return { label: t('Refusée'), bg: '#fee2e2', color: '#991b1b' }
   }
 
   const formationsObligatoires = formations.filter(f => f.obligatoire)
@@ -111,7 +112,7 @@ export default function MesPreuvesPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>Chargement...</div>
+        <div style={{ textAlign: 'center', color: '#6b7280' }}>{t('Chargement…')}</div>
       </div>
     )
   }
@@ -119,20 +120,20 @@ export default function MesPreuvesPage() {
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Mes preuves de formation</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>{t('Mes preuves de formation')}</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Uploadez un document (attestation, certificat) pour faire valider une formation par votre responsable.
+          {t('Téléversez un document (attestation, certificat) pour faire valider une formation par votre responsable.')}
         </p>
       </div>
 
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1a1f36', marginTop: 0, marginBottom: '20px' }}>
-          Soumettre une preuve
+          {t('Soumettre une preuve')}
         </h2>
         <form onSubmit={handleUpload}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-              Formation concernée *
+              {t('Formation concernée *')}
             </label>
             <select
               value={selectedFormationId}
@@ -140,16 +141,16 @@ export default function MesPreuvesPage() {
               required
               style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff' }}
             >
-              <option value="">-- Choisir une formation --</option>
+              <option value="">{t('-- Choisir une formation --')}</option>
               {formationsObligatoires.length > 0 && (
-                <optgroup label="Obligatoires (LSST)">
+                <optgroup label={t('Obligatoires (LSST)')}>
                   {formationsObligatoires.map(f => (
                     <option key={f.id} value={f.id}>{f.titre}</option>
                   ))}
                 </optgroup>
               )}
               {formationsOptionnelles.length > 0 && (
-                <optgroup label="Autres formations">
+                <optgroup label={t('Autres formations')}>
                   {formationsOptionnelles.map(f => (
                     <option key={f.id} value={f.id}>{f.titre}</option>
                   ))}
@@ -158,20 +159,20 @@ export default function MesPreuvesPage() {
               {formationsObligatoires.length === 0 && formationsOptionnelles.length === 0 && formations.map(f => (
                 <option key={f.id} value={f.id}>{f.titre}</option>
               ))}
-              <option value="autre">-- Autre (préciser) --</option>
+              <option value="autre">{t('-- Autre (préciser) --')}</option>
             </select>
           </div>
 
           {autreMode && (
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-                Nom de la formation *
+                {t('Nom de la formation *')}
               </label>
               <input
                 type="text"
                 value={autreTitre}
                 onChange={e => setAutreTitre(e.target.value)}
-                placeholder="Ex: Formation premiers secours"
+                placeholder={t('Ex. : Formation premiers secours')}
                 required
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff', boxSizing: 'border-box' }}
               />
@@ -180,7 +181,7 @@ export default function MesPreuvesPage() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
-              Document (PDF, JPG, PNG) *
+              {t('Document (PDF, JPG, PNG) *')}
             </label>
             <input
               type="file"
@@ -217,31 +218,31 @@ export default function MesPreuvesPage() {
               cursor: uploading ? 'not-allowed' : 'pointer',
             }}
           >
-            {uploading ? 'Envoi en cours...' : 'Soumettre la preuve'}
+            {uploading ? t('Envoi en cours…') : t('Soumettre la preuve')}
           </button>
         </form>
       </div>
 
       <div>
-        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>Mes preuves soumises</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1f36', marginBottom: '16px' }}>{t('Mes preuves soumises')}</h2>
         {preuves.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-            Aucune preuve soumise pour le moment.
+            {t('Aucune preuve soumise pour le moment.')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {preuves.map(p => (
-              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <p style={{ fontWeight: '600', color: '#1a1f36', margin: 0, fontSize: '14px' }}>
                     {getFormationTitle(p)}
                   </p>
                   <p style={{ color: '#6b7280', margin: '4px 0 0', fontSize: '13px' }}>
-                    {new Date(p.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date(p.created_at).toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   {p.commentaire_admin && (
                     <p style={{ color: '#374151', margin: '8px 0 0', fontSize: '13px', fontStyle: 'italic' }}>
-                      Commentaire : {p.commentaire_admin}
+                      {t('Commentaire : {texte}', { texte: p.commentaire_admin })}
                     </p>
                   )}
                 </div>
@@ -263,7 +264,7 @@ export default function MesPreuvesPage() {
                     rel="noreferrer"
                     style={{ fontSize: '12px', color: 'var(--accent-clinique)', textDecoration: 'none' }}
                   >
-                    Voir le document
+                    {t('Voir le document')}
                   </a>
                 </div>
               </div>

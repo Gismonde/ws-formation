@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n/client'
+import type { Traducteur } from '@/lib/i18n/base'
 
 const MIN_LENGTH = 10
 
-function validerMotDePasse(pwd: string): string | null {
-  if (pwd.length < MIN_LENGTH) return `Le mot de passe doit contenir au moins ${MIN_LENGTH} caractères.`
-  if (!/[A-Z]/.test(pwd)) return 'Le mot de passe doit contenir au moins une lettre majuscule.'
-  if (!/[a-z]/.test(pwd)) return 'Le mot de passe doit contenir au moins une lettre minuscule.'
-  if (!/[0-9]/.test(pwd)) return 'Le mot de passe doit contenir au moins un chiffre.'
+function validerMotDePasse(pwd: string, t: Traducteur): string | null {
+  if (pwd.length < MIN_LENGTH) return t('Le mot de passe doit contenir au moins {n} caractères.', { n: MIN_LENGTH })
+  if (!/[A-Z]/.test(pwd)) return t('Le mot de passe doit contenir au moins une lettre majuscule.')
+  if (!/[a-z]/.test(pwd)) return t('Le mot de passe doit contenir au moins une lettre minuscule.')
+  if (!/[0-9]/.test(pwd)) return t('Le mot de passe doit contenir au moins un chiffre.')
   return null
 }
 
@@ -38,6 +40,7 @@ const labelStyle: React.CSSProperties = {
 
 export default function ChangePasswordForm() {
   const supabase = createClient()
+  const { t } = useT()
   const [actuel, setActuel] = useState('')
   const [nouveau, setNouveau] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -48,32 +51,32 @@ export default function ChangePasswordForm() {
     e.preventDefault()
     setMessage(null)
 
-    const regle = validerMotDePasse(nouveau)
+    const regle = validerMotDePasse(nouveau, t)
     if (regle) return setMessage({ type: 'error', text: regle })
-    if (nouveau !== confirmation) return setMessage({ type: 'error', text: 'Les deux nouveaux mots de passe ne correspondent pas.' })
-    if (nouveau === actuel) return setMessage({ type: 'error', text: "Le nouveau mot de passe doit être différent de l'actuel." })
+    if (nouveau !== confirmation) return setMessage({ type: 'error', text: t('Les deux nouveaux mots de passe ne correspondent pas.') })
+    if (nouveau === actuel) return setMessage({ type: 'error', text: t('Le nouveau mot de passe doit être différent de l’actuel.') })
 
     setEnCours(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.email) {
-        setMessage({ type: 'error', text: 'Session expirée. Veuillez vous reconnecter.' })
+        setMessage({ type: 'error', text: t('Session expirée. Veuillez vous reconnecter.') })
         return
       }
 
       const ok = await verifierMotDePasseActuel(user.email, actuel)
       if (!ok) {
-        setMessage({ type: 'error', text: 'Mot de passe actuel incorrect.' })
+        setMessage({ type: 'error', text: t('Mot de passe actuel incorrect.') })
         return
       }
 
       const { error } = await supabase.auth.updateUser({ password: nouveau })
       if (error) {
-        setMessage({ type: 'error', text: 'Erreur lors de la modification : ' + error.message })
+        setMessage({ type: 'error', text: t('Erreur lors de la modification : {detail}', { detail: error.message }) })
         return
       }
 
-      setMessage({ type: 'success', text: 'Mot de passe modifié avec succès.' })
+      setMessage({ type: 'success', text: t('Mot de passe modifié avec succès.') })
       setActuel('')
       setNouveau('')
       setConfirmation('')
@@ -97,9 +100,9 @@ export default function ChangePasswordForm() {
           🔑
         </div>
         <div>
-          <div style={{ fontWeight: '600', color: '#1a1f36', fontSize: '15px' }}>Mot de passe</div>
+          <div style={{ fontWeight: '600', color: '#1a1f36', fontSize: '15px' }}>{t('Mot de passe')}</div>
           <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
-            Au moins {MIN_LENGTH} caractères, avec une majuscule, une minuscule et un chiffre.
+            {t('Au moins {n} caractères, avec une majuscule, une minuscule et un chiffre.', { n: MIN_LENGTH })}
           </div>
         </div>
       </div>
@@ -117,17 +120,17 @@ export default function ChangePasswordForm() {
 
       <form onSubmit={soumettre}>
         <div style={{ marginBottom: '14px' }}>
-          <label htmlFor="pwd-actuel" style={labelStyle}>Mot de passe actuel</label>
+          <label htmlFor="pwd-actuel" style={labelStyle}>{t('Mot de passe actuel')}</label>
           <input id="pwd-actuel" type="password" autoComplete="current-password"
             value={actuel} onChange={e => setActuel(e.target.value)} style={inputStyle} />
         </div>
         <div style={{ marginBottom: '14px' }}>
-          <label htmlFor="pwd-nouveau" style={labelStyle}>Nouveau mot de passe</label>
+          <label htmlFor="pwd-nouveau" style={labelStyle}>{t('Nouveau mot de passe')}</label>
           <input id="pwd-nouveau" type="password" autoComplete="new-password"
             value={nouveau} onChange={e => setNouveau(e.target.value)} style={inputStyle} />
         </div>
         <div style={{ marginBottom: '18px' }}>
-          <label htmlFor="pwd-confirmation" style={labelStyle}>Confirmer le nouveau mot de passe</label>
+          <label htmlFor="pwd-confirmation" style={labelStyle}>{t('Confirmer le nouveau mot de passe')}</label>
           <input id="pwd-confirmation" type="password" autoComplete="new-password"
             value={confirmation} onChange={e => setConfirmation(e.target.value)} style={inputStyle} />
         </div>
@@ -136,7 +139,7 @@ export default function ChangePasswordForm() {
           backgroundColor: pret ? '#4f46e5' : '#e5e7eb', color: pret ? 'white' : '#9ca3af',
           border: 'none', cursor: pret ? 'pointer' : 'not-allowed',
         }}>
-          {enCours ? 'Modification...' : 'Changer le mot de passe'}
+          {enCours ? t('Modification…') : t('Changer le mot de passe')}
         </button>
       </form>
     </div>

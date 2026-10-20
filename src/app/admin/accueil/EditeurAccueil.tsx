@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { CLINIQUE_INFO, type Clinique } from '@/lib/cliniques'
 import type { ContenuAccueil, CarteAccueil, PhotoAccueil } from '@/lib/accueil'
 
-type Page = { clinique: Clinique; contenu: ContenuAccueil; defaut: ContenuAccueil; personnalisee: boolean; modifiee_le: string | null; disponible: boolean }
+type Page = { clinique: Clinique; langue: 'fr' | 'en'; contenu: ContenuAccueil; defaut: ContenuAccueil; personnalisee: boolean; modifiee_le: string | null; disponible: boolean }
 
 const champ = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white'
 const etiquette = 'block text-xs font-semibold text-gray-600 mb-1'
@@ -51,11 +51,16 @@ function deplacer<T>(liste: T[], i: number, d: -1 | 1): T[] {
 }
 
 export default function EditeurAccueil({ pages }: { pages: Page[] }) {
-  const [active, setActive] = useState(pages[0]?.clinique)
-  const [contenus, setContenus] = useState<Record<string, ContenuAccueil>>(Object.fromEntries(pages.map(p => [p.clinique, p.contenu])))
+  const cliniques = pages.map(p => p.clinique).filter((k, i, l) => l.indexOf(k) === i)
+  const [clinique, setClinique] = useState(cliniques[0])
+  const [langue, setLangue] = useState<'fr' | 'en'>('fr')
+  const cle = (p: { clinique: Clinique; langue: string }) => `${p.clinique}-${p.langue}`
+  const active = clinique ? `${clinique}-${langue}` : undefined
+  const [contenus, setContenus] = useState<Record<string, ContenuAccueil>>(Object.fromEntries(pages.map(p => [cle(p), p.contenu])))
   const [etat, setEtat] = useState<{ type: 'ok' | 'erreur'; texte: string } | null>(null)
   const [enCours, setEnCours] = useState(false)
-  const page = pages.find(p => p.clinique === active)
+  const [perso, setPerso] = useState<Record<string, boolean>>(Object.fromEntries(pages.map(p => [cle(p), p.personnalisee])))
+  const page = pages.find(p => cle(p) === active)
   if (!page || !active) return <p className="text-gray-500">Aucune clinique à administrer.</p>
   const c = contenus[active]
   const maj = (f: (c: ContenuAccueil) => ContenuAccueil) => setContenus(v => ({ ...v, [active]: f(v[active]) }))
@@ -64,19 +69,19 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
 
   async function enregistrer() {
     setEnCours(true); setEtat(null)
-    const r = await fetch('/api/admin/accueil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinique: active, contenu: c }) })
+    const r = await fetch('/api/admin/accueil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinique, langue, contenu: c }) })
     const d = await r.json().catch(() => ({}))
     setEnCours(false)
-    if (r.ok) { setContenus(v => ({ ...v, [active!]: d.contenu })); setEtat({ type: 'ok', texte: 'Page enregistrée. Les employés la voient dès maintenant.' }) }
+    if (r.ok) { setContenus(v => ({ ...v, [active!]: d.contenu })); setPerso(v => ({ ...v, [active!]: true })); setEtat({ type: 'ok', texte: 'Page enregistrée. Les employés la voient dès maintenant.' }) }
     else setEtat({ type: 'erreur', texte: d.error ?? 'Enregistrement impossible' })
   }
   async function retablir() {
     if (!confirm('Rétablir le contenu par défaut de cette page ? Vos modifications seront perdues.')) return
     setEnCours(true); setEtat(null)
-    const r = await fetch(`/api/admin/accueil?clinique=${active}`, { method: 'DELETE' })
+    const r = await fetch(`/api/admin/accueil?clinique=${clinique}&langue=${langue}`, { method: 'DELETE' })
     const d = await r.json().catch(() => ({}))
     setEnCours(false)
-    if (r.ok) { setContenus(v => ({ ...v, [active!]: page!.defaut })); setEtat({ type: 'ok', texte: 'Contenu par défaut rétabli.' }) }
+    if (r.ok) { setContenus(v => ({ ...v, [active!]: page!.defaut })); setPerso(v => ({ ...v, [active!]: false })); setEtat({ type: 'ok', texte: 'Contenu par défaut rétabli.' }) }
     else setEtat({ type: 'erreur', texte: d.error ?? 'Opération impossible' })
   }
 
@@ -90,15 +95,26 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
         <Link href="/dashboard/accueil" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">👁 Voir la page</Link>
       </div>
 
-      {pages.length > 1 && (
-        <div className="flex gap-2 mb-5">
-          {pages.map(p => (
-            <button key={p.clinique} type="button" onClick={() => { setActive(p.clinique); setEtat(null) }}
-              className="px-4 py-2 rounded-full text-sm font-semibold border"
-              style={active === p.clinique ? { background: CLINIQUE_INFO[p.clinique].couleur, color: '#fff', borderColor: CLINIQUE_INFO[p.clinique].couleur } : { background: '#fff', color: '#374151' }}>
-              {CLINIQUE_INFO[p.clinique].court}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        {cliniques.length > 1 && cliniques.map(k => (
+          <button key={k} type="button" onClick={() => { setClinique(k); setEtat(null) }}
+            className="px-4 py-2 rounded-full text-sm font-semibold border"
+            style={clinique === k ? { background: CLINIQUE_INFO[k].couleur, color: '#fff', borderColor: CLINIQUE_INFO[k].couleur } : { background: '#fff', color: '#374151' }}>
+            {CLINIQUE_INFO[k].court}
+          </button>
+        ))}
+        <div className="inline-flex rounded-full border border-gray-300 bg-white p-0.5 ml-auto" role="group" aria-label="Langue de la page">
+          {(['fr', 'en'] as const).map(l => (
+            <button key={l} type="button" onClick={() => { setLangue(l); setEtat(null) }} aria-pressed={langue === l}
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold ${langue === l ? 'bg-gray-900 text-white' : 'text-gray-600'}`}>
+              {l === 'fr' ? 'Version française' : 'English version'}
             </button>
           ))}
+        </div>
+      </div>
+      {langue === 'en' && !perso[active] && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-3 text-sm mb-5">
+          Version vue par les employés qui ont choisi l’anglais. Elle affiche le texte anglais par défaut tant qu’elle n’a pas été enregistrée ici.
         </div>
       )}
 
@@ -171,7 +187,7 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
 
       <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-gray-200 mt-6 -mx-4 px-4 py-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={enregistrer} disabled={enCours || !page.disponible} className="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-semibold disabled:opacity-50">
-          {enCours ? 'Enregistrement…' : `Enregistrer la page ${CLINIQUE_INFO[active].court}`}
+          {enCours ? 'Enregistrement…' : `Enregistrer la page ${CLINIQUE_INFO[clinique].court} (${langue.toUpperCase()})`}
         </button>
         {page.disponible && <button type="button" onClick={retablir} disabled={enCours} className="px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-700">Rétablir le contenu par défaut</button>}
         {etat && <span className={'text-sm ' + (etat.type === 'ok' ? 'text-green-700' : 'text-red-600')}>{etat.texte}</span>}

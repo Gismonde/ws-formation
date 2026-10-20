@@ -1,9 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n/client'
 
 export default function ConfirmerPolitique({ id, version, texte, confirmeLe }: { id: string; version: number; texte: string; confirmeLe: string | null }) {
   const router = useRouter()
+  const { t, loc } = useT()
   const [coche, setCoche] = useState(false)
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState('')
@@ -11,8 +13,7 @@ export default function ConfirmerPolitique({ id, version, texte, confirmeLe }: {
   if (confirmeLe) {
     return (
       <div style={{ marginTop: '20px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px 20px', color: '#166534', fontSize: '14px' }}>
-        ✅ Vous avez confirmé avoir lu et compris cette politique le{' '}
-        {new Date(confirmeLe).toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' })}.
+        ✅ {t('Vous avez confirmé avoir lu et compris cette politique le {date}.', { date: new Date(confirmeLe).toLocaleString(loc, { dateStyle: 'long', timeStyle: 'short' }) })}
       </div>
     )
   }
@@ -24,7 +25,7 @@ export default function ConfirmerPolitique({ id, version, texte, confirmeLe }: {
     })
     const d = await res.json().catch(() => ({}))
     setEnCours(false)
-    if (!res.ok) return setErreur(d.error ?? 'Erreur')
+    if (!res.ok) return setErreur(d.error ?? t('Erreur'))
     router.refresh()
   }
 
@@ -37,9 +38,9 @@ export default function ConfirmerPolitique({ id, version, texte, confirmeLe }: {
       {erreur && <p style={{ color: '#dc2626', fontSize: '14px', margin: '10px 0 0' }}>{erreur}</p>}
       <button type="button" onClick={confirmer} disabled={!coche || enCours}
         style={{ marginTop: '14px', padding: '10px 20px', background: coche ? '#16a34a' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: coche ? 'pointer' : 'not-allowed' }}>
-        {enCours ? 'Enregistrement…' : 'Confirmer « J’ai lu et compris »'}
+        {enCours ? t('Enregistrement…') : t('Confirmer « J’ai lu et compris »')}
       </button>
-      <p style={{ fontSize: '12px', color: '#6b7280', margin: '10px 0 0' }}>Votre confirmation est horodatée et conservée comme preuve.</p>
+      <p style={{ fontSize: '12px', color: '#6b7280', margin: '10px 0 0' }}>{t('Votre confirmation est horodatée et conservée comme preuve.')}</p>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useT } from '@/lib/i18n/client'
 
 interface AudioReaderProps {
   text: string
@@ -8,6 +9,7 @@ interface AudioReaderProps {
 }
 
 export default function AudioReader({ text, title }: AudioReaderProps) {
+  const { t } = useT()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -150,7 +152,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
         fontSize: '13px',
         color: '#713f12',
       }}>
-        La lecture audio n&apos;est pas supportée par ce navigateur.
+        {t('La lecture audio n’est pas prise en charge par ce navigateur.')}
       </div>
     )
   }
@@ -180,7 +182,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <span style={{ fontSize: '18px' }}>🔊</span>
         <div>
-          <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#c7d2fe' }}>Lecture audio</p>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#c7d2fe' }}>{t('Lecture audio')}</p>
           {title && <p style={{ margin: 0, fontSize: '12px', color: '#818cf8' }}>{title}</p>}
         </div>
       </div>
@@ -230,7 +232,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
             color: (isPlaying || isPaused) ? '#fca5a5' : 'rgba(255,255,255,0.4)',
             cursor: (isPlaying || isPaused) ? 'pointer' : 'default',
           }}
-          title="Arrêter"
+          title={t('Arrêter')}
         >
           ⏹
         </button>
@@ -247,7 +249,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
             color: '#fff',
             boxShadow: '0 4px 12px rgba(99,102,241,0.5)',
           }}
-          title={isPlaying ? 'Pause' : isPaused ? 'Reprendre' : 'Lire'}
+          title={isPlaying ? t('Pause') : isPaused ? t('Reprendre') : t('Lire')}
         >
           {isPlaying ? '⏸' : '▶️'}
         </button>
@@ -265,7 +267,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
             fontSize: '12px',
             cursor: 'pointer',
           }}
-          title="Vitesse"
+          title={t('Vitesse')}
         >
           <option value={0.75} style={{ color: '#000' }}>0.75×</option>
           <option value={1} style={{ color: '#000' }}>1×</option>
@@ -309,7 +311,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
 
       {/* Status */}
       <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '11px', color: 'rgba(199,210,254,0.6)' }}>
-        {isPlaying ? 'Lecture en cours...' : isPaused ? 'En pause' : progress === 100 ? '✓ Terminé' : 'Prêt à lire'}
+        {isPlaying ? t('Lecture en cours…') : isPaused ? t('En pause') : progress === 100 ? `✓ ${t('Terminé')}` : t('Prêt à lire')}
       </p>
     </div>
   )

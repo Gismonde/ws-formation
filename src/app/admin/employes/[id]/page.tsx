@@ -13,7 +13,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect("/login")
-  if (!aAccesAdmin(acteur.role)) redirect("/dashboard")
+  if (!aAccesAdmin(acteur.role)) redirect("/dashboard/accueil")
 
   const sb = serviceClient()
   const { data: employe } = await sb

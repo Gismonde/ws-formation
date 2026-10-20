@@ -48,7 +48,7 @@ export default function ModifierFormationPage() {
       if (!user) { router.push('/login'); return }
 
       const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-      if (!emp || emp.role === 'employe') { router.push('/dashboard'); return }
+      if (!emp || emp.role === 'employe') { router.push('/dashboard/accueil'); return }
 
       const formationId = params.id as string
       const [{ data: f }, { data: mods }] = await Promise.all([

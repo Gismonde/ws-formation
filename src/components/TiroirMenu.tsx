@@ -3,6 +3,7 @@
 // Le tiroir se referme à chaque changement de page, avec la touche Échap ou en touchant l'arrière-plan.
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useT } from '@/lib/i18n/client'
 
 type Props = {
   /** Classe du <aside> (styles propres à l'espace admin ou employé). */
@@ -16,6 +17,7 @@ type Props = {
 export function TiroirMenu({ classe, fond, titre, children }: Props) {
   const [ouvert, setOuvert] = useState(false)
   const chemin = usePathname()
+  const { t } = useT()
 
   useEffect(() => { setOuvert(false) }, [chemin])
 
@@ -31,7 +33,7 @@ export function TiroirMenu({ classe, fond, titre, children }: Props) {
   return (
     <>
       <div className="tiroir-barre" style={{ background: fond }}>
-        <button type="button" className="tiroir-bouton" aria-label={ouvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+        <button type="button" className="tiroir-bouton" aria-label={ouvert ? t('Fermer le menu') : t('Ouvrir le menu')}
           aria-expanded={ouvert} aria-controls="menu-principal" onClick={() => setOuvert(o => !o)}>
           <span aria-hidden="true">{ouvert ? '✕' : '☰'}</span>
         </button>

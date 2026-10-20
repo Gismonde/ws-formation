@@ -10,7 +10,7 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
   const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
-  if (!emp || emp.role === 'employe') redirect('/dashboard')
+  if (!emp || emp.role === 'employe') redirect('/dashboard/accueil')
 
   // Charger la formation et ses modules
   const { data: formation } = await supabase.from('formations').select('*').eq('id', id).single()

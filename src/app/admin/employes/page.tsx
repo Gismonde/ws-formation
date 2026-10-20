@@ -16,7 +16,7 @@ const roleLabel: Record<string, string> = ROLE_LABEL
 export default async function AdminEmployesPage({ searchParams }: { searchParams: Promise<{ clinique?: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
 
   const { clinique: filtreClinique } = await searchParams
   const sb = serviceClient()

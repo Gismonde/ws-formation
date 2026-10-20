@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter, useParams } from 'next/navigation'
+import { useT } from '@/lib/i18n/client'
 
 type Preuve = {
   id: string
@@ -16,6 +17,7 @@ export default function SoumettrePreuvePage() {
   const params = useParams()
   const formationId = params.id as string
   const router = useRouter()
+  const { t, loc } = useT()
 
   const [formation, setFormation] = useState<{ titre: string } | null>(null)
   const [existingPreuves, setExistingPreuves] = useState<Preuve[]>([])
@@ -52,7 +54,7 @@ export default function SoumettrePreuvePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!file) { setError('Veuillez sélectionner un fichier'); return }
+    if (!file) { setError(t('Veuillez sélectionner un fichier')); return }
     setLoading(true)
     setError('')
 
@@ -64,7 +66,7 @@ export default function SoumettrePreuvePage() {
     const data = await res.json()
 
     if (!res.ok) {
-      setError(data.error || 'Erreur upload')
+      setError(data.error || t('Erreur lors du téléversement'))
       setLoading(false)
       return
     }
@@ -80,44 +82,44 @@ export default function SoumettrePreuvePage() {
   }
 
   function getStatutLabel(statut: string): string {
-    if (statut === 'en_attente') return 'En attente de validation'
-    if (statut === 'valide') return 'Valide'
-    if (statut === 'refuse') return 'Refuse'
+    if (statut === 'en_attente') return t('En attente de validation')
+    if (statut === 'valide' || statut === 'validee') return t('Validée')
+    if (statut === 'refuse' || statut === 'refusee') return t('Refusée')
     return statut
   }
 
   function getStatutClass(statut: string): string {
     if (statut === 'en_attente') return 'bg-yellow-100 text-yellow-800'
-    if (statut === 'valide') return 'bg-green-100 text-green-800'
-    if (statut === 'refuse') return 'bg-red-100 text-red-800'
+    if (statut === 'valide' || statut === 'validee') return 'bg-green-100 text-green-800'
+    if (statut === 'refuse' || statut === 'refusee') return 'bg-red-100 text-red-800'
     return 'bg-gray-100 text-gray-800'
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
         <a href={'/formations/' + formationId} className="text-blue-600 hover:underline text-sm">
-          Retour à la formation
+          ← {t('Retour à la formation')}
         </a>
-        <h1 className="text-2xl font-bold mt-2">Soumettre une preuve externe</h1>
+        <h1 className="text-2xl font-bold mt-2">{t('Soumettre une preuve externe')}</h1>
         {formation && <p className="text-gray-600 mt-1">{formation.titre}</p>}
       </div>
 
       {existingPreuves.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Preuves soumises</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('Preuves soumises')}</h2>
           <div className="space-y-3">
             {existingPreuves.map((p) => (
               <div key={p.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-medium text-sm">{p.nom_fichier}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Soumis le {new Date(p.created_at).toLocaleDateString('fr-CA')}
+                      {t('Soumis le {date}', { date: new Date(p.created_at).toLocaleDateString(loc) })}
                     </p>
                     {p.commentaire_admin && (
                       <p className="text-xs text-gray-700 mt-1 italic">
-                        Commentaire: {p.commentaire_admin}
+                        {t('Commentaire : {texte}', { texte: p.commentaire_admin })}
                       </p>
                     )}
                   </div>
@@ -132,15 +134,14 @@ export default function SoumettrePreuvePage() {
       )}
 
       <div className="bg-white border rounded-lg p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">Ajouter un document</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('Ajouter un document')}</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Soumettez un certificat ou une attestation de formation externe.
-          Un administrateur examinera le document et validera votre formation.
+          {t('Soumettez un certificat ou une attestation de formation externe. Un administrateur examinera le document et validera votre formation.')}
         </p>
 
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-            Document soumis avec succès ! Un administrateur va examiner votre preuve.
+            {t('Document soumis avec succès ! Un administrateur va examiner votre preuve.')}
           </div>
         )}
         {error && (
@@ -152,7 +153,7 @@ export default function SoumettrePreuvePage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Document (PDF, JPG, PNG - max 10 MB)
+              {t('Document (PDF, JPG, PNG — 10 Mo max.)')}
             </label>
             <input
               type="file"
@@ -166,7 +167,7 @@ export default function SoumettrePreuvePage() {
             disabled={loading || !file}
             className="w-full py-2 px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Envoi en cours...' : 'Soumettre la preuve'}
+            {loading ? t('Envoi en cours…') : t('Soumettre la preuve')}
           </button>
         </form>
       </div>

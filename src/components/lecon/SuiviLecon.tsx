@@ -6,6 +6,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
+import { useT } from '@/lib/i18n/client'
 
 const SEUIL_VISIONNEMENT = 0.9 // 90 % de la durée réellement regardée
 
@@ -48,11 +49,12 @@ function useCompteur(blocId: string, obligatoire: boolean) {
 }
 
 function BandeauObligatoire({ vue, pourcentage }: { vue: boolean; pourcentage: number }) {
+  const { t } = useT()
   return (
     <div className={'px-4 py-2 text-xs flex items-center gap-3 ' + (vue ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-800')}>
-      {vue ? <span>✅ Vidéo regardée en entier</span> : (
+      {vue ? <span>✅ {t('Vidéo regardée en entier')}</span> : (
         <>
-          <span className="font-semibold">🎯 Vidéo obligatoire</span>
+          <span className="font-semibold">🎯 {t('Vidéo obligatoire')}</span>
           <span className="flex-1 h-1.5 bg-amber-100 rounded-full overflow-hidden">
             <span className="block h-full bg-amber-500 transition-all" style={{ width: pourcentage + '%' }} />
           </span>
@@ -101,6 +103,7 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
   obligatoire: boolean
 }) {
   const { vue, pourcentage, avancer } = useCompteur(blocId, obligatoire)
+  const { t } = useT()
   const conteneur = useRef<HTMLDivElement>(null)
   const hoteYouTube = useRef<HTMLDivElement>(null)
   const dernier = useRef(0)
@@ -170,7 +173,7 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
         ) : youtubeSuivi ? (
           <div ref={hoteYouTube} className="w-full h-full" />
         ) : (
-          <iframe src={src} className="w-full h-full" allowFullScreen title={titre ?? 'Vidéo'}
+          <iframe src={src} className="w-full h-full" allowFullScreen title={titre ?? t('Vidéo')}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
         )}
       </div>
@@ -191,6 +194,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
   suiviActif: boolean
 }) {
   const { videosVues } = useSuivi()
+  const { t, loc } = useT()
   const [attestationLe, setAttestationLe] = useState(etat.attestationLe)
   const [termineeLe, setTermineeLe] = useState(etat.termineeLe)
   const [coche, setCoche] = useState(!!etat.attestationLe)
@@ -199,12 +203,14 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
 
   const videosRestantes = videosObligatoires.filter(v => !videosVues.includes(v.id))
   const pret = videosRestantes.length === 0 && (!attestationRequise || coche)
-  const date = (iso: string) => new Date(iso).toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' })
+  const date = (iso: string) => new Date(iso).toLocaleString(loc, { dateStyle: 'long', timeStyle: 'short' })
 
   if (!suiviActif) {
     return (
       <div className="mt-8 rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-        Aperçu : les employés verront ici {attestationRequise ? "la case « J'ai lu et compris » et " : ''}le bouton « Terminer la leçon ».
+        {attestationRequise
+          ? t('Aperçu : les employés verront ici la case « J’ai lu et compris » et le bouton « Terminer la leçon ».')
+          : t('Aperçu : les employés verront ici le bouton « Terminer la leçon ».')}
       </div>
     )
   }
@@ -214,8 +220,8 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
       <div className="mt-8 rounded-xl bg-green-50 border border-green-200 p-5 flex items-center gap-3">
         <span className="text-2xl">✅</span>
         <div>
-          <p className="font-semibold text-green-800">Leçon terminée</p>
-          <p className="text-sm text-green-700">Le {date(termineeLe)}{attestationLe ? ` · attestation signée le ${date(attestationLe)}` : ''}</p>
+          <p className="font-semibold text-green-800">{t('Leçon terminée')}</p>
+          <p className="text-sm text-green-700">{t('Le {date}', { date: date(termineeLe) })}{attestationLe ? t(' · attestation signée le {date}', { date: date(attestationLe) }) : ''}</p>
         </div>
       </div>
     )
@@ -231,18 +237,18 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     const r = await terminerLecon(lessonId)
     setEnCours(false)
     if (r.ok) setTermineeLe(r.data ?? new Date().toISOString())
-    else setErreur(r.manquants?.length ? 'Il reste : ' + r.manquants.join(' · ') : r.erreur)
+    else setErreur(r.manquants?.length ? t('Il reste : {liste}', { liste: r.manquants.join(' · ') }) : r.erreur)
   }
 
   return (
     <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-      <h3 className="font-semibold text-gray-900">Terminer la leçon</h3>
+      <h3 className="font-semibold text-gray-900">{t('Terminer la leçon')}</h3>
 
       {videosObligatoires.length > 0 && (
         <ul className="space-y-1 text-sm">
           {videosObligatoires.map(v => (
             <li key={v.id} className={videosVues.includes(v.id) ? 'text-green-700' : 'text-gray-600'}>
-              {videosVues.includes(v.id) ? '✅' : '⏳'} Vidéo « {v.titre || 'sans titre'} » regardée en entier
+              {videosVues.includes(v.id) ? '✅' : '⏳'} {t('Vidéo « {titre} » regardée en entier', { titre: v.titre || t('sans titre') })}
             </li>
           ))}
         </ul>
@@ -260,10 +266,10 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
 
       <button onClick={terminer} disabled={!pret || enCours}
         className="px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-40">
-        {enCours ? 'Enregistrement…' : '✓ Terminer la leçon'}
+        {enCours ? t('Enregistrement…') : `✓ ${t('Terminer la leçon')}`}
       </button>
       {!pret && videosRestantes.length > 0 && (
-        <p className="text-xs text-gray-500">Regardez d’abord {videosRestantes.length > 1 ? 'les vidéos obligatoires' : 'la vidéo obligatoire'} en entier.</p>
+        <p className="text-xs text-gray-500">{videosRestantes.length > 1 ? t('Regardez d’abord les vidéos obligatoires en entier.') : t('Regardez d’abord la vidéo obligatoire en entier.')}</p>
       )}
     </div>
   )

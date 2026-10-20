@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { CLINIQUE_INFO, cliniquesDe } from '@/lib/cliniques'
+import { useT } from '@/lib/i18n/client'
 
 interface Certificat {
   id: string
@@ -39,17 +40,19 @@ const THEMES = {
   LES_DEUX: { principale: '#2f3f5c', claire: '#ece9e4', accent: '#a88d5a' },
 }
 
-const dateLongue = (iso: string) =>
-  new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+const NIVEAUX: Record<string, string> = { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' }
 
 export default function CertificatPDF({ certificat, employe, clinique }: Props) {
+  const { t, loc } = useT()
+  const dateLongue = (iso: string) =>
+    new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric' })
   const cliniques = cliniquesDe(clinique ?? 'LES_DEUX')
   const liste = cliniques.length ? cliniques : cliniquesDe('LES_DEUX')
   const theme = liste.length === 1 ? THEMES[liste[0]] : THEMES.LES_DEUX
   const noms = liste.map(c => CLINIQUE_INFO[c].nom)
 
   const f = certificat.formations
-  const sousTitre = [f?.categorie, f?.niveau ? `Niveau ${f.niveau}` : null].filter(Boolean).join(' — ')
+  const sousTitre = [f?.categorie, f?.niveau ? t('Niveau : {niveau}', { niveau: NIVEAUX[f.niveau] ? t(NIVEAUX[f.niveau]) : f.niveau }) : null].filter(Boolean).join(' — ')
 
   return (
     <>
@@ -75,9 +78,9 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
       `}</style>
 
       <div className="no-print bg-gray-50 border-b border-gray-200">
-        <nav className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+        <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-sm min-w-0">
-            <Link href="/dashboard/certificats" className="text-gray-500 hover:text-gray-900">Mes certificats</Link>
+            <Link href="/dashboard/certificats" className="text-gray-500 hover:text-gray-900">{t('Mes certificats')}</Link>
             <span className="text-gray-300">›</span>
             <span className="font-medium text-gray-900 truncate">{f?.titre}</span>
           </div>
@@ -87,11 +90,11 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Télécharger en PDF
+            {t('Télécharger en PDF')}
           </button>
         </nav>
         <p className="no-print text-xs text-gray-500 text-center pb-3">
-          Dans la fenêtre d’impression, choisissez « Enregistrer en PDF ».
+          {t('Dans la fenêtre d’impression, choisissez « Enregistrer en PDF ».')}
         </p>
       </div>
 
@@ -124,10 +127,10 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
               {/* Corps */}
               <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
                 <div style={{ fontSize: '3.4cqw', letterSpacing: '0.5cqw', textTransform: 'uppercase', color: theme.principale, fontWeight: 'bold' }}>
-                  Certificat de formation
+                  {t('Certificat de formation')}
                 </div>
                 <div style={{ width: '14cqw', height: '0.18cqw', background: theme.accent, margin: '1.2cqw auto 1.6cqw' }} />
-                <div style={{ fontSize: '1.4cqw', fontStyle: 'italic', color: '#6b7280' }}>Ce certificat est décerné à</div>
+                <div style={{ fontSize: '1.4cqw', fontStyle: 'italic', color: '#6b7280' }}>{t('Ce certificat est décerné à')}</div>
                 <div style={{ fontSize: '4.2cqw', fontWeight: 'bold', color: '#111827', margin: '0.6cqw 0 0.2cqw' }}>
                   {employe.prenom} {employe.nom}
                 </div>
@@ -135,7 +138,7 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
                   <div style={{ fontSize: '1.3cqw', color: theme.principale, letterSpacing: '0.1cqw' }}>{employe.departement}</div>
                 )}
                 <div style={{ fontSize: '1.4cqw', color: '#6b7280', marginTop: '1.8cqw' }}>
-                  pour avoir complété avec succès la formation
+                  {t('pour avoir complété avec succès la formation')}
                 </div>
                 <div style={{ fontSize: '2.5cqw', fontWeight: 'bold', color: theme.principale, margin: '0.6cqw auto 0', lineHeight: 1.25, maxWidth: '75cqw' }}>
                   {f?.titre}
@@ -146,7 +149,7 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
                     display: 'inline-block', marginTop: '1.2cqw', padding: '0.4cqw 1.6cqw', borderRadius: '99cqw',
                     background: theme.claire, color: theme.principale, fontSize: '1.2cqw', fontFamily: 'Arial, sans-serif', fontWeight: 600,
                   }}>
-                    Note obtenue : {Math.round(Number(certificat.note_finale))} %
+                    {t('Note obtenue : {note} %', { note: Math.round(Number(certificat.note_finale)) })}
                   </div>
                 )}
               </div>
@@ -154,10 +157,10 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
               {/* Pied : date, sceau, numéro */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'end', position: 'relative', zIndex: 1, fontFamily: 'Arial, sans-serif', paddingBottom: '0.6cqw' }}>
                 <div>
-                  <div style={{ fontSize: '0.95cqw', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1cqw' }}>Date de délivrance</div>
+                  <div style={{ fontSize: '0.95cqw', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1cqw' }}>{t('Date de délivrance')}</div>
                   <div style={{ fontSize: '1.35cqw', color: '#111827', marginTop: '0.2cqw' }}>{dateLongue(certificat.date_emission)}</div>
                   {certificat.date_expiration && (
-                    <div style={{ fontSize: '1.05cqw', color: '#6b7280', marginTop: '0.3cqw' }}>Valide jusqu’au {dateLongue(certificat.date_expiration)}</div>
+                    <div style={{ fontSize: '1.05cqw', color: '#6b7280', marginTop: '0.3cqw' }}>{t('Valide jusqu’au {date}', { date: dateLongue(certificat.date_expiration) })}</div>
                   )}
                 </div>
 
@@ -168,15 +171,15 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
                 }}>
                   <div style={{ fontSize: '2.6cqw', lineHeight: 1 }}>✓</div>
-                  <div style={{ fontSize: '0.75cqw', letterSpacing: '0.12cqw', textTransform: 'uppercase', marginTop: '0.3cqw' }}>Certifié</div>
+                  <div style={{ fontSize: '0.75cqw', letterSpacing: '0.12cqw', textTransform: 'uppercase', marginTop: '0.3cqw' }}>{t('Certifié')}</div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ width: '18cqw', marginLeft: 'auto', borderTop: '0.1cqw solid #9ca3af', paddingTop: '0.4cqw', fontSize: '1cqw', color: '#6b7280' }}>
-                    Responsable de la formation
+                    {t('Responsable de la formation')}
                   </div>
                   <div style={{ fontSize: '0.95cqw', color: '#9ca3af', marginTop: '0.9cqw' }}>
-                    N° <span style={{ fontFamily: 'monospace', color: theme.principale, letterSpacing: '0.08cqw' }}>{certificat.numero_certificat}</span>
+                    {t('N°')} <span style={{ fontFamily: 'monospace', color: theme.principale, letterSpacing: '0.08cqw' }}>{certificat.numero_certificat}</span>
                   </div>
                 </div>
               </div>
