@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import ToggleActifButton from './ToggleActifButton'
+import ZoneSelection from './ZoneSelection'
 import { getActeur, serviceClient, filtrerEmployes, peutGererEmploye, cliniquesAdministrees } from '@/lib/permissions'
 import { aAccesAdmin, ROLE_LABEL, CLINIQUE_INFO, Clinique } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
@@ -118,11 +119,13 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
         </div>
       )}
 
+      <ZoneSelection>
       {/* Active employees table */}
       <div style={{ ...tableStyle, marginBottom: '32px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
           <thead>
             <tr>
+              <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="actifs" aria-label="Sélectionner tous les employés actifs" /></th>
               <th style={thStyle}>Nom</th>
               <th style={thStyle}>Email</th>
               <th style={thStyle}>Clinique</th>
@@ -139,6 +142,9 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
               const rs = roleStyles[emp.role] ?? { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
               return (
                 <tr key={emp.id} style={{ borderBottom: i < actifs.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                  <td style={{ ...tdStyle, paddingRight: 0 }}>
+                    <input type="checkbox" name="employe" value={emp.id} data-groupe="actifs" data-actif="1" data-gerable={peutGerer(emp) ? '1' : '0'} aria-label={`Sélectionner ${emp.prenom} ${emp.nom}`} />
+                  </td>
                   <td style={tdStyle}>
                     <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
                     {emp.poste && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.poste}</div>}
@@ -190,6 +196,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
             <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
               <thead>
                 <tr>
+                  <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="archives" aria-label="Sélectionner tous les employés archivés" /></th>
                   <th style={thStyle}>Nom</th>
                   <th style={thStyle}>Email</th>
                   <th style={thStyle}>Clinique</th>
@@ -204,6 +211,9 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
               <tbody>
                 {archives.map((emp: any, i: number) => (
                   <tr key={emp.id} style={{ borderBottom: i < archives.length - 1 ? '1px solid #f3f4f6' : 'none', color: '#9ca3af' }}>
+                    <td style={{ ...tdStyle, paddingRight: 0 }}>
+                      <input type="checkbox" name="employe" value={emp.id} data-groupe="archives" data-actif="0" data-gerable={peutGerer(emp) ? '1' : '0'} aria-label={`Sélectionner ${emp.prenom} ${emp.nom}`} />
+                    </td>
                     <td style={tdStyle}>
                       <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '500', color: 'inherit', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
                       {emp.poste && <div style={{ fontSize: '12px' }}>{emp.poste}</div>}
@@ -232,6 +242,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
           </div>
         </div>
       )}
+      </ZoneSelection>
     </div>
   )
 }
