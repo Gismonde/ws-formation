@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getEspace } from '@/lib/espace'
 
 type SOP = {
   id: string
@@ -26,16 +27,18 @@ export default async function SOPPage() {
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, role')
+    .select('id, role, clinique')
     .eq('auth_user_id', user.id)
     .single()
 
   if (!employe) redirect('/login')
+  const espace = await getEspace(employe)
 
-  // Le RLS filtre automatiquement les SOPs selon le role de l'utilisateur
+  // Le RLS filtre les SOPs selon le rôle et la clinique ; on n'affiche que celles de l'espace actif
   const { data: sops } = await supabase
     .from('sop')
     .select('*')
+    .in('clinique', espace.cliniquesContenu)
     .order('acces_role', { ascending: true })
     .order('created_at', { ascending: true })
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
+import type { CliniqueContenu } from '@/lib/cliniques'
 
 interface Formation {
   id: string
@@ -10,9 +12,10 @@ interface Formation {
   categorie: string
   description: string
   niveau: string
-  duree_heures: number
-  est_publiee: boolean
-    validite_mois: number | null
+  duree_estimee_minutes: number | null
+  publiee: boolean
+  clinique: CliniqueContenu
+  validite_mois: number | null
 }
 
 interface ModuleForm {
@@ -84,9 +87,10 @@ export default function ModifierFormationPage() {
         categorie: formation.categorie,
         description: formation.description,
         niveau: formation.niveau,
-        duree_heures: formation.duree_heures,
-        est_publiee: formation.est_publiee,
-                validite_mois: formation.validite_mois,
+        duree_estimee_minutes: formation.duree_estimee_minutes,
+        publiee: formation.publiee,
+        clinique: formation.clinique,
+        validite_mois: formation.validite_mois,
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
@@ -193,11 +197,17 @@ export default function ModifierFormationPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Durée (heures)</label>
-                <input type="number" value={formation.duree_heures} onChange={e => updateField('duree_heures', Number(e.target.value))} min={1} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={Math.round(((formation.duree_estimee_minutes ?? 60) / 60) * 10) / 10} onChange={e => updateField('duree_estimee_minutes', Math.round(Number(e.target.value) * 60))} min={0.5} step={0.5} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
+            <ChampCliniqueFormation
+              valeur={formation.clinique}
+              onChange={c => updateField('clinique', c)}
+              labelStyle={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}
+              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', background: '#fff' }}
+            />
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="publiee" checked={formation.est_publiee} onChange={e => updateField('est_publiee', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
+              <input type="checkbox" id="publiee" checked={formation.publiee} onChange={e => updateField('publiee', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
               <label htmlFor="publiee" className="text-sm font-medium text-gray-700">Formation publiée (visible par les employés)</label>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logAudit } from '@/lib/audit'
+import { estCliniqueContenu } from '@/lib/cliniques'
 
 const CATEGORIES = [
   'Administration médicale',
@@ -62,7 +63,18 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, publier_immediatement } = body
+  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, publier_immediatement, clinique } = body
+
+  // Clinique de la formation : la clé de service contourne la RLS, on applique donc ici la même règle
+  // que peut_gerer_contenu_clinique (admin global : tout ; sinon sa clinique, ou les deux s'il est rattaché aux deux)
+  if (!estCliniqueContenu(clinique)) {
+    return NextResponse.json({ error: 'Choisissez la clinique de la formation' }, { status: 400 })
+  }
+  const cliniqueAutorisee = createur.role === 'super_admin' || createur.clinique === 'LES_DEUX' ||
+    (clinique !== 'LES_DEUX' && createur.clinique === clinique)
+  if (!cliniqueAutorisee) {
+    return NextResponse.json({ error: 'Vous ne pouvez pas créer de formation pour cette clinique' }, { status: 403 })
+  }
 
   if (!titre?.trim()) {
     return NextResponse.json({ error: 'Titre requis' }, { status: 400 })
@@ -79,8 +91,9 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       categorie: CATEGORIES.includes(categorie) ? categorie : CATEGORIES[0],
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
-      duree_heures: duree_heures || 1,
-      est_publiee: publier_immediatement === true,
+      clinique,
+      duree_estimee_minutes: Math.round((Number(duree_heures) || 1) * 60),
+      publiee: publier_immediatement === true,
       tags: tags || [],
       objectifs: objectifs || [],
       prerequis_ids: prerequis_ids || [],
@@ -122,7 +135,7 @@ export async function POST(req: NextRequest) {
       await adminClient.from('content_blocks').insert({
         lesson_id: null,
         module_id: insertedModule.id,
-        type: 'texte',
+        type: 'text',
         contenu: m.contenu.trim(),
         ordre: 1,
       }).select()
@@ -159,7 +172,7 @@ export async function POST(req: NextRequest) {
           if (!desc) return null
           return {
             lesson_id: lecon.id,
-            type: 'texte',
+            type: 'text',
             contenu: desc,
             ordre: 1,
           }
@@ -198,7 +211,7 @@ export async function POST(req: NextRequest) {
       .insert({
         formation_id: formation.id,
         titre: questionnaire.titre || ('Questionnaire - ' + titre.trim()),
-        seuil_reussite: questionnaire.seuil_reussite || 70,
+        note_passage: questionnaire.seuil_reussite || 70,
       })
       .select()
       .single()
@@ -212,7 +225,7 @@ export async function POST(req: NextRequest) {
           .insert({
             questionnaire_id: quiz.id,
             texte: q.texte.trim(),
-            type: 'qcm',
+            type: 'choix_multiple',
             ordre: qi + 1,
           })
           .select()

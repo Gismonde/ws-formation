@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
+import type { CliniqueContenu } from '@/lib/cliniques'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -71,6 +73,13 @@ export default function NouvelleFormationPage() {
   const [objectifs, setObjectifs] = useState<string[]>([])
   const [objectifInput, setObjectifInput] = useState('')
   const [imageCouverture, setImageCouverture] = useState('')
+  const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
+
+  // Formations publiées pouvant servir de prérequis (la base ne renvoie que celles de vos cliniques)
+  useEffect(() => {
+    createClient().from('formations').select('id, titre').eq('publiee', true).order('titre')
+      .then(({ data }) => setFormationsDisponibles(data ?? []))
+  }, [])
 
   // Durée auto-calculée depuis les modules
   useEffect(() => {
@@ -184,6 +193,7 @@ export default function NouvelleFormationPage() {
       const emptyR = filledQuestions.filter(q => q.reponses.some(r => !r.texte.trim()))
       if (emptyR.length > 0) errors.push('Chaque réponse doit avoir un texte.')
     }
+    if (!clinique) errors.push('Choisissez la clinique de la formation.')
     if (errors.length > 0) { setError(errors.join(' | ')); return }
 
     setSaving(true)
@@ -193,7 +203,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, categorie, description, niveau, duree_heures: dureeHeures, est_publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
+        .insert({ titre, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
@@ -233,7 +243,7 @@ export default function NouvelleFormationPage() {
                 .map((lecon, lIdx) => {
                   const desc = mod.lecons[lIdx]?.description?.trim()
                   if (!desc) return null
-                  return { lesson_id: lecon.id, type: 'texte', contenu: desc, ordre: 1 }
+                  return { lesson_id: lecon.id, type: 'text', contenu: desc, ordre: 1 }
                 })
                 .filter(Boolean)
               if (blocsToInsert.length > 0) {
@@ -258,7 +268,7 @@ export default function NouvelleFormationPage() {
       if (validQuestions.length > 0) {
         const { data: questionnaire, error: errQ } = await supabase
           .from('questionnaires')
-          .insert({ formation_id: formation.id, titre: 'Questionnaire - ' + titre, seuil_reussite: seuilReussite })
+          .insert({ formation_id: formation.id, titre: 'Questionnaire - ' + titre, note_passage: seuilReussite })
           .select()
           .single()
         if (errQ || !questionnaire) throw new Error(errQ?.message || 'Erreur questionnaire')
@@ -267,7 +277,7 @@ export default function NouvelleFormationPage() {
           const q = validQuestions[i]
           const { data: question, error: errQu } = await supabase
             .from('questions')
-            .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: 'qcm', ordre: i + 1 })
+            .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: 'choix_multiple', ordre: i + 1 })
             .select()
             .single()
           if (errQu || !question) continue
@@ -433,13 +443,14 @@ export default function NouvelleFormationPage() {
             <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)" />
             <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Catégorie</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={categorie} onChange={e => setCategorie(e.target.value)}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+            <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={{ ...inputStyle, cursor: 'pointer' }} labelStyle={labelStyle} />
             <div>
               <label style={labelStyle}>Niveau</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={niveau} onChange={e => setNiveau(e.target.value)}>

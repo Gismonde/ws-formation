@@ -2,11 +2,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { politiquesDeLEmploye } from '@/lib/politiques'
+import { getEspace } from '@/lib/espace'
 
 export default async function MesPolitiquesPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  const politiques = await politiquesDeLEmploye(serviceClient(), acteur)
+  const espace = await getEspace(acteur)
+  const politiques = await politiquesDeLEmploye(serviceClient(), acteur, espace.actif)
   const enAttente = politiques.filter(p => !p.confirme_le)
   const confirmees = politiques.filter(p => p.confirme_le)
 

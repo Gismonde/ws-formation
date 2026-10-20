@@ -10,7 +10,7 @@
 import { createClient as createServiceClient, SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import {
-  Clinique, CliniqueEmploye, Role,
+  Clinique, CliniqueEmploye, CliniqueContenu, Role,
   cliniquesDe, estCliniqueEmploye, estRole,
 } from '@/lib/cliniques'
 
@@ -94,6 +94,45 @@ export function cliniquesAdministrees(a: Acteur): Clinique[] {
   if (a.role === 'super_admin') return ['CMC', 'WSSC']
   if (a.role === 'admin') return cliniquesDe(a.clinique)
   return []
+}
+
+// ---------------------------------------------------------------------------
+// Contenus rattachés à une clinique (formations, SOP)
+// Mêmes règles que les fonctions SQL peut_voir_contenu_clinique / peut_gerer_contenu_clinique
+// (supabase/migrations/formations_sop_par_clinique.sql).
+// ---------------------------------------------------------------------------
+
+/** Cliniques de contenu que l'acteur peut VOIR dans l'espace Admin (tous rôles). */
+export function cliniquesContenuVisibles(a: Acteur): CliniqueContenu[] {
+  if (a.role === 'super_admin') return ['CMC', 'WSSC', 'LES_DEUX']
+  return [...cliniquesDe(a.clinique), 'LES_DEUX']
+}
+
+/**
+ * Cliniques pour lesquelles l'acteur peut CRÉER / MODIFIER du contenu.
+ *  - admin global : CMC, WSSC et les deux
+ *  - admin / gestionnaire autorisé rattaché aux deux cliniques : CMC, WSSC et les deux
+ *  - admin / gestionnaire autorisé d'une seule clinique : cette clinique seulement
+ */
+export function cliniquesContenuGerables(a: Acteur): CliniqueContenu[] {
+  if (a.role === 'super_admin') return ['CMC', 'WSSC', 'LES_DEUX']
+  if (!peutCreerFormations(a)) return []
+  if (a.clinique === 'LES_DEUX') return ['CMC', 'WSSC', 'LES_DEUX']
+  return cliniquesDe(a.clinique)
+}
+
+export function peutVoirContenu(a: Acteur, clinique: string | null | undefined): boolean {
+  return cliniquesContenuVisibles(a).includes((clinique ?? 'LES_DEUX') as CliniqueContenu)
+}
+
+export function peutGererContenu(a: Acteur, clinique: string | null | undefined): boolean {
+  return cliniquesContenuGerables(a).includes((clinique ?? 'LES_DEUX') as CliniqueContenu)
+}
+
+/** Un employé peut-il recevoir un contenu de cette clinique ? (assignation) */
+export function employeConcerneParClinique(cliniqueEmploye: string | null | undefined, clinique: string | null | undefined): boolean {
+  if (!clinique || clinique === 'LES_DEUX') return true
+  return cliniquesDe(cliniqueEmploye).includes(clinique as Clinique)
 }
 
 function intersecte(x: Clinique[], y: Clinique[]) { return x.some(c => y.includes(c)) }

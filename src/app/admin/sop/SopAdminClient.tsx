@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { CLINIQUE_CONTENU_LABEL, CLINIQUE_INFO, type CliniqueContenu } from '@/lib/cliniques'
 
 type SOP = {
   id: string
@@ -11,6 +12,7 @@ type SOP = {
   version: string | null
   fichier_url: string | null
   acces_role: 'employe' | 'gestionnaire' | 'admin'
+  clinique: CliniqueContenu
   created_at: string
   updated_at: string | null
 }
@@ -34,9 +36,15 @@ const EMPTY = {
   version: '1.0',
   fichier_url: '',
   acces_role: 'employe' as SOP['acces_role'],
+  clinique: 'LES_DEUX' as CliniqueContenu,
 }
 
-export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) {
+function BadgeClinique({ c }: { c: CliniqueContenu }) {
+  if (c === 'LES_DEUX') return <span style={{ background: '#f3f4f6', color: '#374151', borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: 600 }}>CMC + WSSC</span>
+  return <span style={{ background: CLINIQUE_INFO[c].fond, color: CLINIQUE_INFO[c].couleur, borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: 700 }}>{CLINIQUE_INFO[c].court}</span>
+}
+
+export default function SopAdminClient({ initialSops, cliniquesGerables }: { initialSops: SOP[]; cliniquesGerables: CliniqueContenu[] }) {
   const [sops, setSops] = useState<SOP[]>(initialSops)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<SOP | null>(null)
@@ -59,7 +67,7 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
 
   function openCreate() {
     setEditing(null)
-    setForm({ ...EMPTY })
+    setForm({ ...EMPTY, clinique: cliniquesGerables.includes('LES_DEUX') ? 'LES_DEUX' : (cliniquesGerables[0] ?? 'LES_DEUX') })
     setShowForm(true)
     setError(null)
   }
@@ -73,6 +81,7 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
       version: sop.version ?? '1.0',
       fichier_url: sop.fichier_url ?? '',
       acces_role: sop.acces_role,
+      clinique: sop.clinique ?? 'LES_DEUX',
     })
     setShowForm(true)
     setError(null)
@@ -89,7 +98,9 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
       version: form.version?.trim() || '1.0',
       fichier_url: form.fichier_url?.trim() || null,
       acces_role: form.acces_role,
+      clinique: form.clinique,
     }
+    if (!cliniquesGerables.includes(form.clinique)) { setSaving(false); setError("Vous ne pouvez pas publier de SOP pour cette clinique."); return }
     let err
     if (editing) {
       const { error: e } = await supabase.from('sop').update(payload).eq('id', editing.id)
@@ -173,8 +184,20 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
               />
             </div>
 
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Clinique *</label>
+              <select
+                value={form.clinique}
+                onChange={e => setForm(f => ({ ...f, clinique: e.target.value as CliniqueContenu }))}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#fff' }}
+              >
+                {cliniquesGerables.map(c => <option key={c} value={c}>{CLINIQUE_CONTENU_LABEL[c]}</option>)}
+              </select>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Seuls les employés de cette clinique verront la SOP.</div>
+            </div>
+
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Acces par role *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Accès par rôle *</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {ROLE_OPTIONS.map(opt => (
                   <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', border: `2px solid ${form.acces_role === opt.value ? '#6366f1' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer', background: form.acces_role === opt.value ? '#f0f0ff' : '#fff' }}>
@@ -215,6 +238,7 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
                     <span style={{ fontSize: '15px', fontWeight: '600', color: '#111827' }}>{sop.titre}</span>
                     {sop.version && <span style={{ background: '#f3f4f6', color: '#6b7280', borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: '500' }}>v{sop.version}</span>}
                     <span style={{ background: badge.bg, color: badge.color, borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: '600' }}>{badge.label}</span>
+                    <BadgeClinique c={sop.clinique ?? 'LES_DEUX'} />
                     {sop.categorie && <span style={{ background: '#f0f0ff', color: '#6366f1', borderRadius: '6px', padding: '1px 8px', fontSize: '11px' }}>{sop.categorie}</span>}
                   </div>
                   {sop.description && <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>{sop.description}</p>}
@@ -223,8 +247,10 @@ export default function SopAdminClient({ initialSops }: { initialSops: SOP[] }) 
                   {sop.fichier_url && (
                     <a href={sop.fichier_url} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>Voir</a>
                   )}
+                  {cliniquesGerables.includes(sop.clinique ?? 'LES_DEUX') && <>
                   <button onClick={() => openEdit(sop)} style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Modifier</button>
                   <button onClick={() => handleDelete(sop.id)} disabled={deleting === sop.id} style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deleting === sop.id ? 0.5 : 1 }}>Suppr.</button>
+                  </>}
                 </div>
               </div>
             )

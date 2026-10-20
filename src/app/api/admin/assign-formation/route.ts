@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { logAudit } from '@/lib/audit'
-import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement } from '@/lib/permissions'
+import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement, peutVoirContenu, employeConcerneParClinique } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { envoyerCourriels, gabarit, origineDepuis, courrielsActifs } from '@/lib/courriels'
 
@@ -31,6 +31,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Parametres manquants' }, { status: 400 })
     }
 
+    // La formation doit appartenir à une clinique de l'acteur
+    const { data: formationCible } = await serviceRole
+      .from('formations').select('id, clinique').eq('id', formationId).single()
+    if (!formationCible || !peutVoirContenu(moi, formationCible.clinique)) {
+      return NextResponse.json({ error: 'Formation introuvable ou hors de votre perimetre' }, { status: 403 })
+    }
+
     let employeIds: string[] = []
 
     if (type === 'employe') {
@@ -42,6 +49,9 @@ export async function POST(req: NextRequest) {
       // Un acteur peut s'assigner une formation à lui-même
       if (!emp || (emp.id !== moi.id && !peutVoirEmploye(moi, emp))) {
         return NextResponse.json({ error: 'Acces refuse - employe hors de votre perimetre' }, { status: 403 })
+      }
+      if (emp.id !== moi.id && !employeConcerneParClinique(emp.clinique, formationCible.clinique)) {
+        return NextResponse.json({ error: 'Cette formation est reservee a une autre clinique que celle de cet employe' }, { status: 400 })
       }
       employeIds = [cibleId]
     } else if (type === 'departement') {
@@ -59,7 +69,8 @@ export async function POST(req: NextRequest) {
         .select('id, role, clinique, departement_id')
         .eq('departement_id', cibleId)
         .eq('actif', true), moi)
-      employeIds = (emps ?? []).map((e: any) => e.id)
+      // Seulement les employés de la clinique de la formation
+      employeIds = (emps ?? []).filter((e: any) => employeConcerneParClinique(e.clinique, formationCible.clinique)).map((e: any) => e.id)
     } else {
       return NextResponse.json({ error: 'Type invalide' }, { status: 400 })
     }

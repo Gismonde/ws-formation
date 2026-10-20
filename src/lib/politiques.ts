@@ -145,9 +145,15 @@ export async function statistiquesPolitiques(
 }
 
 /** Politiques actives qui s'adressent à cet employé, avec son statut pour la version en vigueur. */
-export async function politiquesDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null }) {
+/**
+ * Politiques visées pour l'employé.
+ * `espace` (CMC / WSSC) : n'afficher que les politiques de cet espace (employé rattaché aux deux cliniques).
+ */
+export async function politiquesDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null }, espace?: Clinique | null) {
   const { data } = await sb.from('politiques').select('*').eq('actif', true).order('publiee_le', { ascending: false })
-  const pols = ((data ?? []) as Politique[]).filter(p => estVise(p, e))
+  const pols = ((data ?? []) as Politique[])
+    .filter(p => estVise(p, e))
+    .filter(p => !espace || cliniquesDe(p.clinique).includes(espace))
   if (pols.length === 0) return []
   const { data: confs } = await sb.from('politiques_confirmations')
     .select('politique_id, version, confirme_le').eq('employe_id', e.id).in('politique_id', pols.map(p => p.id))
@@ -164,9 +170,9 @@ export async function politiquesDeLEmploye(sb: SupabaseClient, e: { id: string; 
 }
 
 /** Nombre de politiques en attente de confirmation (pour le badge du menu). */
-export async function nombrePolitiquesEnAttente(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null }) {
+export async function nombrePolitiquesEnAttente(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null }, espace?: Clinique | null) {
   try {
-    return (await politiquesDeLEmploye(sb, e)).filter(p => !p.confirme_le).length
+    return (await politiquesDeLEmploye(sb, e, espace)).filter(p => !p.confirme_le).length
   } catch {
     return 0 // table absente (script SQL pas encore exécuté) : ne bloque pas le menu
   }

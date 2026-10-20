@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         if (lecon && slide.texts.length > 0) {
           await supabase.from('content_blocks').insert({
             lesson_id: lecon.id,
-            type: 'texte',
+            type: 'text',
             contenu: slide.texts.join('\n'),
             ordre: 1
           })
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
         if (lecon && slide.texts.length > 0) {
           await supabase.from('content_blocks').insert({
             lesson_id: lecon.id,
-            type: 'texte',
+            type: 'text',
             contenu: slide.texts.join('\n'),
             ordre: 1
           })
