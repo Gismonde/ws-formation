@@ -59,7 +59,7 @@ export default function ModifierFormationPage() {
     loadData()
   }, [params.id])
 
-  function updateField(field: keyof Formation, value: string | number | boolean) {
+  function updateField(field: keyof Formation, value: string | number | boolean | null) {
     setFormation(prev => prev ? { ...prev, [field]: value } : prev)
   }
 

@@ -6,3 +6,5 @@ out/
 build/
 *.tsbuildinfo
 .vercel
+# Généré par Next.js au build
+next-env.d.ts

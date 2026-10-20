@@ -25,9 +25,6 @@ const nextConfig: NextConfig = {
       async headers() {
               return [{ source: '/:path*', headers: enTetesSecurite }]
       },
-      typescript: {
-              ignoreBuildErrors: true,
-      },
       eslint: {
               ignoreDuringBuilds: true,
       },

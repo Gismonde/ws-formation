@@ -435,7 +435,7 @@ export default function GenererFormationPage() {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
           const pageText = content.items
-            .map((item: { str?: string }) => item.str ?? '')
+            .map(item => ('str' in item ? item.str : ''))
             .join(' ')
           fullText += '\n=== Diapositive ' + i + ' / ' + pdf.numPages + ' ===\n' + pageText + '\n'
         }

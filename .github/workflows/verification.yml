@@ -1,0 +1,49 @@
+# Vérification automatique de chaque pull request (et de chaque fusion sur main).
+# Bloque les erreurs TypeScript, les tests d'accès par clinique qui échouent et les builds cassés.
+name: Vérification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    name: Types, tests et build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier les types (TypeScript)
+        run: npm run typecheck
+
+      - name: Tests des règles d'accès par clinique
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Valeurs factices : le build n'a pas besoin des vraies clés (aucune donnée n'est lue)
+          NEXT_PUBLIC_SUPABASE_URL: https://exemple.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: cle-factice
+          SUPABASE_SERVICE_ROLE_KEY: cle-factice
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Vulnérabilités (production)
+        run: npm audit --omit=dev --audit-level=high

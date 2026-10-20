@@ -6,7 +6,7 @@ import ChangePasswordForm from '@/components/ChangePasswordForm'
 
 type Factor = {
   id: string
-  friendly_name: string | null
+  friendly_name?: string | null
   factor_type: string
   status: string
   created_at: string
