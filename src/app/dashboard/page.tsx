@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getEspace } from '@/lib/espace'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -9,14 +10,14 @@ export default async function DashboardPage() {
 
   let { data: employe, error: empError } = await supabase
     .from('employes')
-    .select('id, prenom, nom, role, departement, poste, email, actif')
+    .select('id, prenom, nom, role, clinique, departement, poste, email, actif')
     .eq('auth_user_id', user.id)
     .maybeSingle()
 
   if (!employe && !empError && user.email) {
     const { data: employeByEmail } = await supabase
       .from('employes')
-      .select('id, prenom, nom, role, departement, poste, email, actif')
+      .select('id, prenom, nom, role, clinique, departement, poste, email, actif')
       .eq('email', user.email)
       .maybeSingle()
     if (employeByEmail) {
@@ -42,6 +43,9 @@ export default async function DashboardPage() {
 
   const assignedIds = assignations?.map((a: any) => a.formation_id) ?? []
 
+  // Seulement les formations de l'espace actif (CMC ou WSSC) + celles communes aux deux cliniques
+  const espace = await getEspace(employe)
+
   let formations: any[] = []
   if (assignedIds.length > 0) {
     const { data } = await supabase
@@ -49,6 +53,7 @@ export default async function DashboardPage() {
       .select('*')
       .eq('publiee', true)
       .in('id', assignedIds)
+      .in('clinique', espace.cliniquesContenu)
       .order('created_at', { ascending: false })
     formations = data ?? []
   }
@@ -115,14 +120,14 @@ export default async function DashboardPage() {
     <div>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Bonjour, {employe.prenom} !</h1>
-        <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>Voici vos formations assignees.</p>
+        <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>Voici vos formations assignées{espace.actif ? ` — espace ${espace.actif}` : ''}.</p>
       </div>
 
       {/* Compteurs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
           <p style={{ fontSize: '28px', fontWeight: '700', color: '#6366f1', margin: 0 }}>{formationsAvecProgression.length}</p>
-          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Formation(s) assignee(s)</p>
+          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Formation(s) assignée(s)</p>
         </div>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
           <p style={{ fontSize: '28px', fontWeight: '700', color: '#f59e0b', margin: 0 }}>{enCours.filter(f => f.progressionPct > 0).length}</p>
@@ -130,7 +135,7 @@ export default async function DashboardPage() {
         </div>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
           <p style={{ fontSize: '28px', fontWeight: '700', color: '#10b981', margin: 0 }}>{terminees.length}</p>
-          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Terminee(s)</p>
+          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Terminée(s)</p>
         </div>
       </div>
 
@@ -220,7 +225,7 @@ export default async function DashboardPage() {
       {formationsAvecProgression.length === 0 && (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '48px', textAlign: 'center' }}>
           <p style={{ fontSize: '40px', marginBottom: '12px' }}>📚</p>
-          <p style={{ color: '#6b7280', fontSize: '15px' }}>Aucune formation ne vous a encore ete assignee.</p>
+          <p style={{ color: '#6b7280', fontSize: '15px' }}>Aucune formation ne vous a encore été assignée dans cet espace.</p>
         </div>
       )}
     </div>

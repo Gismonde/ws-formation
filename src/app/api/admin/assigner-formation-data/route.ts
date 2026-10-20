@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { getActeur, filtrerEmployes, departementsVisibles } from '@/lib/permissions'
+import { getActeur, filtrerEmployes, departementsVisibles, peutVoirContenu, employeConcerneParClinique } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 
 const serviceRole = createClient(
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const [formationRes, employesRes, departementsListe] = await Promise.all([
       serviceRole
         .from('formations')
-        .select('id, titre, description, categorie, niveau')
+        .select('id, titre, description, categorie, niveau, clinique')
         .eq('id', formationId)
         .single(),
       filtrerEmployes(serviceRole
@@ -43,11 +43,12 @@ export async function GET(req: NextRequest) {
       departementsVisibles(moi, serviceRole)
     ])
 
-    if (!formationRes.data) {
+    if (!formationRes.data || !peutVoirContenu(moi, formationRes.data.clinique)) {
       return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
     }
 
-    const employes = (employesRes.data ?? []).map((e: any) => ({
+    // Seuls les employés de la clinique de la formation peuvent la recevoir
+    const employes = (employesRes.data ?? []).filter((e: any) => employeConcerneParClinique(e.clinique, formationRes.data.clinique)).map((e: any) => ({
       id: e.id,
       prenom: e.prenom,
       nom: e.nom,

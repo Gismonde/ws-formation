@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
+import type { CliniqueContenu } from '@/lib/cliniques'
 
 const CATEGORIES = [
   'Administration médicale',
@@ -325,6 +327,7 @@ export default function GenererFormationPage() {
   const [fileName, setFileName] = useState('')
   const [titre, setTitre] = useState('')
   const [description, setDescription] = useState('')
+  const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
   const [categorie, setCategorie] = useState(CATEGORIES[0])
   const [niveau, setNiveau] = useState('debutant')
   const [dureeHeures, setDureeHeures] = useState(1)
@@ -356,7 +359,7 @@ export default function GenererFormationPage() {
   // Load existing formations for prerequis selector
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('formations').select('id, titre').eq('est_publiee', true).order('titre').then(({ data }) => {
+    supabase.from('formations').select('id, titre').eq('publiee', true).order('titre').then(({ data }) => {
       if (data) setFormationsDisponibles(data)
     })
   }, [])
@@ -515,6 +518,7 @@ export default function GenererFormationPage() {
     // Validation renforcée
     const errors: string[] = []
     if (!titre.trim()) errors.push('Le titre de la formation est requis.')
+    if (!clinique) errors.push('Choisissez la clinique de la formation.')
     if (modules.length === 0) errors.push('Au moins un module est requis.')
     const emptyModules = modules.filter(m => !m.titre.trim())
     if (emptyModules.length > 0) errors.push('Chaque module doit avoir un titre.')
@@ -539,7 +543,7 @@ export default function GenererFormationPage() {
       const res = await fetch('/api/generer-formation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre, description, categorie, niveau, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture, publier_immediatement: publierImmediatement }),
+        body: JSON.stringify({ titre, description, categorie, niveau, clinique, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture, publier_immediatement: publierImmediatement }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -752,7 +756,8 @@ export default function GenererFormationPage() {
               />
               <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
+              <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={selectStyle} labelStyle={labelStyle} />
               <div>
                 <label style={labelStyle}>Catégorie</label>
                 <select style={selectStyle} value={categorie} onChange={e => setCategorie(e.target.value)}>

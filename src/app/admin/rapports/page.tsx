@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getActeur, serviceClient, filtrerEmployes, cliniquesAdministrees } from '@/lib/permissions'
+import { getActeur, serviceClient, filtrerEmployes, cliniquesAdministrees, cliniquesContenuVisibles } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 
 export default async function AdminRapportsPage() {
@@ -12,7 +12,7 @@ export default async function AdminRapportsPage() {
     : isGestionnaire ? 'Vous consultez les données de votre département uniquement.'
     : `Vous consultez les données de ${cliniquesAdministrees(acteur).join(' et ')} uniquement.`
 
-  const { data: formations } = await adminSupabase.from('formations').select('id, titre, categorie').eq('publiee', true)
+  const { data: formations } = await adminSupabase.from('formations').select('id, titre, categorie').eq('publiee', true).in('clinique', cliniquesContenuVisibles(acteur))
 
   const { data: employes } = await filtrerEmployes(adminSupabase.from('employes').select('id').eq('actif', true), acteur)
   const ids = new Set((employes ?? []).map((e: any) => e.id))

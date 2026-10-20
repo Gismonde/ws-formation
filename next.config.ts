@@ -10,7 +10,21 @@
 
 import type { NextConfig } from 'next'
 
+// En-têtes de sécurité appliqués à toutes les pages et API
+const enTetesSecurite = [
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },                 // aucun autre site ne peut afficher la plateforme dans un iframe (clickjacking)
+  { key: 'X-Content-Type-Options', value: 'nosniff' },             // le navigateur respecte le type des fichiers
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }, // HTTPS obligatoire
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  { key: 'X-DNS-Prefetch-Control', value: 'off' },
+]
+
 const nextConfig: NextConfig = {
+      poweredByHeader: false,
+      async headers() {
+              return [{ source: '/:path*', headers: enTetesSecurite }]
+      },
       typescript: {
               ignoreBuildErrors: true,
       },

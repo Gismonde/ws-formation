@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { ChampCliniqueFormation } from "@/components/ChampCliniqueFormation"
+import type { CliniqueContenu } from "@/lib/cliniques"
 
 interface QuestionForm {
   texte: string
@@ -59,6 +61,7 @@ export default function DepuisPPPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [publierImmediatement, setPublierImmediatement] = useState(false)
   const [description, setDescription] = useState("")
+  const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
   // Enrichissement
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -103,7 +106,7 @@ export default function DepuisPPPage() {
   // Load formations for prereq
   useEffect(() => {
     const supabase = createClient()
-    supabase.from("formations").select("id, titre").eq("est_publiee", true).order("titre").then(({ data }) => {
+    supabase.from("formations").select("id, titre").eq("publiee", true).order("titre").then(({ data }) => {
       if (data) setFormationsDisponibles(data)
     })
   }, [])
@@ -155,6 +158,7 @@ export default function DepuisPPPage() {
     const errs: string[] = []
     if (!file) errs.push("Veuillez sélectionner un fichier PowerPoint")
     if (!titre.trim()) errs.push("Veuillez saisir un titre pour la formation")
+    if (!clinique) errs.push("Veuillez choisir la clinique de la formation")
     if (errs.length > 0) { setError(errs); return }
     setError([])
     setShowPreview(true)
@@ -179,8 +183,9 @@ export default function DepuisPPPage() {
           description: description || null,
           categorie,
           niveau,
-          duree_heures: 1,
-          est_publiee: publierImmediatement === true,
+          clinique,
+          duree_estimee_minutes: 60,
+          publiee: publierImmediatement === true,
           tags: tags || [],
           objectifs: objectifs || [],
           image_couverture: imageCouverture || null,
@@ -209,8 +214,8 @@ export default function DepuisPPPage() {
       const { count: moduleCount } = await supabase
         .from("modules").select("id", { count: "exact", head: true }).eq("formation_id", formation.id)
       if (moduleCount && moduleCount > 0) {
-        const estimatedDuration = Math.max(1, Math.round(moduleCount * 0.5 * 10) / 10)
-        await supabase.from("formations").update({ duree_heures: estimatedDuration }).eq("id", formation.id)
+        const estimatedDuration = Math.max(30, moduleCount * 30) // ~30 min par module
+        await supabase.from("formations").update({ duree_estimee_minutes: estimatedDuration }).eq("id", formation.id)
       }
 
       // Etape 3: Questionnaire
@@ -219,14 +224,14 @@ export default function DepuisPPPage() {
         setLoadingStep(3)
         const { data: questionnaire } = await supabase
           .from("questionnaires")
-          .insert({ formation_id: formation.id, titre: "Questionnaire - " + titre, seuil_reussite: seuilReussite })
+          .insert({ formation_id: formation.id, titre: "Questionnaire - " + titre, note_passage: seuilReussite })
           .select().single()
         if (questionnaire) {
           for (let i = 0; i < validQuestions.length; i++) {
             const q = validQuestions[i]
             const { data: question } = await supabase
               .from("questions")
-              .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: "qcm", ordre: i + 1 })
+              .insert({ questionnaire_id: questionnaire.id, texte: q.texte, type: "choix_multiple", ordre: i + 1 })
               .select().single()
             if (question) {
               const validR = q.reponses.filter(r => r.texte.trim())
@@ -393,6 +398,9 @@ export default function DepuisPPPage() {
               placeholder="Description de la formation..."
             />
             <span style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px", display: "block" }}>Mise en forme: **gras**, *italique*, - liste</span>
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={{ ...inputStyle, cursor: "pointer", background: "#fff" }} labelStyle={labelStyle} />
           </div>
           <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Catégorie</label>

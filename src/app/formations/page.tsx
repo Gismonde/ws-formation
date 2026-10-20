@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getEspace } from '@/lib/espace'
 
 export default async function FormationsPage() {
   const supabase = await createClient()
@@ -9,11 +10,12 @@ export default async function FormationsPage() {
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, role')
+    .select('id, role, clinique')
     .eq('auth_user_id', user.id)
     .single()
 
   if (!employe) redirect('/login')
+  const espace = await getEspace(employe)
 
   // Récupérer uniquement les formations assignées
   const { data: assignations } = await supabase
@@ -30,6 +32,7 @@ export default async function FormationsPage() {
       .select('*')
       .eq('publiee', true)
       .in('id', assignedIds)
+      .in('clinique', espace.cliniquesContenu)
       .order('created_at', { ascending: false })
     formations = data ?? []
   }

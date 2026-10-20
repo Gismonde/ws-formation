@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
+import { getActeur, serviceClient, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
 import Link from 'next/link'
@@ -39,7 +39,7 @@ export default async function ConformitePage() {
     .order('nom'), acteur)
 
   const { data: employes } = await employesQuery
-  const { data: formations } = await adminSupabase.from('formations').select('id, titre')
+  const { data: formations } = await adminSupabase.from('formations').select('id, titre').in('clinique', cliniquesContenuVisibles(acteur))
   const { data: assignations } = await adminSupabase.from('assignations').select('employe_id, formation_id')
   const { data: progressions } = await adminSupabase.from('progression').select('employe_id, formation_id, statut, progression')
   const { data: certificats } = await adminSupabase.from('certificats').select('employe_id, formation_id, valide, issued_at')

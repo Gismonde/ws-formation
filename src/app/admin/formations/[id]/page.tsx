@@ -5,6 +5,7 @@ import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
 import { getActeur, peutCreerFormations } from '@/lib/permissions'
+import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -74,6 +75,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 {formation.categorie && (
                   <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{formation.categorie}</span>
                 )}
+                {estCliniqueContenu(formation.clinique) && (formation.clinique === 'LES_DEUX'
+                  ? <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">CMC + WSSC</span>
+                  : <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: CLINIQUE_INFO[formation.clinique].fond, color: CLINIQUE_INFO[formation.clinique].couleur }}>{CLINIQUE_INFO[formation.clinique].nom}</span>)}
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{formation.titre}</h1>
               {formation.description && (

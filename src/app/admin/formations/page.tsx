@@ -2,7 +2,19 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdmin } from "@supabase/supabase-js"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { getActeur, peutCreerFormations } from "@/lib/permissions"
+import { getActeur, peutCreerFormations, cliniquesContenuVisibles } from "@/lib/permissions"
+import { CLINIQUE_INFO, estCliniqueContenu, type CliniqueContenu } from "@/lib/cliniques"
+
+function BadgeCliniqueContenu({ c }: { c: CliniqueContenu }) {
+  if (c === "LES_DEUX") {
+    return <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "#f3f4f6", color: "#374151" }}>CMC + WSSC</span>
+  }
+  return (
+    <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: CLINIQUE_INFO[c].fond, color: CLINIQUE_INFO[c].couleur, border: `1px solid ${CLINIQUE_INFO[c].couleur}33` }}>
+      {CLINIQUE_INFO[c].court}
+    </span>
+  )
+}
 
 const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
   debutant: { bg: "#f0fdf4", color: "#16a34a", label: "Débutant" },
@@ -10,7 +22,8 @@ const niveauStyles: Record<string, { bg: string; color: string; label: string }>
   avance: { bg: "#fff1f2", color: "#e11d48", label: "Avancé" },
 }
 
-export default async function AdminFormationsPage() {
+export default async function AdminFormationsPage({ searchParams }: { searchParams: Promise<{ clinique?: string }> }) {
+  const { clinique: filtre } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -27,11 +40,19 @@ export default async function AdminFormationsPage() {
     .eq("auth_user_id", user.id)
     .single()
 
-  const isAdmin = peutCreerFormations(await getActeur())
+  const acteur = await getActeur()
+  if (!acteur) redirect("/login")
+  const isAdmin = peutCreerFormations(acteur)
+
+  // Chaque administrateur ne voit que les formations de sa (ses) clinique(s) + celles communes aux deux
+  const visibles = cliniquesContenuVisibles(acteur)
+  const onglets: CliniqueContenu[] = (["CMC", "WSSC", "LES_DEUX"] as CliniqueContenu[]).filter(c => visibles.includes(c))
+  const filtreActif = estCliniqueContenu(filtre) && visibles.includes(filtre) ? filtre : null
 
   const { data: formations } = await adminSupabase
     .from("formations")
-    .select("id, titre, categorie, niveau, publiee, obligatoire")
+    .select("id, titre, categorie, niveau, publiee, obligatoire, clinique")
+    .in("clinique", filtreActif ? [filtreActif] : visibles)
     .order("created_at", { ascending: false })
 
   const { data: modules } = await adminSupabase
@@ -112,6 +133,21 @@ export default async function AdminFormationsPage() {
         )}
       </div>
 
+      {/* Filtre par clinique */}
+      {onglets.length > 1 && (
+        <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+          {[{ v: null as CliniqueContenu | null, l: "Toutes" }, ...onglets.map(c => ({ v: c as CliniqueContenu | null, l: c === "LES_DEUX" ? "Communes (CMC + WSSC)" : CLINIQUE_INFO[c].nom }))].map(o => {
+            const actif = o.v === filtreActif
+            return (
+              <Link key={o.l} href={o.v ? `/admin/formations?clinique=${o.v}` : "/admin/formations"} style={{
+                padding: "6px 14px", borderRadius: "999px", fontSize: "13px", fontWeight: 600, textDecoration: "none",
+                background: actif ? "#111827" : "#fff", color: actif ? "#fff" : "#374151", border: "1px solid #e5e7eb",
+              }}>{o.l}</Link>
+            )
+          })}
+        </div>
+      )}
+
       {/* Formations table */}
       <div style={{
         background: "#fff",
@@ -124,11 +160,12 @@ export default async function AdminFormationsPage() {
           <thead>
             <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
               <th style={{ textAlign: "left", padding: "12px 20px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Titre</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Categorie</th>
+              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Clinique</th>
+              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Catégorie</th>
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Niveau</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: "600", color: "#dc2626", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Oblig. LSST</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Modules</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Assignees</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Assignées</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: "600", color: "#6b7280", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Statut</th>
               <th style={{ padding: "12px 20px" }}></th>
             </tr>
@@ -139,6 +176,7 @@ export default async function AdminFormationsPage() {
               return (
                 <tr key={f.id} className="formations-row" style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}>{f.titre}</td>
+                  <td style={{ padding: "14px 16px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></td>
                   <td style={{ padding: "14px 16px", color: "#6b7280" }}>{f.categorie}</td>
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{
@@ -190,7 +228,7 @@ export default async function AdminFormationsPage() {
             })}
             {(!formations || formations.length === 0) && (
               <tr>
-                <td colSpan={8} style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>
+                <td colSpan={9} style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>
                   Aucune formation pour le moment.
                 </td>
               </tr>

@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { CliniqueLogos } from '@/components/CliniqueBadge'
 import { serviceClient } from '@/lib/permissions'
 import { nombrePolitiquesEnAttente } from '@/lib/politiques'
+import { getEspace } from '@/lib/espace'
+import { ChoixEspace } from '@/components/ChoixEspace'
+import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE } from '@/lib/cliniques'
 
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
@@ -27,10 +30,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('auth_user_id', user.id)
     .single()
 
-  const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe) : 0
+  const espace = await getEspace(employe)
+  const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
-  // L'admin global (sans clinique) voit les deux logos
-  const cliniqueAffichee = employe?.clinique ?? (employe?.role === 'super_admin' ? 'LES_DEUX' : null)
+  // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
+  const cliniqueAffichee = espace.actif
+  const theme = espace.actif ? THEME_CLINIQUE[espace.actif] : THEME_NEUTRE
   const displayName = employe?.prenom && employe?.nom
     ? employe.prenom + ' ' + employe.nom
     : (user.email?.split('@')[0] || 'Utilisateur')
@@ -40,12 +45,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <aside className="dashboard-sidebar">
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
-          <div className="sidebar-subtitle">Espace employe</div>
+          <div className="sidebar-subtitle">
+            {cliniqueAffichee ? `Espace ${CLINIQUE_INFO[cliniqueAffichee].court} — ${CLINIQUE_INFO[cliniqueAffichee].nom}` : 'Espace employé'}
+          </div>
           {cliniqueAffichee && (
             <div style={{ marginTop: '14px', background: '#fff', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
               <CliniqueLogos clinique={cliniqueAffichee} hauteur={34} />
             </div>
           )}
+          <ChoixEspace actif={espace.actif} possibles={espace.possibles} />
         </div>
 
         <nav className="sidebar-nav">
@@ -62,7 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         <div className="sidebar-footer">
           <div className="sidebar-user-info">
-            <div className="sidebar-user-label">Connecte en tant que</div>
+            <div className="sidebar-user-label">Connecté en tant que</div>
             <div className="sidebar-user-name">{displayName}</div>
           </div>
           {isAdmin && (
@@ -73,7 +81,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           )}
           <Link href="/logout" className="sidebar-logout-btn">
             <span>🚪</span>
-            <span>Deconnexion</span>
+            <span>Déconnexion</span>
           </Link>
         </div>
       </aside>
@@ -86,7 +94,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .dashboard-shell { display: flex; min-height: 100vh; font-family: Inter, system-ui, sans-serif; }
         .dashboard-sidebar {
           width: 260px; min-width: 260px;
-          background: linear-gradient(160deg, #1e3a5f 0%, #0d2137 50%, #111827 100%);
+          background: ${theme.fondBarre};
           display: flex; flex-direction: column;
           box-shadow: 4px 0 24px rgba(0,0,0,0.4);
           position: sticky; top: 0; height: 100vh; overflow-y: auto;
@@ -102,7 +110,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           font-size: 14px; font-weight: 500;
           transition: background 0.15s ease, color 0.15s ease;
         }
-        .sidebar-nav-item:hover { background: rgba(255,255,255,0.1); color: #ffffff; }
+        .sidebar-nav-item:hover { background: rgba(255,255,255,0.12); color: #ffffff; }
+        .dashboard-shell { --accent-clinique: ${theme.accent}; }
         .sidebar-emoji { font-size: 18px; width: 26px; text-align: center; }
         .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.07); }
         .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.06); margin-bottom: 8px; }
@@ -111,7 +120,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .sidebar-admin-btn {
           display: flex; align-items: center; gap: 10px;
           padding: 10px 13px; border-radius: 10px; margin-bottom: 4px;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.25);
           color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600;
         }
         .sidebar-admin-btn:hover { opacity: 0.88; }
@@ -121,7 +130,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px;
         }
         .sidebar-logout-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
-        .dashboard-main { flex: 1; background: #f8fafc; min-height: 100vh; overflow-y: auto; padding: 32px; }
+        .dashboard-main { flex: 1; background: ${theme.fondPage}; min-height: 100vh; overflow-y: auto; padding: 32px; }
       `}</style>
     </div>
   )

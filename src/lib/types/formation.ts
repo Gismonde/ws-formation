@@ -15,6 +15,8 @@ export interface Formation {
   niveau: NiveauFormation | null
   duree_estimee_minutes: number | null
   publiee: boolean
+  /** Clinique de la formation : CMC, WSSC ou LES_DEUX (commune) */
+  clinique?: 'CMC' | 'WSSC' | 'LES_DEUX'
   validite_mois: number | null
   created_at: string
 }
