@@ -20,12 +20,12 @@ const EXTENSIONS: Record<string, string> = {
  */
 export async function POST(request: Request) {
   const createur = await getCreateurFormations()
-  if (!createur) return NextResponse.json({ error: 'Non autorise - creation de formations non permise' }, { status: 403 })
+  if (!createur) return NextResponse.json({ error: 'Non autorisé : création de formations non permise' }, { status: 403 })
 
   const { genre, type, taille } = await request.json() as { genre: GenreMedia; type: string; taille: number }
   const regle = REGLES_MEDIAS[genre]
-  if (!regle) return NextResponse.json({ error: 'Type de media inconnu' }, { status: 400 })
-  if (!regle.types.includes(type)) return NextResponse.json({ error: `Format non accepte (${regle.libelle})` }, { status: 400 })
+  if (!regle) return NextResponse.json({ error: 'Type de média inconnu' }, { status: 400 })
+  if (!regle.types.includes(type)) return NextResponse.json({ error: `Format non accepté (${regle.libelle})` }, { status: 400 })
   if (typeof taille !== 'number' || taille <= 0 || taille > regle.tailleMaxMo * 1024 * 1024) {
     return NextResponse.json({ error: `Fichier trop volumineux (${regle.libelle})` }, { status: 400 })
   }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 /** Adresses temporaires pour prévisualiser des médias privés dans l'éditeur. */
 export async function GET(request: Request) {
   const createur = await getCreateurFormations()
-  if (!createur) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!createur) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const refs = new URL(request.url).searchParams.getAll('ref')
   return NextResponse.json({ urls: await signerUrlsMedias(refs) })
 }

@@ -2,19 +2,22 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getActeur } from '@/lib/permissions'
-import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO } from '@/lib/cliniques'
+import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO, THEME_CLINIQUE, vuesAdminPossibles } from '@/lib/cliniques'
+import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
-  { href: '/admin/employes', label: 'Employes', icon: 'people' },
+  { href: '/admin/employes', label: 'Employés', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
-  { href: '/admin/conformite', label: 'Conformite', icon: 'verified' },
+  { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
-  { href: '/admin/departements', label: 'Departements', icon: 'apartment', adminOnly: true },
+  { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
+  { href: '/admin/sondages', label: 'Sondages', icon: 'reviews' },
+  { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
   { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
-  { href: '/admin/parametres', label: 'Parametres', icon: 'settings', adminOnly: true },
+  { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -26,9 +29,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard')
 
   const isAdmin = estAdministrateur(employe.role)
-  const perimetre = employe.role === 'super_admin'
-    ? 'CMC + WSSC'
-    : cliniquesDe(employe.clinique).map(c => CLINIQUE_INFO[c].court).join(' + ')
+  const perimetre = employe.vue
+    ? CLINIQUE_INFO[employe.vue].court
+    : employe.role === 'super_admin'
+      ? 'CMC + WSSC'
+      : cliniquesDe(employe.clinique).map(c => CLINIQUE_INFO[c].court).join(' + ')
+  // Une seule clinique (choisie ou unique) : la barre prend ses couleurs
+  const cliniqueTheme = employe.vue ?? (cliniquesDe(employe.clinique).length === 1 && employe.role !== 'super_admin' ? cliniquesDe(employe.clinique)[0] : null)
+  const fondBarre = cliniqueTheme ? THEME_CLINIQUE[cliniqueTheme].fondBarre : 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)'
   const visibleNav = adminNav.filter(item => !item.adminOnly || isAdmin)
 
   return (
@@ -41,10 +49,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         .admin-main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
       `}</style>
 
-      <aside style={{ width: '240px', background: 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)', color: '#fff', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100 }}>
+      <aside style={{ width: '240px', background: fondBarre, color: '#fff', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100 }}>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff' }}>WS Formation</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Administration</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+            Administration{cliniqueTheme ? ` — ${CLINIQUE_INFO[cliniqueTheme].nom}` : ''}
+          </div>
+          <ChoixVueAdmin vue={employe.vue ?? null} possibles={vuesAdminPossibles(employe.clinique, employe.role)} />
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
@@ -72,7 +83,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <form action='/api/auth/signout' method='POST'>
             <button type='submit' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', width: '100%' }}>
               <span className='material-icons' style={{ fontSize: '16px' }}>logout</span>
-              Deconnexion
+              Déconnexion
             </button>
           </form>
         </div>
@@ -84,7 +95,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '14px', color: '#6b7280' }}>{user.email}</span>
             <form action='/api/auth/signout' method='POST'>
-              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Deconnexion</button>
+              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Déconnexion</button>
             </form>
           </div>
         </header>

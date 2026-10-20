@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-    if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorise - creation de formations non permise' }, { status: 403 })
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorisé : création de formations non permise' }, { status: 403 })
 
     const formData = await req.formData()
     const file = formData.get('file') as File
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       })
 
     if (slideEntries.length === 0) {
-      return NextResponse.json({ error: 'Aucun slide trouve. Verifiez que le fichier est bien un .pptx' }, { status: 400 })
+      return NextResponse.json({ error: 'Aucune diapositive trouvée. Vérifiez que le fichier est bien un .pptx' }, { status: 400 })
     }
 
     const slides = slideEntries.map(([, data]) => {
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (modError || !module) {
-        return NextResponse.json({ error: 'Erreur creation module: ' + modError?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Erreur lors de la création du module : ' + modError?.message }, { status: 500 })
       }
 
       for (let i = 0; i < slides.length; i++) {
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
       success: true,
       slidesCount: slides.length,
       modulesCreated,
-      message: `${slides.length} slides importees avec succes !`
+      message: `${slides.length} diapositives importées avec succès !`
     })
 
   } catch (error: any) {

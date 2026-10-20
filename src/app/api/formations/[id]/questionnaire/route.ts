@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { chargerEtatQuestionnaire, emettreCertificat } from '@/lib/questionnaire-serveur'
+import { prerequisManquants, messagePrerequis } from '@/lib/prerequis'
 
 /**
  * Correction du questionnaire côté serveur.
@@ -23,6 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   ])
   if (!formation || !formation.publiee) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
   if (!assignation) return NextResponse.json({ error: 'Cette formation ne vous est pas assignée.' }, { status: 403 })
+  const manquants = await prerequisManquants(sb, acteur.id, formationId)
+  if (manquants.length) return NextResponse.json({ error: messagePrerequis(manquants) }, { status: 403 })
 
   // 2. Conditions d'accès au questionnaire
   const etat = await chargerEtatQuestionnaire(sb, acteur.id, formationId)

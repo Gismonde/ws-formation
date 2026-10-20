@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { serviceClient } from '@/lib/permissions'
 import { chargerEtatQuestionnaire } from '@/lib/questionnaire-serveur'
+import { etatSondage } from '@/lib/sondages'
 
 export default async function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -62,6 +63,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
   const modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
   const progressionPct = Math.max(etatQ.progressionPct, modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0)
   const estTerminee = progressionPct === 100
+  const sondage = isAdmin ? 'inactif' : await etatSondage(serviceClient(), employe.id, id)
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -106,6 +108,16 @@ export default async function FormationDetailPage({ params }: { params: Promise<
           </div>
         )}
 
+        {sondage === 'a_repondre' && (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-gray-900">💬 Votre avis compte</p>
+              <p className="text-sm text-gray-500">Aidez-nous à améliorer cette formation : 5 questions, 1 minute.</p>
+            </div>
+            <Link href={`/formations/${id}/sondage`} className="px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: 'var(--accent-clinique, #4f46e5)' }}>Donner mon avis</Link>
+          </div>
+        )}
+
         {/* Info formation */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mb-2 inline-block">{formation.categorie}</span>
@@ -119,7 +131,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
             <div className="bg-gray-100 rounded-full h-2">
               <div
                 className="h-2 rounded-full transition-all"
-                style={{ width: progressionPct + '%', background: estTerminee ? '#10b981' : '#6366f1' }}
+                style={{ width: progressionPct + '%', background: estTerminee ? '#10b981' : 'var(--accent-clinique)' }}
               />
             </div>
           </div>

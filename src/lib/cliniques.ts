@@ -7,7 +7,7 @@ export type Role = 'super_admin' | 'admin' | 'gestionnaire' | 'employe'
 export const CLINIQUES: Clinique[] = ['CMC', 'WSSC']
 
 export const CLINIQUE_INFO: Record<Clinique, { nom: string; court: string; logo: string; couleur: string; fond: string }> = {
-  CMC: { nom: 'Complexe Chirurgical CMC', court: 'CMC', logo: '/logos/cmc.png', couleur: '#8a7a6b', fond: '#f5f1ec' },
+  CMC: { nom: 'Centre Métropolitain de Chirurgie', court: 'CMC', logo: '/logos/cmc.png', couleur: '#8a7a6b', fond: '#f5f1ec' },
   WSSC: { nom: 'Westmount Square Surgical Center', court: 'WSSC', logo: '/logos/wssc.png', couleur: '#1e3a6e', fond: '#eef2fa' },
 }
 
@@ -78,6 +78,17 @@ export function cliniquesContenuDeLEspace(espace: Clinique | null): CliniqueCont
 // Espace employé (CMC / WSSC) et thème visuel
 // ---------------------------------------------------------------------------
 
+/** Cookie de la vue de l'espace Admin (CMC, WSSC ; absent = les deux). */
+export const VUE_ADMIN_COOKIE = 'ws_vue_admin'
+
+/** Vues Admin possibles : seulement pour l'équipe rattachée aux deux cliniques (ou l'admin global). */
+export function vuesAdminPossibles(cliniqueEmploye: string | null | undefined, role: string | null | undefined): Clinique[] {
+  if (role === 'super_admin') return ['CMC', 'WSSC']
+  if (!aAccesAdmin(role)) return []
+  const cl = cliniquesDe(cliniqueEmploye)
+  return cl.length > 1 ? cl : []
+}
+
 /** Cookie qui mémorise l'espace choisi par un employé rattaché aux deux cliniques. */
 export const ESPACE_COOKIE = 'ws_espace'
 
@@ -103,8 +114,14 @@ export function espacesPossibles(cliniqueEmploye: string | null | undefined, rol
 export type ThemeClinique = {
   /** Dégradé de la barre latérale */
   fondBarre: string
-  /** Couleur d'accent (boutons, liens actifs) */
+  /** Couleur d'accent (boutons, liens actifs, barres de progression) */
   accent: string
+  /** Accent plus foncé (survol, textes sur fond clair) */
+  accentFonce: string
+  /** Fond très clair de l'accent (badges, encadrés) */
+  accentClair: string
+  /** Dégradé des vignettes de formation */
+  degrade: string
   /** Fond clair de la zone principale */
   fondPage: string
 }
@@ -113,11 +130,17 @@ export const THEME_CLINIQUE: Record<Clinique, ThemeClinique> = {
   CMC: {
     fondBarre: 'linear-gradient(160deg, #8a7a6b 0%, #5e5246 55%, #3b332b 100%)',
     accent: '#8a7a6b',
+    accentFonce: '#5e5246',
+    accentClair: '#f3eee8',
+    degrade: 'linear-gradient(135deg, #a8988a 0%, #6f6154 100%)',
     fondPage: '#faf8f5',
   },
   WSSC: {
     fondBarre: 'linear-gradient(160deg, #1e3a6e 0%, #142a52 55%, #0b1a36 100%)',
     accent: '#1e3a6e',
+    accentFonce: '#142a52',
+    accentClair: '#e8eef8',
+    degrade: 'linear-gradient(135deg, #3a5ea0 0%, #1e3a6e 100%)',
     fondPage: '#f5f7fc',
   },
 }
@@ -125,6 +148,21 @@ export const THEME_CLINIQUE: Record<Clinique, ThemeClinique> = {
 /** Thème neutre (employé sans clinique). */
 export const THEME_NEUTRE: ThemeClinique = {
   fondBarre: 'linear-gradient(160deg, #1e3a5f 0%, #0d2137 50%, #111827 100%)',
-  accent: '#2563eb',
+  accent: '#4f46e5',
+  accentFonce: '#3730a3',
+  accentClair: '#eef2ff',
+  degrade: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
   fondPage: '#f8fafc',
+}
+
+/** Variables CSS du thème, utilisées par toutes les pages de l'espace employé. */
+export function variablesTheme(t: ThemeClinique): Record<string, string> {
+  return {
+    '--accent-clinique': t.accent,
+    '--accent-clinique-fonce': t.accentFonce,
+    '--accent-clinique-clair': t.accentClair,
+    '--degrade-clinique': t.degrade,
+    '--fond-clinique': t.fondPage,
+    '--barre-clinique': t.fondBarre,
+  }
 }

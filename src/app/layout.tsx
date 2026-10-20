@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </span>
           <span style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <Link href="/confidentialite" style={{ color: "#6b7280", textDecoration: "underline" }}>
-              Politique de confidentialite
+              Politique de confidentialité
             </Link>
             <a href="mailto:confidentialite@wssurgical.com" style={{ color: "#6b7280", textDecoration: "underline" }}>
               RPP: confidentialite@wssurgical.com

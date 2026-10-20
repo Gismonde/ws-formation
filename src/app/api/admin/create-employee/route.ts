@@ -7,8 +7,8 @@ import { origineDepuis } from '@/lib/courriels'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-  if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+  if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const body = await request.json()
   const { prenom, nom, poste } = body
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'EMPLOYE_CREE',
-    description: `Nouvel employe cree : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
+    description: `Nouvel employé créé : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
     cible_employe_id: newEmp?.id ?? null,
     metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye },
     ...ipEtAgent(request),

@@ -40,7 +40,7 @@ const quickActions = [
         bg: '#f0fdf4',
   },
   {
-        href: '/admin/audit-log',
+        href: '/admin/audit',
         icon: 'history',
         title: 'Audit Log',
         desc: 'Journal immuable de toutes les actions et événements de la plateforme',

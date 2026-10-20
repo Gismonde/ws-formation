@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       await logAudit({
             acteur_id: emp.id,
             type_action: 'CONNEXION_ECHOUEE',
-            description: `Tentative de connexion echouee pour ${email}`,
+            description: `Tentative de connexion échouée pour ${email}`,
             ip_address: ip,
             user_agent: userAgent,
           })
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       await logAudit({
             acteur_id: employe.id,
             type_action: 'CONNEXION',
-            description: `Connexion reussie pour ${email}`,
+            description: `Connexion réussie pour ${email}`,
             ip_address: ip,
             user_agent: userAgent,
           })

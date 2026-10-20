@@ -6,8 +6,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
-    if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorise - creation de formations non permise' }, { status: 403 })
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorisé : création de formations non permise' }, { status: 403 })
 
     const serviceClient = createServiceClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-          return NextResponse.json({ error: 'Type non supporte. Utilisez JPG, PNG, GIF ou WebP.' }, { status: 400 })
+          return NextResponse.json({ error: 'Type non pris en charge. Utilisez JPG, PNG, GIF ou WebP.' }, { status: 400 })
         }
 
     if (file.size > 10 * 1024 * 1024) {

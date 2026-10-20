@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getEspace } from '@/lib/espace'
+import { serviceClient } from '@/lib/permissions'
+import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
+import { prerequisManquants } from '@/lib/prerequis'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -92,19 +95,26 @@ export default async function DashboardPage() {
     if (!resultatMap.has(r.formation_id)) resultatMap.set(r.formation_id, r)
   })
 
+  // Avancement réel (leçons ou modules, certificat) et verrouillage par prérequis
+  const sb = serviceClient()
+  const etat = await chargerEtatsFormations(sb, [employe.id], formations.map((f: any) => f.id))
   const formationsAvecProgression = await Promise.all(
     formations.map(async (f: any) => {
-      const { data: modules } = await supabase.from('modules').select('id').eq('formation_id', f.id)
-      const total = modules?.length ?? 0
-      const termines = progressions?.filter((p: any) => p.formation_id === f.id && p.statut === 'termine').length ?? 0
-      const pct = total > 0 ? Math.round((termines / total) * 100) : 0
+      const e = etat(employe.id, f.id)
       const certif = certMap.get(f.id) ?? null
       const resultat = resultatMap.get(f.id) ?? null
-      // Date de dernière activité
       const derniereProg = progressions
         ?.filter((p: any) => p.formation_id === f.id && p.updated_at)
         .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
-      return { ...f, progressionPct: pct, certifie: !!certif, certif, resultat, derniereActivite: derniereProg?.updated_at ?? null }
+      const prerequis = e.progression > 0 ? [] : await prerequisManquants(sb, employe.id, f.id)
+      return {
+        ...f,
+        progressionPct: estComplete(e.statut) ? 100 : Math.min(e.progression, 99),
+        certifie: e.certificat_valide, certif, resultat,
+        derniereActivite: derniereProg?.updated_at ?? e.certificat?.date_emission ?? null,
+        verrouillee: prerequis.length > 0,
+        prerequis: prerequis.map(p => p.titre),
+      }
     })
   )
 
@@ -126,7 +136,7 @@ export default async function DashboardPage() {
       {/* Compteurs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
-          <p style={{ fontSize: '28px', fontWeight: '700', color: '#6366f1', margin: 0 }}>{formationsAvecProgression.length}</p>
+          <p style={{ fontSize: '28px', fontWeight: '700', color: 'var(--accent-clinique)', margin: 0 }}>{formationsAvecProgression.length}</p>
           <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Formation(s) assignée(s)</p>
         </div>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
@@ -149,22 +159,29 @@ export default async function DashboardPage() {
             {enCours.map((f: any) => (
               <Link key={f.id} href={'/formations/' + f.id} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.15s' }}>
-                  <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <div style={{ background: 'var(--degrade-clinique)', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     <span style={{ fontSize: '32px' }}>📚</span>
-                    {f.progressionPct === 0 && (
+                    {f.verrouillee ? (
+                      <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', color: '#92400e', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>🔒 Verrouillée</span>
+                    ) : f.progressionPct === 0 && (
                       <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', color: '#374151', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>Nouveau</span>
                     )}
                   </div>
                   <div style={{ padding: '16px' }}>
                     <h3 style={{ fontWeight: '600', color: '#1a1f36', fontSize: '14px', margin: '0 0 4px 0' }}>{f.titre}</h3>
                     <p style={{ color: '#6b7280', fontSize: '12px', marginBottom: '12px' }}>{f.description?.slice(0, 60)}{f.description?.length > 60 ? '...' : ''}</p>
+                    {f.verrouillee && (
+                      <p style={{ color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '11px', padding: '6px 8px', margin: '0 0 12px' }}>
+                        À faire d’abord : {f.prerequis.join(', ')}
+                      </p>
+                    )}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
                         <span>Progression</span>
                         <span style={{ fontWeight: '500' }}>{f.progressionPct}%</span>
                       </div>
                       <div style={{ background: '#f3f4f6', borderRadius: '99px', height: '6px' }}>
-                        <div style={{ height: '6px', borderRadius: '99px', background: '#6366f1', width: f.progressionPct + '%' }} />
+                        <div style={{ height: '6px', borderRadius: '99px', background: 'var(--accent-clinique)', width: f.progressionPct + '%' }} />
                       </div>
                     </div>
                     {f.progressionPct > 0 && f.derniereActivite && (
@@ -211,7 +228,7 @@ export default async function DashboardPage() {
                         Complétée le {formatDate(f.derniereActivite)}
                       </p>
                     )}
-                    <p style={{ fontSize: '12px', color: '#6366f1', marginTop: '8px', marginBottom: 0, fontWeight: '500' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--accent-clinique)', marginTop: '8px', marginBottom: 0, fontWeight: '500' }}>
                       Revoir le contenu →
                     </p>
                   </div>

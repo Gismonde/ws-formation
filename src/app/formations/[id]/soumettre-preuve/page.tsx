@@ -52,7 +52,7 @@ export default function SoumettrePreuvePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!file) { setError('Veuillez selectionner un fichier'); return }
+    if (!file) { setError('Veuillez sélectionner un fichier'); return }
     setLoading(true)
     setError('')
 
@@ -97,7 +97,7 @@ export default function SoumettrePreuvePage() {
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-6">
         <a href={'/formations/' + formationId} className="text-blue-600 hover:underline text-sm">
-          Retour a la formation
+          Retour à la formation
         </a>
         <h1 className="text-2xl font-bold mt-2">Soumettre une preuve externe</h1>
         {formation && <p className="text-gray-600 mt-1">{formation.titre}</p>}
@@ -140,7 +140,7 @@ export default function SoumettrePreuvePage() {
 
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-            Document soumis avec succes! Un administrateur va examiner votre preuve.
+            Document soumis avec succès ! Un administrateur va examiner votre preuve.
           </div>
         )}
         {error && (

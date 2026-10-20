@@ -7,7 +7,7 @@ import { estVise, Politique, TEXTE_CONFIRMATION_POLITIQUE } from '@/lib/politiqu
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
-  if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+  if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   const { version, lu } = await request.json()
   if (lu !== true) return NextResponse.json({ error: 'Cochez « J’ai lu et compris »' }, { status: 400 })

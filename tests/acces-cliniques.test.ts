@@ -215,3 +215,43 @@ describe('Politiques', () => {
     expect(estVise({ clinique: 'CMC', departements: ['autre'] }, employeCMC)).toBe(false)
   })
 })
+
+describe('Vue CMC / WSSC dans l’espace Admin', () => {
+  const superCMC = { ...superAdmin, vue: 'CMC' as const }
+  const adminDeuxWSSC = { ...adminDeux, vue: 'WSSC' as const }
+
+  it("l'admin global en vue CMC ne voit que le CMC et le contenu commun", () => {
+    expect(cliniquesContenuVisibles(superCMC).sort()).toEqual(['CMC', 'LES_DEUX'])
+    expect(peutVoirContenu(superCMC, 'WSSC')).toBe(false)
+    expect(peutVoirEmploye(superCMC, { role: 'employe', clinique: 'WSSC' })).toBe(false)
+    expect(peutVoirEmploye(superCMC, { role: 'employe', clinique: 'LES_DEUX' })).toBe(true)
+  })
+
+  it('la liste des employés suit la vue', () => {
+    const filtres: unknown[] = []
+    const q = { eq(...x: unknown[]) { filtres.push(['eq', ...x]); return q }, in(...x: unknown[]) { filtres.push(['in', ...x]); return q } }
+    filtrerEmployes(q, superCMC)
+    expect(filtres).toEqual([['in', 'clinique', ['CMC', 'LES_DEUX']]])
+  })
+
+  it('un admin des deux cliniques en vue WSSC ne gère que le WSSC (et le commun)', () => {
+    expect(cliniquesContenuGerables(adminDeuxWSSC).sort()).toEqual(['LES_DEUX', 'WSSC'])
+    expect(peutVoirEmploye(adminDeuxWSSC, { role: 'employe', clinique: 'CMC' })).toBe(false)
+  })
+
+  it('la vue ne donne jamais plus de droits', () => {
+    const adminCMCVueWSSC = { ...adminCMC, vue: 'WSSC' as const }
+    expect(peutVoirContenu(adminCMCVueWSSC, 'WSSC')).toBe(false)
+    expect(cliniquesContenuGerables(adminCMCVueWSSC)).toEqual([])
+  })
+})
+
+import { vuesAdminPossibles } from '@/lib/cliniques'
+describe('Vues Admin proposées', () => {
+  it('seulement pour l’admin global et l’équipe des deux cliniques', () => {
+    expect(vuesAdminPossibles(null, 'super_admin')).toEqual(['CMC', 'WSSC'])
+    expect(vuesAdminPossibles('LES_DEUX', 'admin')).toEqual(['CMC', 'WSSC'])
+    expect(vuesAdminPossibles('CMC', 'admin')).toEqual([])
+    expect(vuesAdminPossibles('LES_DEUX', 'employe')).toEqual([])
+  })
+})

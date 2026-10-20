@@ -18,7 +18,7 @@ import { estMediaPrive } from '@/lib/medias'
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
-  if (!acteur) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+  if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   const sb = serviceClient()
   const { data } = await sb.from('politiques').select('*').eq('id', id).single()
   const pol = data as Politique | null
@@ -38,14 +38,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ success: true, courriels: envoi.envoyes })
   }
 
-  if (!peutGererPolitique(acteur, pol)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!peutGererPolitique(acteur, pol)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   if (action === 'modifier') {
     const v = await validerCiblage(acteur, body, sb)
     if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
     const { error } = await sb.from('politiques').update({ ...v.valeurs, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    await logAudit({ acteur_id: acteur.id, type_action: 'POLITIQUE_MODIFIEE', description: `Politique modifiee : ${v.valeurs.titre}`, metadata: { politique_id: id }, ...ipEtAgent(request) })
+    await logAudit({ acteur_id: acteur.id, type_action: 'POLITIQUE_MODIFIEE', description: `Politique modifiée : ${v.valeurs.titre}`, metadata: { politique_id: id }, ...ipEtAgent(request) })
     return NextResponse.json({ success: true })
   }
 

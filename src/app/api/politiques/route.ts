@@ -8,7 +8,7 @@ import { estMediaPrive } from '@/lib/medias'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !peutPublierPolitiques(acteur)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 })
+  if (!acteur || !peutPublierPolitiques(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const body = await request.json()
   const sb = serviceClient()
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'POLITIQUE_PUBLIEE',
-    description: `Politique publiee : ${pol.titre} (${pol.clinique}${pol.departements.length ? `, ${pol.departements.length} departement(s)` : ', toute la clinique'})`,
+    description: `Politique publiée : ${pol.titre} (${pol.clinique}${pol.departements.length ? `, ${pol.departements.length} departement(s)` : ', toute la clinique'})`,
     metadata: { politique_id: pol.id, version: 1 },
     ...ipEtAgent(request),
   })

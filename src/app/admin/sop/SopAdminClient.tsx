@@ -18,7 +18,7 @@ type SOP = {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'employe',      label: 'Tous les employes',  desc: 'Visible par tous les employes' },
+  { value: 'employe',      label: 'Tous les employés',  desc: 'Visible par tous les employés' },
   { value: 'gestionnaire', label: 'Gestionnaires',       desc: 'Gestionnaires et admins seulement' },
   { value: 'admin',        label: 'Admins seulement',    desc: 'Admins uniquement' },
 ]
@@ -111,7 +111,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
     }
     setSaving(false)
     if (err) { setError(err.message); return }
-    setSuccess(editing ? 'SOP mise a jour.' : 'SOP creee.')
+    setSuccess(editing ? 'SOP mise à jour.' : 'SOP créée.')
     setShowForm(false)
     setTimeout(() => { setSuccess(null); loadSops() }, 1500)
   }
@@ -132,7 +132,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: 0 }}>Gestion des SOP</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>Procedures operationnelles standard — {sops.length} SOP{sops.length !== 1 ? 's' : ''}</p>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>Procédures opérationnelles normalisées — {sops.length} SOP{sops.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
           + Nouvelle SOP
@@ -143,7 +143,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
       {error && !showForm && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>Erreur : {error}</div>}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {[{ v: 'all', l: 'Toutes' }, { v: 'employe', l: 'Employes' }, { v: 'gestionnaire', l: 'Gestionnaires' }, { v: 'admin', l: 'Admin' }].map(f => (
+        {[{ v: 'all', l: 'Toutes' }, { v: 'employe', l: 'Employés' }, { v: 'gestionnaire', l: 'Gestionnaires' }, { v: 'admin', l: 'Admin' }].map(f => (
           <button key={f.v} onClick={() => setFilterRole(f.v)} style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '500', border: '1px solid', cursor: 'pointer', background: filterRole === f.v ? '#6366f1' : '#fff', color: filterRole === f.v ? '#fff' : '#374151', borderColor: filterRole === f.v ? '#6366f1' : '#e5e7eb' }}>
             {f.l}
           </button>
@@ -157,8 +157,8 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
             {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>Erreur : {error}</div>}
 
             {[
-              { label: 'Titre *', key: 'titre', placeholder: 'Ex. : SOP-01 — Onboarding employe' },
-              { label: 'Categorie', key: 'categorie', placeholder: 'Ex. : Ressources humaines' },
+              { label: 'Titre *', key: 'titre', placeholder: 'Ex. : SOP-01 — Accueil d’un employé' },
+              { label: 'Catégorie', key: 'categorie', placeholder: 'Ex. : Ressources humaines' },
               { label: 'Version', key: 'version', placeholder: '1.0' },
               { label: 'URL du fichier (optionnel)', key: 'fichier_url', placeholder: 'https://...' },
             ].map(({ label, key, placeholder }) => (
@@ -214,7 +214,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowForm(false); setError(null) }} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>Annuler</button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Enregistrement...' : editing ? 'Mettre a jour' : 'Creer'}
+                {saving ? 'Enregistrement...' : editing ? 'Mettre à jour' : 'Creer'}
               </button>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '60px', textAlign: 'center' }}>
           <p style={{ fontSize: '40px', margin: '0 0 12px' }}>📄</p>
           <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>Aucune SOP trouvee</p>
-          <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>Cliquez sur Nouvelle SOP pour en creer une.</p>
+          <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>Cliquez sur Nouvelle SOP pour en créer une.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

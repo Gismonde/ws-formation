@@ -15,7 +15,7 @@ export async function upsertLessonProgression(payload: {
 }): Promise<ActionResult<LessonProgression>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data: employe } = await supabase
     .from('employes')
@@ -23,7 +23,7 @@ export async function upsertLessonProgression(payload: {
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return { success: false, error: 'Employe introuvable' }
+  if (!employe) return { success: false, error: 'Employé introuvable' }
 
   const now = new Date().toISOString()
   const update: Record<string, unknown> = {
@@ -54,7 +54,7 @@ export async function upsertLessonProgression(payload: {
 export async function getLessonProgressions(lessonId: string): Promise<ActionResult<LessonProgression[]>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data, error } = await supabase
     .from('lesson_progressions')
@@ -68,7 +68,7 @@ export async function getLessonProgressions(lessonId: string): Promise<ActionRes
 export async function getMyLessonProgressions(moduleId: string): Promise<ActionResult<LessonProgression[]>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data: employe } = await supabase
     .from('employes')
@@ -76,7 +76,7 @@ export async function getMyLessonProgressions(moduleId: string): Promise<ActionR
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return { success: false, error: 'Employe introuvable' }
+  if (!employe) return { success: false, error: 'Employé introuvable' }
 
   const { data, error } = await supabase
     .from('lesson_progressions')
@@ -99,7 +99,7 @@ export async function upsertModuleProgression(payload: {
 }): Promise<ActionResult<Progression>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data: employe } = await supabase
     .from('employes')
@@ -107,7 +107,7 @@ export async function upsertModuleProgression(payload: {
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return { success: false, error: 'Employe introuvable' }
+  if (!employe) return { success: false, error: 'Employé introuvable' }
 
   const now = new Date().toISOString()
   const update: Record<string, unknown> = {
@@ -140,7 +140,7 @@ export async function upsertModuleProgression(payload: {
 export async function syncModuleProgression(moduleId: string): Promise<ActionResult<Progression>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data: employe } = await supabase
     .from('employes')
@@ -148,7 +148,7 @@ export async function syncModuleProgression(moduleId: string): Promise<ActionRes
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return { success: false, error: 'Employe introuvable' }
+  if (!employe) return { success: false, error: 'Employé introuvable' }
 
   // Compter les lecons du module
   const { count: totalLessons } = await supabase
@@ -188,7 +188,7 @@ export async function syncModuleProgression(moduleId: string): Promise<ActionRes
 export async function getProgressionResume(formationId: string): Promise<ActionResult<ProgressionResume>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Non authentifie' }
+  if (!user) return { success: false, error: 'Non authentifié' }
 
   const { data: employe } = await supabase
     .from('employes')
@@ -196,7 +196,7 @@ export async function getProgressionResume(formationId: string): Promise<ActionR
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return { success: false, error: 'Employe introuvable' }
+  if (!employe) return { success: false, error: 'Employé introuvable' }
 
   const { data: formation } = await supabase
     .from('formations')

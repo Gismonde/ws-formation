@@ -9,9 +9,10 @@
 
 import { createClient as createServiceClient, SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import {
   Clinique, CliniqueEmploye, CliniqueContenu, Role,
-  cliniquesDe, estCliniqueEmploye, estRole,
+  cliniquesDe, estCliniqueEmploye, estRole, VUE_ADMIN_COOKIE, vuesAdminPossibles,
 } from '@/lib/cliniques'
 
 export type Acteur = {
@@ -25,6 +26,11 @@ export type Acteur = {
   departement_id: string | null
   /** Gestionnaire autorisé à créer/modifier des formations (les admins le sont toujours) */
   peut_creer_formations: boolean
+  /**
+   * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
+   * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
+   */
+  vue?: Clinique | null
 }
 
 export type CibleEmploye = {
@@ -59,6 +65,12 @@ export async function getActeur(): Promise<Acteur | null> {
     .single()
 
   if (!data || data.actif === false || !estRole(data.role)) return null
+  const clinique = estCliniqueEmploye(data.clinique) ? data.clinique : null
+  let vue: Clinique | null = null
+  try {
+    const choix = (await cookies()).get(VUE_ADMIN_COOKIE)?.value
+    if (vuesAdminPossibles(clinique, data.role).includes(choix as Clinique)) vue = choix as Clinique
+  } catch { /* hors requête (tâche planifiée) : pas de vue */ }
   return {
     id: data.id,
     auth_user_id: data.auth_user_id,
@@ -66,9 +78,10 @@ export async function getActeur(): Promise<Acteur | null> {
     nom: data.nom,
     email: data.email,
     role: data.role,
-    clinique: estCliniqueEmploye(data.clinique) ? data.clinique : null,
+    clinique,
     departement_id: data.departement_id ?? null,
     peut_creer_formations: data.peut_creer_formations === true,
+    vue,
   }
 }
 
@@ -91,9 +104,14 @@ export async function getCreateurFormations(): Promise<Acteur | null> {
 
 /** Cliniques administrées par l'acteur (vide si gestionnaire/employé). */
 export function cliniquesAdministrees(a: Acteur): Clinique[] {
-  if (a.role === 'super_admin') return ['CMC', 'WSSC']
-  if (a.role === 'admin') return cliniquesDe(a.clinique)
-  return []
+  const base: Clinique[] = a.role === 'super_admin' ? ['CMC', 'WSSC'] : a.role === 'admin' ? cliniquesDe(a.clinique) : []
+  return dansLaVue(a, base)
+}
+
+/** Restreint une liste de cliniques à la vue choisie (si elle en fait partie). */
+function dansLaVue<T extends string>(a: Acteur, liste: T[]): T[] {
+  if (!a.vue) return liste
+  return liste.filter(c => c === a.vue || c === 'LES_DEUX')
 }
 
 // ---------------------------------------------------------------------------
@@ -104,8 +122,8 @@ export function cliniquesAdministrees(a: Acteur): Clinique[] {
 
 /** Cliniques de contenu que l'acteur peut VOIR dans l'espace Admin (tous rôles). */
 export function cliniquesContenuVisibles(a: Acteur): CliniqueContenu[] {
-  if (a.role === 'super_admin') return ['CMC', 'WSSC', 'LES_DEUX']
-  return [...cliniquesDe(a.clinique), 'LES_DEUX']
+  if (a.role === 'super_admin') return dansLaVue<CliniqueContenu>(a, ['CMC', 'WSSC', 'LES_DEUX'])
+  return dansLaVue<CliniqueContenu>(a, [...cliniquesDe(a.clinique), 'LES_DEUX'])
 }
 
 /**
@@ -115,10 +133,10 @@ export function cliniquesContenuVisibles(a: Acteur): CliniqueContenu[] {
  *  - admin / gestionnaire autorisé d'une seule clinique : cette clinique seulement
  */
 export function cliniquesContenuGerables(a: Acteur): CliniqueContenu[] {
-  if (a.role === 'super_admin') return ['CMC', 'WSSC', 'LES_DEUX']
+  if (a.role === 'super_admin') return dansLaVue<CliniqueContenu>(a, ['CMC', 'WSSC', 'LES_DEUX'])
   if (!peutCreerFormations(a)) return []
-  if (a.clinique === 'LES_DEUX') return ['CMC', 'WSSC', 'LES_DEUX']
-  return cliniquesDe(a.clinique)
+  if (a.clinique === 'LES_DEUX') return dansLaVue<CliniqueContenu>(a, ['CMC', 'WSSC', 'LES_DEUX'])
+  return dansLaVue<CliniqueContenu>(a, cliniquesDe(a.clinique))
 }
 
 export function peutVoirContenu(a: Acteur, clinique: string | null | undefined): boolean {
@@ -145,7 +163,7 @@ function inclus(x: Clinique[], y: Clinique[]) { return x.length > 0 && x.every(c
 /** Restreint une requête sur la table employes à la portée de l'acteur. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Acteur): Q {
-  if (a.role === 'super_admin') return query
+  if (a.role === 'super_admin') return a.vue ? query.in('clinique', [a.vue, 'LES_DEUX']) : query
   if (a.role === 'admin') {
     const cl = cliniquesAdministrees(a)
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
@@ -153,7 +171,7 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
   }
   if (a.role === 'gestionnaire' && a.departement_id) {
     // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
-    const cl = cliniquesDe(a.clinique)
+    const cl = dansLaVue(a, cliniquesDe(a.clinique))
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
     return query.eq('departement_id', a.departement_id).in('clinique', [...cl, 'LES_DEUX'])
   }
@@ -162,18 +180,18 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
 
 /** L'acteur peut-il consulter le dossier de cet employé ? */
 export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
-  if (a.role === 'super_admin') return true
+  if (a.role === 'super_admin') return !a.vue || cliniquesDe(c.clinique).includes(a.vue)
   if (a.role === 'admin') return intersecte(cliniquesDe(c.clinique), cliniquesAdministrees(a))
   if (a.role === 'gestionnaire') {
     return !!a.departement_id && c.departement_id === a.departement_id
-      && intersecte(cliniquesDe(c.clinique), cliniquesDe(a.clinique))
+      && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))
   }
   return false
 }
 
 /** IDs des employés dans la portée (null = tous, pour l'admin global). */
 export async function idsEmployesDansPortee(a: Acteur, sb = serviceClient()): Promise<string[] | null> {
-  if (a.role === 'super_admin') return null
+  if (a.role === 'super_admin' && !a.vue) return null
   const { data } = await filtrerEmployes(sb.from('employes').select('id'), a)
   return (data ?? []).map((e: { id: string }) => e.id)
 }
@@ -296,4 +314,11 @@ export function ipEtAgent(req: Request) {
     ip_address: ipRaw ? ipRaw.split(',')[0].trim() : null,
     user_agent: req.headers.get('user-agent') ?? null,
   }
+}
+
+/** Libellé court de la portée de l'acteur (rapports, exports). */
+export function libellePerimetre(a: Acteur): string {
+  if (a.role === 'gestionnaire') return 'mon département'
+  const cl = cliniquesAdministrees(a)
+  return cl.length ? cl.join(' + ') : 'aucune clinique'
 }

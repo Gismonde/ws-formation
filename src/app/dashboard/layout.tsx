@@ -6,7 +6,7 @@ import { serviceClient } from '@/lib/permissions'
 import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 import { getEspace } from '@/lib/espace'
 import { ChoixEspace } from '@/components/ChoixEspace'
-import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE } from '@/lib/cliniques'
+import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
 const employeNav = [
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
@@ -111,7 +111,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           transition: background 0.15s ease, color 0.15s ease;
         }
         .sidebar-nav-item:hover { background: rgba(255,255,255,0.12); color: #ffffff; }
-        .dashboard-shell { --accent-clinique: ${theme.accent}; }
+        .dashboard-shell { ${Object.entries(variablesTheme(theme)).map(([k, v]) => `${k}: ${v};`).join(' ')} }
+        .dashboard-main .bg-indigo-600, .dashboard-main .bg-blue-600 { background-color: var(--accent-clinique) !important; }
+        .dashboard-main .text-indigo-600, .dashboard-main .text-blue-600, .dashboard-main .text-indigo-700 { color: var(--accent-clinique) !important; }
+        .dashboard-main .bg-indigo-50, .dashboard-main .bg-blue-50 { background-color: var(--accent-clinique-clair) !important; }
         .sidebar-emoji { font-size: 18px; width: 26px; text-align: center; }
         .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.07); }
         .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.06); margin-bottom: 8px; }

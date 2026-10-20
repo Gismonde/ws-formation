@@ -43,7 +43,7 @@ export default async function SOPPage() {
     .order('created_at', { ascending: true })
 
   const sopList: SOP[] = sops ?? []
-  const categories = Array.from(new Set(sopList.map(s => s.categorie ?? 'General'))).sort()
+  const categories = Array.from(new Set(sopList.map(s => s.categorie ?? 'Général'))).sort()
 
   const userRole = employe.role ?? 'employe'
   const isGestionnaire = ['gestionnaire', 'admin', 'super_admin'].includes(userRole)
@@ -54,11 +54,11 @@ export default async function SOPPage() {
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Mes SOP</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Procedures operationnelles standard disponibles pour votre role
+          Procédures opérationnelles normalisées disponibles pour votre rôle
         </p>
         <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
           <span style={{ background: '#dcfce7', color: '#166534', borderRadius: '8px', padding: '3px 10px', fontSize: '12px', fontWeight: '500' }}>
-            Employes
+            Employés
           </span>
           {isGestionnaire && (
             <span style={{ background: '#dbeafe', color: '#1e40af', borderRadius: '8px', padding: '3px 10px', fontSize: '12px', fontWeight: '500' }}>
@@ -80,12 +80,12 @@ export default async function SOPPage() {
       ) : (
         <div>
           {categories.map(cat => {
-            const sopsInCat = sopList.filter(s => (s.categorie ?? 'General') === cat)
+            const sopsInCat = sopList.filter(s => (s.categorie ?? 'Général') === cat)
             return (
               <div key={cat} style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#1a1f36' }}>{cat}</span>
-                  <span style={{ background: '#e0e7ff', color: '#4338ca', borderRadius: '12px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>
+                  <span style={{ background: 'var(--accent-clinique-clair)', color: 'var(--accent-clinique-fonce)', borderRadius: '12px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>
                     {sopsInCat.length}
                   </span>
                 </div>
@@ -110,11 +110,11 @@ export default async function SOPPage() {
                             <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#6b7280', lineHeight: '1.5' }}>{sop.description}</p>
                           )}
                           <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>
-                            Mise a jour le {new Date(sop.updated_at ?? sop.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            Mise à jour le {new Date(sop.updated_at ?? sop.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                           </p>
                         </div>
                         {sop.fichier_url && (
-                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
+                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--accent-clinique)', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
                             Consulter
                           </a>
                         )}

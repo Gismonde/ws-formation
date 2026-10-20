@@ -193,7 +193,7 @@ export default function DepuisPPPage() {
         })
         .select()
         .single()
-      if (errF || !formation) throw new Error(errF?.message || "Erreur creation formation")
+      if (errF || !formation) throw new Error(errF?.message || "Erreur lors de la création de la formation")
       formationId = formation.id
 
       // Etape 2: Import PPTX

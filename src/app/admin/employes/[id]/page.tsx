@@ -38,7 +38,7 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
   await sb.from("audit_logs").insert({
     acteur_id: acteur.id,
     type_action: "CONSULTATION_DOSSIER",
-    description: "Consultation du dossier employe par " + acteur.role,
+    description: "Consultation du dossier employé par " + acteur.role,
     cible_employe_id: id,
     ip_address: ipRaw ? ipRaw.split(",")[0].trim() : null,
     user_agent: headersList.get("user-agent") || null,
@@ -48,8 +48,8 @@ export default async function EditEmployePage({ params }: { params: Promise<{ id
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <div className="mb-6">
-        <a href="/admin/employes" className="text-sm text-blue-600 hover:underline">← Retour aux employes</a>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">{modifiable ? "Modifier l'employe" : "Dossier employe"}</h1>
+        <a href="/admin/employes" className="text-sm text-blue-600 hover:underline">← Retour aux employés</a>
+        <h1 className="text-2xl font-bold text-gray-900 mt-2">{modifiable ? "Modifier l'employé" : "Dossier employé"}</h1>
         <p className="text-gray-500 text-sm mt-1">{employe.prenom} {employe.nom}</p>
       </div>
       <EditEmployeForm

@@ -5,7 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   const serviceClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!employe) return NextResponse.json({ error: 'Employe non trouve' }, { status: 404 })
+  if (!employe) return NextResponse.json({ error: 'Employé non trouvé' }, { status: 404 })
 
   const formData = await request.formData()
   const file = formData.get('file') as File
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   // Validate file type (PDF, images)
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: 'Type de fichier non supporte. Utilisez PDF, JPG ou PNG.' }, { status: 400 })
+    return NextResponse.json({ error: 'Type de fichier non pris en charge. Utilisez PDF, JPG ou PNG.' }, { status: 400 })
   }
 
   // Max size 10MB
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
   if (dbError) {
     console.error('DB error:', dbError)
-    return NextResponse.json({ error: 'Erreur base de donnees: ' + dbError.message }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur de base de données : ' + dbError.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, preuve })
