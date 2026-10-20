@@ -10,6 +10,7 @@ const adminNav = [
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
   { href: '/admin/conformite', label: 'Conformite', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
+  { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
   { href: '/admin/departements', label: 'Departements', icon: 'apartment', adminOnly: true },
   { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
