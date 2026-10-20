@@ -26,7 +26,10 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
 
   let query = filtrerEmployes(sb.from('employes').select('*, departements(nom)').order('nom'), acteur)
   if (afficherFiltre && (filtreClinique === 'CMC' || filtreClinique === 'WSSC')) {
-    query = query.in('clinique', [filtreClinique, 'LES_DEUX'])
+    // L'administrateur global (sans clinique enregistrée) couvre les deux cliniques
+    query = acteur.role === 'super_admin'
+      ? query.or(`clinique.in.(${filtreClinique},LES_DEUX),role.eq.super_admin`)
+      : query.in('clinique', [filtreClinique, 'LES_DEUX'])
   }
   const { data: employes } = await query
   const ids = (employes ?? []).map((e: any) => e.id)
@@ -141,7 +144,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     {emp.poste && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.poste}</div>}
                   </td>
                   <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
-                  <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} /></td>
+                  <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
                   <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
                   <td style={tdStyle}>
                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
@@ -206,7 +209,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                       {emp.poste && <div style={{ fontSize: '12px' }}>{emp.poste}</div>}
                     </td>
                     <td style={tdStyle}>{emp.email}</td>
-                    <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} /></td>
+                    <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
                     <td style={{ ...tdStyle, fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
                     <td style={tdStyle}>{roleLabel[emp.role] ?? emp.role}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>{nbAssign(emp.id)}</td>

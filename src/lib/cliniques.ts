@@ -11,6 +11,15 @@ export const CLINIQUE_INFO: Record<Clinique, { nom: string; court: string; logo:
   WSSC: { nom: 'Westmount Square Surgical Center', court: 'WSSC', logo: '/logos/wssc.png', couleur: '#1e3a6e', fond: '#eef2fa' },
 }
 
+/**
+ * Clinique à afficher pour un employé : l'administrateur global, enregistré sans clinique (accès global),
+ * couvre les deux cliniques. Sert à l'affichage et aux exports, pas aux contrôles d'accès.
+ */
+export function cliniqueAffichee(clinique: string | null | undefined, role: string | null | undefined): CliniqueEmploye | null {
+  if (clinique === 'CMC' || clinique === 'WSSC' || clinique === 'LES_DEUX') return clinique
+  return role === 'super_admin' ? 'LES_DEUX' : null
+}
+
 export const CLINIQUE_EMPLOYE_LABEL: Record<CliniqueEmploye, string> = {
   CMC: 'CMC',
   WSSC: 'WSSC',

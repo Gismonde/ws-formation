@@ -2,7 +2,7 @@
 // Côté serveur uniquement : clé de service + filtres de portée de l'acteur.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { type Acteur, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
-import type { CliniqueContenu } from '@/lib/cliniques'
+import { cliniqueAffichee, type CliniqueContenu } from '@/lib/cliniques'
 import { chargerEtatsFormations, estComplete, type StatutFormation, type CertificatEtat } from '@/lib/etat-formations'
 import type { SuiviFormationEmploye } from '@/lib/suivi-formations'
 import { joursRestants } from '@/lib/expirations'
@@ -50,7 +50,7 @@ export type SyntheseConformite = {
 
 export async function chargerConformite(sb: SupabaseClient, acteur: Acteur, filtres: FiltresConformite = {}): Promise<EmployeConformite[]> {
   let q = filtrerEmployes(
-    sb.from('employes').select('id, nom, prenom, email, poste, departement, departement_id, clinique, actif, departements(nom)').order('nom'),
+    sb.from('employes').select('id, nom, prenom, email, poste, departement, departement_id, clinique, role, actif, departements(nom)').order('nom'),
     acteur,
   )
   if (filtres.departement_id) q = q.eq('departement_id', filtres.departement_id)
@@ -98,7 +98,7 @@ export async function chargerConformite(sb: SupabaseClient, acteur: Acteur, filt
       poste: (e.poste as string) ?? '',
       departement: (e.departements as { nom?: string } | null)?.nom ?? (e.departement as string) ?? '',
       departement_id: (e.departement_id as string | null) ?? null,
-      clinique: (e.clinique as string | null) ?? null,
+      clinique: cliniqueAffichee(e.clinique as string | null, e.role as string | null),
       assignations: lignes,
     }
   })

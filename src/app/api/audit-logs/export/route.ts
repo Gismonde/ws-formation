@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { estAdministrateur, CLINIQUE_EMPLOYE_LABEL, estCliniqueEmploye, ROLE_LABEL, estRole } from '@/lib/cliniques'
+import { estAdministrateur, CLINIQUE_EMPLOYE_LABEL, estCliniqueEmploye, ROLE_LABEL, estRole, cliniqueAffichee } from '@/lib/cliniques'
 import { lireFiltresAudit, employesConcernes, requeteAudit, libelleAudit, concerne, type LigneAudit, type EmployeAudit } from '@/lib/audit-journal'
 import { classeurExcel, fichierCsv, nomFichier, reponseFichier, type Colonne, type Feuille } from '@/lib/export-tableur'
 import { logAudit } from '@/lib/audit'
@@ -20,7 +20,7 @@ const COLONNES: Colonne<LigneAudit>[] = [
   { titre: 'Auteur', valeur: l => personne(l.acteur), largeur: 22 },
   { titre: 'Courriel de l’auteur', valeur: l => l.acteur?.email, largeur: 28 },
   { titre: 'Rôle', valeur: l => (l.acteur && estRole(l.acteur.role) ? ROLE_LABEL[l.acteur.role] : l.acteur?.role), largeur: 18 },
-  { titre: 'Clinique', valeur: l => (estCliniqueEmploye(l.acteur?.clinique) ? CLINIQUE_EMPLOYE_LABEL[l.acteur!.clinique as 'CMC'] : ''), largeur: 14 },
+  { titre: 'Clinique', valeur: l => { const c = cliniqueAffichee(l.acteur?.clinique, l.acteur?.role); return c ? CLINIQUE_EMPLOYE_LABEL[c] : '' }, largeur: 14 },
   { titre: 'Personne visée', valeur: l => personne(l.cible), largeur: 22 },
   { titre: 'Description', valeur: l => l.description, largeur: 60 },
   { titre: 'Adresse IP', valeur: l => l.ip_address, largeur: 16 },

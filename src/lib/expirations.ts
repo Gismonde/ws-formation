@@ -2,7 +2,7 @@
 // Côté serveur uniquement (le chargement passe par la clé de service + filtres de portée).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { type Acteur, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
-import type { CliniqueContenu } from '@/lib/cliniques'
+import { cliniqueAffichee, type CliniqueContenu } from '@/lib/cliniques'
 
 export type StatutExpiration = 'expire' | 'bientot' | 'valide'
 
@@ -64,7 +64,7 @@ type CertRow = {
 /** Certificats à durée limitée des employés visibles par l'acteur, triés du plus urgent au moins urgent. */
 export async function chargerExpirations(sb: SupabaseClient, acteur: Acteur, horizon = 60): Promise<LigneExpiration[]> {
   const { data: employes } = await filtrerEmployes(
-    sb.from('employes').select('id, prenom, nom, email, clinique, actif, departements(nom), departement'),
+    sb.from('employes').select('id, prenom, nom, email, clinique, role, actif, departements(nom), departement'),
     acteur,
   )
   const actifs = (employes ?? []).filter((e: { actif: boolean | null }) => e.actif !== false)
@@ -96,7 +96,7 @@ export async function chargerExpirations(sb: SupabaseClient, acteur: Acteur, hor
       employe_id: c.employe_id,
       employe_nom: `${e.prenom ?? ''} ${e.nom ?? ''}`.trim(),
       employe_email: (e.email as string | null) ?? null,
-      clinique: (e.clinique as string | null) ?? null,
+      clinique: cliniqueAffichee(e.clinique as string | null, e.role as string | null),
       departement: dep,
       formation_id: f.id,
       formation_titre: f.titre,

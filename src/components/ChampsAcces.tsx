@@ -58,7 +58,7 @@ export default function ChampsAcces(p: Props) {
         <label className={p.labelCls}>Clinique {p.role !== 'super_admin' && '*'}</label>
         <select className={p.inputCls} value={p.clinique} onChange={e => changerClinique(e.target.value)}
           disabled={p.disabled} required={p.role !== 'super_admin'}>
-          <option value="">{p.role === 'super_admin' ? 'Aucune (accès global)' : '-- Choisir une clinique --'}</option>
+          <option value="">{p.role === 'super_admin' ? 'Les deux cliniques (accès global)' : '-- Choisir une clinique --'}</option>
           {cliniques.map(c => (
             <option key={c} value={c} disabled={!p.cliniquesPossibles.includes(c)}>{CLINIQUE_EMPLOYE_LABEL[c]}</option>
           ))}
