@@ -51,3 +51,38 @@ describe('Exports tableur', () => {
     expect(csv).toContain('"dit ""oui"""')
   })
 })
+
+import { palierRelanceEcheance } from '@/lib/echeances'
+import { statutFormation, certificatValide } from '@/lib/etat-formations'
+
+describe('Relances d’échéance', () => {
+  it('relance 7 jours avant, la veille / le jour même, puis chaque semaine de retard', () => {
+    expect(palierRelanceEcheance(8)).toBeNull()
+    expect(palierRelanceEcheance(7)).toBe('J-7')
+    expect(palierRelanceEcheance(2)).toBe('J-7')
+    expect(palierRelanceEcheance(1)).toBe('J-1')
+    expect(palierRelanceEcheance(0)).toBe('J-1')
+    expect(palierRelanceEcheance(-1)).toBe('retard-1')
+    expect(palierRelanceEcheance(-7)).toBe('retard-7')
+    expect(palierRelanceEcheance(-34)).toBe('retard-28')
+    expect(palierRelanceEcheance(-35)).toBeNull()
+  })
+})
+
+describe('État d’une formation', () => {
+  it('certifié l’emporte, terminé seulement sans questionnaire', () => {
+    expect(statutFormation({ progressionPct: 40, aQuestionnaire: true, certificatValide: true, commence: true })).toBe('certifie')
+    expect(statutFormation({ progressionPct: 100, aQuestionnaire: false, certificatValide: false, commence: true })).toBe('termine')
+    expect(statutFormation({ progressionPct: 100, aQuestionnaire: true, certificatValide: false, commence: true })).toBe('en_cours')
+    expect(statutFormation({ progressionPct: 0, aQuestionnaire: true, certificatValide: false, commence: false })).toBe('non_commence')
+  })
+
+  it('un certificat expiré ou invalidé ne compte plus', () => {
+    const base = { numero_certificat: 'C', date_emission: null, note_finale: null }
+    const ajd = new Date('2026-10-20T10:00:00')
+    expect(certificatValide({ ...base, valide: true, date_expiration: null }, ajd)).toBe(true)
+    expect(certificatValide({ ...base, valide: true, date_expiration: '2026-10-20' }, ajd)).toBe(true)
+    expect(certificatValide({ ...base, valide: true, date_expiration: '2026-10-19' }, ajd)).toBe(false)
+    expect(certificatValide({ ...base, valide: false, date_expiration: null }, ajd)).toBe(false)
+  })
+})
