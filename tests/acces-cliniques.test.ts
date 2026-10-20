@@ -255,3 +255,33 @@ describe('Vues Admin proposées', () => {
     expect(vuesAdminPossibles('LES_DEUX', 'employe')).toEqual([])
   })
 })
+
+// ---------------------------------------------------------------------------
+import { validerAttribution } from '@/lib/permissions'
+import { cliniqueAffichee } from '@/lib/cliniques'
+
+describe('Administrateur global', () => {
+  const sbFactice = {} as never // aucun département demandé : aucune requête
+
+  it('seul un administrateur global peut nommer un administrateur global', async () => {
+    for (const a of [adminCMC, adminWSSC, adminDeux, gestCMC, employeCMC]) {
+      const r = await validerAttribution(a, { role: 'super_admin', clinique: null }, sbFactice)
+      expect('erreur' in r).toBe(true)
+    }
+    const ok = await validerAttribution(superAdmin, { role: 'super_admin', clinique: null }, sbFactice)
+    expect(ok).toEqual({ valeurs: { role: 'super_admin', clinique: null, departement_id: null } })
+  })
+
+  it('un administrateur de clinique ne peut ni modifier ni rétrograder un administrateur global', () => {
+    const cible = { id: 'sa-2', role: 'super_admin', clinique: null }
+    for (const a of [adminCMC, adminWSSC, adminDeux, gestCMC]) expect(peutGererEmploye(a, cible)).toBe(false)
+    expect(peutGererEmploye(superAdmin, cible)).toBe(true)
+  })
+
+  it('est affiché sur les deux cliniques plutôt que « Non assignée »', () => {
+    expect(cliniqueAffichee(null, 'super_admin')).toBe('LES_DEUX')
+    expect(cliniqueAffichee('CMC', 'super_admin')).toBe('CMC')
+    expect(cliniqueAffichee(null, 'employe')).toBeNull()
+    expect(cliniqueAffichee('WSSC', 'admin')).toBe('WSSC')
+  })
+})

@@ -1,8 +1,8 @@
-import { CLINIQUE_INFO, cliniquesDe } from '@/lib/cliniques'
+import { CLINIQUE_INFO, cliniquesDe, cliniqueAffichee } from '@/lib/cliniques'
 
 /** Petit badge texte « CMC » / « WSSC » (listes, tableaux). */
-export function CliniqueBadge({ clinique }: { clinique: string | null | undefined }) {
-  const liste = cliniquesDe(clinique)
+export function CliniqueBadge({ clinique, role }: { clinique: string | null | undefined; role?: string | null }) {
+  const liste = cliniquesDe(cliniqueAffichee(clinique, role))
   if (liste.length === 0) {
     return <span style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Non assignée</span>
   }
