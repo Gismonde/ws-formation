@@ -1,121 +1,118 @@
 import { redirect } from 'next/navigation'
-import { getActeur, serviceClient, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
-import { aAccesAdmin } from '@/lib/cliniques'
-import { CliniqueBadge } from '@/components/CliniqueBadge'
 import Link from 'next/link'
-import { chargerSuiviFormations, suiviDe, type SuiviFormationEmploye } from '@/lib/suivi-formations'
+import { getActeur, serviceClient, departementsVisibles, cliniquesAdministrees } from '@/lib/permissions'
+import { aAccesAdmin, CLINIQUE_INFO, type Clinique } from '@/lib/cliniques'
+import { CliniqueBadge } from '@/components/CliniqueBadge'
+import { chargerConformite, synthese } from '@/lib/conformite'
+import { LIBELLE_STATUT, estComplete, type StatutFormation } from '@/lib/etat-formations'
 
-type StatutFormation = 'non_commence' | 'en_cours' | 'termine'
-
-type AssignationDetail = {
-  formation_id: string
-  formation_titre: string
-  statut: StatutFormation
-  progression: number
-  certificat_valide: boolean
-  certificat_date: string | null
-  suivi: SuiviFormationEmploye | null
+const STYLE_STATUT: Record<StatutFormation, { bg: string; color: string }> = {
+  non_commence: { bg: '#f3f4f6', color: '#6b7280' },
+  en_cours: { bg: '#fef3c7', color: '#92400e' },
+  termine: { bg: '#d1fae5', color: '#065f46' },
+  certifie: { bg: '#e0e7ff', color: '#4338ca' },
 }
 
-type EmployeConformite = {
-  id: string
-  nom: string
-  prenom: string
-  email: string
-  departement: string
-  clinique: string | null
-  assignations: AssignationDetail[]
-}
+const date = (iso: string | null) =>
+  iso ? new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { dateStyle: 'medium' }) : null
 
-export default async function ConformitePage() {
+type Params = { clinique?: string; departement?: string; vue?: string }
+
+export default async function ConformitePage({ searchParams }: { searchParams: Promise<Params> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard')
-  const adminSupabase = serviceClient()
+  const sb = serviceClient()
+  const sp = await searchParams
 
-  const employesQuery = filtrerEmployes(adminSupabase
-    .from('employes')
-    .select('id, nom, prenom, email, departement, clinique, actif, departements(nom)')
-    .order('nom'), acteur)
+  const cliniquesPossibles: Clinique[] = acteur.role === 'gestionnaire' ? [] : cliniquesAdministrees(acteur)
+  const clinique = cliniquesPossibles.includes(sp.clinique as Clinique) ? (sp.clinique as Clinique) : null
+  const departements = await departementsVisibles(acteur, sb)
+  const departement = departements.some(d => d.id === sp.departement) ? sp.departement! : null
+  const vue = sp.vue === 'retard' || sp.vue === 'incomplet' ? sp.vue : 'tous'
 
-  const { data: employes } = await employesQuery
-  const { data: formations } = await adminSupabase.from('formations').select('id, titre').in('clinique', cliniquesContenuVisibles(acteur))
-  const { data: assignations } = await adminSupabase.from('assignations').select('employe_id, formation_id')
-  const { data: progressions } = await adminSupabase.from('progression').select('employe_id, formation_id, statut, progression')
-  const { data: certificats } = await adminSupabase.from('certificats').select('employe_id, formation_id, valide, issued_at')
+  const toutes = await chargerConformite(sb, acteur, { clinique, departement_id: departement })
+  const data = toutes
+    .map(e => ({
+      ...e,
+      assignations: vue === 'retard' ? e.assignations.filter(a => a.en_retard)
+        : vue === 'incomplet' ? e.assignations.filter(a => !estComplete(a.statut)) : e.assignations,
+    }))
+    .filter(e => vue === 'tous' || e.assignations.length > 0)
+  const s = synthese(toutes)
 
-  // Filter active employees in JS (actif !== false handles null/true/undefined)
-  const employes_ = (employes ?? []).filter((e: any) => e.actif !== false)
-  const formations_ = formations ?? []
-  const assignations_ = assignations ?? []
-  const progressions_ = progressions ?? []
-  const certificats_ = certificats ?? []
-
-  // Suivi détaillé : leçons terminées, attestations « J'ai lu et compris », vidéos obligatoires
-  const idsAssignes = Array.from(new Set(assignations_.map((a: any) => a.formation_id)))
-  const suivi = await chargerSuiviFormations(adminSupabase, employes_.map((e: any) => e.id), idsAssignes as string[])
-
-  const data: EmployeConformite[] = employes_.map((emp: any) => {
-    const empAssignations = assignations_.filter((a: any) => a.employe_id === emp.id)
-    const details: AssignationDetail[] = empAssignations.map((a: any) => {
-      const form = formations_.find((f: any) => f.id === a.formation_id)
-      const prog = progressions_.find((p: any) => p.employe_id === emp.id && p.formation_id === a.formation_id)
-      const cert = certificats_.find((c: any) => c.employe_id === emp.id && c.formation_id === a.formation_id && c.valide)
-      return {
-        formation_id: a.formation_id,
-        formation_titre: form?.titre ?? 'Formation inconnue',
-        statut: (prog?.statut as StatutFormation) ?? 'non_commence',
-        progression: prog?.progression ?? 0,
-        certificat_valide: !!cert,
-        certificat_date: cert?.issued_at ?? null,
-        suivi: suiviDe(suivi, emp.id, a.formation_id),
-      }
-    })
-    return {
-      id: emp.id,
-      nom: emp.nom ?? '',
-      prenom: emp.prenom ?? '',
-      email: emp.email ?? '',
-      departement: (emp as any).departements?.nom ?? emp.departement ?? '',
-      clinique: emp.clinique ?? null,
-      assignations: details,
-    }
-  })
-
-  const totalAssign = data.reduce((s, e) => s + e.assignations.length, 0)
-  const totalTermines = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'termine').length, 0)
-  const totalEnCours = data.reduce((s, e) => s + e.assignations.filter(a => a.statut === 'en_cours').length, 0)
-  const totalCerts = data.reduce((s, e) => s + e.assignations.filter(a => a.certificat_valide).length, 0)
-  const taux = totalAssign > 0 ? Math.round((totalTermines / totalAssign) * 100) : 0
-  const attRequises = data.reduce((s, e) => s + e.assignations.reduce((x, a) => x + (a.suivi?.attestations_requises ?? 0), 0), 0)
-  const attSignees = data.reduce((s, e) => s + e.assignations.reduce((x, a) => x + (a.suivi?.attestations_signees ?? 0), 0), 0)
-
-  const statutConfig: Record<StatutFormation, { bg: string; color: string; label: string }> = {
-    non_commence: { bg: '#f3f4f6', color: '#6b7280', label: 'Non commence' },
-    en_cours: { bg: '#fef3c7', color: '#92400e', label: 'En cours' },
-    termine: { bg: '#d1fae5', color: '#065f46', label: 'Termine' },
+  const filtresQ = new URLSearchParams()
+  if (clinique) filtresQ.set('clinique', clinique)
+  if (departement) filtresQ.set('departement', departement)
+  if (vue !== 'tous') filtresQ.set('vue', vue)
+  const lienVue = (v: string) => {
+    const q = new URLSearchParams(filtresQ)
+    if (v === 'tous') q.delete('vue'); else q.set('vue', v)
+    return `/admin/conformite${q.size ? '?' + q : ''}`
   }
+  const exporter = (format: string) => `/api/admin/conformite/export?format=${format}${filtresQ.size ? '&' + filtresQ : ''}`
 
   return (
     <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>Conformite</h1>
-        <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
-          Suivi de la conformite reglementaire - {data.length} employe(s) actif(s)
-        </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1f36', margin: 0 }}>Conformité</h1>
+          <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
+            Suivi de la conformité réglementaire — {s.employes} employé(s) actif(s)
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[['xlsx', 'Excel'], ['pdf', 'PDF'], ['csv', 'CSV']].map(([f, l]) => (
+            <a key={f} href={exporter(f)} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>⬇ {l}</a>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px', marginBottom: '32px' }}>
+      <form method="get" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end', marginBottom: '20px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '14px 16px' }}>
+        {cliniquesPossibles.length > 1 && (
+          <label style={{ fontSize: '12px', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            Clinique
+            <select name="clinique" defaultValue={clinique ?? ''} style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#fff' }}>
+              <option value="">Toutes</option>
+              {cliniquesPossibles.map(c => <option key={c} value={c}>{CLINIQUE_INFO[c].nom}</option>)}
+            </select>
+          </label>
+        )}
+        {departements.length > 1 && (
+          <label style={{ fontSize: '12px', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            Département
+            <select name="departement" defaultValue={departement ?? ''} style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#fff' }}>
+              <option value="">Tous</option>
+              {departements.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+            </select>
+          </label>
+        )}
+        {vue !== 'tous' && <input type="hidden" name="vue" value={vue} />}
+        {(cliniquesPossibles.length > 1 || departements.length > 1) && (
+          <button type="submit" style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Filtrer</button>
+        )}
+        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {[['tous', 'Toutes les formations'], ['incomplet', 'À compléter'], ['retard', `En retard (${s.en_retard})`]].map(([v, l]) => (
+            <Link key={v} href={lienVue(v)} style={{
+              padding: '6px 12px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', border: '1px solid #e5e7eb',
+              background: vue === v ? '#111827' : '#fff', color: vue === v ? '#fff' : (v === 'retard' && s.en_retard ? '#b91c1c' : '#374151'),
+            }}>{l}</Link>
+          ))}
+        </div>
+      </form>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px', marginBottom: '28px' }}>
         {[
-          { label: 'Taux conformite', value: taux + '%', color: taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#991b1b' },
-          { label: 'Formations assignees', value: String(totalAssign), color: '#1a1f36' },
-          { label: 'Terminees', value: String(totalTermines), color: '#065f46' },
-          { label: 'Certificats obtenus', value: String(totalCerts), color: '#4338ca' },
-          { label: "Attestations « lu et compris »", value: attRequises ? `${attSignees}/${attRequises}` : '—', color: attRequises && attSignees === attRequises ? '#065f46' : '#92400e' },
+          { label: 'Taux de conformité', value: s.taux + ' %', color: s.taux >= 80 ? '#065f46' : s.taux >= 50 ? '#92400e' : '#991b1b' },
+          { label: 'Formations assignées', value: String(s.assignations), color: '#1a1f36' },
+          { label: 'Terminées ou certifiées', value: String(s.completes), color: '#065f46' },
+          { label: 'En retard', value: String(s.en_retard), color: s.en_retard ? '#b91c1c' : '#065f46' },
+          { label: 'Certificats valides', value: String(s.certificats), color: '#4338ca' },
+          { label: 'Attestations « lu et compris »', value: s.attestations_requises ? `${s.attestations_signees}/${s.attestations_requises}` : '—', color: s.attestations_requises && s.attestations_signees === s.attestations_requises ? '#065f46' : '#92400e' },
         ].map(stat => (
-          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</p>
-            <p style={{ margin: 0, fontSize: '26px', fontWeight: '700', color: stat.color }}>{stat.value}</p>
+          <div key={stat.label} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px 18px' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>{stat.label}</p>
+            <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: stat.color }}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -123,117 +120,105 @@ export default async function ConformitePage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {data.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-            Aucun employe actif trouve.
+            {vue === 'retard' ? 'Aucune formation en retard.' : vue === 'incomplet' ? 'Toutes les formations assignées sont complétées.' : 'Aucun employé actif trouvé.'}
           </div>
         ) : data.map(emp => {
-          const empTermines = emp.assignations.filter(a => a.statut === 'termine').length
-          const empTotal = emp.assignations.length
-          const empTaux = empTotal > 0 ? Math.round((empTermines / empTotal) * 100) : 0
-          const empCerts = emp.assignations.filter(a => a.certificat_valide).length
-          const tauxColor = empTaux >= 80 ? '#065f46' : empTaux >= 50 ? '#92400e' : '#6b7280'
+          const faits = emp.assignations.filter(a => estComplete(a.statut)).length
+          const total = emp.assignations.length
+          const taux = total > 0 ? Math.round((faits / total) * 100) : 0
+          const retards = emp.assignations.filter(a => a.en_retard).length
+          const couleur = taux >= 80 ? '#065f46' : taux >= 50 ? '#92400e' : '#6b7280'
 
           return (
-            <details key={emp.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-              <summary style={{ padding: '16px 20px', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', minWidth: 0 }}>
+            <details key={emp.id} open={vue !== 'tous' && data.length <= 5} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+              <summary style={{ padding: '14px 18px', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', minWidth: 0 }}>
                   <div style={{ minWidth: '180px' }}>
-                    <div style={{ fontWeight: '700', color: '#1a1f36', fontSize: '14px' }}>{emp.prenom} {emp.nom}</div>
+                    <div style={{ fontWeight: 700, color: '#1a1f36', fontSize: '14px' }}>{emp.prenom} {emp.nom}</div>
                     <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.email}</div>
                   </div>
                   <CliniqueBadge clinique={emp.clinique} />
                   {emp.departement && (
-                    <span style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
-                      {emp.departement}
-                    </span>
+                    <span style={{ fontSize: '12px', color: '#6b7280', background: '#f3f4f6', padding: '2px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>{emp.departement}</span>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', width: '80px' }}>
-                      <div style={{ width: empTaux + '%', background: empTaux >= 80 ? '#10b981' : empTaux >= 50 ? '#f59e0b' : '#9ca3af', height: '8px', borderRadius: '4px' }} />
+                      <div style={{ width: taux + '%', background: taux >= 80 ? '#10b981' : taux >= 50 ? '#f59e0b' : '#9ca3af', height: '8px', borderRadius: '4px' }} />
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: tauxColor }}>{empTaux}%</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: couleur }}>{taux} %</span>
                   </div>
-                  <span style={{ fontSize: '12px', color: '#6b7280' }}>{empTermines}/{empTotal} formations</span>
-                  {empCerts > 0 && (
-                    <span style={{ fontSize: '12px', color: '#4338ca', background: '#e0e7ff', padding: '1px 8px', borderRadius: '20px', fontWeight: '600' }}>
-                      {empCerts} cert.
-                    </span>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>{faits}/{total} formations</span>
+                  {retards > 0 && (
+                    <span style={{ fontSize: '12px', color: '#b91c1c', background: '#fee2e2', padding: '1px 8px', borderRadius: '20px', fontWeight: 600 }}>{retards} en retard</span>
                   )}
                 </div>
                 <span style={{ color: '#9ca3af', fontSize: '14px', flexShrink: 0 }}>&#9660;</span>
               </summary>
-              <div style={{ padding: '8px 20px', borderTop: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end' }}>
-                <Link href={'/admin/employes/' + emp.id} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                  Voir le dossier
-                </Link>
+              <div style={{ padding: '8px 18px', borderTop: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <a href={`/api/admin/conformite/export?format=pdf&employe=${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fff', color: '#374151', textDecoration: 'none', fontSize: '12px', fontWeight: 600, border: '1px solid #e5e7eb' }}>⬇ Fiche PDF</a>
+                <Link href={'/admin/employes/' + emp.id} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: 600, border: '1px solid #bfdbfe' }}>Voir le dossier</Link>
               </div>
-              <div style={{ borderTop: '1px solid #f3f4f6' }}>
+              <div style={{ borderTop: '1px solid #f3f4f6', overflowX: 'auto' }}>
                 {emp.assignations.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>Aucune formation assignee.</div>
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>Aucune formation assignée.</div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '760px' }}>
                     <thead>
                       <tr style={{ background: '#f9fafb' }}>
-                        <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Formation</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Statut</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Progression</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Leçons</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Lu et compris</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>Certificat</th>
+                        {['Formation', 'Échéance', 'Statut', 'Progression', 'Leçons', 'Lu et compris', 'Certificat'].map((t, i) => (
+                          <th key={t} style={{ padding: '10px 14px', textAlign: i === 0 || i === 3 ? 'left' : 'center', fontWeight: 600, color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>{t}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {emp.assignations.map((a, i) => {
-                        const sc = statutConfig[a.statut]
+                        const sc = STYLE_STATUT[a.statut]
                         return (
-                          <tr key={a.formation_id} style={{ borderTop: i > 0 ? '1px solid #f3f4f6' : 'none', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                            <td style={{ padding: '12px 20px', fontWeight: '500', color: '#1a1f36' }}>{a.formation_titre}</td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                              <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
-                                {sc.label}
-                              </span>
+                          <tr key={a.formation_id} style={{ borderTop: i > 0 ? '1px solid #f3f4f6' : 'none' }}>
+                            <td style={{ padding: '11px 14px', fontWeight: 500, color: '#1a1f36' }}>
+                              {a.formation_titre}
+                              {a.obligatoire && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: 700, color: '#dc2626' }}>LSST</span>}
                             </td>
-                            <td style={{ padding: '12px 16px' }}>
+                            <td style={{ padding: '11px 14px', textAlign: 'center', whiteSpace: 'nowrap', color: a.en_retard ? '#b91c1c' : '#6b7280', fontWeight: a.en_retard ? 700 : 400 }}>
+                              {date(a.date_echeance) ?? '—'}{a.en_retard && <div style={{ fontSize: '10px' }}>En retard</div>}
+                            </td>
+                            <td style={{ padding: '11px 14px', textAlign: 'center' }}>
+                              <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{LIBELLE_STATUT[a.statut]}</span>
+                            </td>
+                            <td style={{ padding: '11px 14px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '4px', height: '6px', minWidth: '80px' }}>
-                                  <div style={{ width: a.progression + '%', background: a.statut === 'termine' ? '#10b981' : '#6366f1', height: '6px', borderRadius: '4px' }} />
+                                <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '4px', height: '6px', minWidth: '70px' }}>
+                                  <div style={{ width: a.progression + '%', background: estComplete(a.statut) ? '#10b981' : '#6366f1', height: '6px', borderRadius: '4px' }} />
                                 </div>
-                                <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>{a.progression}%</span>
+                                <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>{a.progression} %</span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '11px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                               {a.suivi ? (
-                                <span style={{ fontWeight: 600, color: a.suivi.lecons_terminees === a.suivi.lecons_total ? '#065f46' : '#374151' }}>
-                                  {a.suivi.lecons_terminees}/{a.suivi.lecons_total}
-                                </span>
-                              ) : <span style={{ color: '#d1d5db' }}>-</span>}
+                                <span style={{ fontWeight: 600, color: a.suivi.lecons_terminees === a.suivi.lecons_total ? '#065f46' : '#374151' }}>{a.suivi.lecons_terminees}/{a.suivi.lecons_total}</span>
+                              ) : <span style={{ color: '#d1d5db' }}>—</span>}
                               {a.suivi && a.suivi.videos_obligatoires > 0 && (
                                 <div style={{ fontSize: '10px', color: '#9ca3af' }}>🎬 {a.suivi.videos_vues}/{a.suivi.videos_obligatoires} vidéos</div>
                               )}
                             </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '11px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                               {a.suivi && a.suivi.attestations_requises > 0 ? (
                                 <span style={{
                                   padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
                                   background: a.suivi.attestations_signees === a.suivi.attestations_requises ? '#d1fae5' : '#fef3c7',
                                   color: a.suivi.attestations_signees === a.suivi.attestations_requises ? '#065f46' : '#92400e',
-                                }}>
-                                  ✍️ {a.suivi.attestations_signees}/{a.suivi.attestations_requises}
-                                </span>
-                              ) : <span style={{ color: '#d1d5db' }}>-</span>}
+                                }}>✍️ {a.suivi.attestations_signees}/{a.suivi.attestations_requises}</span>
+                              ) : <span style={{ color: '#d1d5db' }}>—</span>}
                             </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                              {a.certificat_valide ? (
+                            <td style={{ padding: '11px 14px', textAlign: 'center' }}>
+                              {a.certificat ? (
                                 <div>
-                                  <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', display: 'inline-block' }}>Obtenu</span>
-                                  {a.certificat_date && (
-                                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
-                                      {new Date(a.certificat_date).toLocaleDateString('fr-FR')}
-                                    </div>
-                                  )}
+                                  <span style={{ background: a.certificat_valide ? '#e0e7ff' : '#fee2e2', color: a.certificat_valide ? '#4338ca' : '#b91c1c', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, display: 'inline-block' }}>
+                                    {a.certificat_valide ? 'Valide' : 'Expiré'}
+                                  </span>
+                                  {a.certificat.date_emission && <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{date(a.certificat.date_emission)}</div>}
                                 </div>
-                              ) : (
-                                <span style={{ color: '#d1d5db' }}>-</span>
-                              )}
+                              ) : <span style={{ color: '#d1d5db' }}>—</span>}
                             </td>
                           </tr>
                         )
@@ -248,4 +233,4 @@ export default async function ConformitePage() {
       </div>
     </div>
   )
-              }
+}

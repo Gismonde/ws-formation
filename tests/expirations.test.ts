@@ -86,3 +86,27 @@ describe('État d’une formation', () => {
     expect(certificatValide({ ...base, valide: false, date_expiration: null }, ajd)).toBe(false)
   })
 })
+
+import { genererPdf, textePdf } from '@/lib/pdf-rapport'
+import { classeurExcel } from '@/lib/export-tableur'
+
+describe('Génération des fichiers', () => {
+  it('PDF : document valide, accents conservés, émojis retirés', () => {
+    expect(textePdf('✍️ Élise — « été » ’')).toBe('Élise — « été » ’')
+    const pdf = genererPdf({
+      titre: 'Rapport de conformité', perimetre: 'CMC',
+      indicateurs: [['Employés', 3], ['Taux', '67 %']],
+      sections: [{ titre: 'Détail', entetes: ['Employé', 'Statut'], lignes: [['Élise Gagné', 'Terminé']] }, { entetes: ['A'], lignes: [] }],
+    })
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-')
+    expect(pdf.length).toBeGreaterThan(2000)
+  })
+
+  it('Excel : classeur à plusieurs onglets', async () => {
+    const x = await classeurExcel([
+      { nom: 'Synthèse', colonnes: [{ titre: 'A', valeur: (l: number) => l }], lignes: [1, 2] },
+      { nom: 'Détail', colonnes: [{ titre: 'B', valeur: (l: string) => l }], lignes: ['x'] },
+    ])
+    expect(x.subarray(0, 2).toString()).toBe('PK')
+  })
+})
