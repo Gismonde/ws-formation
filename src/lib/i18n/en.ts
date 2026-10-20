@@ -193,7 +193,6 @@ export const EN: Record<string, string> = {
   'Données collectées :': 'Data collected:',
   'Nom, prénom, courriel professionnel, rôle, progression dans les formations.': 'Last name, first name, work email, role, training progress.',
   'Finalité :': 'Purpose:',
-  'Gestion des formations, suivi pédagogique, certificats, conformité RGPD.': 'Training management, learning follow-up, certificates, GDPR compliance.',
   'Conservation :': 'Retention:',
   'Données conservées pendant 5 ans conformément à la réglementation en vigueur.': 'Data kept for 5 years in accordance with applicable regulations.',
   'Partage :': 'Sharing:',
@@ -396,4 +395,5 @@ export const EN: Record<string, string> = {
   'Choisissez votre mot de passe pour activer votre compte.': 'Choose your password to activate your account.',
   '← Retour à l’accueil': '← Back to home',
   'Cette politique est rédigée en français.': 'This privacy policy is published in French. For an English version, contact the privacy officer at confidentialite@wssurgical.com.',
+  'Gestion des formations, suivi pédagogique, certificats, conformité à la Loi 25 (Québec).': 'Training management, learning follow-up, certificates, compliance with Quebec’s Law 25.',
 }

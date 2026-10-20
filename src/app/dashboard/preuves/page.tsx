@@ -259,7 +259,7 @@ export default function MesPreuvesPage() {
                     {getStatutLabel(p.statut).label}
                   </span>
                   <a
-                    href={p.fichier_url}
+                    href={`/api/preuves/${p.id}/fichier`}
                     target="_blank"
                     rel="noreferrer"
                     style={{ fontSize: '12px', color: 'var(--accent-clinique)', textDecoration: 'none' }}
