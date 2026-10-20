@@ -6,6 +6,7 @@ import { serviceClient } from '@/lib/permissions'
 import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 import { getEspace } from '@/lib/espace'
 import { ChoixEspace } from '@/components/ChoixEspace'
+import { TiroirMenu } from '@/components/TiroirMenu'
 import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
 const employeNav = [
@@ -42,8 +43,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : (user.email?.split('@')[0] || 'Utilisateur')
 
   return (
-    <div className="dashboard-shell">
-      <aside className="dashboard-sidebar">
+    <div className="dashboard-shell coque-adaptative">
+      <TiroirMenu classe="dashboard-sidebar" fond={theme.fondBarre} titre={cliniqueAffichee ? `WS Formation — ${CLINIQUE_INFO[cliniqueAffichee].court}` : 'WS Formation'}>
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
           <div className="sidebar-subtitle">
@@ -85,9 +86,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span>Déconnexion</span>
           </Link>
         </div>
-      </aside>
+      </TiroirMenu>
 
-      <main className="dashboard-main" style={{padding: '32px'}}>
+      <main className="dashboard-main contenu-adaptatif">
         {children}
       </main>
 
@@ -134,7 +135,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px;
         }
         .sidebar-logout-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
-        .dashboard-main { flex: 1; background: ${theme.fondPage}; min-height: 100vh; overflow-y: auto; padding: 32px; }
+        .dashboard-main { flex: 1; background: ${theme.fondPage}; min-height: 100vh; overflow-y: auto; padding: 32px; min-width: 0; }
+        @media (max-width: 900px) { .dashboard-main { padding: 16px; min-height: 0; overflow-y: visible; } }
       `}</style>
     </div>
   )

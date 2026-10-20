@@ -134,7 +134,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Compteurs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '20px' }}>
           <p style={{ fontSize: '28px', fontWeight: '700', color: 'var(--accent-clinique)', margin: 0 }}>{formationsAvecProgression.length}</p>
           <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Formation(s) assignée(s)</p>

@@ -304,7 +304,7 @@ export default function DepuisPPPage() {
 
         <div style={{ display: "grid", gap: "16px", marginBottom: "24px" }}>
           <div style={{ padding: "16px", background: "#f9fafb", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div className="grille-2-colonnes" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Titre</span><p style={{ fontSize: "15px", fontWeight: "600", color: "#111827", margin: "4px 0 0" }}>{titre}</p></div>
               {description && <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0" }}>{description}</p></div>}
               <div><span style={{ fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Niveau</span><p style={{ fontSize: "14px", color: "#374151", margin: "4px 0 0", textTransform: "capitalize" }}>{niveau}</p></div>

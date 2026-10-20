@@ -8,7 +8,7 @@ export default async function EnveloppeEmploye({ children }: { children: React.R
   const { espace, variables } = await themeEmploye()
   const c = espace.actif
   return (
-    <div className="espace-employe" style={{ ...(variables as React.CSSProperties), background: 'var(--fond-clinique)', minHeight: '100vh' }}>
+    <div className="espace-employe contenu-adaptatif" style={{ ...(variables as React.CSSProperties), background: 'var(--fond-clinique)', minHeight: '100vh' }}>
       <div className="bandeau-clinique" style={{ background: 'var(--barre-clinique)', color: '#fff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
           {c && (

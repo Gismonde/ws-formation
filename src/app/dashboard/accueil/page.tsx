@@ -52,7 +52,7 @@ export default async function AccueilPage() {
               🎓 Mes formations{aFaire > 0 ? ` (${aFaire} à faire)` : ''}
             </Link>
             {estAdministrateur(acteur.role) && (
-              <Link href="/admin/accueil" style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid #e5e7eb', color: '#374151', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }}>✏️ Modifier cette page</Link>
+              <Link href="/admin/accueil" style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid #e5e7eb', color: '#374151', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }} title="Visible uniquement par les administrateurs et l’administrateur global">✏️ Modifier cette page · admin</Link>
             )}
           </div>
         </div>
