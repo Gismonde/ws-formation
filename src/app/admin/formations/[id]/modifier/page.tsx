@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
+import { ChampPrerequis } from '@/components/ChampPrerequis'
 import type { CliniqueContenu } from '@/lib/cliniques'
 
 interface Formation {
@@ -16,6 +17,7 @@ interface Formation {
   publiee: boolean
   clinique: CliniqueContenu
   validite_mois: number | null
+  prerequis_ids: string[] | null
 }
 
 interface ModuleForm {
@@ -59,7 +61,7 @@ export default function ModifierFormationPage() {
     loadData()
   }, [params.id])
 
-  function updateField(field: keyof Formation, value: string | number | boolean | null) {
+  function updateField(field: keyof Formation, value: string | number | boolean | string[] | null) {
     setFormation(prev => prev ? { ...prev, [field]: value } : prev)
   }
 
@@ -91,6 +93,7 @@ export default function ModifierFormationPage() {
         publiee: formation.publiee,
         clinique: formation.clinique,
         validite_mois: formation.validite_mois,
+        prerequis_ids: formation.prerequis_ids ?? [],
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
@@ -206,6 +209,7 @@ export default function ModifierFormationPage() {
               labelStyle={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}
               style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', background: '#fff' }}
             />
+            <ChampPrerequis formationId={formation.id} valeur={formation.prerequis_ids ?? []} onChange={ids => updateField('prerequis_ids', ids)} />
             <div className="flex items-center gap-3">
               <input type="checkbox" id="publiee" checked={formation.publiee} onChange={e => updateField('publiee', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
               <label htmlFor="publiee" className="text-sm font-medium text-gray-700">Formation publiée (visible par les employés)</label>

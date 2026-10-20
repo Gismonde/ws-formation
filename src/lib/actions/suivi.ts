@@ -7,6 +7,8 @@ import { headers } from 'next/headers'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
 import { TEXTE_ATTESTATION_DEFAUT } from '@/lib/suivi-constantes'
+import { prerequisManquants, messagePrerequis } from '@/lib/prerequis'
+import { aAccesAdmin } from '@/lib/cliniques'
 
 
 export type EtatSuivi = {
@@ -95,6 +97,16 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
   const sb = serviceClient()
   const { data: lecon } = await sb.from('lessons').select('id, titre, attestation_requise').eq('id', lessonId).single()
   if (!lecon) return { ok: false, erreur: 'Lecon introuvable' }
+
+  // Prérequis bloquants (l'équipe garde l'accès pour prévisualiser)
+  if (!aAccesAdmin(ctx.acteur.role)) {
+    const { data: mod } = await sb.from('lessons').select('modules(formation_id)').eq('id', lessonId).single()
+    const formationId = (mod?.modules as { formation_id?: string } | null)?.formation_id
+    if (formationId) {
+      const manquants = await prerequisManquants(sb, ctx.acteur.id, formationId)
+      if (manquants.length) return { ok: false, erreur: messagePrerequis(manquants) }
+    }
+  }
 
   const [{ data: blocs }, etat] = await Promise.all([
     sb.from('content_blocks').select('id, titre, type, metadata').eq('lesson_id', lessonId),
