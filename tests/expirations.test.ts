@@ -110,3 +110,27 @@ describe('Génération des fichiers', () => {
     expect(x.subarray(0, 2).toString()).toBe('PK')
   })
 })
+
+import { validerReponse, agregerReponses } from '@/lib/sondages'
+
+describe('Sondages de satisfaction', () => {
+  const ok = { note_globale: 5, clarte: 4, utilite: 4, duree: 3, recommandation: 5, commentaire: '  Très bien  ' }
+  it('valide les réponses de 1 à 5 et nettoie le commentaire', () => {
+    const r = validerReponse(ok)
+    expect('reponse' in r && r.reponse.commentaire).toBe('Très bien')
+    expect('erreur' in validerReponse({ ...ok, clarte: 6 })).toBe(true)
+    expect('erreur' in validerReponse({ ...ok, duree: undefined })).toBe(true)
+    expect('erreur' in validerReponse({ ...ok, commentaire: 'x'.repeat(2001) })).toBe(true)
+  })
+  it('calcule moyennes, répartition et % de satisfaits', () => {
+    const r = agregerReponses('f', [
+      { ...ok, commentaire: null, created_at: '2026-10-01' },
+      { ...ok, note_globale: 2, clarte: 2, commentaire: 'Trop long', created_at: '2026-10-02' },
+    ])
+    expect(r.reponses).toBe(2)
+    expect(r.moyennes.clarte).toBe(3)
+    expect(r.satisfaits).toBe(50)
+    expect(r.repartition.note_globale).toEqual([0, 1, 0, 0, 1])
+    expect(r.commentaires).toEqual([{ texte: 'Trop long', date: '2026-10-02' }])
+  })
+})
