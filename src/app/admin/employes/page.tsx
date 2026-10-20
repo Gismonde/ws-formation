@@ -140,7 +140,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
               return (
                 <tr key={emp.id} style={{ borderBottom: i < actifs.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: '600', color: '#111827' }}>{emp.prenom} {emp.nom}</div>
+                    <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
                     {emp.poste && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.poste}</div>}
                   </td>
                   <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
@@ -164,9 +164,9 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                   <td style={{ ...tdStyle, textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                       <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                        {peutGerer(emp) ? 'Modifier' : 'Dossier'}
+                        Dossier
                       </Link>
-                      <Link href={`/admin/employes/${emp.id}/preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
+                      <Link href={`/admin/employes/${emp.id}?onglet=preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
                         Preuves
                       </Link>
                       {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />}
@@ -205,7 +205,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                 {archives.map((emp: any, i: number) => (
                   <tr key={emp.id} style={{ borderBottom: i < archives.length - 1 ? '1px solid #f3f4f6' : 'none', color: '#9ca3af' }}>
                     <td style={tdStyle}>
-                      <div style={{ fontWeight: '500' }}>{emp.prenom} {emp.nom}</div>
+                      <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '500', color: 'inherit', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
                       {emp.poste && <div style={{ fontSize: '12px' }}>{emp.poste}</div>}
                     </td>
                     <td style={tdStyle}>{emp.email}</td>
