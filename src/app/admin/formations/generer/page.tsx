@@ -1268,7 +1268,7 @@ export default function GenererFormationPage() {
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>Vérifiez le récapitulatif avant de soumettre.</p>
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className='grille-2-colonnes' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Titre</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Niveau</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Modules</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''}</p></div>

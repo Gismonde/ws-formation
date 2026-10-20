@@ -44,7 +44,7 @@ export default async function ProfilPage() {
             </div>
             <CliniqueLogos clinique={cliniqueAffichee} hauteur={56} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className='grille-2-colonnes' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {([
               ['Email', employe.email],
               ['Clinique', cliniques.length ? cliniques.map(c => CLINIQUE_INFO[c].nom).join(' + ') : '-'],

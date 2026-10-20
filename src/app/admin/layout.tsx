@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getActeur } from '@/lib/permissions'
 import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO, THEME_CLINIQUE, vuesAdminPossibles } from '@/lib/cliniques'
 import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
+import { TiroirMenu } from '@/components/TiroirMenu'
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
@@ -41,16 +42,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const visibleNav = adminNav.filter(item => !item.adminOnly || isAdmin)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5' }}>
+    <div className='coque-adaptative' style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
         .admin-nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 2px; transition: all 0.15s ease; }
         .admin-nav-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .admin-main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .admin-sidebar { width: 240px; color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+        .admin-main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; }
+        .admin-entete { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; gap: 12px; }
+        .admin-contenu { padding: 32px; flex: 1; }
+        @media (max-width: 900px) {
+          .admin-main-content { margin-left: 0; min-height: 0; }
+          .admin-entete { display: none; }
+          .admin-contenu { padding: 16px; }
+        }
       `}</style>
 
-      <aside style={{ width: '240px', background: fondBarre, color: '#fff', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100 }}>
+      <TiroirMenu classe='admin-sidebar' fond={fondBarre} titre='WS Formation — Administration'>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff' }}>WS Formation</div>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
@@ -88,10 +97,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </button>
           </form>
         </div>
-      </aside>
+      </TiroirMenu>
 
       <main className='admin-main-content'>
-        <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
+        <header className='admin-entete'>
           <div style={{ fontWeight: '600', fontSize: '16px', color: '#1a1f36' }}>WS Formation — Administration</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '14px', color: '#6b7280' }}>{user.email}</span>
@@ -100,8 +109,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </form>
           </div>
         </header>
-        <div style={{ padding: '32px', flex: 1 }}>{children}</div>
+        <div className='admin-contenu contenu-adaptatif'>{children}</div>
       </main>
     </div>
   )
-        }
+}

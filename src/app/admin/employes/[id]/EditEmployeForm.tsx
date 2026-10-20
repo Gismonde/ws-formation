@@ -95,7 +95,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
       )}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Prénom *</label>
           <input className={inputCls} value={prenom} onChange={e => setPrenom(e.target.value)} required />

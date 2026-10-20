@@ -177,7 +177,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <label className="text-xs text-gray-500">Du<input type="date" value={dateDebut} onChange={e => setDateDebut(e.target.value)} className={champ + ' mt-1'} /></label>
             <label className="text-xs text-gray-500">Au<input type="date" value={dateFin} onChange={e => setDateFin(e.target.value)} className={champ + ' mt-1'} /></label>
           </div>

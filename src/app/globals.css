@@ -29,3 +29,43 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* ---------------------------------------------------------------------------
+   Affichage sur téléphone et petite tablette (menu en tiroir, tableaux défilants)
+   --------------------------------------------------------------------------- */
+.tiroir-barre, .tiroir-fond { display: none; }
+
+@media (max-width: 900px) {
+  .tiroir-barre {
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 90;
+    height: 52px; padding: 0 12px; color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+  .tiroir-bouton {
+    width: 40px; height: 40px; border: none; border-radius: 8px;
+    background: rgba(255,255,255,0.14); color: #fff; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tiroir-titre { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tiroir-fond { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 110; }
+  .tiroir-menu {
+    position: fixed !important; top: 0 !important; left: 0 !important; bottom: 0 !important;
+    height: auto !important; width: min(280px, 85vw) !important; min-width: 0 !important;
+    z-index: 120 !important; overflow-y: auto;
+    transform: translateX(-105%); transition: transform 0.2s ease;
+  }
+  .tiroir-menu.tiroir-ouvert { transform: translateX(0); }
+
+  /* Les écrans en colonne plutôt qu'en ligne */
+  .coque-adaptative { flex-direction: column; }
+
+  /* Les tableaux larges défilent horizontalement au lieu de déborder de l'écran */
+  .contenu-adaptatif table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .contenu-adaptatif img, .contenu-adaptatif video, .contenu-adaptatif iframe { max-width: 100%; }
+  .contenu-adaptatif pre { white-space: pre-wrap; word-break: break-word; }
+}
+
+@media (max-width: 640px) {
+  .grille-2-colonnes { grid-template-columns: 1fr !important; }
+}

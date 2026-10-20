@@ -87,7 +87,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-5 gap-4 mt-5 pt-5 border-t border-gray-100">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-5 pt-5 border-t border-gray-100">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{formation.modules?.length || 0}</p>
               <p className="text-xs text-gray-500 mt-0.5">Modules</p>

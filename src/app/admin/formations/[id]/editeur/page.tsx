@@ -258,7 +258,7 @@ export default function EditeurFormationPage() {
           </Link>
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{formation?.titre}</h1>
-            <p className="text-sm text-gray-500">Editeur de cours</p>
+            <p className="text-sm text-gray-500">Éditeur de cours</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -279,9 +279,9 @@ export default function EditeurFormationPage() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex flex-col md:flex-row md:h-[calc(100vh-73px)]">
         {/* Colonne gauche: structure du cours */}
-        <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
+        <div className="w-full md:w-80 max-h-72 md:max-h-none bg-white border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto flex-shrink-0">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Structure</h2>
             <button
@@ -419,7 +419,7 @@ export default function EditeurFormationPage() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
                 <div className="text-6xl mb-4">✏️</div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">Editeur de cours</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Éditeur de cours</h2>
                 <p className="text-gray-500 mb-6">Sélectionnez un module ou une leçon dans la colonne de gauche pour l&apos;éditer, ou ajoutez un nouveau module pour commencer.</p>
                 <button
                   onClick={ajouterModule}
