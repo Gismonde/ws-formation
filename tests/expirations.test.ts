@@ -162,3 +162,24 @@ describe('Filtres du journal d’audit', () => {
     expect(concerne({ acteur_id: 'b', cible_employe_id: 'c' }, 'a')).toBe(false)
   })
 })
+
+import { lienValide, validerContenu, ACCUEIL_PAR_DEFAUT } from '@/lib/accueil'
+
+describe('Page d’accueil', () => {
+  it('n’accepte que des liens sûrs', () => {
+    expect(lienValide('https://wssurgical.com/about-us')).toBe(true)
+    expect(lienValide('/dashboard/sop')).toBe(true)
+    expect(lienValide('#visite')).toBe(true)
+    expect(lienValide('javascript:alert(1)')).toBe(false)
+    expect(lienValide('http://exemple.com')).toBe(false)
+    expect(lienValide('//exemple.com/x')).toBe(false)
+  })
+  it('les contenus par défaut sont valides', () => {
+    for (const c of Object.values(ACCUEIL_PAR_DEFAUT)) expect('contenu' in validerContenu(c)).toBe(true)
+  })
+  it('refuse un lien dangereux et exige un titre', () => {
+    const base = ACCUEIL_PAR_DEFAUT.CMC
+    expect('erreur' in validerContenu({ ...base, cartes: [{ titre: 'X', texte: '', image: '', lien: 'javascript:x' }] })).toBe(true)
+    expect('erreur' in validerContenu({ ...base, banniere: { ...base.banniere, titre: '' } })).toBe(true)
+  })
+})

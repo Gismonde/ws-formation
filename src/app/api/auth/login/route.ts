@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     const { data: mfaData } = await supabase.auth.mfa.listFactors()
     const hasMFA = mfaData?.totp?.some(f => f.status === 'verified') ?? false
 
-    const redirectUrl = hasMFA ? '/mfa-verify' : '/dashboard'
+    const redirectUrl = hasMFA ? '/mfa-verify' : '/dashboard/accueil'
     const response = NextResponse.redirect(new URL(redirectUrl, request.url), { status: 303 })
 
     for (const { name, value, options } of cookiesToSet) {
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     return response
   }
 
-  const response = NextResponse.redirect(new URL('/dashboard', request.url), { status: 303 })
+  const response = NextResponse.redirect(new URL('/dashboard/accueil', request.url), { status: 303 })
 
   for (const { name, value, options } of cookiesToSet) {
     response.cookies.set(name, value, options)

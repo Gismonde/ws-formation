@@ -46,7 +46,7 @@ export default function MfaVerifyPage() {
       return
     }
 
-    router.push('/dashboard')
+    router.push('/dashboard/accueil')
   }
 
   return (

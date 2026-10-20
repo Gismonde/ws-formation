@@ -47,4 +47,16 @@ ALTER TABLE public.sondage_reponses ENABLE ROW LEVEL SECURITY;
 -- Sondage proposé ou non à la fin de chaque formation (activé par défaut)
 ALTER TABLE public.formations ADD COLUMN IF NOT EXISTS sondage_actif boolean NOT NULL DEFAULT true;
 
+-- ---------------------------------------------------------------------------
+-- 3. Page d'accueil de l'espace employé, par clinique (photos, liens, informations)
+--    Modifiée par les administrateurs depuis Admin → Page d'accueil ; lue par le serveur.
+
+CREATE TABLE IF NOT EXISTS public.pages_accueil (
+  clinique    text PRIMARY KEY CHECK (clinique IN ('CMC', 'WSSC')),
+  contenu     jsonb NOT NULL,
+  modifie_par uuid REFERENCES public.employes(id) ON DELETE SET NULL,
+  modifie_le  timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.pages_accueil ENABLE ROW LEVEL SECURITY;
+
 COMMIT;

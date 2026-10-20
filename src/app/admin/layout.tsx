@@ -16,6 +16,7 @@ const adminNav = [
   { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
   { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
+  { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
   { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
 ]
