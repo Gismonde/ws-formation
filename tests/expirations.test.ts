@@ -134,3 +134,31 @@ describe('Sondages de satisfaction', () => {
     expect(r.commentaires).toEqual([{ texte: 'Trop long', date: '2026-10-02' }])
   })
 })
+
+import { lireFiltresAudit, borneToronto, concerne } from '@/lib/audit-journal'
+
+describe('Filtres du journal d’audit', () => {
+  it('ne garde que des valeurs valides', () => {
+    const f = lireFiltresAudit(new URLSearchParams({
+      types: 'CONNEXION,INCONNU,CONNEXION_ECHOUEE', clinique: 'XYZ', departement: 'pas-un-uuid',
+      employes: '0b7d0a3e-1c2d-4e5f-8a9b-0c1d2e3f4a5b,abc', date_debut: '2026-10-01', date_fin: '01/10/2026',
+      recherche: 'abc),(acteur_id.eq.x%',
+    }))
+    expect(f.types).toEqual(['CONNEXION', 'CONNEXION_ECHOUEE'])
+    expect(f.clinique).toBeNull()
+    expect(f.departement_id).toBeNull()
+    expect(f.employe_ids).toEqual(['0b7d0a3e-1c2d-4e5f-8a9b-0c1d2e3f4a5b'])
+    expect(f.date_debut).toBe('2026-10-01')
+    expect(f.date_fin).toBeNull()
+    expect(f.recherche).not.toMatch(/[(),%]/)
+  })
+  it('borne les journées à l’heure de Montréal (été / hiver)', () => {
+    expect(borneToronto('2026-07-01', false)).toBe('2026-07-01T00:00:00-04:00')
+    expect(borneToronto('2026-01-15', true)).toBe('2026-01-15T23:59:59.999-05:00')
+  })
+  it('une entrée concerne l’auteur ou la personne visée', () => {
+    expect(concerne({ acteur_id: 'a', cible_employe_id: null }, 'a')).toBe(true)
+    expect(concerne({ acteur_id: 'b', cible_employe_id: 'a' }, 'a')).toBe(true)
+    expect(concerne({ acteur_id: 'b', cible_employe_id: 'c' }, 'a')).toBe(false)
+  })
+})
