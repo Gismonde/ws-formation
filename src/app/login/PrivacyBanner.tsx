@@ -76,7 +76,7 @@ export default function PrivacyBanner() {
             <p style={{ margin: '0 0 10px', fontWeight: '600', fontSize: '14px' }}>{t('Politique de confidentialité — WS Formation')}</p>
             <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <li><strong>{t('Données collectées :')}</strong> {t('Nom, prénom, courriel professionnel, rôle, progression dans les formations.')}</li>
-              <li><strong>{t('Finalité :')}</strong> {t('Gestion des formations, suivi pédagogique, certificats, conformité RGPD.')}</li>
+              <li><strong>{t('Finalité :')}</strong> {t('Gestion des formations, suivi pédagogique, certificats, conformité à la Loi 25 (Québec).')}</li>
               <li><strong>{t('Conservation :')}</strong> {t('Données conservées pendant 5 ans conformément à la réglementation en vigueur.')}</li>
               <li><strong>{t('Partage :')}</strong> {t('Vos données ne sont jamais vendues ni partagées avec des tiers.')}</li>
               <li><strong>{t('Vos droits :')}</strong> {t('Accès, rectification, suppression sur demande auprès de votre administrateur.')}</li>
