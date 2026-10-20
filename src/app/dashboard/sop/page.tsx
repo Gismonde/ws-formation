@@ -85,7 +85,7 @@ export default async function SOPPage() {
               <div key={cat} style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#1a1f36' }}>{cat}</span>
-                  <span style={{ background: '#e0e7ff', color: '#4338ca', borderRadius: '12px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>
+                  <span style={{ background: 'var(--accent-clinique-clair)', color: 'var(--accent-clinique-fonce)', borderRadius: '12px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>
                     {sopsInCat.length}
                   </span>
                 </div>
@@ -114,7 +114,7 @@ export default async function SOPPage() {
                           </p>
                         </div>
                         {sop.fichier_url && (
-                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
+                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--accent-clinique)', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
                             Consulter
                           </a>
                         )}

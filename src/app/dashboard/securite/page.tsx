@@ -172,7 +172,7 @@ export default function SecuritePage() {
             onClick={demarrerEnrollment}
             style={{
               width: '100%', padding: '10px 16px', borderRadius: '8px',
-              backgroundColor: '#4f46e5', color: 'white', border: 'none',
+              backgroundColor: 'var(--accent-clinique)', color: 'white', border: 'none',
               cursor: 'pointer', fontWeight: '600', fontSize: '14px',
             }}
           >
@@ -269,7 +269,7 @@ export default function SecuritePage() {
             </button>
             <button onClick={verifierCode} disabled={code.length !== 6} style={{
               flex: 2, padding: '10px', borderRadius: '8px', fontSize: '14px',
-              backgroundColor: code.length === 6 ? '#4f46e5' : '#e5e7eb',
+              backgroundColor: code.length === 6 ? 'var(--accent-clinique)' : '#e5e7eb',
               color: code.length === 6 ? 'white' : '#9ca3af',
               border: 'none', cursor: code.length === 6 ? 'pointer' : 'not-allowed', fontWeight: '600',
             }}>
@@ -281,7 +281,7 @@ export default function SecuritePage() {
 
       {step === 'liste' && !mfaActive && (
         <div style={{
-          backgroundColor: '#eff6ff', border: '1px solid #bfdbfe',
+          backgroundColor: 'var(--accent-clinique-clair)', border: '1px solid #bfdbfe',
           borderRadius: '12px', padding: '16px',
         }}>
           <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#1e40af', marginTop: 0, marginBottom: '8px' }}>

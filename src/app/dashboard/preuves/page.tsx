@@ -207,7 +207,7 @@ export default function MesPreuvesPage() {
             type="submit"
             disabled={uploading}
             style={{
-              background: uploading ? '#9ca3af' : '#4f46e5',
+              background: uploading ? '#9ca3af' : 'var(--accent-clinique)',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
@@ -261,7 +261,7 @@ export default function MesPreuvesPage() {
                     href={p.fichier_url}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}
+                    style={{ fontSize: '12px', color: 'var(--accent-clinique)', textDecoration: 'none' }}
                   >
                     Voir le document
                   </a>

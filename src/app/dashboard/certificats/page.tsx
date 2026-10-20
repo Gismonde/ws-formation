@@ -53,7 +53,7 @@ export default async function CertificatsPage() {
                   {cert.numero_certificat}
                 </span>
                 <div style={{ marginTop: '8px' }}>
-                  <a href={'/certificat/' + cert.id} style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none' }}>Voir / imprimer →</a>
+                  <a href={'/certificat/' + cert.id} style={{ fontSize: '13px', color: 'var(--accent-clinique)', textDecoration: 'none' }}>Voir / imprimer →</a>
                 </div>
               </div>
             </div>

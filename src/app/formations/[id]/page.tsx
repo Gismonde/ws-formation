@@ -131,7 +131,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
             <div className="bg-gray-100 rounded-full h-2">
               <div
                 className="h-2 rounded-full transition-all"
-                style={{ width: progressionPct + '%', background: estTerminee ? '#10b981' : '#6366f1' }}
+                style={{ width: progressionPct + '%', background: estTerminee ? '#10b981' : 'var(--accent-clinique)' }}
               />
             </div>
           </div>

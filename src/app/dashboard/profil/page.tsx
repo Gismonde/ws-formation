@@ -31,8 +31,8 @@ export default async function ProfilPage() {
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>Vos informations personnelles</p>
       </div>
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', height: '100px', position: 'relative' }}>
-          <div style={{ position: 'absolute', bottom: '-32px', left: '32px', width: '64px', height: '64px', borderRadius: '50%', background: '#fff', border: '3px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '700', color: '#6366f1' }}>
+        <div style={{ background: 'var(--degrade-clinique)', height: '100px', position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: '-32px', left: '32px', width: '64px', height: '64px', borderRadius: '50%', background: '#fff', border: '3px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '700', color: 'var(--accent-clinique)' }}>
             {initiales}
           </div>
         </div>
