@@ -9,6 +9,7 @@ import { ChoixEspace } from '@/components/ChoixEspace'
 import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
 const employeNav = [
+  { href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' },
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
   { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
