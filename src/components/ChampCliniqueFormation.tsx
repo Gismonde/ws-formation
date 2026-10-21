@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useEffect, useState } from 'react'
 import { CLINIQUE_CONTENU_LABEL, type CliniqueContenu } from '@/lib/cliniques'
 
@@ -13,6 +14,7 @@ export function ChampCliniqueFormation({ valeur, onChange, style, labelStyle }: 
   style?: React.CSSProperties
   labelStyle?: React.CSSProperties
 }) {
+  const { t } = useT()
   const [options, setOptions] = useState<CliniqueContenu[] | null>(null)
 
   useEffect(() => {
@@ -29,19 +31,19 @@ export function ChampCliniqueFormation({ valeur, onChange, style, labelStyle }: 
 
   return (
     <div>
-      <label style={labelStyle}>Clinique *</label>
+      <label style={labelStyle}>{t('Clinique *')}</label>
       <select
         style={style}
         value={valeur ?? ''}
         onChange={e => onChange(e.target.value as CliniqueContenu)}
         disabled={!options || options.length === 0}
       >
-        {!options && <option value="">Chargement…</option>}
-        {options && options.length === 0 && <option value="">Aucune clinique autorisée</option>}
+        {!options && <option value="">{t('Chargement…')}</option>}
+        {options && options.length === 0 && <option value="">{t('Aucune clinique autorisée')}</option>}
         {valeur && options && !options.includes(valeur) && <option value={valeur} disabled>{CLINIQUE_CONTENU_LABEL[valeur]}</option>}
         {options?.map(c => <option key={c} value={c}>{CLINIQUE_CONTENU_LABEL[c]}</option>)}
       </select>
-      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>Seuls les employés de cette clinique pourront voir la formation.</div>
+      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>{t('Seuls les employés de cette clinique pourront voir la formation.')}</div>
     </div>
   )
 }

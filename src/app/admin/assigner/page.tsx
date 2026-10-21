@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, filtrerEmployes, departementsVisibles, cliniquesContenuVisibles, cliniquesAdministrees } from '@/lib/permissions'
 import { aAccesAdmin, cliniqueAffichee, CLINIQUE_EMPLOYE_LABEL } from '@/lib/cliniques'
@@ -7,6 +8,7 @@ import AssignationGroupee from './AssignationGroupee'
 const liste = (v: string | undefined) => (v ?? '').split(',').filter(Boolean)
 
 export default async function AssignerPage({ searchParams }: { searchParams: Promise<{ formations?: string; politiques?: string; employes?: string }> }) {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')

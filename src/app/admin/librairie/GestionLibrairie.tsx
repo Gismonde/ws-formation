@@ -1,5 +1,6 @@
 'use client'
 // Admin → Librairie : vidéos, liens et documents réutilisables dans les leçons.
+import { useT } from '@/lib/i18n/client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { LIBELLE_TYPE_LIBRAIRIE, TYPES_LIBRAIRIE, plateformeVideo, type ElementLibrairie, type TypeLibrairie, type Utilisation } from '@/lib/librairie-commun'
@@ -16,6 +17,7 @@ const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:
 type Brouillon = { id?: string; type: TypeLibrairie; titre: string; description: string; url: string; nom_fichier: string; categorie: string; clinique: CliniqueContenu }
 
 export default function GestionLibrairie({ cliniques, peutImporter }: { cliniques: CliniqueContenu[]; peutImporter: boolean }) {
+  const { t } = useT()
   const [type, setType] = useState<TypeLibrairie>('video')
   const [elements, setElements] = useState<Element[]>([])
   const [chargement, setChargement] = useState(true)
@@ -58,30 +60,30 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
     })
     const d = await r.json().catch(() => ({}))
     setEnCours(false)
-    if (!r.ok) return setErreur(d.error ?? 'Enregistrement impossible')
-    setMessage(brouillon.id ? `Enregistré.${d.blocsMisAJour ? ` ${d.blocsMisAJour} leçon(s) mise(s) à jour automatiquement.` : ''}` : 'Ajouté à la librairie.')
+    if (!r.ok) return setErreur(d.error ?? t('Enregistrement impossible'))
+    setMessage(brouillon.id ? t('Enregistré.') + (d.blocsMisAJour ? ' ' + t('{n} leçon(s) mise(s) à jour automatiquement.', { n: d.blocsMisAJour }) : '') : t('Ajouté à la librairie.'))
     setBrouillon(null)
     if (brouillon.type !== type) setType(brouillon.type); else charger()
   }
 
   async function archiver(e: Element, archive: boolean) {
     const r = await fetch(`/api/admin/librairie/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archive }) })
-    if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? 'Opération impossible')
+    if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? t('Opération impossible'))
   }
   async function supprimer(e: Element) {
-    if (!window.confirm(`Supprimer définitivement « ${e.titre} » de la librairie ?`)) return
+    if (!window.confirm(t('Supprimer définitivement « {titre} » de la librairie ?', { titre: e.titre }))) return
     const r = await fetch(`/api/admin/librairie/${e.id}`, { method: 'DELETE' })
-    if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? 'Suppression impossible')
+    if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? t('Suppression impossible'))
   }
 
   async function importerGrs() {
-    if (!window.confirm('Importer dans la librairie les vidéos et les liens relevés dans la librairie GrS (clinique CMC) ? Les éléments déjà présents sont ignorés.')) return
+    if (!window.confirm(t('Importer dans la librairie les vidéos et les liens relevés dans la librairie GrS (clinique CMC) ? Les éléments déjà présents sont ignorés.'))) return
     setEnCours(true); setErreur(null); setMessage(null)
     const r = await fetch('/api/admin/librairie/import-grs', { method: 'POST' })
     const d = await r.json().catch(() => ({}))
     setEnCours(false)
-    if (!r.ok) return setErreur(d.error ?? 'Import impossible')
-    setMessage(`${d.importes} élément(s) importé(s) de GrS${d.ignores ? `, ${d.ignores} déjà présent(s)` : ''}.`)
+    if (!r.ok) return setErreur(d.error ?? t('Import impossible'))
+    setMessage(t('{n} élément(s) importé(s) de GrS', { n: d.importes }) + (d.ignores ? ', ' + t('{n} déjà présent(s)', { n: d.ignores }) : '') + '.')
     charger()
   }
 
@@ -101,12 +103,12 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
     <div className="max-w-6xl space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Librairie</h1>
-          <p className="text-sm text-gray-500 mt-1">Vidéos, liens et documents à réutiliser dans les leçons. Une modification ici met à jour toutes les leçons qui les utilisent.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('Librairie')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('Vidéos, liens et documents à réutiliser dans les leçons. Une modification ici met à jour toutes les leçons qui les utilisent.')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-        {peutImporter && <button type="button" onClick={importerGrs} disabled={enCours} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 disabled:opacity-40">⇣ Importer la librairie GrS</button>}
-        <button type="button" onClick={nouveau} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">+ Ajouter {type === 'video' ? 'une vidéo' : type === 'lien' ? 'un lien' : 'un document'}</button>
+        {peutImporter && <button type="button" onClick={importerGrs} disabled={enCours} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 disabled:opacity-40">{t('⇣ Importer la librairie GrS')}</button>}
+        <button type="button" onClick={nouveau} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">{t('+ Ajouter')}{' '}{type === 'video' ? 'une vidéo' : type === 'lien' ? 'un lien' : 'un document'}</button>
         </div>
       </div>
 
@@ -114,12 +116,12 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
         {TYPES_LIBRAIRIE.map(t => (
           <button key={t} type="button" className={ongletCls(type === t)} onClick={() => { setType(t); setCategorie('') }}>{ICONE[t]} {LIBELLE_TYPE_LIBRAIRIE[t]}</button>
         ))}
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher…" className="ml-auto border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-56" />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher…')} className="ml-auto border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-56" />
         <select value={categorie} onChange={e => setCategorie(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <option value="">Toutes les catégories</option>
+          <option value="">{t('Toutes les catégories')}</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" checked={archives} onChange={e => setArchives(e.target.checked)} /> Archivés</label>
+        <label className="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" checked={archives} onChange={e => setArchives(e.target.checked)} /> {t('Archivés')}</label>
       </div>
 
       {message && <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-2 text-sm">{message}</div>}
@@ -133,23 +135,23 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
               {TYPES_LIBRAIRIE.map(t => <button key={t} type="button" className={ongletCls(brouillon.type === t) + ' !py-1'} onClick={() => setBrouillon({ ...brouillon, type: t, url: '', nom_fichier: '' })}>{ICONE[t]} {LIBELLE_TYPE_LIBRAIRIE[t].replace(/s$/, '')}</button>)}
             </div>
           )}
-          <input value={brouillon.titre} onChange={e => setBrouillon({ ...brouillon, titre: e.target.value })} placeholder="Titre *" className={champ + ' font-medium'} maxLength={300} />
+          <input value={brouillon.titre} onChange={e => setBrouillon({ ...brouillon, titre: e.target.value })} placeholder={t('Titre *')} className={champ + ' font-medium'} maxLength={300} />
           <div className="space-y-1">
             <input value={estMediaPrive(brouillon.url) ? '' : brouillon.url} onChange={e => setBrouillon({ ...brouillon, url: e.target.value.trim(), nom_fichier: '' })}
-              placeholder={brouillon.type === 'video' ? 'Lien YouTube, Vimeo ou SharePoint' : brouillon.type === 'lien' ? 'Adresse https://…' : 'Adresse https://… du document (ou téléversez-le ci-dessous)'} className={champ} />
+              placeholder={brouillon.type === 'video' ? t('Lien YouTube, Vimeo ou SharePoint') : brouillon.type === 'lien' ? 'Adresse https://…' : t('Adresse https://… du document (ou téléversez-le ci-dessous)')} className={champ} />
             {brouillon.type !== 'lien' && (
               <label className="inline-flex items-center gap-2 text-sm text-indigo-700 cursor-pointer">
-                <span className="underline">{estMediaPrive(brouillon.url) ? `📎 ${brouillon.nom_fichier || 'Fichier téléversé'} — remplacer` : brouillon.type === 'video' ? 'ou téléverser un fichier vidéo (50 Mo max.)' : 'ou téléverser un document (PDF, Word, Excel, PowerPoint)'}</span>
+                <span className="underline">{estMediaPrive(brouillon.url) ? `📎 ${brouillon.nom_fichier || t('Fichier téléversé')} — ${t('remplacer')}` : brouillon.type === 'video' ? t('ou téléverser un fichier vidéo (50 Mo max.)') : t('ou téléverser un document (PDF, Word, Excel, PowerPoint)')}</span>
                 <input type="file" className="hidden" accept={brouillon.type === 'video' ? 'video/mp4,video/webm,video/quicktime' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx'} onChange={e => { const f = e.target.files?.[0]; if (f) televerser(f) }} />
               </label>
             )}
             {brouillon.type === 'video' && brouillon.url && !estMediaPrive(brouillon.url) && (
-              <p className="text-xs text-gray-500">{analyserVideoEnLigne(brouillon.url) ? `✓ ${plateformeVideo(brouillon.url)} reconnu : le visionnement pourra être suivi.` : 'Lien SharePoint : la vidéo s’ouvrira dans un nouvel onglet (pas de suivi du visionnement).'}</p>
+              <p className="text-xs text-gray-500">{analyserVideoEnLigne(brouillon.url) ? t('✓ {plateforme} reconnu : le visionnement pourra être suivi.', { plateforme: plateformeVideo(brouillon.url) ?? '' }) : t('Lien SharePoint : la vidéo s’ouvrira dans un nouvel onglet (pas de suivi du visionnement).')}</p>
             )}
           </div>
-          <textarea value={brouillon.description} onChange={e => setBrouillon({ ...brouillon, description: e.target.value })} placeholder="Description (facultatif)" rows={2} className={champ} maxLength={2000} />
+          <textarea value={brouillon.description} onChange={e => setBrouillon({ ...brouillon, description: e.target.value })} placeholder={t('Description (facultatif)')} rows={2} className={champ} maxLength={2000} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={brouillon.categorie} onChange={e => setBrouillon({ ...brouillon, categorie: e.target.value })} placeholder="Catégorie (ex. Santé et sécurité)" list="categories-librairie" className={champ} maxLength={80} />
+            <input value={brouillon.categorie} onChange={e => setBrouillon({ ...brouillon, categorie: e.target.value })} placeholder={t('Catégorie (ex. Santé et sécurité)')} list="categories-librairie" className={champ} maxLength={80} />
             <datalist id="categories-librairie">{categories.map(c => <option key={c} value={c} />)}</datalist>
             <select value={brouillon.clinique} onChange={e => setBrouillon({ ...brouillon, clinique: e.target.value as CliniqueContenu })} className={champ}>
               {cliniques.map(c => <option key={c} value={c}>{LIBELLE_CLINIQUE[c]}</option>)}
@@ -157,14 +159,14 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={enregistrer} disabled={enCours || !brouillon.titre || !brouillon.url} className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-40">{enCours ? '…' : 'Enregistrer'}</button>
-            <button type="button" onClick={() => setBrouillon(null)} className="px-4 py-2 rounded-lg border border-gray-300 text-sm">Annuler</button>
+            <button type="button" onClick={() => setBrouillon(null)} className="px-4 py-2 rounded-lg border border-gray-300 text-sm">{t('Annuler')}</button>
           </div>
         </section>
       )}
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        {chargement ? <p className="p-8 text-center text-sm text-gray-400">Chargement…</p>
-          : visibles.length === 0 ? <p className="p-8 text-center text-sm text-gray-400">Aucun élément.</p>
+        {chargement ? <p className="p-8 text-center text-sm text-gray-400">{t('Chargement…')}</p>
+          : visibles.length === 0 ? <p className="p-8 text-center text-sm text-gray-400">{t('Aucun élément.')}</p>
           : (
             <ul className="divide-y divide-gray-100">
               {visibles.map(e => {
@@ -179,7 +181,7 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
                           {e.type === 'video' && <span>{plateformeVideo(e.url)}</span>}
                           {e.categorie && <span>{e.categorie}</span>}
                           <span>{LIBELLE_CLINIQUE[e.clinique]}</span>
-                          {e.source === 'grs' && <span>importé de GrS</span>}
+                          {e.source === 'grs' && <span>{t('importé de GrS')}</span>}
                         </div>
                         {e.description && <p className="text-sm text-gray-600 mt-1">{e.description}</p>}
                         {e.utilisations.length > 0 && (
@@ -196,10 +198,10 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
                         )}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {lien && <a href={lien} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-md border border-gray-300 text-xs text-gray-700">Ouvrir ↗</a>}
-                        <button type="button" onClick={() => modifier(e)} className="px-2.5 py-1 rounded-md border border-gray-300 text-xs text-gray-700">Modifier</button>
+                        {lien && <a href={lien} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-md border border-gray-300 text-xs text-gray-700">{t('Ouvrir ↗')}</a>}
+                        <button type="button" onClick={() => modifier(e)} className="px-2.5 py-1 rounded-md border border-gray-300 text-xs text-gray-700">{t('Modifier')}</button>
                         <button type="button" onClick={() => archiver(e, !e.archive)} className="px-2.5 py-1 rounded-md border border-gray-300 text-xs text-gray-700">{e.archive ? 'Désarchiver' : 'Archiver'}</button>
-                        {e.utilisations.length === 0 && <button type="button" onClick={() => supprimer(e)} className="px-2.5 py-1 rounded-md border border-red-200 text-xs text-red-600">Supprimer</button>}
+                        {e.utilisations.length === 0 && <button type="button" onClick={() => supprimer(e)} className="px-2.5 py-1 rounded-md border border-red-200 text-xs text-red-600">{t('Supprimer')}</button>}
                       </div>
                     </div>
                   </li>

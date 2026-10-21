@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -30,6 +31,7 @@ interface PageProps {
 }
 
 export default function AssignerFormationPage({ params }: PageProps) {
+  const { t } = useT()
   const router = useRouter()
   const [formationId, setFormationId] = useState<string>('')
   const [formation, setFormation] = useState<Formation | null>(null)
@@ -70,7 +72,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
         setCibleId(defaultDept || '')
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Impossible de charger les données' })
+      setMessage({ type: 'error', text: t('Impossible de charger les données') })
     } finally {
       setLoading(false)
     }
@@ -79,7 +81,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!cibleId) {
-      setMessage({ type: 'error', text: 'Veuillez sélectionner une cible' })
+      setMessage({ type: 'error', text: t('Veuillez sélectionner une cible') })
       return
     }
     setSubmitting(true)
@@ -101,12 +103,12 @@ export default function AssignerFormationPage({ params }: PageProps) {
       } else {
         setMessage({
           type: 'success',
-          text: `${data.assigned} assignation(s) créée(s)${data.skipped > 0 ? `, ${data.skipped} déjà assignée(s)` : ''}${data.courriels > 0 ? ` — ${data.courriels} courriel(s) envoyé(s)` : ''}`
+          text: t('{n} assignation(s) créée(s)', { n: data.assigned }) + (data.skipped > 0 ? ', ' + t('{n} déjà assignée(s)', { n: data.skipped }) : '') + (data.courriels > 0 ? ' — ' + t('{n} courriel(s) envoyé(s)', { n: data.courriels }) : '')
         })
         setTimeout(() => router.push('/admin/formations'), 2500)
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur réseau' })
+      setMessage({ type: 'error', text: t('Erreur réseau') })
     } finally {
       setSubmitting(false)
     }
@@ -123,7 +125,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div className="text-gray-500">Chargement...</div>
+        <div className="text-gray-500">{t('Chargement...')}</div>
       </div>
     )
   }
@@ -131,9 +133,9 @@ export default function AssignerFormationPage({ params }: PageProps) {
   if (!formation) {
     return (
       <div className="p-8">
-        <div className="text-red-500">Formation introuvable.</div>
+        <div className="text-red-500">{t('Formation introuvable.')}</div>
         <Link href="/admin/formations" className="text-indigo-600 hover:underline mt-2 inline-block">
-          ← Retour aux formations
+          {t('← Retour aux formations')}
         </Link>
       </div>
     )
@@ -143,9 +145,9 @@ export default function AssignerFormationPage({ params }: PageProps) {
     <div className="p-8 max-w-2xl">
       <div className="mb-6">
         <Link href="/admin/formations" className="text-sm text-indigo-600 hover:underline">
-          ← Retour aux formations
+          {t('← Retour aux formations')}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">Assigner une formation</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mt-2">{t('Assigner une formation')}</h1>
         <p className="text-gray-500 text-sm mt-1">
           <span className="font-medium text-gray-700">{formation.titre}</span>
           {formation.categorie && <span className="ml-2 text-gray-400">• {formation.categorie}</span>}
@@ -161,7 +163,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
         {/* Type d'assignation */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Type d'assignation</label>
+          <label className="block text-sm font-medium text-gray-700 mb-3">{t('Type d\'assignation')}</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -178,7 +180,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
                 }}
                 className="text-indigo-600"
               />
-              <span className="text-sm text-gray-700">Département entier</span>
+              <span className="text-sm text-gray-700">{t('Département entier')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -192,7 +194,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
                 }}
                 className="text-indigo-600"
               />
-              <span className="text-sm text-gray-700">Employé spécifique</span>
+              <span className="text-sm text-gray-700">{t('Employé spécifique')}</span>
             </label>
           </div>
         </div>
@@ -201,9 +203,9 @@ export default function AssignerFormationPage({ params }: PageProps) {
         <div>
           {type === 'departement' ? (
             <>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('Département')}</label>
               {filteredDepartements.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">Aucun département disponible</p>
+                <p className="text-sm text-gray-500 italic">{t('Aucun département disponible')}</p>
               ) : (
                 <select
                   value={cibleId}
@@ -215,13 +217,13 @@ export default function AssignerFormationPage({ params }: PageProps) {
                   ))}
                 </select>
               )}
-              <p className="text-xs text-gray-400 mt-1">Tous les employés actifs du département seront assignés.</p>
+              <p className="text-xs text-gray-400 mt-1">{t('Tous les employés actifs du département seront assignés.')}</p>
             </>
           ) : (
             <>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Employé</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('Employé')}</label>
               {filteredEmployes.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">Aucun employé disponible</p>
+                <p className="text-sm text-gray-500 italic">{t('Aucun employé disponible')}</p>
               ) : (
                 <select
                   value={cibleId}
@@ -257,13 +259,13 @@ export default function AssignerFormationPage({ params }: PageProps) {
             disabled={submitting || !cibleId}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {submitting ? 'Assignation...' : 'Assigner la formation'}
+            {submitting ? 'Assignation...' : t('Assigner la formation')}
           </button>
           <Link
             href="/admin/formations"
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
-            Annuler
+            {t('Annuler')}
           </Link>
         </div>
       </form>
