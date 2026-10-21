@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { nettoyerCategorie } from '@/lib/categories'
 import { createClient } from '@supabase/supabase-js'
 import { logAudit } from '@/lib/audit'
 import { estCliniqueContenu } from '@/lib/cliniques'
 
-const CATEGORIES = [
-  'Administration médicale',
-  'Gestion des soins',
-  'Hygiène et sécurité',
-  'Ressources humaines',
-  'Qualité et conformité',
-  'Informatique et systèmes',
-  'Formation du personnel',
-  'Gestion des risques',
-  'Communication',
-]
 
 interface LeconInput {
   titre: string
@@ -89,7 +79,7 @@ export async function POST(req: NextRequest) {
     .insert({
       titre: titre.trim(),
       description: description?.trim() || null,
-      categorie: CATEGORIES.includes(categorie) ? categorie : CATEGORIES[0],
+      categorie: nettoyerCategorie(categorie) ?? 'Administration médicale',
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
       clinique,
       duree_estimee_minutes: Math.round((Number(duree_heures) || 1) * 60),

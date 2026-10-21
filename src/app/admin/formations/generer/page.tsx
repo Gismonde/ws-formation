@@ -1,22 +1,12 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { ChampCategorie } from '@/components/ChampCategorie'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import type { CliniqueContenu } from '@/lib/cliniques'
 
-const CATEGORIES = [
-  'Administration médicale',
-  'Gestion des soins',
-  'Hygiène et sécurité',
-  'Ressources humaines',
-  'Qualité et conformité',
-  'Informatique et systèmes',
-  'Formation du personnel',
-  'Gestion des risques',
-  'Communication',
-]
 
 interface BlocData {
   type: 'video' | 'file' | 'code' | 'link'
@@ -328,7 +318,7 @@ export default function GenererFormationPage() {
   const [titre, setTitre] = useState('')
   const [description, setDescription] = useState('')
   const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
-  const [categorie, setCategorie] = useState(CATEGORIES[0])
+  const [categorie, setCategorie] = useState('Administration médicale')
   const [niveau, setNiveau] = useState('debutant')
   const [dureeHeures, setDureeHeures] = useState(1)
   const [dureeManuelle, setDureeManuelle] = useState(false)
@@ -760,9 +750,7 @@ export default function GenererFormationPage() {
               <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={selectStyle} labelStyle={labelStyle} />
               <div>
                 <label style={labelStyle}>Catégorie</label>
-                <select style={selectStyle} value={categorie} onChange={e => setCategorie(e.target.value)}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <ChampCategorie valeur={categorie} onChange={setCategorie} style={selectStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Niveau</label>

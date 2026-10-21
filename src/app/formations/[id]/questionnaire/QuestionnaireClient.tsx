@@ -11,6 +11,7 @@ type Resultat = {
   reussi: boolean
   seuil: number
   certificatId: string | null
+  sansCertificat?: boolean
   tentativesRestantes: number | null
   correction: Record<string, { correcte: boolean; bonne_reponse?: string }>
 }
@@ -79,6 +80,8 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
                   <p className="text-green-700 font-medium">{t('Votre certificat a été émis.')}</p>
                   <button onClick={() => router.push(`/certificat/${resultat.certificatId}`)} className="mt-2 text-green-700 underline text-sm">{t('Voir mon certificat')}</button>
                 </div>
+              ) : resultat.sansCertificat ? (
+                <p className="text-green-700 text-sm font-medium mb-5">{t('Formation réussie : votre réussite est enregistrée.')}</p>
               ) : (
                 <p className="text-amber-700 text-sm mb-5">{t('Réussite enregistrée, mais le certificat n’a pas pu être émis. L’incident est noté dans le journal ; contactez votre gestionnaire.')}</p>
               )

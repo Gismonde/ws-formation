@@ -8,6 +8,7 @@ import { getActeur, peutCreerFormations } from '@/lib/permissions'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
+import BoutonPublier from './BoutonPublier'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -88,6 +89,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <p className="text-gray-600 leading-relaxed">{formation.description}</p>
               )}
             </div>
+            {peutCreer && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />}
           </div>
 
           {/* Statistiques */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ChampCategorie } from '@/components/ChampCategorie'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import type { CliniqueContenu } from '@/lib/cliniques'
 import { useRouter } from 'next/navigation'
@@ -8,17 +9,6 @@ import { createClient } from '@/lib/supabase/client'
 import ChoixLibrairie, { type ElementChoisi } from '@/components/editeur/ChoixLibrairie'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 
-const CATEGORIES = [
-  'Administration médicale',
-  'Gestion des soins',
-  'Hygiène et sécurité',
-  'Ressources humaines',
-  'Qualité et conformité',
-  'Informatique et systèmes',
-  'Formation du personnel',
-  'Gestion des risques',
-  'Communication',
-]
 
 interface BlocData {
   type: 'video' | 'file' | 'code' | 'link'
@@ -468,9 +458,7 @@ export default function NouvelleFormationPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Catégorie</label>
-              <select style={{ ...inputStyle, cursor: 'pointer' }} value={categorie} onChange={e => setCategorie(e.target.value)}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <ChampCategorie valeur={categorie} onChange={setCategorie} style={{ ...inputStyle }} />
             </div>
             <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={{ ...inputStyle, cursor: 'pointer' }} labelStyle={labelStyle} />
             <div>

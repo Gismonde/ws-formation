@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // 1. La formation doit être publiée et assignée à l'employé
   const [{ data: formation }, { data: assignation }] = await Promise.all([
-    sb.from('formations').select('id, titre, publiee').eq('id', formationId).single(),
+    sb.from('formations').select('*').eq('id', formationId).single(),
     sb.from('assignations').select('id').eq('employe_id', acteur.id).eq('formation_id', formationId).limit(1).maybeSingle(),
   ])
   if (!formation || !formation.publiee) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
@@ -91,7 +91,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // 5. Certificat
   let certificatId: string | null = null
-  if (reussi) {
+  const sansCertificat = formation.delivre_certificat === false
+  if (reussi && !sansCertificat) {
     const cert = await emettreCertificat(sb, acteur.id, formationId, score)
     certificatId = cert?.id ?? null
     await logAudit({
@@ -111,6 +112,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     reussi,
     seuil: q.note_passage,
     certificatId,
+    sansCertificat,
     tentativesRestantes: restantes,
     // Les bonnes réponses ne sont révélées qu'en cas de réussite (sinon : seulement juste / faux)
     correction: Object.fromEntries(Object.entries(correction).map(([k, v]) => [k, reussi ? v : { correcte: v.correcte }])),

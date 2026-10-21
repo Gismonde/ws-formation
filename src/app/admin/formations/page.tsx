@@ -24,8 +24,9 @@ const niveauStyles: Record<string, { bg: string; color: string; label: string }>
   avance: { bg: "#fff1f2", color: "#e11d48", label: "Avancé" },
 }
 
-export default async function AdminFormationsPage({ searchParams }: { searchParams: Promise<{ clinique?: string; vue?: string }> }) {
-  const { clinique: filtre, vue: vueDemandee } = await searchParams
+export default async function AdminFormationsPage({ searchParams }: { searchParams: Promise<{ clinique?: string; vue?: string; statut?: string }> }) {
+  const { clinique: filtre, vue: vueDemandee, statut: statutDemande } = await searchParams
+  const statut: "brouillon" | "publiee" | null = statutDemande === "brouillon" || statutDemande === "publiee" ? statutDemande : null
   const vueMemorisee = (await cookies()).get("ws_vue_formations")?.value
   const vue: "liste" | "cartes" = (vueDemandee ?? vueMemorisee) === "cartes" ? "cartes" : "liste"
   const supabase = await createClient()
@@ -53,11 +54,14 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
   const onglets: CliniqueContenu[] = (["CMC", "WSSC", "LES_DEUX"] as CliniqueContenu[]).filter(c => visibles.includes(c))
   const filtreActif = estCliniqueContenu(filtre) && visibles.includes(filtre) ? filtre : null
 
-  const { data: formations } = await adminSupabase
+  const { data: toutes } = await adminSupabase
     .from("formations")
     .select("id, titre, description, categorie, niveau, publiee, obligatoire, clinique, image_couverture, duree_estimee_minutes")
     .in("clinique", filtreActif ? [filtreActif] : visibles)
     .order("created_at", { ascending: false })
+  const nbBrouillons = (toutes ?? []).filter(f => !f.publiee).length
+  const nbPubliees = (toutes ?? []).length - nbBrouillons
+  const formations = (toutes ?? []).filter(f => statut === null || (statut === "publiee") === !!f.publiee)
 
   const { data: modules } = await adminSupabase
     .from("modules")
@@ -69,9 +73,10 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
 
   const nbModules = (id: string) => modules?.filter((m: any) => m.formation_id === id).length ?? 0
   const nbAssign = (id: string) => assignations?.filter((a: any) => a.formation_id === id).length ?? 0
-  const lien = (c: CliniqueContenu | null, v: "liste" | "cartes") => {
+  const lien = (c: CliniqueContenu | null, v: "liste" | "cartes", st: "brouillon" | "publiee" | null = statut) => {
     const q = new URLSearchParams()
     if (c) q.set("clinique", c)
+    if (st) q.set("statut", st)
     if (v === "cartes") q.set("vue", "cartes")
     const s = q.toString()
     return "/admin/formations" + (s ? "?" + s : "")
@@ -159,11 +164,19 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
         </div>
       )}
 
-      {/* Choix de la vue */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px" }}>
+      {/* Choix de la vue et filtre par statut */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "12px" }}>
+        <div role="group" aria-label="Statut" style={{ display: "inline-flex", border: "1px solid #e5e7eb", borderRadius: "10px", background: "#fff", padding: "3px" }}>
+          {([{ v: null, l: `Toutes (${nbBrouillons + nbPubliees})` }, { v: "brouillon", l: `Brouillons (${nbBrouillons})` }, { v: "publiee", l: `Publiées (${nbPubliees})` }] as const).map(o => (
+            <Link key={o.l} href={lien(filtreActif, vue, o.v)} style={{
+              padding: "6px 14px", borderRadius: "7px", fontSize: "13px", fontWeight: 600, textDecoration: "none",
+              background: statut === o.v ? "#111827" : "transparent", color: statut === o.v ? "#fff" : "#374151",
+            }}>{o.l}</Link>
+          ))}
+        </div>
         <div role="group" aria-label="Affichage" style={{ display: "inline-flex", border: "1px solid #e5e7eb", borderRadius: "10px", background: "#fff", padding: "3px" }}>
           {([{ v: "liste", l: "☰ Liste" }, { v: "cartes", l: "▦ Vue détaillée" }] as const).map(o => (
-            <LienVue key={o.v} href={lien(filtreActif, o.v) + (o.v === "liste" ? (filtreActif ? "&" : "?") + "vue=liste" : "")} vue={o.v} actif={vue === o.v} style={{
+            <LienVue key={o.v} href={lien(filtreActif, o.v) + (o.v === "liste" ? (lien(filtreActif, o.v).includes("?") ? "&" : "?") + "vue=liste" : "")} vue={o.v} actif={vue === o.v} style={{
               padding: "6px 14px", borderRadius: "7px", fontSize: "13px", fontWeight: 600, textDecoration: "none",
               background: vue === o.v ? "#111827" : "transparent", color: vue === o.v ? "#fff" : "#374151",
             }}>{o.l}</LienVue>

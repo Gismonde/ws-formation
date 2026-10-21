@@ -112,7 +112,8 @@ export async function chargerEtatQuestionnaire(sb: SupabaseClient, employeId: st
 
 /** Émet (ou renouvelle) le certificat de l'employé pour cette formation. */
 export async function emettreCertificat(sb: SupabaseClient, employeId: string, formationId: string, note: number): Promise<Certificat | null> {
-  const { data: formation } = await sb.from('formations').select('validite_mois').eq('id', formationId).single()
+  const { data: formation } = await sb.from('formations').select('*').eq('id', formationId).single()
+  if (formation?.delivre_certificat === false) return null
   const maintenant = new Date()
   let expiration: string | null = null
   if (formation?.validite_mois && formation.validite_mois > 0) {
