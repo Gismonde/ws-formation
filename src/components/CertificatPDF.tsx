@@ -16,6 +16,7 @@ interface Certificat {
     categorie: string | null
     niveau: string | null
     description: string | null
+    responsable_formation?: string | null
   } | null
 }
 
@@ -184,7 +185,12 @@ export default function CertificatPDF({ certificat, employe, clinique, retour, a
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ width: '18cqw', marginLeft: 'auto', borderTop: '0.1cqw solid #9ca3af', paddingTop: '0.4cqw', fontSize: '1cqw', color: '#6b7280' }}>
+                  {f?.responsable_formation && (
+                    <div style={{ width: '24cqw', marginLeft: 'auto', textAlign: 'center', fontSize: '1.45cqw', color: '#111827', fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', marginBottom: '0.3cqw' }}>
+                      {f.responsable_formation}
+                    </div>
+                  )}
+                  <div style={{ width: '24cqw', marginLeft: 'auto', textAlign: 'center', borderTop: '0.1cqw solid #9ca3af', paddingTop: '0.4cqw', fontSize: '1cqw', color: '#6b7280' }}>
                     {t('Responsable de la formation')}
                   </div>
                   <div style={{ fontSize: '0.95cqw', color: '#9ca3af', marginTop: '0.9cqw' }}>
