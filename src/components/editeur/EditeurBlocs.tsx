@@ -15,6 +15,8 @@ import {
 } from '@/lib/actions/lessons'
 import type { ContentBlock, ContentBlockType } from '@/lib/types/formation'
 import { analyserVideoEnLigne, estMediaPrive, REGLES_MEDIAS, GenreMedia } from '@/lib/medias'
+import { envoyerMedia } from '@/lib/medias-client'
+import ChoixLibrairie, { type ElementChoisi } from './ChoixLibrairie'
 import { lireQuiz, nouvelleQuestion, Quiz } from '@/lib/quiz'
 import { STYLES_ENCADRE } from '@/lib/texte-riche'
 import { MODELES_LECON, ModeleLecon } from '@/lib/modeles-lecon'
@@ -42,25 +44,6 @@ const supabaseNavigateur = () => createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-/** Envoie un fichier directement dans l'espace privé et renvoie sa référence « media:… ». */
-async function envoyerMedia(fichier: File, genre: GenreMedia): Promise<string> {
-  const regle = REGLES_MEDIAS[genre]
-  if (!regle.types.includes(fichier.type)) throw new Error(`Format non accepté (${regle.libelle})`)
-  if (fichier.size > regle.tailleMaxMo * 1024 * 1024) throw new Error(`Fichier trop volumineux (${regle.libelle})`)
-  const res = await fetch('/api/formations/medias', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ genre, type: fichier.type, taille: fichier.size }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error ?? 'Envoi refusé')
-  const { error } = await supabaseNavigateur().storage.from(data.bucket).uploadToSignedUrl(data.chemin, data.jeton, fichier, {
-    contentType: fichier.type,
-  })
-  if (error) throw new Error('Envoi échoué : ' + error.message)
-  return data.reference as string
-}
-
 function meta(b: Bloc): Record<string, unknown> {
   return (b.metadata && typeof b.metadata === 'object') ? b.metadata as Record<string, unknown> : {}
 }
@@ -78,6 +61,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   const [etat, setEtat] = useState<EtatSauvegarde>('ok')
   const [erreur, setErreur] = useState<string | null>(null)
   const [menuOuvert, setMenuOuvert] = useState<number | null>(null)
+  const [choixLibrairie, setChoixLibrairie] = useState<{ position: number } | { blocId: string } | null>(null)
   const [glisse, setGlisse] = useState<string | null>(null)
   const [survol, setSurvol] = useState<number | null>(null)
   const [urlsMedias, setUrlsMedias] = useState<Record<string, string>>({})
@@ -213,7 +197,25 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
     return () => window.removeEventListener('paste', coller)
   }, [ajouter, blocs.length])
 
-  const props = { modifier, urlsMedias, setErreur, setEtat }
+  const props = { modifier, urlsMedias, setErreur, setEtat, ouvrirLibrairie: (blocId: string) => setChoixLibrairie({ blocId }) }
+
+  // Élément de la librairie → bloc lié (vidéo intégrée si YouTube/Vimeo/fichier, sinon lien vers le document)
+  const depuisLibrairie = (e: ElementChoisi) => {
+    const integrable = e.type === 'video' && (estMediaPrive(e.url) || !!analyserVideoEnLigne(e.url))
+    const type: ContentBlockType = integrable ? 'video' : 'file'
+    const metadata = e.type === 'politique' ? { politique_id: e.id } : { librairie_id: e.id, ...(e.nom_fichier ? { nom_fichier: e.nom_fichier } : {}) }
+    const cible = choixLibrairie
+    setChoixLibrairie(null)
+    if (!cible) return
+    if ('position' in cible) {
+      ajouter(cible.position, type, undefined, { titre: e.titre, url: e.url, metadata })
+    } else {
+      const bloc = blocs.find(b => b.id === cible.blocId)
+      if (!bloc) return
+      if (bloc.type !== type) { setErreur(type === 'file' ? 'Cette vidéo ne peut pas être intégrée (lien SharePoint) : ajoutez-la comme bloc « Librairie » pour l’afficher en lien.' : 'Choisissez un document ou un lien pour ce bloc.'); return }
+      modifier(bloc.id, { url: e.url, contenu: null, titre: bloc.titre || e.titre, metadata: { ...meta(bloc), ...metadata } }, true)
+    }
+  }
 
   // Partir d'un modèle : crée tous les blocs du modèle d'un coup
   const appliquerModele = async (modele: ModeleLecon) => {
@@ -235,6 +237,13 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
 
   return (
     <div>
+      {choixLibrairie && (
+        <ChoixLibrairie
+          types={'blocId' in choixLibrairie
+            ? (blocs.find(b => b.id === choixLibrairie.blocId)?.type === 'video' ? ['video'] : ['document', 'lien', 'politique'])
+            : ['video', 'lien', 'document', 'politique']}
+          onChoisir={depuisLibrairie} onFermer={() => setChoixLibrairie(null)} />
+      )}
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           Contenu de la leçon <span className="text-gray-400 font-normal normal-case">({blocs.length} bloc{blocs.length > 1 ? 's' : ''})</span>
@@ -278,7 +287,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
         </div>
       )}
 
-      <ZoneInsertion index={0} ouvert={menuOuvert === 0} setOuvert={setMenuOuvert} onChoisir={ajouter}
+      <ZoneInsertion index={0} ouvert={menuOuvert === 0} setOuvert={setMenuOuvert} onChoisir={ajouter} onLibrairie={p => { setMenuOuvert(null); setChoixLibrairie({ position: p }) }}
         actif={glisse !== null && survol === 0} onDragOver={() => setSurvol(0)} onDrop={() => glisse && deplacer(glisse, 0)} vide={blocs.length === 0} />
 
       {blocs.map((b, i) => (
@@ -315,7 +324,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               {b.type === 'slide' && <EditeurLien bloc={b} {...props} />}
             </div>
           </div>
-          <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter}
+          <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter} onLibrairie={p => { setMenuOuvert(null); setChoixLibrairie({ position: p }) }}
             actif={glisse !== null && survol === i + 1} onDragOver={() => setSurvol(i + 1)} onDrop={() => glisse && deplacer(glisse, i + 1)} />
         </div>
       ))}
@@ -326,8 +335,9 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
 // ---------------------------------------------------------------------------
 // Insertion
 
-function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, actif, onDragOver, onDrop, vide }: {
+function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif, onDragOver, onDrop, vide }: {
   index: number
+  onLibrairie: (position: number) => void
   ouvert: boolean
   setOuvert: (i: number | null) => void
   onChoisir: (position: number, type: ContentBlockType, style?: string) => void
@@ -368,6 +378,12 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, actif, onDragOver,
               <span className="text-xs text-gray-500">{t.aide}</span>
             </button>
           ))}
+          <button onClick={() => onLibrairie(index)}
+            className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 hover:bg-indigo-50 text-left">
+            <span className="text-xl">📚</span>
+            <span className="text-sm font-semibold text-gray-800">Librairie</span>
+            <span className="text-xs text-gray-500">Vidéo, lien, document ou politique</span>
+          </button>
         </div>
       )}
     </div>
@@ -390,6 +406,7 @@ function BoutonIcone({ children, titre, onClick, disabled, danger }: {
 
 type PropsBloc = {
   bloc: Bloc
+  ouvrirLibrairie: (blocId: string) => void
   modifier: (id: string, changes: Partial<Bloc>, immediat?: boolean) => void
   urlsMedias: Record<string, string>
   setErreur: (e: string | null) => void
@@ -521,6 +538,20 @@ function EditeurImage(p: PropsBloc) {
   )
 }
 
+/** Bandeau d'un bloc lié à la librairie. */
+function LienLibrairie({ bloc, modifier }: PropsBloc) {
+  if (!meta(bloc).librairie_id) return null
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-lg px-3 py-2">
+      <span>📚 Lié à la librairie : se met à jour si l’élément y est modifié.</span>
+      <button type="button" className="ml-auto underline" onClick={() => {
+        const m = { ...meta(bloc) }; delete m.librairie_id
+        modifier(bloc.id, { metadata: m }, true)
+      }}>Détacher</button>
+    </div>
+  )
+}
+
 function EditeurVideo(p: PropsBloc) {
   const { bloc, modifier, urlsMedias } = p
   const { enCours, envoyer } = useEnvoi(p, 'video')
@@ -533,6 +564,7 @@ function EditeurVideo(p: PropsBloc) {
     <div className="space-y-3">
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
         placeholder="Titre de la vidéo" className={champ + ' font-medium'} />
+      <LienLibrairie {...p} />
 
       {source ? (
         <div className="space-y-2">
@@ -552,7 +584,7 @@ function EditeurVideo(p: PropsBloc) {
           </div>
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>{enLigne ? (enLigne.plateforme === 'youtube' ? '▶ YouTube' : '▶ Vimeo') : estMediaPrive(source) ? '🔒 Vidéo privée hébergée' : ''}</span>
-            <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)} className="text-blue-600 hover:underline">Changer de vidéo</button>
+            <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-blue-600 hover:underline">Changer de vidéo</button>
           </div>
         </div>
       ) : (
@@ -573,6 +605,7 @@ function EditeurVideo(p: PropsBloc) {
               texte="Glissez une vidéo ici ou cliquez pour choisir (reste privée, visible seulement dans WS Formation)" />
           )}
           <p className="text-xs text-gray-400">Pour une vidéo de plus de 50 Mo, publiez-la sur YouTube en « non répertoriée » et collez le lien.</p>
+          <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">📚 Choisir dans la librairie</button>
         </>
       )}
       <label className="flex items-start gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
@@ -595,15 +628,19 @@ function EditeurFichier(p: PropsBloc) {
     <div className="space-y-3">
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
         placeholder="Nom affiché (ex. Politique de confidentialité 2026)" className={champ + ' font-medium'} />
+      <LienLibrairie {...p} />
       {bloc.url || bloc.contenu ? (
         <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
           <span className="truncate">📎 {nom || (estMediaPrive(bloc.url) ? 'Document privé' : bloc.url ?? bloc.contenu)}</span>
-          <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">Remplacer</button>
+          <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">Remplacer</button>
         </div>
       ) : (
         <ZoneDepot genre="fichier" enCours={enCours}
           onFichier={f => envoyer(f, { metadata: { ...meta(bloc), nom_fichier: f.name }, titre: bloc.titre || f.name.replace(/\.[^.]+$/, '') })}
           texte="Glissez un document ici ou cliquez pour choisir" />
+      )}
+      {!(bloc.url || bloc.contenu) && (
+        <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">📚 Choisir dans la librairie</button>
       )}
     </div>
   )
