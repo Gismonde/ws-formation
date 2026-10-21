@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
 import { cliniqueAffichee, CLINIQUE_EMPLOYE_LABEL } from '@/lib/cliniques'
 import { peutPublierPolitiques, peutGererPolitique, type Politique } from '@/lib/politiques'
-import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
-import { peutGererJournees, CHAMPS_JOURNEE, RAISONS_JOURNEE, type Journee } from '@/lib/journees'
+import { peutGererJournees, CHAMPS_JOURNEE, RAISONS_JOURNEE, avancementJournees, type Journee } from '@/lib/journees'
 import JourneesClient, { type Suivi } from './JourneesClient'
 
 export default async function JourneesPage() {
@@ -28,22 +27,11 @@ export default async function JourneesPage() {
 
   // Avancement des journées lancées : employés ayant tout complété (formations + politiques confirmées)
   const lancees = liste.filter(j => !j.modele)
-  const tousEmployes = Array.from(new Set(lancees.flatMap(j => j.employe_ids)))
-  const toutesFormations = Array.from(new Set(lancees.flatMap(j => j.formation_ids)))
-  const toutesPolitiques = Array.from(new Set(lancees.flatMap(j => j.politique_ids)))
-  const etat = await chargerEtatsFormations(sb, tousEmployes, toutesFormations)
-  const { data: pols } = toutesPolitiques.length ? await sb.from('politiques').select('id, version').in('id', toutesPolitiques) : { data: [] as { id: string; version: number }[] }
-  const { data: confs } = toutesPolitiques.length && tousEmployes.length
-    ? await sb.from('politiques_confirmations').select('employe_id, politique_id, version').in('politique_id', toutesPolitiques).in('employe_id', tousEmployes)
-    : { data: [] as { employe_id: string; politique_id: string; version: number }[] }
-  const confirmee = (e: string, p: string) => (confs ?? []).some(c => c.employe_id === e && c.politique_id === p && c.version === (pols ?? []).find(x => x.id === p)?.version)
+  const avancement = await avancementJournees(sb, lancees)
   const nomEmploye = new Map((employes ?? []).map(e => [e.id as string, `${e.prenom ?? ''} ${e.nom ?? ''}`.trim()]))
   const suivi: Record<string, Suivi[]> = {}
   for (const j of lancees) {
-    suivi[j.id] = j.employe_ids.map(e => {
-      const faits = j.formation_ids.filter(f => estComplete(etat(e, f).statut)).length + j.politique_ids.filter(p => confirmee(e, p)).length
-      return { employe_id: e, nom: nomEmploye.get(e) ?? 'Employé archivé ou hors de votre périmètre', faits, total: j.formation_ids.length + j.politique_ids.length }
-    })
+    suivi[j.id] = (avancement[j.id] ?? []).map(x => ({ ...x, nom: nomEmploye.get(x.employe_id) ?? 'Employé archivé ou hors de votre périmètre' }))
   }
 
   return (
