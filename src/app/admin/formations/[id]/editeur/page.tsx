@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -24,6 +25,7 @@ type PanneauActif =
 
 export default function EditeurFormationPage() {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const params = useParams()
   const formationId = params.id as string
 
@@ -128,7 +130,7 @@ export default function EditeurFormationPage() {
   }
 
   const supprimerModule = async (moduleId: string) => {
-    if (!confirm(t('Supprimer ce module et toutes ses leçons ?'))) return
+    if (!(await confirmer({ message: t('Supprimer ce module et toutes ses leçons ?'), bouton: t('Supprimer'), danger: true }))) return
     setSauvegarde(true)
     const res = await deleteModule(moduleId)
     setSauvegarde(false)
@@ -202,7 +204,7 @@ export default function EditeurFormationPage() {
   }
 
   const supprimerLecon = async (leconId: string) => {
-    if (!confirm(t('Supprimer cette leçon et tout son contenu ?'))) return
+    if (!(await confirmer({ message: t('Supprimer cette leçon et tout son contenu ?'), bouton: t('Supprimer'), danger: true }))) return
     setSauvegarde(true)
     const res = await deleteLesson(leconId)
     setSauvegarde(false)

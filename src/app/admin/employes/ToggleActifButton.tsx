@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -14,11 +15,12 @@ export default function ToggleActifButton({
   nom: string
 }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function handleToggle() {
-    if (!confirm(actif ? t('Voulez-vous vraiment archiver {nom} ?', { nom }) : t('Voulez-vous vraiment réactiver {nom} ?', { nom }))) return
+    if (!(await confirmer({ message: actif ? t('Voulez-vous vraiment archiver {nom} ?', { nom }) : t('Voulez-vous vraiment réactiver {nom} ?', { nom }), bouton: actif ? t('Archiver') : t('Réactiver'), danger: actif }))) return
     setLoading(true)
 
     const res = await fetch('/api/admin/toggle-employe-actif', {
@@ -31,7 +33,7 @@ export default function ToggleActifButton({
 
     setLoading(false)
     if (error) {
-      alert('Erreur : ' + error.message)
+      await confirmer({ information: true, titre: t('Erreur'), message: error.message })
     } else {
       router.refresh()
     }

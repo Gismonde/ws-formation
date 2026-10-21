@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { CLINIQUE_CONTENU_LABEL, CLINIQUE_INFO, type CliniqueContenu } from '@/lib/cliniques'
@@ -49,6 +50,7 @@ function BadgeClinique({ c }: { c: CliniqueContenu }) {
 
 export default function SopAdminClient({ initialSops, cliniquesGerables }: { initialSops: SOP[]; cliniquesGerables: CliniqueContenu[] }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const [sops, setSops] = useState<SOP[]>(initialSops)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<SOP | null>(null)
@@ -133,7 +135,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer cette SOP ?')) return
+    if (!(await confirmer({ message: t('Supprimer cette SOP ?'), bouton: t('Supprimer'), danger: true }))) return
     setDeleting(id)
     const { error: e } = await supabase.from('sop').delete().eq('id', id)
     setDeleting(null)

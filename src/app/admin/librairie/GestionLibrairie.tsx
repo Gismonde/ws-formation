@@ -1,6 +1,7 @@
 'use client'
 // Admin → Librairie : vidéos, liens et documents réutilisables dans les leçons.
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { LIBELLE_TYPE_LIBRAIRIE, TYPES_LIBRAIRIE, plateformeVideo, type ElementLibrairie, type TypeLibrairie, type Utilisation } from '@/lib/librairie-commun'
@@ -18,6 +19,7 @@ type Brouillon = { id?: string; type: TypeLibrairie; titre: string; description:
 
 export default function GestionLibrairie({ cliniques, peutImporter }: { cliniques: CliniqueContenu[]; peutImporter: boolean }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const [type, setType] = useState<TypeLibrairie>('video')
   const [elements, setElements] = useState<Element[]>([])
   const [chargement, setChargement] = useState(true)
@@ -71,13 +73,13 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
     if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? t('Opération impossible'))
   }
   async function supprimer(e: Element) {
-    if (!window.confirm(t('Supprimer définitivement « {titre} » de la librairie ?', { titre: e.titre }))) return
+    if (!(await confirmer({ message: t('Supprimer définitivement « {titre} » de la librairie ?', { titre: e.titre }), bouton: t('Supprimer'), danger: true }))) return
     const r = await fetch(`/api/admin/librairie/${e.id}`, { method: 'DELETE' })
     if (r.ok) charger(); else setErreur((await r.json().catch(() => ({}))).error ?? t('Suppression impossible'))
   }
 
   async function importerGrs() {
-    if (!window.confirm(t('Importer dans la librairie les vidéos et les liens relevés dans la librairie GrS (clinique CMC) ? Les éléments déjà présents sont ignorés.'))) return
+    if (!(await confirmer({ message: t('Importer dans la librairie les vidéos et les liens relevés dans la librairie GrS (clinique CMC) ? Les éléments déjà présents sont ignorés.'), bouton: t('Importer') }))) return
     setEnCours(true); setErreur(null); setMessage(null)
     const r = await fetch('/api/admin/librairie/import-grs', { method: 'POST' })
     const d = await r.json().catch(() => ({}))
