@@ -7,26 +7,36 @@ import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import { RechercheGlobale } from '@/components/RechercheGlobale'
+import { MenuAdmin, type GroupeMenu } from '@/components/MenuAdmin'
 import { i18n } from '@/lib/i18n/serveur'
 
-const adminNav = [
-  { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
-  { href: '/admin/employes', label: 'Employés', icon: 'people' },
-  { href: '/admin/formations', label: 'Formations', icon: 'school' },
-  { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
-  { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available' },
-  { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
-  { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
-  { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
-  { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
-  { href: '/admin/sondages', label: 'Sondages', icon: 'reviews' },
-  { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
-  { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
-  { href: '/admin/sop', label: 'SOP', icon: 'description' },
-  { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
-  { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
-  { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
-  { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
+type EntreeNav = { href: string; label: string; icon: string; adminOnly?: boolean; createurs?: boolean; superAdmin?: boolean }
+const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[] = [
+  { id: 'accueil', label: 'Tableau de bord', icon: 'dashboard', liens: [{ href: '/admin', label: 'Tableau de bord', icon: 'dashboard' }] },
+  { id: 'employes', label: 'Employés', icon: 'people', liens: [
+    { href: '/admin/employes', label: 'Employés', icon: 'people' },
+    { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
+    { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
+  ] },
+  { id: 'contenus', label: 'Formations & politiques', icon: 'school', liens: [
+    { href: '/admin/formations', label: 'Formations', icon: 'school' },
+    { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
+    { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available' },
+    { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
+    { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
+    { href: '/admin/sop', label: 'SOP', icon: 'description' },
+  ] },
+  { id: 'suivi', label: 'Suivi & conformité', icon: 'verified', liens: [
+    { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
+    { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
+    { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
+    { href: '/admin/sondages', label: 'Sondages', icon: 'reviews' },
+  ] },
+  { id: 'administration', label: 'Administration', icon: 'settings', liens: [
+    { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
+    { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
+    { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
+  ] },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -47,7 +57,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Une seule clinique (choisie ou unique) : la barre prend ses couleurs
   const cliniqueTheme = employe.vue ?? (cliniquesDe(employe.clinique).length === 1 && employe.role !== 'super_admin' ? cliniquesDe(employe.clinique)[0] : null)
   const fondBarre = cliniqueTheme ? THEME_CLINIQUE[cliniqueTheme].fondBarre : 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)'
-  const visibleNav = adminNav.filter(item => (!('adminOnly' in item) || !item.adminOnly || isAdmin) && (!('createurs' in item) || peutCreerFormations(employe)) && (!('superAdmin' in item) || employe.role === 'super_admin'))
+  const visible = (l: EntreeNav) => (!l.adminOnly || isAdmin) && (!l.createurs || peutCreerFormations(employe)) && (!l.superAdmin || employe.role === 'super_admin')
+  const groupes: GroupeMenu[] = adminNav
+    .map(g => ({ id: g.id, label: t(g.label), icon: g.icon, liens: g.liens.filter(visible).map(l => ({ href: l.href, label: t(l.label), icon: l.icon })) }))
+    .filter(g => g.liens.length > 0)
 
   return (
     <div className='coque-adaptative' style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5' }}>
@@ -56,6 +69,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
         .admin-nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 2px; transition: all 0.15s ease; }
         .admin-nav-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .admin-nav-groupe { width: 100%; background: none; border: none; cursor: pointer; font-family: inherit; }
+        .admin-nav-sous { padding: 7px 10px; font-size: 13px; }
+        .admin-nav-link.actif { background: rgba(255,255,255,0.14); color: #fff; }
         .admin-sidebar { width: 240px; color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
         .admin-main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; }
         .admin-entete { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; gap: 12px; }
@@ -76,14 +92,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <ChoixVueAdmin vue={employe.vue ?? null} possibles={vuesAdminPossibles(employe.clinique, employe.role)} />
         </div>
 
-        <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
-          {visibleNav.map((item) => (
-            <Link key={item.href} href={item.href} className='admin-nav-link'>
-              <span className='material-icons' style={{ fontSize: '18px' }}>{item.icon}</span>
-              {t(item.label)}
-            </Link>
-          ))}
-        </nav>
+        <MenuAdmin groupes={groupes} />
 
         <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <div className='langue-tiroir' style={{ marginBottom: '12px' }}><ChoixLangue sombre /></div>
