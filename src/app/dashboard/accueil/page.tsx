@@ -38,6 +38,9 @@ export default async function AccueilPage() {
 
   const { contenu, disponible } = await chargerAccueil(sb, espace.actif, langue)
   const info = CLINIQUE_INFO[espace.actif]
+  // Journées de formation en cours pour cet employé
+  const { data: journees } = await sb.from('journees_formation').select('id, nom, raison, date_journee, date_echeance')
+    .eq('modele', false).contains('employe_ids', [acteur.id]).order('cree_le', { ascending: false }).limit(3)
   const { banniere, cartes, visite, infos } = contenu
 
   return (
@@ -63,6 +66,21 @@ export default async function AccueilPage() {
           <img src={banniere.image} alt="" style={{ width: '100%', height: '100%', minHeight: '260px', maxHeight: '420px', objectFit: 'cover', display: 'block' }} />
         )}
       </section>
+
+      {(journees ?? []).length > 0 && (
+        <section style={{ display: 'grid', gap: '10px', marginBottom: '24px' }}>
+          {(journees ?? []).map(j => (
+            <Link key={j.id} href={`/dashboard/journees/${j.id}`} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', borderRadius: '14px', background: 'var(--accent-clinique)', color: '#fff', textDecoration: 'none' }}>
+              <span style={{ fontSize: '24px' }}>🗓️</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontWeight: 700, fontSize: '15px' }}>{t('Journée de formation — {nom}', { nom: j.nom })}</span>
+                <span style={{ display: 'block', fontSize: '13px', opacity: 0.85 }}>{j.date_echeance ? t('À compléter avant le {date}', { date: new Date(j.date_echeance + 'T12:00:00').toLocaleDateString(langue === 'en' ? 'en-CA' : 'fr-CA', { dateStyle: 'long' }) }) : j.raison}</span>
+              </span>
+              <span style={{ fontWeight: 600, fontSize: '14px' }}>{t('Voir')} →</span>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {/* Cartes (liens et informations) */}
       {cartes.length > 0 && (

@@ -11,6 +11,7 @@ const adminNav = [
   { href: '/admin/employes', label: 'Employés', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
   { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
+  { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available' },
   { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
   { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
