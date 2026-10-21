@@ -80,6 +80,7 @@ export default function ZoneSelection({ children }: { children: React.ReactNode 
       {n > 0 && (
         <div className="sticky top-14 md:top-16 z-40 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 shadow-sm">
           <span className="text-sm font-semibold text-indigo-900 mr-2">{n} sélectionné(s)</span>
+          <a href={`/admin/assigner?employes=${sel.ids.join(',')}`} className={bouton + ' bg-indigo-600 border-indigo-600 text-white'}>Assigner…</a>
           <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('xlsx')} disabled={enCours}>⬇ Excel</button>
           <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('zip')} disabled={enCours} title="Classeur Excel et documents de preuves">⬇ Dossiers complets (ZIP)</button>
           {sel.archivables.length > 0 && (

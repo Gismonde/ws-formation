@@ -10,6 +10,7 @@ const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { href: '/admin/employes', label: 'Employés', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
+  { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
   { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
   { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
