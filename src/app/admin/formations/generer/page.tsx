@@ -557,7 +557,6 @@ export default function GenererFormationPage() {
     maxWidth: '800px',
     margin: '0 auto',
     padding: '32px 24px',
-    fontFamily: 'system-ui, sans-serif',
   }
 
   const cardStyle: React.CSSProperties = {
@@ -640,9 +639,6 @@ export default function GenererFormationPage() {
     return (
       <div style={containerStyle}>
         <div style={{ marginBottom: '24px' }}>
-          <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>
-            {t('← Retour aux formations')}
-          </a>
           <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '8px 0 4px' }}>
             {t('Générer une formation depuis un document')}
           </h1>
@@ -1259,7 +1255,7 @@ export default function GenererFormationPage() {
     const totalLecons = modules.reduce((sum, m) => sum + (m.lecons || []).length, 0)
     const validQs = questions.filter(q => q.texte.trim())
     return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>{t('Aperçu avant création')}</h2>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{t('Vérifiez le récapitulatif avant de soumettre.')}</p>
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>

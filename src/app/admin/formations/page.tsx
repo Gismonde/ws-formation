@@ -102,37 +102,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
         </div>
         {isAdmin && (
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-            <Link href="/admin/formations/generer" style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "10px 18px",
-              background: "#fff",
-              color: "#4f46e5",
-              border: "2px solid #4f46e5",
-              borderRadius: "8px",
-              textDecoration: "none",
-              fontSize: "14px",
-              fontWeight: "600",
-            }}>
-              {t('Créer à partir d’un document')}
-            </Link>
-            <Link href="/admin/formations/depuis-pp" style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "10px 18px",
-              background: "#fff",
-              color: "#7c3aed",
-              border: "2px solid #7c3aed",
-              borderRadius: "8px",
-              textDecoration: "none",
-              fontSize: "14px",
-              fontWeight: "600",
-            }}>
-              {t('Créer à partir d’un PP')}
-            </Link>
-            <Link href="/admin/formations/nouvelle" style={{
+            <Link href="/admin/formations/creer" style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
