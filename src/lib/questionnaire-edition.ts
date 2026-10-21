@@ -12,7 +12,7 @@ export type QuestionnaireEdition = {
 
 const texte = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
-/** Valide le questionnaire envoyé par l'éditeur. Chaque question : un texte, 2 réponses ou plus, une seule bonne réponse. */
+/** Valide le questionnaire envoyé par l'éditeur. Chaque question : un texte, 2 réponses ou plus, au moins une bonne réponse (l'employé en choisit une ; toute réponse cochée correcte est acceptée). */
 export function validerQuestionnaire(b: unknown): { erreur: string } | { valeurs: QuestionnaireEdition } {
   const c = (b ?? {}) as Record<string, unknown>
   const note = Number(c.note_passage)
@@ -31,7 +31,7 @@ export function validerQuestionnaire(b: unknown): { erreur: string } | { valeurs
       .map(r => ({ texte: texte(r.texte, 1000), est_correcte: r.est_correcte === true }))
       .filter(r => r.texte)
     if (reponses.length < 2) return { erreur: `Question ${i + 1} : au moins deux réponses sont nécessaires.` }
-    if (reponses.filter(r => r.est_correcte).length !== 1) return { erreur: `Question ${i + 1} : cochez une (et une seule) bonne réponse.` }
+    if (!reponses.some(r => r.est_correcte)) return { erreur: `Question ${i + 1} : cochez au moins une bonne réponse.` }
     const points = Number(q.points)
     questions.push({ texte: t, points: Number.isInteger(points) && points > 0 && points <= 100 ? points : 1, reponses })
   }
