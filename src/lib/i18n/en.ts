@@ -1255,4 +1255,10 @@ export const EN: Record<string, string> = {
   '{n} bloc(s)': '{n} block(s)',
   'Historique des modifications': 'Change history',
   'Aucune modification enregistrée pour le moment.': 'No change recorded yet.',
+  'Modification du modèle « {nom} »': 'Editing template “{nom}”',
+  'Annuler la modification': 'Cancel editing',
+  'Mettre à jour le modèle': 'Update template',
+  'Enregistrer comme nouveau modèle': 'Save as new template',
+  'Message aux employés (optionnel)': 'Message to employees (optional)',
+  'Modification du modèle « {nom} »': 'Editing template “{nom}”',
 }
