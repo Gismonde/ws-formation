@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useT } from '@/lib/i18n/client'
+import { voixPour } from '@/lib/voix'
 
 interface AudioReaderProps {
   text: string
@@ -30,12 +31,10 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
     }
 
     const loadVoices = () => {
-      const v = window.speechSynthesis.getVoices()
-      // Prefer French voices
-      const frenchVoices = v.filter(voice => voice.lang.startsWith('fr'))
-      const allVoices = frenchVoices.length > 0 ? frenchVoices : v
+      // Seulement des voix françaises naturelles et professionnelles (le contenu des leçons est en français), meilleure en premier
+      const allVoices = voixPour(window.speechSynthesis.getVoices(), 'fr')
       setVoices(allVoices)
-      if (allVoices.length > 0 && !selectedVoice) {
+      if (allVoices.length > 0 && (!selectedVoice || !allVoices.some(x => x.name === selectedVoice))) {
         setSelectedVoice(allVoices[0].name)
       }
     }
@@ -84,6 +83,7 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
     wordIndexRef.current = 0
 
     const utterance = new SpeechSynthesisUtterance(cleanedText)
+    utterance.lang = 'fr-CA'
     utterance.rate = rate
     utterance.pitch = 1
     utterance.volume = 1
