@@ -8,8 +8,9 @@ describe('édition du questionnaire', () => {
     const r = validerQuestionnaire({ titre: 'Quiz', note_passage: 80, nb_tentatives_max: 3, questions: [q('Q1', [['Oui', true], ['Non', false], ['', false]])] })
     expect('valeurs' in r && r.valeurs.questions[0].reponses.length).toBe(2)
   })
-  it('exige une seule bonne réponse et deux réponses', () => {
-    expect(validerQuestionnaire({ note_passage: 80, questions: [q('Q1', [['Oui', true], ['Non', true]])] })).toHaveProperty('erreur')
+  it('exige au moins une bonne réponse et deux réponses', () => {
+    expect(validerQuestionnaire({ note_passage: 80, questions: [q('Q1', [['Oui', false], ['Non', false]])] })).toHaveProperty('erreur')
+    expect(validerQuestionnaire({ note_passage: 80, questions: [q('Q1', [['Oui', true], ['Aussi', true], ['Non', false]])] })).toHaveProperty('valeurs')
     expect(validerQuestionnaire({ note_passage: 80, questions: [q('Q1', [['Oui', true]])] })).toHaveProperty('erreur')
     expect(validerQuestionnaire({ note_passage: 80, questions: [q('', [['Oui', true], ['Non', false]])] })).toHaveProperty('erreur')
   })

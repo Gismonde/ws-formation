@@ -34,7 +34,7 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
 
   const majQ = (i: number, c: Partial<QuestionEdition>) => { setEtat(''); setQuestions(qs => qs.map((q, j) => (j === i ? { ...q, ...c } : q))) }
   const majR = (i: number, k: number, texte: string) => majQ(i, { reponses: questions[i].reponses.map((r, j) => (j === k ? { ...r, texte } : r)) })
-  const bonne = (i: number, k: number) => majQ(i, { reponses: questions[i].reponses.map((r, j) => ({ ...r, est_correcte: j === k })) })
+  const bonne = (i: number, k: number) => majQ(i, { reponses: questions[i].reponses.map((r, j) => (j === k ? { ...r, est_correcte: !r.est_correcte } : r)) })
   const deplacer = (i: number, d: -1 | 1) => setQuestions(qs => { const n = [...qs]; const j = i + d; if (j < 0 || j >= n.length) return qs; [n[i], n[j]] = [n[j], n[i]]; return n })
 
   const enregistrer = async () => {
@@ -55,7 +55,7 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="text-lg font-bold text-gray-900">{t('Questionnaire de fin de formation')}</h2>
-          <p className="text-sm text-gray-500">{t('L’employé y accède après avoir terminé tous les modules. Une seule bonne réponse par question.')}</p>
+          <p className="text-sm text-gray-500">{t('L’employé y accède après avoir terminé tous les modules. Cochez la ou les bonnes réponses : l’employé en choisit une, et toute réponse cochée est acceptée.')}</p>
         </div>
       </div>
       {dejaPasses > 0 && (
@@ -97,7 +97,7 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
             <div className="mt-2 space-y-1.5">
               {q.reponses.map((r, k) => (
                 <div key={k} className="flex items-center gap-2">
-                  <input type="radio" name={`bonne-${i}`} checked={r.est_correcte} onChange={() => bonne(i, k)} title={t('Bonne réponse')} />
+                  <input type="checkbox" checked={r.est_correcte} onChange={() => bonne(i, k)} title={t('Bonne réponse')} />
                   <input value={r.texte} onChange={e => majR(i, k, e.target.value)} placeholder={t('Réponse {n}', { n: k + 1 })}
                     className={'flex-1 border rounded-lg px-3 py-1.5 text-sm ' + (r.est_correcte ? 'border-green-400 bg-green-50' : 'border-gray-300')} />
                   {q.reponses.length > 2 && <button type="button" onClick={() => majQ(i, { reponses: q.reponses.filter((_, j) => j !== k) })} className="text-gray-400 hover:text-red-600" aria-label={t('Supprimer')}>×</button>}
