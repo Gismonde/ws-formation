@@ -5,11 +5,13 @@ import { createClient } from '@/lib/supabase/server'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
-import { getActeur, peutCreerFormations } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, cliniquesContenuGerables } from '@/lib/permissions'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
 import BoutonPublier from './BoutonPublier'
+import DupliquerFormation from './DupliquerFormation'
+import { historiqueFormation } from '@/lib/historique-formation'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -24,7 +26,10 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
   if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) redirect('/dashboard/accueil')
 
-  const peutCreer = peutCreerFormations(await getActeur())
+  const acteurCourant = await getActeur()
+  const { loc } = await i18n()
+  const peutCreer = peutCreerFormations(acteurCourant)
+  const historique = peutCreer ? await historiqueFormation(id) : []
 
   const res = await getFormationWithModules(id)
   if (!res.success || !res.data) notFound()
@@ -91,7 +96,12 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <p className="text-gray-600 leading-relaxed">{formation.description}</p>
               )}
             </div>
-            {peutCreer && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />}
+            {peutCreer && (
+              <div className="flex items-start gap-2">
+                <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
+                <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />
+              </div>
+            )}
           </div>
 
           {/* Statistiques */}
@@ -233,7 +243,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                       <h3 className="text-sm font-semibold text-gray-900">{mod.titre}</h3>
                       {mod.description && <p className="text-xs text-gray-500 mt-0.5">{mod.description}</p>}
                     </div>
-                    <span className="text-xs text-gray-400">{mod.lecons.length} leçon{mod.lecons.length !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-gray-400">{t('{n} leçon(s)', { n: mod.lecons.length })}</span>
                   </div>
                   {mod.lecons.map((lecon, j) => (
                     <div key={lecon.id} className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 transition-colors border-t border-gray-50">
@@ -242,7 +252,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                       </span>
                       <span className="text-sm text-gray-700 flex-1">{lecon.titre}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">{lecon.blocs?.length || 0} bloc(s)</span>
+                        <span className="text-xs text-gray-400">{t('{n} bloc(s)', { n: lecon.blocs?.length || 0 })}</span>
                       </div>
                     </div>
                   ))}
@@ -254,6 +264,24 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
           )}
         </div>
+
+        {/* Historique des modifications */}
+        {peutCreer && (
+          <details className="mt-6 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <summary className="px-6 py-4 cursor-pointer text-base font-semibold text-gray-900">{t('Historique des modifications')} <span className="text-sm font-normal text-gray-400">({historique.length})</span></summary>
+            {historique.length === 0 ? <p className="px-6 pb-5 text-sm text-gray-400">{t('Aucune modification enregistrée pour le moment.')}</p> : (
+              <ul className="divide-y divide-gray-100 border-t border-gray-100">
+                {historique.map(h => (
+                  <li key={h.id} className="px-6 py-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    <span className="text-gray-500 w-44 shrink-0">{new Date(h.quand).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Toronto' })}</span>
+                    <span className="text-gray-900 flex-1 min-w-[200px]">{h.quoi}</span>
+                    <span className="text-gray-500">{h.qui}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
       </div>
     </div>
   )

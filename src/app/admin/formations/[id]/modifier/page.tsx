@@ -4,6 +4,7 @@ import { useT } from '@/lib/i18n/client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { noterReglages } from '@/lib/actions/formations'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import { ChampPrerequis } from '@/components/ChampPrerequis'
 import { ChampCategorie } from '@/components/ChampCategorie'
@@ -30,14 +31,6 @@ interface Formation {
   delivre_certificat?: boolean
 }
 
-interface ModuleForm {
-  id?: string
-  titre: string
-  contenu: string
-  duree_minutes: number
-  ordre: number
-}
-
 export default function ModifierFormationPage() {
   const { t } = useT()
   const params = useParams()
@@ -45,7 +38,7 @@ export default function ModifierFormationPage() {
   const supabase = createClient()
 
   const [formation, setFormation] = useState<Formation | null>(null)
-  const [modules, setModules] = useState<ModuleForm[]>([])
+  const [initiale, setInitiale] = useState<Formation | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -60,13 +53,8 @@ export default function ModifierFormationPage() {
       if (!emp || emp.role === 'employe') { router.push('/dashboard/accueil'); return }
 
       const formationId = params.id as string
-      const [{ data: f }, { data: mods }] = await Promise.all([
-        supabase.from('formations').select('*').eq('id', formationId).single(),
-        supabase.from('modules').select('*').eq('formation_id', formationId).order('ordre'),
-      ])
-
-      if (f) setFormation(f)
-      if (mods) setModules(mods)
+      const { data: f } = await supabase.from('formations').select('*').eq('id', formationId).single()
+      if (f) { setFormation(f); setInitiale(f) }
       setLoading(false)
     }
     loadData()
@@ -74,18 +62,6 @@ export default function ModifierFormationPage() {
 
   function updateField(field: keyof Formation, value: string | number | boolean | string[] | null) {
     setFormation(prev => prev ? { ...prev, [field]: value } : prev)
-  }
-
-  function updateModule(idx: number, field: keyof ModuleForm, value: string | number) {
-    setModules(prev => prev.map((m, i) => i === idx ? { ...m, [field]: value } : m))
-  }
-
-  function addModule() {
-    setModules(prev => [...prev, { titre: '', contenu: '', duree_minutes: 30, ordre: prev.length + 1 }])
-  }
-
-  function removeModule(idx: number) {
-    setModules(prev => prev.filter((_, i) => i !== idx).map((m, i) => ({ ...m, ordre: i + 1 })))
   }
 
   async function handleSave() {
@@ -113,25 +89,9 @@ export default function ModifierFormationPage() {
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
-
-      // Update existing modules
-      for (const mod of modules) {
-        if (mod.id) {
-          await supabase.from('modules').update({
-            titre: mod.titre,
-            contenu: mod.contenu,
-            duree_minutes: mod.duree_minutes,
-            ordre: mod.ordre,
-          }).eq('id', mod.id)
-        } else {
-          await supabase.from('modules').insert({
-            formation_id: formation.id,
-            titre: mod.titre,
-            contenu: mod.contenu,
-            duree_minutes: mod.duree_minutes,
-            ordre: mod.ordre,
-          })
-        }
+      if (initiale) {
+        const changes = (Object.keys(formation) as (keyof Formation)[]).filter(k => JSON.stringify(formation[k] ?? null) !== JSON.stringify(initiale[k] ?? null))
+        if (changes.length) { await noterReglages(formation.id, changes as string[]); setInitiale(formation) }
       }
 
       setSuccess(t('Formation mise à jour avec succès !'))
@@ -309,36 +269,19 @@ export default function ModifierFormationPage() {
           </div>
         </div>
 
-        {/* Modules */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Modules ({modules.length})</h2>
-            <button onClick={addModule} className="text-sm text-blue-600 hover:text-blue-700 font-medium">{t('+ Ajouter un module')}</button>
+        {/* Contenu : géré dans l'éditeur de cours */}
+        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{t('Modules, leçons et questionnaire')}</h2>
+            <p className="text-sm text-gray-500">{t('Le contenu de la formation se modifie dans l’éditeur de cours.')}</p>
           </div>
-          <div className="space-y-4">
-            {modules.map((mod, idx) => (
-              <div key={idx} className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">{t('Module')}{' '}{mod.ordre}</span>
-                  {modules.length > 1 && <button onClick={() => removeModule(idx)} className="text-red-500 hover:text-red-700 text-sm">{t('Supprimer')}</button>}
-                </div>
-                <div className="space-y-3">
-                  <input type="text" value={mod.titre} onChange={e => updateModule(idx, 'titre', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder={t('Titre du module')} />
-                  <textarea value={mod.contenu} onChange={e => updateModule(idx, 'contenu', e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500" placeholder={t('Contenu du module...')} />
-                  <div className="flex items-center">
-                    <label className="text-sm text-gray-600">Durée (minutes)</label>
-                    <input type="number" value={mod.duree_minutes} onChange={e => updateModule(idx, 'duree_minutes', Number(e.target.value))} min={5} className="ml-3 w-24 border rounded px-2 py-1 text-sm bg-white" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <a href={`/admin/formations/${formation.id}/editeur`} className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold hover:bg-blue-100">{t('Ouvrir l’éditeur de cours →')}</a>
         </div>
 
         <div className="flex gap-3 justify-end">
           <button onClick={() => router.push('/admin/formations')} className="px-6 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">{t('Annuler')}</button>
           <button onClick={handleSave} disabled={saving} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
-            {saving ? 'Enregistrement...' : 'Sauvegarder'}
+            {saving ? t('Enregistrement...') : t('Sauvegarder')}
           </button>
         </div>
       </div>
