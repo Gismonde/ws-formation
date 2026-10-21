@@ -125,7 +125,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
         </div>
 
         {/* Actions principales */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {peutCreer && (
             <Link
               href={"/admin/formations/" + id + "/editeur"}
@@ -172,6 +172,16 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <span className="text-sm font-semibold">Aperçu</span>
             <span className="text-xs text-gray-400">Vue employé</span>
           </Link>
+          {(formation as { delivre_certificat?: boolean }).delivre_certificat !== false && (
+            <Link
+              href={"/certificat/apercu/" + id}
+              className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"
+            >
+              <span className="text-2xl leading-6">🏆</span>
+              <span className="text-sm font-semibold">Aperçu du certificat</span>
+              <span className="text-xs text-gray-400">Vérifier le titre</span>
+            </Link>
+          )}
         </div>
 
         {peutCreer && enAttente > 0 && <BrancherLibrairie formationId={id} enAttente={enAttente} />}

@@ -33,6 +33,7 @@ export type AuditActionType =
   | 'POLITIQUE_PUBLIEE'
   | 'POLITIQUE_MODIFIEE'
   | 'POLITIQUE_CONFIRMEE'
+  | 'CONSULTATION_DOSSIER'
 
 export interface LogAuditParams {
     acteur_id: string

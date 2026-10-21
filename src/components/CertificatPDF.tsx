@@ -31,6 +31,10 @@ interface Props {
   employe: Employe
   /** CMC, WSSC, LES_DEUX (ou null : les deux cliniques) */
   clinique: string | null
+  /** Lien de retour (par défaut : « Mes certificats ») */
+  retour?: { href: string; libelle: string }
+  /** Aperçu pour les créateurs de formations : filigrane « APERÇU » */
+  apercu?: boolean
 }
 
 // Couleurs du certificat selon la clinique
@@ -42,7 +46,7 @@ const THEMES = {
 
 const NIVEAUX: Record<string, string> = { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' }
 
-export default function CertificatPDF({ certificat, employe, clinique }: Props) {
+export default function CertificatPDF({ certificat, employe, clinique, retour, apercu }: Props) {
   const { t, loc } = useT()
   const dateLongue = (iso: string) =>
     new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -80,7 +84,7 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
       <div className="no-print bg-gray-50 border-b border-gray-200">
         <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-sm min-w-0">
-            <Link href="/dashboard/certificats" className="text-gray-500 hover:text-gray-900">{t('Mes certificats')}</Link>
+            <Link href={retour?.href ?? '/dashboard/certificats'} className="text-gray-500 hover:text-gray-900">{retour?.libelle ?? t('Mes certificats')}</Link>
             <span className="text-gray-300">›</span>
             <span className="font-medium text-gray-900 truncate">{f?.titre}</span>
           </div>
@@ -94,7 +98,7 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
           </button>
         </nav>
         <p className="no-print text-xs text-gray-500 text-center pb-3">
-          {t('Dans la fenêtre d’impression, choisissez « Enregistrer en PDF ».')}
+          {apercu ? 'Aperçu : voici le certificat que recevront les employés qui réussissent cette formation (nom, date et numéro d’exemple). Vérifiez le titre et la catégorie.' : t('Dans la fenêtre d’impression, choisissez « Enregistrer en PDF ».')}
         </p>
       </div>
 
@@ -105,6 +109,11 @@ export default function CertificatPDF({ certificat, employe, clinique }: Props) 
               {/* Double bordure aux couleurs de la clinique */}
               <div style={{ position: 'absolute', inset: '1.4cqw', border: `0.35cqw solid ${theme.principale}`, pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', inset: '2cqw', border: `0.1cqw solid ${theme.accent}`, pointerEvents: 'none' }} />
+              {apercu && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 2 }}>
+                  <div style={{ transform: 'rotate(-18deg)', fontSize: '11cqw', fontWeight: 'bold', letterSpacing: '1.5cqw', color: 'rgba(220, 38, 38, 0.13)', fontFamily: 'Arial, sans-serif' }}>APERÇU</div>
+                </div>
+              )}
               {/* Coins décoratifs */}
               {[{ top: '2.6cqw', left: '2.6cqw' }, { top: '2.6cqw', right: '2.6cqw' }, { bottom: '2.6cqw', left: '2.6cqw' }, { bottom: '2.6cqw', right: '2.6cqw' }].map((pos, i) => (
                 <div key={i} style={{ position: 'absolute', ...pos, width: '1.4cqw', height: '1.4cqw', background: theme.accent, transform: 'rotate(45deg)', pointerEvents: 'none' }} />
