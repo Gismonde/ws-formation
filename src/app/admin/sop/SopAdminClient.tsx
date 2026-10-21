@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { CLINIQUE_CONTENU_LABEL, CLINIQUE_INFO, type CliniqueContenu } from '@/lib/cliniques'
+import { envoyerMedia } from '@/lib/medias-client'
+import { estMediaPrive } from '@/lib/medias'
 
 type SOP = {
   id: string
@@ -54,6 +56,18 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [filterRole, setFilterRole] = useState<string>('all')
+  const [envoiPdf, setEnvoiPdf] = useState(false)
+
+  async function televerserPdf(f: File | undefined) {
+    if (!f) return
+    if (f.type !== 'application/pdf') { setError('Choisissez un fichier PDF.'); return }
+    setEnvoiPdf(true); setError(null)
+    try {
+      const ref = await envoyerMedia(f, 'fichier')
+      setForm(x => ({ ...x, fichier_url: ref, titre: x.titre || f.name.replace(/\.pdf$/i, '') }))
+    } catch (e) { setError(e instanceof Error ? e.message : 'Envoi impossible') }
+    setEnvoiPdf(false)
+  }
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -160,7 +174,6 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
               { label: 'Titre *', key: 'titre', placeholder: 'Ex. : SOP-01 — Accueil d’un employé' },
               { label: 'Catégorie', key: 'categorie', placeholder: 'Ex. : Ressources humaines' },
               { label: 'Version', key: 'version', placeholder: '1.0' },
-              { label: 'URL du fichier (optionnel)', key: 'fichier_url', placeholder: 'https://...' },
             ].map(({ label, key, placeholder }) => (
               <div key={key} style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>{label}</label>
@@ -173,8 +186,27 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
               </div>
             ))}
 
+            <div style={{ marginBottom: '16px', padding: '14px', border: '1px dashed #c7d2fe', borderRadius: '10px', background: '#f8faff' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Document de la SOP (PDF)</label>
+              {estMediaPrive(form.fichier_url) ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+                  <span>📄 PDF téléversé</span>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, fichier_url: '' }))} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}>Retirer</button>
+                </div>
+              ) : (
+                <>
+                  <input type="file" accept="application/pdf" disabled={envoiPdf} onChange={e => televerserPdf(e.target.files?.[0])} style={{ fontSize: '13px' }} />
+                  {envoiPdf && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Envoi en cours…</div>}
+                  <div style={{ fontSize: '12px', color: '#6b7280', margin: '10px 0 4px' }}>ou collez l’adresse d’un document (SharePoint, etc.) :</div>
+                  <input value={form.fichier_url ?? ''} onChange={e => setForm(f => ({ ...f, fichier_url: e.target.value }))} placeholder="https://..."
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+                </>
+              )}
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>Les employés ouvrent le PDF depuis leur page SOP. Il n’est plus nécessaire de recopier le texte.</div>
+            </div>
+
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Description</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Description (optionnelle)</label>
               <textarea
                 value={form.description ?? ''}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -245,7 +277,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   {sop.fichier_url && (
-                    <a href={sop.fichier_url} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>Voir</a>
+                    <a href={`/api/sop/${sop.id}/fichier`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>Voir</a>
                   )}
                   {cliniquesGerables.includes(sop.clinique ?? 'LES_DEUX') && <>
                   <button onClick={() => openEdit(sop)} style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Modifier</button>
