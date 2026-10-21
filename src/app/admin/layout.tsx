@@ -21,6 +21,7 @@ const adminNav = [
   { href: '/admin/sop', label: 'SOP', icon: 'description' },
   { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
   { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
+  { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
   { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
 ]
 
@@ -41,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Une seule clinique (choisie ou unique) : la barre prend ses couleurs
   const cliniqueTheme = employe.vue ?? (cliniquesDe(employe.clinique).length === 1 && employe.role !== 'super_admin' ? cliniquesDe(employe.clinique)[0] : null)
   const fondBarre = cliniqueTheme ? THEME_CLINIQUE[cliniqueTheme].fondBarre : 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)'
-  const visibleNav = adminNav.filter(item => (!('adminOnly' in item) || !item.adminOnly || isAdmin) && (!('createurs' in item) || peutCreerFormations(employe)))
+  const visibleNav = adminNav.filter(item => (!('adminOnly' in item) || !item.adminOnly || isAdmin) && (!('createurs' in item) || peutCreerFormations(employe)) && (!('superAdmin' in item) || employe.role === 'super_admin'))
 
   return (
     <div className='coque-adaptative' style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5' }}>
