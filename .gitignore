@@ -8,3 +8,7 @@ build/
 .vercel
 # Généré par Next.js au build
 next-env.d.ts
+
+# Playwright
+/test-results/
+/playwright-report/
