@@ -216,7 +216,7 @@ export async function rappelsEcheances(sb: SupabaseClient, origine: string, aujo
 // ---------------------------------------------------------------------------
 
 export async function executerRappels(sb: SupabaseClient, origine: string): Promise<{ actif: boolean; raison?: string; bilans: BilanRappels[] }> {
-  if (!courrielsActifs()) return { actif: false, raison: 'Courriels non configurés (RESEND_API_KEY / COURRIEL_EXPEDITEUR)', bilans: [] }
+  if (!courrielsActifs()) return { actif: false, raison: 'Courriels non configurés (MAILGUN_API_KEY + MAILGUN_DOMAIN, ou RESEND_API_KEY ; et COURRIEL_EXPEDITEUR)', bilans: [] }
   if (!(await suiviRappelsDisponible(sb))) return { actif: false, raison: 'Table rappels_envoyes absente : exécuter supabase/migrations/conformite_suivi.sql', bilans: [] }
   const bilans: BilanRappels[] = []
   bilans.push(await rappelsCertificats(sb, origine))
