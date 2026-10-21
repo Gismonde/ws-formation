@@ -199,10 +199,10 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                   {f.description && (
                     <p style={{ margin: 0, fontSize: "13px", color: "#6b7280", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{f.description}</p>
                   )}
-                  <div style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#6b7280", marginTop: "auto" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", columnGap: "12px", rowGap: "4px", fontSize: "12px", color: "#6b7280", marginTop: "auto", whiteSpace: "nowrap" }}>
                     <span>📦 {nbModules(f.id)} module(s)</span>
-                    <span>👥 {nbAssign(f.id)} assignée(s)</span>
-                    {f.duree_estimee_minutes ? <span>⏱ {Math.round(f.duree_estimee_minutes / 6) / 10} h</span> : null}
+                    <span>👥 {nbAssign(f.id)} assignation(s)</span>
+                    {f.duree_estimee_minutes ? <span>⏱ {f.duree_estimee_minutes < 60 ? `${f.duree_estimee_minutes} min` : `${Math.round(f.duree_estimee_minutes / 6) / 10} h`}</span> : null}
                   </div>
                   <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                     <Link href={`/admin/formations/${f.id}`} style={{ flex: 1, textAlign: "center", padding: "7px", borderRadius: "8px", background: "#f3f4f6", color: "#374151", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>Gérer</Link>
