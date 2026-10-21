@@ -45,7 +45,7 @@ export default function ListeConfirmations({ lignes, filtreInitial, titre, versi
   )
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
       <div className="flex flex-wrap items-center gap-2 p-4 border-b border-gray-100">
         {onglet('tous', 'Tous', lignes.length)}
         {onglet('confirmes', '✅ Lu et compris', confirmes)}

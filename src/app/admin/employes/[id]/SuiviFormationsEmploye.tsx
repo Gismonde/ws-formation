@@ -36,7 +36,7 @@ export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: Su
             const s = suiviDe(suivi, employeId, f.id)
             const complet = s && s.lecons_total > 0 && s.lecons_terminees === s.lecons_total
             return (
-              <details key={f.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden" open={(formations ?? []).length === 1}>
+              <details key={f.id} className="bg-white border border-gray-200 rounded-xl overflow-x-auto" open={(formations ?? []).length === 1}>
                 <summary className="px-5 py-4 cursor-pointer flex flex-wrap items-center gap-3 list-none">
                   <span className="font-semibold text-gray-900 flex-1 min-w-[180px]">{f.titre}</span>
                   {s ? (
