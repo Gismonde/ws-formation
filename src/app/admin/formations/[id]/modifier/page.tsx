@@ -18,6 +18,7 @@ interface Formation {
   clinique: CliniqueContenu
   validite_mois: number | null
   prerequis_ids: string[] | null
+  image_couverture: string | null
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
 }
@@ -96,6 +97,7 @@ export default function ModifierFormationPage() {
         clinique: formation.clinique,
         validite_mois: formation.validite_mois,
         prerequis_ids: formation.prerequis_ids ?? [],
+        image_couverture: formation.image_couverture || null,
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
       }).eq('id', formation.id)
 
@@ -212,6 +214,33 @@ export default function ModifierFormationPage() {
               labelStyle={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}
               style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', background: '#fff' }}
             />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Image de couverture</label>
+              <div className="flex flex-wrap items-start gap-3">
+                {formation.image_couverture ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={formation.image_couverture} alt="" className="w-48 h-28 object-cover rounded-lg border border-gray-200" />
+                ) : (
+                  <div className="w-48 h-28 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">Aucune image</div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                    {formation.image_couverture ? 'Remplacer l’image' : '+ Ajouter une image'}
+                    <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                      const f = e.target.files?.[0]; if (!f) return
+                      const fd = new FormData(); fd.append('file', f)
+                      const res = await fetch('/api/upload-lesson-image', { method: 'POST', body: fd })
+                      const d = await res.json().catch(() => ({}))
+                      if (d.url) updateField('image_couverture', d.url); else setError(d.error ?? 'Téléversement impossible')
+                    }} />
+                  </label>
+                  {formation.image_couverture && (
+                    <button type="button" onClick={() => updateField('image_couverture', null)} className="text-sm text-red-600 text-left">Retirer l’image</button>
+                  )}
+                  <p className="text-xs text-gray-400">Affichée dans la vue détaillée de la liste des formations.</p>
+                </div>
+              </div>
+            </div>
             <ChampPrerequis formationId={formation.id} valeur={formation.prerequis_ids ?? []} onChange={ids => updateField('prerequis_ids', ids)} />
             {formation.sondage_actif !== undefined && (
               <div className="flex items-center gap-3">
