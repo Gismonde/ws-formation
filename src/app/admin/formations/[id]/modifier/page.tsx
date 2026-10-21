@@ -4,6 +4,7 @@ import { useT } from '@/lib/i18n/client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { noterReglages } from '@/lib/actions/formations'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import { ChampPrerequis } from '@/components/ChampPrerequis'
 import { ChampCategorie } from '@/components/ChampCategorie'
@@ -37,6 +38,7 @@ export default function ModifierFormationPage() {
   const supabase = createClient()
 
   const [formation, setFormation] = useState<Formation | null>(null)
+  const [initiale, setInitiale] = useState<Formation | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -52,7 +54,7 @@ export default function ModifierFormationPage() {
 
       const formationId = params.id as string
       const { data: f } = await supabase.from('formations').select('*').eq('id', formationId).single()
-      if (f) setFormation(f)
+      if (f) { setFormation(f); setInitiale(f) }
       setLoading(false)
     }
     loadData()
@@ -87,6 +89,10 @@ export default function ModifierFormationPage() {
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
+      if (initiale) {
+        const changes = (Object.keys(formation) as (keyof Formation)[]).filter(k => JSON.stringify(formation[k] ?? null) !== JSON.stringify(initiale[k] ?? null))
+        if (changes.length) { await noterReglages(formation.id, changes as string[]); setInitiale(formation) }
+      }
 
       setSuccess(t('Formation mise à jour avec succès !'))
       setSaving(false)

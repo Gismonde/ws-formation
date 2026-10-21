@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!error) branches++
   }
   if (branches) {
-    await logAudit({ acteur_id: p.acteur.id, type_action: 'FORMATION_MODIFIEE', description: `Librairie branchée sur « ${p.f.titre} » : ${branches} bloc(s)`, metadata: { formation_id: p.f.id, blocs: branches } })
+    await logAudit({ acteur_id: p.acteur.id, formation_id: p.f.id, type_action: 'FORMATION_MODIFIEE', description: `Librairie branchée sur « ${p.f.titre} » : ${branches} bloc(s)`, metadata: { formation_id: p.f.id, blocs: branches } })
   }
   const restants = p.liste.filter(c => !c.element).length
   return NextResponse.json({ branches, restants })
