@@ -6,6 +6,8 @@ import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
 import { getActeur, peutCreerFormations } from '@/lib/permissions'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
+import { titreAttendu } from '@/lib/brancher-librairie'
+import BrancherLibrairie from './BrancherLibrairie'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -29,11 +31,13 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const modulesAvecLecons: ModuleAvecLecons[] = []
   let totalLecons = 0
   let totalBlocs = 0
+  let enAttente = 0
   for (const mod of (formation.modules || [])) {
     const lr = await getLessonsWithBlocks(mod.id)
     const lecons = lr.success ? (lr.data as ModuleAvecLecons['lecons']) : []
     totalLecons += lecons.length
     lecons.forEach(l => { totalBlocs += (l.blocs?.length || 0) })
+    lecons.forEach(l => { enAttente += ((l.blocs ?? []) as { type?: string; contenu?: string | null }[]).filter(b => b.type === 'text' && titreAttendu(b.contenu) !== null).length })
     modulesAvecLecons.push({ ...mod, lecons })
   }
 
@@ -167,6 +171,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <span className="text-xs text-gray-400">Vue employé</span>
           </Link>
         </div>
+
+        {peutCreer && enAttente > 0 && <BrancherLibrairie formationId={id} enAttente={enAttente} />}
 
         {/* Structure du cours */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
