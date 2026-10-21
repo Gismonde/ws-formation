@@ -1,4 +1,5 @@
 'use client'
+import { useT } from '@/lib/i18n/client'
 import { useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { REGLES_MEDIAS } from '@/lib/medias'
@@ -24,6 +25,7 @@ async function envoyerDocument(fichier: File): Promise<DocumentEnvoye> {
 
 /** Zone « glisser-déposer » pour choisir le document (PDF recommandé). */
 export default function ChoixDocument({ valeur, onChange }: { valeur: DocumentEnvoye | null; onChange: (d: DocumentEnvoye | null) => void }) {
+  const { t } = useT()
   const input = useRef<HTMLInputElement>(null)
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState('')
@@ -47,16 +49,16 @@ export default function ChoixDocument({ valeur, onChange }: { valeur: DocumentEn
         className={'border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ' +
           (survol ? 'border-blue-500 bg-blue-50' : valeur ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50')}
       >
-        {enCours ? <p className="text-sm text-gray-600">Envoi du document…</p>
+        {enCours ? <p className="text-sm text-gray-600">{t('Envoi du document…')}</p>
           : valeur ? (
             <div>
               <p className="text-sm font-semibold text-green-800">📄 {valeur.nom}</p>
-              <p className="text-xs text-green-700 mt-1">Document prêt — cliquez pour le remplacer</p>
+              <p className="text-xs text-green-700 mt-1">{t('Document prêt — cliquez pour le remplacer')}</p>
             </div>
           ) : (
             <div>
-              <p className="text-sm font-medium text-gray-700">📄 Glissez le document ici ou cliquez pour le choisir</p>
-              <p className="text-xs text-gray-500 mt-1">{REGLES_MEDIAS.fichier.libelle} · le PDF s’affiche directement dans le portail</p>
+              <p className="text-sm font-medium text-gray-700">{t('📄 Glissez le document ici ou cliquez pour le choisir')}</p>
+              <p className="text-xs text-gray-500 mt-1">{REGLES_MEDIAS.fichier.libelle}{' '}{t('· le PDF s’affiche directement dans le portail')}</p>
             </div>
           )}
       </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
@@ -50,6 +51,7 @@ const quickActions = [
   ]
 
 export default function AdminPage() {
+  const { t } = useT()
     const [employe, setEmploye] = useState<Employe | null>(null)
     const [loading, setLoading] = useState(true)
     const router = useRouter()
@@ -72,7 +74,7 @@ export default function AdminPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid #e5e7eb', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }}></div>
-                          <p style={{ color: '#6b7280', fontSize: '14px' }}>Chargement...</p>
+                          <p style={{ color: '#6b7280', fontSize: '14px' }}>{t('Chargement...')}</p>
                 </div>
         </div>
       )
@@ -82,10 +84,10 @@ export default function AdminPage() {
           {/* Page header */}
               <div style={{ marginBottom: '32px' }}>
                       <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, letterSpacing: '-0.5px' }}>
-                                Tableau de bord
+                                {t('Tableau de bord')}
                       </h1>
                       <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>
-                                Vue d'ensemble de la plateforme de formation
+                                {t('Vue d\'ensemble de la plateforme de formation')}
                       </p>
               </div>
         
@@ -117,10 +119,10 @@ export default function AdminPage() {
                                               }}>
                                                               <span className="material-icons" style={{ color: action.color, fontSize: '24px' }}>{action.icon}</span>
                                               </div>
-                                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{action.title}</h3>
-                                              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.5' }}>{action.desc}</p>
+                                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{t(action.title)}</h3>
+                                              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.5' }}>{t(action.desc)}</p>
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '16px', color: action.color, fontSize: '13px', fontWeight: '600' }}>
-                                                              Accéder <span className="material-icons" style={{ fontSize: '16px' }}>arrow_forward</span>
+                                                              {t('Accéder')} <span className="material-icons" style={{ fontSize: '16px' }}>arrow_forward</span>
                                               </div>
                                 </div>
                     </Link>
@@ -138,8 +140,8 @@ export default function AdminPage() {
                   justifyContent: 'space-between',
         }}>
                       <div>
-                                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>Gérez votre équipe</h3>
-                                <p style={{ margin: 0, opacity: 0.85, fontSize: '14px' }}>Assignez des formations, suivez la conformité et exportez des rapports.</p>
+                                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>{t('Gérez votre équipe')}</h3>
+                                <p style={{ margin: 0, opacity: 0.85, fontSize: '14px' }}>{t('Assignez des formations, suivez la conformité et exportez des rapports.')}</p>
                       </div>
                       <Link href="/admin/employes" style={{
                     background: 'rgba(255,255,255,0.2)',
@@ -153,7 +155,7 @@ export default function AdminPage() {
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255,255,255,0.3)',
         }}>
-                                Voir les employés →
+                                {t('Voir les employés →')}
                       </Link>
               </div>
         

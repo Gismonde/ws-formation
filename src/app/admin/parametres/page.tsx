@@ -1,13 +1,15 @@
-export default function ParametresPage() {
+import { i18n } from '@/lib/i18n/serveur'
+export default async function ParametresPage() {
+  const { t } = await i18n()
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Paramètres</h1>
-        <p className="text-gray-500 mb-8">Configuration de la plateforme.</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('Paramètres')}</h1>
+        <p className="text-gray-500 mb-8">{t('Configuration de la plateforme.')}</p>
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-16 text-center">
           <p className="text-5xl mb-4">⚙️</p>
-          <p className="text-gray-600 font-semibold">Module en cours de développement</p>
-          <p className="text-gray-400 text-sm mt-1">Disponible prochainement</p>
+          <p className="text-gray-600 font-semibold">{t('Module en cours de développement')}</p>
+          <p className="text-gray-400 text-sm mt-1">{t('Disponible prochainement')}</p>
         </div>
       </div>
     </div>

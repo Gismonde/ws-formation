@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, filtrerEmployes, cliniquesContenuVisibles } from '@/lib/permissions'
 import { cliniqueAffichee, CLINIQUE_EMPLOYE_LABEL } from '@/lib/cliniques'
@@ -7,6 +8,7 @@ import { peutGererJournees, CHAMPS_JOURNEE, RAISONS_JOURNEE, type Journee } from
 import JourneesClient, { type Suivi } from './JourneesClient'
 
 export default async function JourneesPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutGererJournees(acteur)) redirect('/dashboard/accueil')

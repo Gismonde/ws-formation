@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { headers } from "next/headers"
@@ -38,6 +39,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
   params: Promise<{ id: string }>
   searchParams: Promise<{ onglet?: string }>
 }) {
+  const { t } = await i18n()
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect("/login")
@@ -99,19 +101,19 @@ export default async function FicheEmployePage({ params, searchParams }: {
     contenu = (
       <>
         {dossier.formations.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">Aucune formation assignée.</div>
+          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucune formation assignée.')}</div>
         ) : (
           <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead>
                 <tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
-                  <th className="px-4 py-2.5 font-semibold">Formation</th>
-                  <th className="px-3 py-2.5 font-semibold">Assignée le</th>
-                  <th className="px-3 py-2.5 font-semibold">Échéance</th>
-                  <th className="px-3 py-2.5 font-semibold">Statut</th>
-                  <th className="px-3 py-2.5 font-semibold w-40">Progression</th>
-                  <th className="px-3 py-2.5 font-semibold">Leçons</th>
-                  <th className="px-3 py-2.5 font-semibold">Certificat</th>
+                  <th className="px-4 py-2.5 font-semibold">{t('Formation')}</th>
+                  <th className="px-3 py-2.5 font-semibold">{t('Assignée le')}</th>
+                  <th className="px-3 py-2.5 font-semibold">{t('Échéance')}</th>
+                  <th className="px-3 py-2.5 font-semibold">{t('Statut')}</th>
+                  <th className="px-3 py-2.5 font-semibold w-40">{t('Progression')}</th>
+                  <th className="px-3 py-2.5 font-semibold">{t('Leçons')}</th>
+                  <th className="px-3 py-2.5 font-semibold">{t('Certificat')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,7 +121,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                   <tr key={f.formation_id} className="border-t border-gray-100">
                     <td className="px-4 py-2.5">
                       <Link href={`/admin/formations/${f.formation_id}`} className="font-medium text-gray-900 hover:underline">{f.titre}</Link>
-                      {f.obligatoire && <span className="ml-2 text-[10px] font-bold uppercase text-red-600">Obligatoire</span>}
+                      {f.obligatoire && <span className="ml-2 text-[10px] font-bold uppercase text-red-600">{t('Obligatoire')}</span>}
                     </td>
                     <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{jour(f.assignee_le)}</td>
                     <td className={"px-3 py-2.5 whitespace-nowrap " + (f.en_retard ? "text-red-600 font-semibold" : "text-gray-600")}>
@@ -145,18 +147,18 @@ export default async function FicheEmployePage({ params, searchParams }: {
     )
   } else if (onglet === "certificats") {
     contenu = dossier.certificats.length === 0
-      ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">Aucun certificat.</div>
+      ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucun certificat.')}</div>
       : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
-                <th className="px-4 py-2.5 font-semibold">Formation</th>
-                <th className="px-3 py-2.5 font-semibold">Numéro</th>
-                <th className="px-3 py-2.5 font-semibold">Émis le</th>
-                <th className="px-3 py-2.5 font-semibold">Expire le</th>
-                <th className="px-3 py-2.5 font-semibold">Note</th>
-                <th className="px-3 py-2.5 font-semibold">État</th>
+                <th className="px-4 py-2.5 font-semibold">{t('Formation')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Numéro')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Émis le')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Expire le')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Note')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('État')}</th>
                 <th className="px-3 py-2.5 font-semibold"></th>
               </tr>
             </thead>
@@ -172,7 +174,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                     <span className={"text-xs font-semibold px-2 py-1 rounded-full " + (c.etat === "Valide" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>{c.etat}</span>
                   </td>
                   <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    {c.etat !== "Révoqué" && <Link href={`/certificat/${c.id}`} className="text-xs font-semibold text-indigo-600 hover:underline">🏆 Voir / télécharger</Link>}
+                    {c.etat !== "Révoqué" && <Link href={`/certificat/${c.id}`} className="text-xs font-semibold text-indigo-600 hover:underline">{t('🏆 Voir / télécharger')}</Link>}
                   </td>
                 </tr>
               ))}
@@ -184,13 +186,13 @@ export default async function FicheEmployePage({ params, searchParams }: {
     contenu = <ListePreuvesAdmin preuves={dossier.preuves} peutDecider={acteur.id !== id} />
   } else if (onglet === "politiques") {
     contenu = dossier.politiques.length === 0
-      ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">Aucune politique confirmée.</div>
+      ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucune politique confirmée.')}</div>
       : (
         <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
           {dossier.politiques.map(p => (
             <div key={p.politique + p.version} className="px-4 py-3 flex flex-wrap items-center gap-3">
               <span className="font-medium text-gray-900 flex-1 min-w-[200px]">📜 {p.politique} <span className="text-xs text-gray-400">v{p.version}</span></span>
-              <span className="text-xs text-green-700" title={p.texte}>✅ Lu et compris le {moment(p.confirme_le)}</span>
+              <span className="text-xs text-green-700" title={p.texte}>{t('✅ Lu et compris le')}{' '}{moment(p.confirme_le)}</span>
             </div>
           ))}
         </div>
@@ -201,10 +203,10 @@ export default async function FicheEmployePage({ params, searchParams }: {
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
-              <th className="px-4 py-2.5 font-semibold">Date</th>
-              <th className="px-3 py-2.5 font-semibold">Action</th>
-              <th className="px-3 py-2.5 font-semibold">Description</th>
-              <th className="px-3 py-2.5 font-semibold">Par</th>
+              <th className="px-4 py-2.5 font-semibold">{t('Date')}</th>
+              <th className="px-3 py-2.5 font-semibold">{t('Action')}</th>
+              <th className="px-3 py-2.5 font-semibold">{t('Description')}</th>
+              <th className="px-3 py-2.5 font-semibold">{t('Par')}</th>
             </tr>
           </thead>
           <tbody>
@@ -219,7 +221,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           </tbody>
         </table>
         <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
-          200 derniers événements affichés · l’export Excel en contient jusqu’à 500 · <Link href={`/admin/audit?employes=${id}`} className="underline">ouvrir dans le journal d’audit</Link>
+          {t('200 derniers événements affichés · l’export Excel en contient jusqu’à 500 ·')} <Link href={`/admin/audit?employes=${id}`} className="underline">{t('ouvrir dans le journal d’audit')}</Link>
         </p>
       </div>
     )
@@ -228,7 +230,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
   const p = dossier.profil
   return (
     <div className="max-w-5xl">
-      <Link href="/admin/employes" className="text-sm text-blue-600 hover:underline">← Retour aux employés</Link>
+      <Link href="/admin/employes" className="text-sm text-blue-600 hover:underline">{t('← Retour aux employés')}</Link>
 
       {/* En-tête du dossier */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5 mt-3 mb-4 flex flex-wrap items-start gap-4">
@@ -243,12 +245,12 @@ export default async function FicheEmployePage({ params, searchParams }: {
             <CliniqueBadge clinique={employe.clinique} role={employe.role} />
             {p.departement && <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">{p.departement}</span>}
             <span className={"text-xs font-semibold px-2.5 py-1 rounded-full " + (p.actif ? "bg-green-50 text-green-700" : "bg-gray-200 text-gray-600")}>{p.actif ? "Actif" : "Archivé"}</span>
-            {!p.invitation_acceptee && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">Invitation non acceptée</span>}
+            {!p.invitation_acceptee && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">{t('Invitation non acceptée')}</span>}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <a href={`/api/admin/employes/export?ids=${id}&format=xlsx`} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">⬇ Excel</a>
-          <a href={`/api/admin/employes/export?ids=${id}&format=zip`} title="Classeur Excel et documents de preuves" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">⬇ Dossier complet (ZIP)</a>
+          <a href={`/api/admin/employes/export?ids=${id}&format=xlsx`} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">{t('⬇ Excel')}</a>
+          <a href={`/api/admin/employes/export?ids=${id}&format=zip`} title={t('Classeur Excel et documents de preuves')} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">⬇ Dossier complet (ZIP)</a>
           {modifiable && <ToggleActifButton id={id} actif={p.actif} nom={`${p.prenom} ${p.nom}`} />}
         </div>
       </div>
@@ -256,7 +258,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
       {/* Indicateurs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {[
-          { v: dossier.formations.length, l: "Formations assignées" },
+          { v: dossier.formations.length, l: t('Formations assignées') },
           { v: dossier.formations.filter(f => f.statut === "termine" || f.statut === "certifie").length, l: "Terminées" },
           { v: enRetard, l: "En retard", alerte: enRetard > 0 },
           { v: dossier.certificats.filter(c => c.etat === "Valide").length, l: "Certificats valides" },
@@ -269,14 +271,14 @@ export default async function FicheEmployePage({ params, searchParams }: {
       </div>
 
       {/* Onglets */}
-      <nav className="flex gap-1 overflow-x-auto border-b border-gray-200 mb-5" aria-label="Sections du dossier">
+      <nav className="flex gap-1 overflow-x-auto border-b border-gray-200 mb-5" aria-label={t('Sections du dossier')}>
         {onglets.map(o => {
           const actif = o.id === onglet
           const pastille = o.id === "preuves" && preuvesEnAttente > 0 ? preuvesEnAttente : null
           return (
             <Link key={o.id} href={`/admin/employes/${id}?onglet=${o.id}`} aria-current={actif ? "page" : undefined}
               className={"px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px " + (actif ? "border-indigo-600 text-indigo-700" : "border-transparent text-gray-500 hover:text-gray-800")}>
-              {o.libelle}
+              {t(o.libelle)}
               {pastille && <span className="ml-1.5 text-[11px] bg-amber-500 text-white rounded-full px-1.5 py-0.5">{pastille}</span>}
             </Link>
           )

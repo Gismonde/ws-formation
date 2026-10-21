@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect, notFound } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import {
@@ -13,6 +14,7 @@ import ListeConfirmations, { LigneConfirmation } from './ListeConfirmations'
 export default async function PolitiqueAdminPage({ params, searchParams }: {
   params: Promise<{ id: string }>; searchParams: Promise<{ filtre?: string }>
 }) {
+  const { t } = await i18n()
   const { id } = await params
   const { filtre } = await searchParams
   const acteur = await getActeur()
@@ -53,14 +55,14 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
 
   return (
     <div className="max-w-5xl">
-      <a href="/admin/politiques" className="text-sm text-blue-600 hover:underline">← Politiques</a>
+      <a href="/admin/politiques" className="text-sm text-blue-600 hover:underline">{t('← Politiques')}</a>
       <div className="flex flex-wrap items-start gap-4 mt-2 mb-4">
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-2xl font-bold text-gray-900">
-            {pol.titre} {!pol.actif && <span className="text-xs align-middle bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2">Archivée</span>}
+            {pol.titre} {!pol.actif && <span className="text-xs align-middle bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2">{t('Archivée')}</span>}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Version {pol.version} · publiée le {new Date(pol.publiee_le).toLocaleDateString('fr-CA', { dateStyle: 'long' })} · {publicDe(pol, noms)}
+            Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString('fr-CA', { dateStyle: 'long' })} · {publicDe(pol, noms)}
           </p>
           {pol.description && <p className="text-sm text-gray-700 mt-2">{pol.description}</p>}
           {urls[pol.fichier] && (
@@ -71,7 +73,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-5 text-center min-w-[200px]">
           <div className="text-4xl font-bold" style={{ color: couleur }}>{stat.pourcentage}%</div>
-          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">Lu et compris</div>
+          <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">{t('Lu et compris')}</div>
           <div className="text-sm text-gray-700 mt-2">{stat.confirmes} / {stat.total} employés</div>
           <div className="h-2 bg-gray-100 rounded-full mt-3 overflow-hidden"><div className="h-full" style={{ width: `${stat.pourcentage}%`, background: couleur }} /></div>
         </div>
@@ -108,7 +110,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
 
       {(versions ?? []).length > 1 && (
         <div className="mt-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Historique des versions</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-2">{t('Historique des versions')}</h2>
           <ul className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 text-sm">
             {(versions ?? []).map(v => (
               <li key={v.version} className="px-5 py-3 flex flex-wrap gap-3 items-center">

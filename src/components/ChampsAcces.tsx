@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { CLINIQUE_EMPLOYE_LABEL, ROLE_LABEL, CliniqueEmploye, Role } from '@/lib/cliniques'
 
 export interface DepartementOption { id: string; nom: string; clinique: string | null }
@@ -33,13 +34,14 @@ const AIDE_ROLE: Record<Role, string> = {
 
 /** Champs Clinique / Département / Rôle, filtrés selon les droits de la personne connectée. */
 export default function ChampsAcces(p: Props) {
+  const { t } = useT()
   // Gestionnaire : tout est imposé par son département
   if (p.estGestionnaire) {
     const dept = p.departements.find(d => d.id === p.departementId) ?? p.departements[0]
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
-        Rôle : <strong>Employé</strong> · Clinique : <strong>{p.clinique ? CLINIQUE_EMPLOYE_LABEL[p.clinique as CliniqueEmploye] : '—'}</strong> · Département : <strong>{dept?.nom ?? '—'}</strong>
-        <p className="text-xs text-gray-400 mt-1">En tant que gestionnaire, vous gérez uniquement les employés de votre département.</p>
+        {t('Rôle :')} <strong>{t('Employé')}</strong> {t('· Clinique :')} <strong>{p.clinique ? CLINIQUE_EMPLOYE_LABEL[p.clinique as CliniqueEmploye] : '—'}</strong> {t('· Département :')} <strong>{dept?.nom ?? '—'}</strong>
+        <p className="text-xs text-gray-400 mt-1">{t('En tant que gestionnaire, vous gérez uniquement les employés de votre département.')}</p>
       </div>
     )
   }
@@ -55,20 +57,20 @@ export default function ChampsAcces(p: Props) {
   return (
     <>
       <div>
-        <label className={p.labelCls}>Clinique {p.role !== 'super_admin' && '*'}</label>
+        <label className={p.labelCls}>{t('Clinique')}{' '}{p.role !== 'super_admin' && '*'}</label>
         <select className={p.inputCls} value={p.clinique} onChange={e => changerClinique(e.target.value)}
           disabled={p.disabled} required={p.role !== 'super_admin'}>
-          <option value="">{p.role === 'super_admin' ? 'Les deux cliniques (accès global)' : '-- Choisir une clinique --'}</option>
+          <option value="">{p.role === 'super_admin' ? t('Les deux cliniques (accès global)') : t('-- Choisir une clinique --')}</option>
           {cliniques.map(c => (
             <option key={c} value={c} disabled={!p.cliniquesPossibles.includes(c)}>{CLINIQUE_EMPLOYE_LABEL[c]}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className={p.labelCls}>Département {p.role === 'gestionnaire' && '*'}</label>
+        <label className={p.labelCls}>{t('Département')}{' '}{p.role === 'gestionnaire' && '*'}</label>
         <select className={p.inputCls} value={p.departementId} onChange={e => p.setDepartementId(e.target.value)}
           disabled={p.disabled || (!p.clinique && p.role !== 'super_admin')} required={p.role === 'gestionnaire'}>
-          <option value="">-- Aucun département --</option>
+          <option value="">{t('-- Aucun département --')}</option>
           {depts.map(d => (
             <option key={d.id} value={d.id}>{d.nom}</option>
           ))}
@@ -76,22 +78,22 @@ export default function ChampsAcces(p: Props) {
         {!p.clinique && p.role !== 'super_admin' && <p className="text-xs text-gray-400 mt-1">Choisissez d&apos;abord une clinique.</p>}
       </div>
       <div>
-        <label className={p.labelCls}>Rôle</label>
+        <label className={p.labelCls}>{t('Rôle')}</label>
         <select className={p.inputCls} value={p.role} onChange={e => p.setRole(e.target.value)} disabled={p.disabled}>
           {roles.map(r => (
-            <option key={r} value={r} disabled={!p.rolesPossibles.includes(r)}>{ROLE_LABEL[r] ?? r}</option>
+            <option key={r} value={r} disabled={!p.rolesPossibles.includes(r)}>{t(ROLE_LABEL[r] ?? r)}</option>
           ))}
         </select>
-        {AIDE_ROLE[p.role as Role] && <p className="text-xs text-gray-400 mt-1">{AIDE_ROLE[p.role as Role]}</p>}
+        {AIDE_ROLE[p.role as Role] && <p className="text-xs text-gray-400 mt-1">{t(AIDE_ROLE[p.role as Role])}</p>}
       </div>
       {p.afficherAutorisationCreation && p.role === 'gestionnaire' && (
         <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
           <input type="checkbox" className="mt-0.5 w-4 h-4" disabled={p.disabled}
             checked={!!p.peutCreerFormations} onChange={e => p.setPeutCreerFormations?.(e.target.checked)} />
           <span className="text-sm text-gray-700">
-            <strong>Peut créer et modifier des formations</strong>
+            <strong>{t('Peut créer et modifier des formations')}</strong>
             <span className="block text-xs text-gray-500 mt-0.5">
-              Sans cette autorisation, le gestionnaire peut assigner des formations et gérer ses employés, mais pas en créer.
+              {t('Sans cette autorisation, le gestionnaire peut assigner des formations et gérer ses employés, mais pas en créer.')}
             </span>
           </span>
         </label>

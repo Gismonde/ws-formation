@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -13,6 +14,7 @@ import BoutonPublier from './BoutonPublier'
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
 export default async function AdminFormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await i18n()
   const { id } = await params
   const supabase = await createClient()
 
@@ -54,7 +56,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Fil d'Ariane */}
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <Link href="/admin/formations" className="hover:text-gray-700">Formations</Link>
+          <Link href="/admin/formations" className="hover:text-gray-700">{t('Formations')}</Link>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
@@ -73,15 +75,15 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                   {niveauStyle.label}
                 </span>
                 {formation.publiee ? (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">Publiée</span>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">{t('Publiée')}</span>
                 ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700">Brouillon</span>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700">{t('Brouillon')}</span>
                 )}
                 {formation.categorie && (
                   <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{formation.categorie}</span>
                 )}
                 {estCliniqueContenu(formation.clinique) && (formation.clinique === 'LES_DEUX'
-                  ? <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">CMC + WSSC</span>
+                  ? <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{t('CMC + WSSC')}</span>
                   : <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: CLINIQUE_INFO[formation.clinique].fond, color: CLINIQUE_INFO[formation.clinique].couleur }}>{CLINIQUE_INFO[formation.clinique].nom}</span>)}
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{formation.titre}</h1>
@@ -96,19 +98,19 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-5 pt-5 border-t border-gray-100">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{formation.modules?.length || 0}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Modules</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Modules')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{totalLecons}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Leçons</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Leçons')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{totalBlocs}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Blocs de contenu</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Blocs de contenu')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{formation.duree_estimee_minutes || 0}'</p>
-              <p className="text-xs text-gray-500 mt-0.5">Durée estimée</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Durée estimée')}</p>
             </div>
                           <div className="text-center">
                 <p className="text-2xl font-bold text-amber-600">
@@ -118,7 +120,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                       : `${formation.validite_mois}m`
                     : '∞'}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">Validité certificat</p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('Validité certificat')}</p>
               </div>
             
           </div>
@@ -134,8 +136,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              <span className="text-sm font-semibold">Éditeur de cours</span>
-              <span className="text-xs text-blue-200">Modules et leçons</span>
+              <span className="text-sm font-semibold">{t('Éditeur de cours')}</span>
+              <span className="text-xs text-blue-200">{t('Modules et leçons')}</span>
             </Link>
           )}
           {peutCreer && (
@@ -147,8 +149,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="text-sm font-semibold">Paramètres</span>
-              <span className="text-xs text-gray-400">Titre, niveau, durée</span>
+              <span className="text-sm font-semibold">{t('Paramètres')}</span>
+              <span className="text-xs text-gray-400">{t('Titre, niveau, durée')}</span>
             </Link>
           )}
           <Link
@@ -158,8 +160,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <span className="text-sm font-semibold">Assigner</span>
-            <span className="text-xs text-gray-400">Employés / départements</span>
+            <span className="text-sm font-semibold">{t('Assigner')}</span>
+            <span className="text-xs text-gray-400">{t('Employés / départements')}</span>
           </Link>
           <Link
             href={"/admin/formations/" + id + "/apercu"}
@@ -169,8 +171,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span className="text-sm font-semibold">Aperçu</span>
-            <span className="text-xs text-gray-400">Vue employé</span>
+            <span className="text-sm font-semibold">{t('Aperçu')}</span>
+            <span className="text-xs text-gray-400">{t('Vue employé')}</span>
           </Link>
           {(formation as { delivre_certificat?: boolean }).delivre_certificat !== false && (
             <Link
@@ -178,8 +180,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"
             >
               <span className="text-2xl leading-6">🏆</span>
-              <span className="text-sm font-semibold">Aperçu du certificat</span>
-              <span className="text-xs text-gray-400">Vérifier le titre</span>
+              <span className="text-sm font-semibold">{t('Aperçu du certificat')}</span>
+              <span className="text-xs text-gray-400">{t('Vérifier le titre')}</span>
             </Link>
           )}
         </div>
@@ -189,7 +191,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
         {/* Structure du cours */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">Structure du cours</h2>
+            <h2 className="text-base font-semibold text-gray-900">{t('Structure du cours')}</h2>
             {peutCreer && (
               <Link
                 href={"/admin/formations/" + id + "/editeur"}
@@ -198,7 +200,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Modifier
+                {t('Modifier')}
               </Link>
             )}
           </div>
@@ -245,7 +247,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                     </div>
                   ))}
                   {mod.lecons.length === 0 && (
-                    <p className="px-16 py-3 text-xs text-gray-400 italic">Aucune leçon dans ce module</p>
+                    <p className="px-16 py-3 text-xs text-gray-400 italic">{t('Aucune leçon dans ce module')}</p>
                   )}
                 </div>
               ))}

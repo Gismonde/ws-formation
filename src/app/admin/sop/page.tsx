@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -5,6 +6,7 @@ import SopAdminClient from './SopAdminClient'
 import { getActeur, cliniquesContenuVisibles, cliniquesContenuGerables } from '@/lib/permissions'
 
 export default async function SopAdminPage() {
+  const { t } = await i18n()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

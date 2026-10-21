@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient, cliniquesAdministrees } from '@/lib/permissions'
@@ -5,13 +6,14 @@ import { aAccesAdmin, CLINIQUE_INFO, estCliniqueEmploye } from '@/lib/cliniques'
 import { chargerConformite, synthese, rapportParFormation, formationsDuRapport } from '@/lib/conformite'
 
 export default async function AdminRapportsPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const perimetre = acteur.role === 'super_admin' && !acteur.vue ? null
-    : acteur.role === 'gestionnaire' ? 'Vous consultez les données de votre département uniquement.'
-    : `Vous consultez les données de ${cliniquesAdministrees(acteur).join(' et ')} uniquement.`
+    : acteur.role === 'gestionnaire' ? t('Vous consultez les données de votre département uniquement.')
+    : t('Vous consultez les données de {cliniques} uniquement.', { cliniques: cliniquesAdministrees(acteur).join(t(' et ')) })
 
   const [donnees, formations] = await Promise.all([chargerConformite(sb, acteur), formationsDuRapport(sb, acteur)])
   const s = synthese(donnees)
@@ -35,12 +37,12 @@ export default async function AdminRapportsPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rapports</h1>
-          <p className="text-sm text-gray-500 mt-1">Progression par formation, dans votre périmètre.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('Rapports')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('Progression par formation, dans votre périmètre.')}</p>
         </div>
         <div className="flex gap-2">
-          <a href="/api/admin/rapports/export?format=xlsx" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">⬇ Excel</a>
-          <a href="/api/admin/rapports/export?format=pdf" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">⬇ PDF</a>
+          <a href="/api/admin/rapports/export?format=xlsx" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{t('⬇ Excel')}</a>
+          <a href="/api/admin/rapports/export?format=pdf" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{t('⬇ PDF')}</a>
         </div>
       </div>
       {perimetre && (
@@ -51,30 +53,30 @@ export default async function AdminRapportsPage() {
           <div key={st.label} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="text-2xl mb-2">{st.icon}</div>
             <div className="text-2xl font-bold text-gray-900">{st.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{st.label}</div>
+            <div className="text-sm text-gray-500 mt-1">{t(st.label)}</div>
           </div>
         ))}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-x-auto">
-        <h2 className="text-base font-semibold text-gray-800 px-6 pt-5 pb-3">Progression par formation</h2>
+        <h2 className="text-base font-semibold text-gray-800 px-6 pt-5 pb-3">{t('Progression par formation')}</h2>
         <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="bg-gray-50 text-xs uppercase text-gray-500">
-              <th className="text-left px-6 py-3 font-semibold">Formation</th>
-              <th className="text-center px-3 py-3 font-semibold">Assignés</th>
-              <th className="text-center px-3 py-3 font-semibold">Complétés</th>
-              <th className="text-center px-3 py-3 font-semibold">En cours</th>
-              <th className="text-center px-3 py-3 font-semibold">En retard</th>
-              <th className="text-left px-3 py-3 font-semibold w-48">Taux</th>
+              <th className="text-left px-6 py-3 font-semibold">{t('Formation')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Assignés')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Complétés')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('En cours')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('En retard')}</th>
+              <th className="text-left px-3 py-3 font-semibold w-48">{t('Taux')}</th>
             </tr>
           </thead>
           <tbody>
-            {lignes.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">Aucune formation publiée</td></tr>}
+            {lignes.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">{t('Aucune formation publiée')}</td></tr>}
             {lignes.map(l => (
               <tr key={l.formation_id} className="border-t border-gray-100">
                 <td className="px-6 py-3">
-                  <div className="font-medium text-gray-900">{l.titre}{l.obligatoire && <span className="ml-2 text-[10px] font-bold text-red-600">LSST</span>}</div>
+                  <div className="font-medium text-gray-900">{l.titre}{l.obligatoire && <span className="ml-2 text-[10px] font-bold text-red-600">{t('LSST')}</span>}</div>
                   <div className="text-xs text-gray-400">
                     {[l.categorie, l.clinique === 'LES_DEUX' ? 'CMC + WSSC' : estCliniqueEmploye(l.clinique) ? CLINIQUE_INFO[l.clinique as 'CMC' | 'WSSC'].court : null].filter(Boolean).join(' · ')}
                   </div>
@@ -98,9 +100,9 @@ export default async function AdminRapportsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Derniers certificats émis</h2>
+        <h2 className="text-base font-semibold text-gray-800 mb-4">{t('Derniers certificats émis')}</h2>
         {derniers.length === 0 ? (
-          <p className="text-gray-400 text-sm">Aucun certificat encore</p>
+          <p className="text-gray-400 text-sm">{t('Aucun certificat encore')}</p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {derniers.map(({ e, a }) => (

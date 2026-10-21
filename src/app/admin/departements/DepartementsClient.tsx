@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CLINIQUE_INFO } from '@/lib/cliniques'
@@ -13,6 +14,7 @@ const th: React.CSSProperties = { textAlign: 'left', padding: '12px 20px', fontS
 const td: React.CSSProperties = { padding: '12px 20px', fontSize: '14px', color: '#374151', borderTop: '1px solid #f3f4f6' }
 
 export default function DepartementsClient({ departements, estSuperAdmin }: { departements: Dept[]; estSuperAdmin: boolean }) {
+  const { t } = useT()
   const router = useRouter()
   const [nom, setNom] = useState('')
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null)
@@ -33,12 +35,12 @@ export default function DepartementsClient({ departements, estSuperAdmin }: { de
     e.preventDefault()
     if (await appeler('POST', { nom })) {
       setNom('')
-      setMessage({ ok: true, texte: 'Département créé (disponible pour les deux cliniques).' })
+      setMessage({ ok: true, texte: t('Département créé (disponible pour les deux cliniques).') })
     }
   }
 
   function renommer(d: Dept) {
-    const nouveau = prompt(`Nouveau nom pour « ${d.nom} » :`, d.nom)
+    const nouveau = prompt(t('Nouveau nom pour « {nom} » :', { nom: d.nom }), d.nom)
     if (nouveau && nouveau.trim() && nouveau.trim() !== d.nom) appeler('PATCH', { id: d.id, nom: nouveau })
   }
 
@@ -51,19 +53,19 @@ export default function DepartementsClient({ departements, estSuperAdmin }: { de
       )}
 
       <form onSubmit={creer} style={{ ...carte, padding: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <strong style={{ fontSize: '14px', color: '#111827', marginRight: '6px' }}>Nouveau département</strong>
-        <input style={{ ...champ, flex: 1, minWidth: '220px' }} placeholder="Nom (ex. Bloc opératoire)" value={nom} onChange={e => setNom(e.target.value)} required />
-        <button type="submit" style={{ ...bouton, opacity: enCours ? 0.6 : 1 }} disabled={enCours}>Créer</button>
+        <strong style={{ fontSize: '14px', color: '#111827', marginRight: '6px' }}>{t('Nouveau département')}</strong>
+        <input style={{ ...champ, flex: 1, minWidth: '220px' }} placeholder={t('Nom (ex. Bloc opératoire)')} value={nom} onChange={e => setNom(e.target.value)} required />
+        <button type="submit" style={{ ...bouton, opacity: enCours ? 0.6 : 1 }} disabled={enCours}>{t('Créer')}</button>
       </form>
 
       <div style={carte}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={th}>Département</th>
+              <th style={th}>{t('Département')}</th>
               <th style={{ ...th, textAlign: 'center' }}>{CLINIQUE_INFO.CMC.court}</th>
               <th style={{ ...th, textAlign: 'center' }}>{CLINIQUE_INFO.WSSC.court}</th>
-              <th style={{ ...th, textAlign: 'center' }}>Sans clinique</th>
+              <th style={{ ...th, textAlign: 'center' }}>{t('Sans clinique')}</th>
               {estSuperAdmin && <th style={th}></th>}
             </tr>
           </thead>
@@ -78,7 +80,7 @@ export default function DepartementsClient({ departements, estSuperAdmin }: { de
                   <td style={{ ...td, textAlign: 'right' }}>
                     <button type="button" disabled={enCours} onClick={() => renommer(d)}
                       style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', background: '#fff', border: '1px solid #e5e7eb', color: '#6b7280', cursor: 'pointer' }}>
-                      Renommer
+                      {t('Renommer')}
                     </button>
                   </td>
                 )}

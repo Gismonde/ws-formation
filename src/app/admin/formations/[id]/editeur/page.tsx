@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -20,6 +21,7 @@ type PanneauActif =
   | { type: 'bloc'; blocId: string; leconId: string }
 
 export default function EditeurFormationPage() {
+  const { t } = useT()
   const params = useParams()
   const formationId = params.id as string
 
@@ -74,7 +76,7 @@ export default function EditeurFormationPage() {
       const res = await fetch('/api/import-pptx', { method: 'POST', body: formData })
       const data = await res.json()
       if (data.success) {
-        setImportPptxMessage(data.message || 'Import réussi !')
+        setImportPptxMessage(data.message || t('Import réussi !'))
         setImportPptxFile(null)
         await chargerFormation()
         setTimeout(() => { setShowImportPptx(false); setImportPptxMessage(null) }, 2000)
@@ -124,7 +126,7 @@ export default function EditeurFormationPage() {
   }
 
   const supprimerModule = async (moduleId: string) => {
-    if (!confirm('Supprimer ce module et toutes ses leçons ?')) return
+    if (!confirm(t('Supprimer ce module et toutes ses leçons ?'))) return
     setSauvegarde(true)
     const res = await deleteModule(moduleId)
     setSauvegarde(false)
@@ -198,7 +200,7 @@ export default function EditeurFormationPage() {
   }
 
   const supprimerLecon = async (leconId: string) => {
-    if (!confirm('Supprimer cette leçon et tout son contenu ?')) return
+    if (!confirm(t('Supprimer cette leçon et tout son contenu ?'))) return
     setSauvegarde(true)
     const res = await deleteLesson(leconId)
     setSauvegarde(false)
@@ -253,7 +255,7 @@ export default function EditeurFormationPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-8 shadow-sm text-center">
         <p className="text-red-600 mb-4">{erreur}</p>
-        <Link href="/admin/formations" className="text-blue-600 hover:underline">Retour aux formations</Link>
+        <Link href="/admin/formations" className="text-blue-600 hover:underline">{t('Retour aux formations')}</Link>
       </div>
     </div>
   )
@@ -281,23 +283,23 @@ export default function EditeurFormationPage() {
           </Link>
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{formation?.titre}</h1>
-            <p className="text-sm text-gray-500">Éditeur de cours</p>
+            <p className="text-sm text-gray-500">{t('Éditeur de cours')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {sauvegarde && <span className="text-sm text-blue-600 animate-pulse">Sauvegarde...</span>}
+          {sauvegarde && <span className="text-sm text-blue-600 animate-pulse">{t('Sauvegarde...')}</span>}
           {erreur && <span className="text-sm text-red-600">{erreur}</span>}
           <Link
             href={"/admin/formations/" + formationId + "/apercu"}
             className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
-            Aperçu
+            {t('Aperçu')}
           </Link>
           <Link
             href={"/admin/formations/" + formationId + "/modifier"}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Paramètres
+            {t('Paramètres')}
           </Link>
         </div>
       </div>
@@ -306,7 +308,7 @@ export default function EditeurFormationPage() {
         {/* Colonne gauche: structure du cours */}
         <div className="w-full md:w-80 max-h-72 md:max-h-none bg-white border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto flex-shrink-0">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Structure</h2>
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('Structure')}</h2>
             <button
               onClick={ajouterModule}
               className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
@@ -314,7 +316,7 @@ export default function EditeurFormationPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Module
+              {t('Module')}
             </button>
           </div>
 
@@ -326,7 +328,7 @@ export default function EditeurFormationPage() {
                 onClick={ajouterModule}
                 className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Ajouter le premier module
+                {t('Ajouter le premier module')}
               </button>
             </div>
           )}
@@ -360,7 +362,7 @@ export default function EditeurFormationPage() {
                 <button
                   onClick={e => { e.stopPropagation(); ajouterLecon(mod.id, mod.lecons || []) }}
                   className="text-gray-400 hover:text-blue-600 p-1"
-                  title="Ajouter une leçon"
+                  title={t('Ajouter une leçon')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -406,7 +408,7 @@ export default function EditeurFormationPage() {
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Ajouter une leçon
+                  {t('Ajouter une leçon')}
                 </button>
               )}
             </div>
@@ -421,7 +423,7 @@ export default function EditeurFormationPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                Importer un PowerPoint
+                {t('Importer un PowerPoint')}
               </button>
               <button
                 onClick={ajouterModule}
@@ -430,7 +432,7 @@ export default function EditeurFormationPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Ajouter un module
+                {t('Ajouter un module')}
               </button>
             </div>
           )}
@@ -442,13 +444,13 @@ export default function EditeurFormationPage() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
                 <div className="text-6xl mb-4">✏️</div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">Éditeur de cours</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('Éditeur de cours')}</h2>
                 <p className="text-gray-500 mb-6">Sélectionnez un module ou une leçon dans la colonne de gauche pour l&apos;éditer, ou ajoutez un nouveau module pour commencer.</p>
                 <button
                   onClick={ajouterModule}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  Créer le premier module
+                  {t('Créer le premier module')}
                 </button>
               </div>
             </div>
@@ -458,7 +460,7 @@ export default function EditeurFormationPage() {
           {panneau.type === 'module' && moduleActif && (
             <div className="max-w-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Modifier le module</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('Modifier le module')}</h2>
                 <button
                   onClick={() => supprimerModule(panneau.moduleId)}
                   className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
@@ -466,29 +468,29 @@ export default function EditeurFormationPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Supprimer
+                  {t('Supprimer')}
                 </button>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre du module</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('Titre du module')}</label>
                   <input
                     type="text"
                     value={titreModule}
                     onChange={e => setTitreModule(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Titre du module..."
+                    placeholder={t('Titre du module...')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('Description')}</label>
                   <textarea
                     value={descModule}
                     onChange={e => setDescModule(e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                    placeholder="Description du module..."
+                    placeholder={t('Description du module...')}
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -506,13 +508,13 @@ export default function EditeurFormationPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Ajouter une leçon
+                    {t('Ajouter une leçon')}
                   </button>
                   <button
                     onClick={() => setLibrairieModule(panneau.moduleId)}
                     className="px-6 py-2 bg-indigo-50 text-indigo-700 text-sm rounded-lg hover:bg-indigo-100 transition-colors font-medium"
                   >
-                    📚 Ajouter depuis la librairie
+                    {t('📚 Ajouter depuis la librairie')}
                   </button>
                 </div>
               </div>
@@ -550,7 +552,7 @@ export default function EditeurFormationPage() {
           {panneau.type === 'lecon' && leconActive && (
             <div className="max-w-3xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Modifier la leçon</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('Modifier la leçon')}</h2>
                 <button
                   onClick={() => supprimerLecon(panneau.leconId)}
                   className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
@@ -558,38 +560,38 @@ export default function EditeurFormationPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Supprimer
+                  {t('Supprimer')}
                 </button>
               </div>
 
               {/* Infos lecon */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre de la leçon</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('Titre de la leçon')}</label>
                   <input
                     type="text"
                     value={titreLecon}
                     onChange={e => setTitreLecon(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Titre de la leçon..."
+                    placeholder={t('Titre de la leçon...')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('Description')}</label>
                   <textarea
                     value={descLecon}
                     onChange={e => setDescLecon(e.target.value)}
                     rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                    placeholder="Description de la leçon..."
+                    placeholder={t('Description de la leçon...')}
                   />
                 </div>
                 <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 w-4 h-4" checked={attestationLecon}
                     onChange={e => setAttestationLecon(e.target.checked)} />
                   <span className="text-sm text-gray-700">
-                    <strong>Exiger « J’ai lu et compris » à la fin de la leçon</strong>
-                    <span className="block text-xs text-gray-500 mt-0.5">L’employé doit cocher la case pour terminer la leçon. La date et le texte accepté sont conservés comme preuve.</span>
+                    <strong>{t('Exiger « J’ai lu et compris » à la fin de la leçon')}</strong>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('L’employé doit cocher la case pour terminer la leçon. La date et le texte accepté sont conservés comme preuve.')}</span>
                   </span>
                 </label>
                 {attestationLecon && (
@@ -631,10 +633,10 @@ export default function EditeurFormationPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">📊 Importer un PowerPoint</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('📊 Importer un PowerPoint')}</h2>
               <button onClick={() => setShowImportPptx(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-            <p className="text-sm text-gray-500 mb-4">Chaque slide du PowerPoint sera convertie automatiquement en leçon avec son contenu.</p>
+            <p className="text-sm text-gray-500 mb-4">{t('Chaque slide du PowerPoint sera convertie automatiquement en leçon avec son contenu.')}</p>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Fichier PowerPoint (.pptx)</label>
@@ -647,20 +649,20 @@ export default function EditeurFormationPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mode d'organisation</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('Mode d\'organisation')}</label>
               <div className="space-y-2">
                 <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-purple-50" style={{borderColor: importPptxMode === 'one' ? '#7c3aed' : '#e5e7eb'}}>
                   <input type="radio" value="one" checked={importPptxMode === 'one'} onChange={() => setImportPptxMode('one')} className="mt-0.5" />
                   <div>
-                    <div className="font-medium text-sm">1 module, N leçons</div>
-                    <div className="text-xs text-gray-500">Toutes les slides dans un seul module</div>
+                    <div className="font-medium text-sm">{t('1 module, N leçons')}</div>
+                    <div className="text-xs text-gray-500">{t('Toutes les slides dans un seul module')}</div>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-purple-50" style={{borderColor: importPptxMode === 'many' ? '#7c3aed' : '#e5e7eb'}}>
                   <input type="radio" value="many" checked={importPptxMode === 'many'} onChange={() => setImportPptxMode('many')} className="mt-0.5" />
                   <div>
-                    <div className="font-medium text-sm">N modules, 1 leçon chacun</div>
-                    <div className="text-xs text-gray-500">Chaque slide devient un module independant</div>
+                    <div className="font-medium text-sm">{t('N modules, 1 leçon chacun')}</div>
+                    <div className="text-xs text-gray-500">{t('Chaque slide devient un module independant')}</div>
                   </div>
                 </label>
               </div>
@@ -674,7 +676,7 @@ export default function EditeurFormationPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setShowImportPptx(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                Annuler
+                {t('Annuler')}
               </button>
               <button
                 onClick={importerPptx}

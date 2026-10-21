@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { CLINIQUE_CONTENU_LABEL, CLINIQUE_INFO, type CliniqueContenu } from '@/lib/cliniques'
@@ -47,6 +48,7 @@ function BadgeClinique({ c }: { c: CliniqueContenu }) {
 }
 
 export default function SopAdminClient({ initialSops, cliniquesGerables }: { initialSops: SOP[]; cliniquesGerables: CliniqueContenu[] }) {
+  const { t } = useT()
   const [sops, setSops] = useState<SOP[]>(initialSops)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<SOP | null>(null)
@@ -60,12 +62,12 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
 
   async function televerserPdf(f: File | undefined) {
     if (!f) return
-    if (f.type !== 'application/pdf') { setError('Choisissez un fichier PDF.'); return }
+    if (f.type !== 'application/pdf') { setError(t('Choisissez un fichier PDF.')); return }
     setEnvoiPdf(true); setError(null)
     try {
       const ref = await envoyerMedia(f, 'fichier')
       setForm(x => ({ ...x, fichier_url: ref, titre: x.titre || f.name.replace(/\.pdf$/i, '') }))
-    } catch (e) { setError(e instanceof Error ? e.message : 'Envoi impossible') }
+    } catch (e) { setError(e instanceof Error ? e.message : t('Envoi impossible')) }
     setEnvoiPdf(false)
   }
 
@@ -102,7 +104,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
   }
 
   async function handleSave() {
-    if (!form.titre.trim()) { setError('Le titre est requis.'); return }
+    if (!form.titre.trim()) { setError(t('Le titre est requis.')); return }
     setSaving(true)
     setError(null)
     const payload = {
@@ -114,7 +116,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
       acces_role: form.acces_role,
       clinique: form.clinique,
     }
-    if (!cliniquesGerables.includes(form.clinique)) { setSaving(false); setError("Vous ne pouvez pas publier de SOP pour cette clinique."); return }
+    if (!cliniquesGerables.includes(form.clinique)) { setSaving(false); setError(t('Vous ne pouvez pas publier de SOP pour cette clinique.')); return }
     let err
     if (editing) {
       const { error: e } = await supabase.from('sop').update(payload).eq('id', editing.id)
@@ -125,7 +127,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
     }
     setSaving(false)
     if (err) { setError(err.message); return }
-    setSuccess(editing ? 'SOP mise à jour.' : 'SOP créée.')
+    setSuccess(editing ? t('SOP mise à jour.') : t('SOP créée.'))
     setShowForm(false)
     setTimeout(() => { setSuccess(null); loadSops() }, 1500)
   }
@@ -145,16 +147,16 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: 0 }}>Gestion des SOP</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>Procédures opérationnelles normalisées — {sops.length} SOP{sops.length !== 1 ? 's' : ''}</p>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: 0 }}>{t('Gestion des SOP')}</h1>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>{t('Procédures opérationnelles normalisées —')}{' '}{sops.length}{' '}{t('SOP')}{sops.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
-          + Nouvelle SOP
+          {t('+ Nouvelle SOP')}
         </button>
       </div>
 
-      {success && <div style={{ background: '#dcfce7', color: '#166534', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', fontWeight: '500' }}>OK {success}</div>}
-      {error && !showForm && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>Erreur : {error}</div>}
+      {success && <div style={{ background: '#dcfce7', color: '#166534', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', fontWeight: '500' }}>{t('OK')}{' '}{success}</div>}
+      {error && !showForm && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{t('Erreur :')}{' '}{error}</div>}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {[{ v: 'all', l: 'Toutes' }, { v: 'employe', l: 'Employés' }, { v: 'gestionnaire', l: 'Gestionnaires' }, { v: 'admin', l: 'Admin' }].map(f => (
@@ -167,11 +169,11 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 24px' }}>{editing ? 'Modifier la SOP' : 'Nouvelle SOP'}</h2>
-            {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>Erreur : {error}</div>}
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 24px' }}>{editing ? t('Modifier la SOP') : 'Nouvelle SOP'}</h2>
+            {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{t('Erreur :')}{' '}{error}</div>}
 
             {[
-              { label: 'Titre *', key: 'titre', placeholder: 'Ex. : SOP-01 — Accueil d’un employé' },
+              { label: 'Titre *', key: 'titre', placeholder: t('Ex. : SOP-01 — Accueil d’un employé') },
               { label: 'Catégorie', key: 'categorie', placeholder: 'Ex. : Ressources humaines' },
               { label: 'Version', key: 'version', placeholder: '1.0' },
             ].map(({ label, key, placeholder }) => (
@@ -190,19 +192,19 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Document de la SOP (PDF)</label>
               {estMediaPrive(form.fichier_url) ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
-                  <span>📄 PDF téléversé</span>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, fichier_url: '' }))} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}>Retirer</button>
+                  <span>{t('📄 PDF téléversé')}</span>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, fichier_url: '' }))} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}>{t('Retirer')}</button>
                 </div>
               ) : (
                 <>
                   <input type="file" accept="application/pdf" disabled={envoiPdf} onChange={e => televerserPdf(e.target.files?.[0])} style={{ fontSize: '13px' }} />
-                  {envoiPdf && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Envoi en cours…</div>}
+                  {envoiPdf && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>{t('Envoi en cours…')}</div>}
                   <div style={{ fontSize: '12px', color: '#6b7280', margin: '10px 0 4px' }}>ou collez l’adresse d’un document (SharePoint, etc.) :</div>
                   <input value={form.fichier_url ?? ''} onChange={e => setForm(f => ({ ...f, fichier_url: e.target.value }))} placeholder="https://..."
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
                 </>
               )}
-              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>Les employés ouvrent le PDF depuis leur page SOP. Il n’est plus nécessaire de recopier le texte.</div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>{t('Les employés ouvrent le PDF depuis leur page SOP. Il n’est plus nécessaire de recopier le texte.')}</div>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
@@ -211,13 +213,13 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
                 value={form.description ?? ''}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={3}
-                placeholder="Description courte de la SOP..."
+                placeholder={t('Description courte de la SOP...')}
                 style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical', outline: 'none' }}
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Clinique *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>{t('Clinique *')}</label>
               <select
                 value={form.clinique}
                 onChange={e => setForm(f => ({ ...f, clinique: e.target.value as CliniqueContenu }))}
@@ -225,18 +227,18 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
               >
                 {cliniquesGerables.map(c => <option key={c} value={c}>{CLINIQUE_CONTENU_LABEL[c]}</option>)}
               </select>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Seuls les employés de cette clinique verront la SOP.</div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>{t('Seuls les employés de cette clinique verront la SOP.')}</div>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Accès par rôle *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>{t('Accès par rôle *')}</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {ROLE_OPTIONS.map(opt => (
                   <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', border: `2px solid ${form.acces_role === opt.value ? '#6366f1' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer', background: form.acces_role === opt.value ? '#f0f0ff' : '#fff' }}>
                     <input type="radio" name="acces_role" value={opt.value} checked={form.acces_role === opt.value} onChange={() => setForm(f => ({ ...f, acces_role: opt.value as SOP['acces_role'] }))} style={{ marginTop: '2px' }} />
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{opt.label}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{opt.desc}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{t(opt.label)}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{t(opt.desc)}</div>
                     </div>
                   </label>
                 ))}
@@ -244,9 +246,9 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowForm(false); setError(null) }} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>Annuler</button>
+              <button onClick={() => { setShowForm(false); setError(null) }} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>{t('Annuler')}</button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Enregistrement...' : editing ? 'Mettre à jour' : 'Creer'}
+                {saving ? 'Enregistrement...' : editing ? t('Mettre à jour') : 'Creer'}
               </button>
             </div>
           </div>
@@ -256,8 +258,8 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
       {filtered.length === 0 ? (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '60px', textAlign: 'center' }}>
           <p style={{ fontSize: '40px', margin: '0 0 12px' }}>📄</p>
-          <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>Aucune SOP trouvee</p>
-          <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>Cliquez sur Nouvelle SOP pour en créer une.</p>
+          <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>{t('Aucune SOP trouvee')}</p>
+          <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>{t('Cliquez sur Nouvelle SOP pour en créer une.')}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -269,7 +271,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
                     <span style={{ fontSize: '15px', fontWeight: '600', color: '#111827' }}>{sop.titre}</span>
                     {sop.version && <span style={{ background: '#f3f4f6', color: '#6b7280', borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: '500' }}>v{sop.version}</span>}
-                    <span style={{ background: badge.bg, color: badge.color, borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: '600' }}>{badge.label}</span>
+                    <span style={{ background: badge.bg, color: badge.color, borderRadius: '6px', padding: '1px 8px', fontSize: '11px', fontWeight: '600' }}>{t(badge.label)}</span>
                     <BadgeClinique c={sop.clinique ?? 'LES_DEUX'} />
                     {sop.categorie && <span style={{ background: '#f0f0ff', color: '#6366f1', borderRadius: '6px', padding: '1px 8px', fontSize: '11px' }}>{sop.categorie}</span>}
                   </div>
@@ -277,11 +279,11 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   {sop.fichier_url && (
-                    <a href={`/api/sop/${sop.id}/fichier`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>Voir</a>
+                    <a href={`/api/sop/${sop.id}/fichier`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>{t('Voir')}</a>
                   )}
                   {cliniquesGerables.includes(sop.clinique ?? 'LES_DEUX') && <>
-                  <button onClick={() => openEdit(sop)} style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Modifier</button>
-                  <button onClick={() => handleDelete(sop.id)} disabled={deleting === sop.id} style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deleting === sop.id ? 0.5 : 1 }}>Suppr.</button>
+                  <button onClick={() => openEdit(sop)} style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>{t('Modifier')}</button>
+                  <button onClick={() => handleDelete(sop.id)} disabled={deleting === sop.id} style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deleting === sop.id ? 0.5 : 1 }}>{t('Suppr.')}</button>
                   </>}
                 </div>
               </div>

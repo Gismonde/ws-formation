@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState, useEffect } from 'react'
 import { ChampCategorie } from '@/components/ChampCategorie'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
@@ -45,6 +46,7 @@ function extractYouTubeId(url: string): string | null {
 }
 
 export default function NouvelleFormationPage() {
+  const { t } = useT()
   const router = useRouter()
   const [titre, setTitre] = useState('')
   const [responsable, setResponsable] = useState('')
@@ -188,22 +190,22 @@ export default function NouvelleFormationPage() {
   async function handleSave() {
     // Validation renforcée
     const errors: string[] = []
-    if (!titre.trim()) errors.push('Le titre est requis.')
-    if (modules.length === 0) errors.push('Au moins un module est requis.')
+    if (!titre.trim()) errors.push(t('Le titre est requis.'))
+    if (modules.length === 0) errors.push(t('Au moins un module est requis.'))
     const emptyModules = modules.filter(m => !m.titre.trim())
-    if (emptyModules.length > 0) errors.push('Chaque module doit avoir un titre.')
+    if (emptyModules.length > 0) errors.push(t('Chaque module doit avoir un titre.'))
     const invalidDurations = modules.filter(m => !m.duree_minutes || m.duree_minutes <= 0)
-    if (invalidDurations.length > 0) errors.push('Chaque module doit avoir une durée supérieure à 0.')
+    if (invalidDurations.length > 0) errors.push(t('Chaque module doit avoir une durée supérieure à 0.'))
     const emptyLecons = modules.flatMap(m => m.lecons || []).filter(l => !l.titre.trim())
-    if (emptyLecons.length > 0) errors.push('Chaque leçon doit avoir un titre.')
+    if (emptyLecons.length > 0) errors.push(t('Chaque leçon doit avoir un titre.'))
     const filledQuestions = questions.filter(q => q.texte.trim())
     if (filledQuestions.length > 0) {
       const noCorrect = filledQuestions.filter(q => !q.reponses.some(r => r.est_correcte))
-      if (noCorrect.length > 0) errors.push('Chaque question doit avoir au moins une réponse correcte.')
+      if (noCorrect.length > 0) errors.push(t('Chaque question doit avoir au moins une réponse correcte.'))
       const emptyR = filledQuestions.filter(q => q.reponses.some(r => !r.texte.trim()))
-      if (emptyR.length > 0) errors.push('Chaque réponse doit avoir un texte.')
+      if (emptyR.length > 0) errors.push(t('Chaque réponse doit avoir un texte.'))
     }
-    if (!clinique) errors.push('Choisissez la clinique de la formation.')
+    if (!clinique) errors.push(t('Choisissez la clinique de la formation.'))
     if (errors.length > 0) { setError(errors.join(' | ')); return }
 
     setSaving(true)
@@ -216,7 +218,7 @@ export default function NouvelleFormationPage() {
         .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
-      if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
+      if (errF || !formation) throw new Error(errF?.message || t('Erreur création formation'))
 
       const { data: modulesCreated, error: errM } = await supabase
         .from('modules')
@@ -377,31 +379,31 @@ export default function NouvelleFormationPage() {
     const validQs = questions.filter(q => q.texte.trim())
     return (
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontFamily: 'system-ui, sans-serif' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>Aperçu avant création</h2>
-        <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>Vérifiez les informations avant de créer la formation.</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>{t('Aperçu avant création')}</h2>
+        <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{t('Vérifiez les informations avant de créer la formation.')}</p>
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
             <div className='grille-2-colonnes' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Titre</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Niveau</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Modules</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''} — {totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Durée</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Titre')}</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Niveau')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Modules')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''} — {totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Durée')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
             </div>
           </div>
           {(tags.length > 0 || objectifs.length > 0) && (
             <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
-              {tags.length > 0 && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', fontWeight: '600' }}>Tags</span><div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>{tags.map((t, i) => <span key={i} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '11px', padding: '1px 8px', borderRadius: '20px' }}>{t}</span>)}</div></div>}
+              {tags.length > 0 && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', fontWeight: '600' }}>{t('Tags')}</span><div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>{tags.map((t, i) => <span key={i} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '11px', padding: '1px 8px', borderRadius: '20px' }}>{t}</span>)}</div></div>}
               {objectifs.length > 0 && <div><span style={{ fontSize: '12px', fontWeight: '600' }}>Objectifs ({objectifs.length})</span>{objectifs.map((o, i) => <p key={i} style={{ fontSize: '12px', color: '#374151', margin: '4px 0 0' }}>✓ {o}</p>)}</div>}
             </div>
           )}
           {prerequisIds.length > 0 && (
             <div style={{ padding: '12px 16px', background: '#fefce8', borderRadius: '10px', border: '1px solid #fef08a' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#713f12' }}>⚠️ {prerequisIds.length} prérequis obligatoire{prerequisIds.length > 1 ? 's' : ''}</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#713f12' }}>⚠️ {prerequisIds.length}{' '}{t('prérequis obligatoire')}{prerequisIds.length > 1 ? 's' : ''}</span>
             </div>
           )}
           {validQs.length > 0 && (
             <div style={{ padding: '12px 16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#15803d' }}>✓ Questionnaire : {validQs.length} question{validQs.length > 1 ? 's' : ''}, seuil {seuilReussite}%</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#15803d' }}>{t('✓ Questionnaire :')}{' '}{validQs.length} question{validQs.length > 1 ? 's' : ''}{t(', seuil')}{' '}{seuilReussite}%</span>
             </div>
           )}
         </div>
@@ -410,8 +412,8 @@ export default function NouvelleFormationPage() {
           <span>Publier immédiatement (visible par les apprenants)</span>
         </label>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>← Modifier</button>
-          <button onClick={handleSave} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>✓ Confirmer et créer</button>
+          <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>{t('← Modifier')}</button>
+          <button onClick={handleSave} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>{t('✓ Confirmer et créer')}</button>
         </div>
       </div>
     )
@@ -421,33 +423,33 @@ export default function NouvelleFormationPage() {
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px', fontFamily: 'system-ui, sans-serif' }}>
       {choixLib && <ChoixLibrairie types={['video', 'lien', 'document', 'politique']} onChoisir={ajouterDepuisLibrairie} onFermer={() => setChoixLib(null)} />}
       <div style={{ marginBottom: '24px' }}>
-        <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>← Retour</a>
-        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>Nouvelle formation</h1>
+        <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>{t('← Retour')}</a>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>{t('Nouvelle formation')}</h1>
       </div>
 
       {error && <p style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>{error}</p>}
 
       {/* Informations générales */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>Informations générales</h2>
+        <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>{t('Informations générales')}</h2>
         <div style={{ display: 'grid', gap: '14px' }}>
 <div>
-            <label style={labelStyle}>Responsable de la formation</label>
-            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" />
-            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Ce nom apparaît sur le certificat remis aux employés.</span>
+            <label style={labelStyle}>{t('Responsable de la formation')}</label>
+            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder={t('Ex. : Dre Julie Martin, directrice des soins infirmiers')} />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>{t('Ce nom apparaît sur le certificat remis aux employés.')}</span>
           </div>
           <div>
-            <label style={labelStyle}>Titre *</label>
+            <label style={labelStyle}>{t('Titre *')}</label>
             <input
               style={{ ...inputStyle, borderColor: !titre.trim() && saving ? '#ef4444' : '#d1d5db' }}
               value={titre}
               onChange={e => setTitre(e.target.value)}
-              placeholder="Titre de la formation"
+              placeholder={t('Titre de la formation')}
             />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <label style={labelStyle}>Description</label>
+              <label style={labelStyle}>{t('Description')}</label>
               <button type="button" onClick={() => {
                 const modTitles = modules.map(m => m.titre).filter(t => t.trim()).slice(0, 6)
                 if (modTitles.length > 0) {
@@ -455,24 +457,24 @@ export default function NouvelleFormationPage() {
                   setDescription(desc)
                 }
               }} style={{ fontSize: '11px', color: '#6366f1', background: 'none', border: '1px solid #6366f1', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer' }}>
-                ↺ Générer depuis les modules
+                {t('↺ Générer depuis les modules')}
               </button>
             </div>
-            <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)" />
-            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
+            <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} placeholder={t('Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)')} />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>{t('Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes')}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Catégorie</label>
+              <label style={labelStyle}>{t('Catégorie')}</label>
               <ChampCategorie valeur={categorie} onChange={setCategorie} style={{ ...inputStyle }} />
             </div>
             <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={{ ...inputStyle, cursor: 'pointer' }} labelStyle={labelStyle} />
             <div>
-              <label style={labelStyle}>Niveau</label>
+              <label style={labelStyle}>{t('Niveau')}</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={niveau} onChange={e => setNiveau(e.target.value)}>
-                <option value="debutant">Débutant</option>
-                <option value="intermediaire">Intermédiaire</option>
-                <option value="avance">Avancé</option>
+                <option value="debutant">{t('Débutant')}</option>
+                <option value="intermediaire">{t('Intermédiaire')}</option>
+                <option value="avance">{t('Avancé')}</option>
               </select>
             </div>
             <div>
@@ -498,7 +500,7 @@ export default function NouvelleFormationPage() {
                   <button
                     onClick={() => { setDureeManuelle(false); setDureeHeures(autoHeures) }}
                     style={{ ...btnSecStyle, padding: '6px 8px', fontSize: '12px', whiteSpace: 'nowrap' }}
-                    title="Recalculer automatiquement"
+                    title={t('Recalculer automatiquement')}
                   >
                     🔄
                   </button>
@@ -512,8 +514,8 @@ export default function NouvelleFormationPage() {
       {/* Modules */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#111827' }}>Modules ({modules.length}) — {totalMinutes} min total</h2>
-          <button onClick={addModule} style={{ ...btnStyle, padding: '6px 12px', fontSize: '13px' }}>+ Module</button>
+          <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#111827' }}>Modules ({modules.length}) — {totalMinutes}{' '}{t('min total')}</h2>
+          <button onClick={addModule} style={{ ...btnStyle, padding: '6px 12px', fontSize: '13px' }}>{t('+ Module')}</button>
         </div>
 
         {modules.map((mod, idx) => (
@@ -521,31 +523,31 @@ export default function NouvelleFormationPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title="Monter">▲</button>
-                  <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title="Descendre">▼</button>
+                  <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title={t('Monter')}>▲</button>
+                  <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title={t('Descendre')}>▼</button>
                 </div>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>{t('Module')}{' '}{idx + 1}</span>
               </div>
-              <button onClick={() => removeModule(idx)} style={btnDangerStyle}>Supprimer</button>
+              <button onClick={() => removeModule(idx)} style={btnDangerStyle}>{t('Supprimer')}</button>
             </div>
             <div style={{ display: 'grid', gap: '8px' }}>
               <div>
-                <label style={{ ...labelStyle, fontSize: '12px' }}>Titre *</label>
+                <label style={{ ...labelStyle, fontSize: '12px' }}>{t('Titre *')}</label>
                 <input
                   style={{ ...inputStyle, borderColor: !mod.titre.trim() ? '#ef4444' : '#d1d5db' }}
                   value={mod.titre}
                   onChange={e => updateModule(idx, 'titre', e.target.value)}
-                  placeholder="Titre du module"
+                  placeholder={t('Titre du module')}
                 />
-                {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '2px 0 0' }}>Titre requis</p>}
+                {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '2px 0 0' }}>{t('Titre requis')}</p>}
               </div>
               <div>
-                <label style={{ ...labelStyle, fontSize: '12px' }}>Contenu</label>
+                <label style={{ ...labelStyle, fontSize: '12px' }}>{t('Contenu')}</label>
                 <textarea
                   style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', fontSize: '13px' }}
                   value={mod.contenu}
                   onChange={e => updateModule(idx, 'contenu', e.target.value)}
-                  placeholder="Contenu du module..."
+                  placeholder={t('Contenu du module...')}
                 />
               </div>
               <div style={{ maxWidth: '160px' }}>
@@ -573,11 +575,11 @@ export default function NouvelleFormationPage() {
                     }}
                     style={{ ...btnSecStyle, fontSize: '11px', padding: '2px 8px' }}
                   >
-                    + Leçon
+                    {t('+ Leçon')}
                   </button>
                 </div>
                 {(mod.lecons || []).length === 0 && (
-                  <p style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic', margin: '4px 0' }}>Aucune leçon</p>
+                  <p style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic', margin: '4px 0' }}>{t('Aucune leçon')}</p>
                 )}
                 {(mod.lecons || []).map((lecon, leconIdx) => {
                   const leconImgId = 'img-nv-' + idx + '-' + leconIdx
@@ -586,10 +588,10 @@ export default function NouvelleFormationPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === 0} title="Monter">▲</button>
-                            <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title="Descendre">▼</button>
+                            <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === 0} title={t('Monter')}>▲</button>
+                            <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '10px', padding: '0px 4px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title={t('Descendre')}>▼</button>
                           </div>
-                          <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>{t('Leçon')}{' '}{leconIdx + 1}</span>
                         </div>
                         <button
                           onClick={() => {
@@ -599,7 +601,7 @@ export default function NouvelleFormationPage() {
                           }}
                           style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 6px' }}
                         >
-                          Supprimer
+                          {t('Supprimer')}
                         </button>
                       </div>
                       <input
@@ -610,7 +612,7 @@ export default function NouvelleFormationPage() {
                           updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
                           setModules(updated)
                         }}
-                        placeholder="Titre de la leçon *"
+                        placeholder={t('Titre de la leçon *')}
                       />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                         <input
@@ -623,11 +625,11 @@ export default function NouvelleFormationPage() {
                             updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], duree_minutes: parseInt(e.target.value) || 0 }
                             setModules(updated)
                           }}
-                          placeholder="min"
+                          placeholder={t('min')}
                         />
-                        <span style={{ fontSize: '11px', color: '#6b7280' }}>min / leçon</span>
+                        <span style={{ fontSize: '11px', color: '#6b7280' }}>{t('min / leçon')}</span>
                       </div>
-                      {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '-2px 0 4px' }}>Titre requis</p>}
+                      {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '11px', margin: '-2px 0 4px' }}>{t('Titre requis')}</p>}
                       <textarea
                         style={{ ...inputStyle, minHeight: '55px', resize: 'vertical', fontSize: '12px' }}
                         value={lecon.description}
@@ -636,7 +638,7 @@ export default function NouvelleFormationPage() {
                           updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], description: e.target.value }
                           setModules(updated)
                         }}
-                        placeholder="Description de la leçon..."
+                        placeholder={t('Description de la leçon...')}
                       />
                       {/* Enriched blocs */}
                       {(lecon.blocs || []).length > 0 && (lecon.blocs || []).map((bloc: any, bi: number) => (
@@ -647,18 +649,18 @@ export default function NouvelleFormationPage() {
                             <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
                               <img
                                 src={'https://img.youtube.com/vi/' + extractYouTubeId(bloc.contenu) + '/mqdefault.jpg'}
-                                alt="YouTube preview"
+                                alt={t('YouTube preview')}
                                 style={{ width: '100%', display: 'block', maxHeight: '120px', objectFit: 'cover' }}
                               />
-                              <div style={{ padding: '4px 8px', background: '#f9fafb', fontSize: '12px', color: '#6b7280' }}>YouTube</div>
+                              <div style={{ padding: '4px 8px', background: '#f9fafb', fontSize: '12px', color: '#6b7280' }}>{t('YouTube')}</div>
                             </div>
                           )}
-                          <button onClick={() => { const up = [...modules]; const b = (up[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 5px' }}>×</button>
+                          <button onClick={() => { const up = [...modules]; const b = (up[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 5px' }}>{t('×')}</button>
                         </div>
                       ))}
                       <div style={{ display: 'flex', gap: '3px', marginTop: '4px', flexWrap: 'wrap' }}>
                         <button type="button" onClick={() => setChoixLib({ m: idx, l: leconIdx })} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', color: '#4338ca', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>
-                          + 📚 Librairie
+                          {t('+ 📚 Librairie')}
                         </button>
                         {(['video', 'file', 'code', 'link'] as const).map(type => (
                           <button key={type} onClick={() => { const up = [...modules]; const blocs = [...(up[idx].lecons[leconIdx].blocs || []), { type, contenu: '' }]; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs }; setModules(up) }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}>
@@ -669,7 +671,7 @@ export default function NouvelleFormationPage() {
                       <div style={{ marginTop: '6px' }}>
                         {lecon.image_url ? (
                           <div>
-                            <img src={lecon.image_url} alt="Aperçu" style={{ maxWidth: '160px', maxHeight: '100px', borderRadius: '4px', border: '1px solid #d1d5db', display: 'block' }} />
+                            <img src={lecon.image_url} alt={t('Aperçu')} style={{ maxWidth: '160px', maxHeight: '100px', borderRadius: '4px', border: '1px solid #d1d5db', display: 'block' }} />
                             <button
                               onClick={() => {
                                 const updated = [...modules]
@@ -685,7 +687,7 @@ export default function NouvelleFormationPage() {
                           </div>
                         ) : (
                           <label htmlFor={leconImgId} style={{ ...btnSecStyle, fontSize: '11px', padding: '2px 8px', cursor: 'pointer', display: 'inline-block' }}>
-                            + Image
+                            {t('+ Image')}
                             <input
                               id={leconImgId}
                               type="file"
@@ -710,19 +712,19 @@ export default function NouvelleFormationPage() {
 
       {/* Enrichissement */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>Enrichissement</h2>
+        <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>{t('Enrichissement')}</h2>
         <div style={{ display: 'grid', gap: '16px' }}>
           {/* Image couverture */}
           <div>
-            <label style={labelStyle}>Image de couverture</label>
+            <label style={labelStyle}>{t('Image de couverture')}</label>
             {imageCouverture ? (
               <div>
-                <img src={imageCouverture} alt="Couverture" style={{ maxWidth: '220px', maxHeight: '130px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '6px' }} />
-                <button onClick={() => setImageCouverture('')} style={{ ...btnDangerStyle, fontSize: '11px' }}>Retirer</button>
+                <img src={imageCouverture} alt={t('Couverture')} style={{ maxWidth: '220px', maxHeight: '130px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '6px' }} />
+                <button onClick={() => setImageCouverture('')} style={{ ...btnDangerStyle, fontSize: '11px' }}>{t('Retirer')}</button>
               </div>
             ) : (
               <label htmlFor="cover-img-nv" style={{ ...btnSecStyle, display: 'inline-block', cursor: 'pointer', fontSize: '12px' }}>
-                + Image de couverture
+                {t('+ Image de couverture')}
                 <input id="cover-img-nv" type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
                   const f = e.target.files?.[0]; if (!f) return
                   const fd = new FormData(); fd.append('file', f)
@@ -734,32 +736,32 @@ export default function NouvelleFormationPage() {
           </div>
           {/* Tags */}
           <div>
-            <label style={labelStyle}>Tags / mots-clés</label>
+            <label style={labelStyle}>{t('Tags / mots-clés')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '6px' }}>
               {tags.map((tag, ti) => (
                 <span key={ti} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  {tag}<button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '13px', padding: 0 }}>×</button>
+                  {tag}<button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '13px', padding: 0 }}>{t('×')}</button>
                 </span>
               ))}
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
-              <input style={{ ...inputStyle, flex: 1 }} value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); setTags(p => [...p, tagInput.trim()]); setTagInput('') } }} placeholder="Tag (Entrée ou virgule)" />
+              <input style={{ ...inputStyle, flex: 1 }} value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); setTags(p => [...p, tagInput.trim()]); setTagInput('') } }} placeholder={t('Tag (Entrée ou virgule)')} />
               <button onClick={() => { if (tagInput.trim()) { setTags(p => [...p, tagInput.trim()]); setTagInput('') } }} style={{ ...btnSecStyle, padding: '6px 12px' }}>+</button>
             </div>
           </div>
           {/* Objectifs */}
           <div>
-            <label style={labelStyle}>Objectifs pédagogiques</label>
+            <label style={labelStyle}>{t('Objectifs pédagogiques')}</label>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>À la fin de cette formation, l&apos;apprenant saura...</p>
             {objectifs.map((obj, oi) => (
               <div key={oi} style={{ display: 'flex', gap: '6px', marginBottom: '4px', alignItems: 'center' }}>
                 <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
                 <span style={{ flex: 1, fontSize: '13px', color: '#374151' }}>{obj}</span>
-                <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 6px' }}>×</button>
+                <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '10px', padding: '1px 6px' }}>{t('×')}</button>
               </div>
             ))}
             <div style={{ display: 'flex', gap: '6px' }}>
-              <input style={{ ...inputStyle, flex: 1 }} value={objectifInput} onChange={e => setObjectifInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && objectifInput.trim()) { e.preventDefault(); setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput('') } }} placeholder="Ex: utiliser le logiciel X..." />
+              <input style={{ ...inputStyle, flex: 1 }} value={objectifInput} onChange={e => setObjectifInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && objectifInput.trim()) { e.preventDefault(); setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput('') } }} placeholder={t('Ex: utiliser le logiciel X...')} />
               <button onClick={() => { if (objectifInput.trim()) { setObjectifs(p => [...p, objectifInput.trim()]); setObjectifInput('') } }} style={{ ...btnSecStyle, padding: '6px 12px' }}>+</button>
             </div>
           </div>
@@ -770,7 +772,7 @@ export default function NouvelleFormationPage() {
             <label style={labelStyle}>Prérequis (formations obligatoires avant)</label>
             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>Sélectionnez les formations que l&apos;apprenant doit avoir terminées avant d&apos;accéder à celle-ci.</p>
             {formationsDisponibles.length === 0 ? (
-              <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Aucune formation publiée disponible.</p>
+              <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>{t('Aucune formation publiée disponible.')}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
                 {formationsDisponibles.map(f => (
@@ -789,7 +791,7 @@ export default function NouvelleFormationPage() {
               </div>
             )}
             {prerequisIds.length > 0 && (
-              <p style={{ fontSize: '11px', color: '#7c3aed', margin: '4px 0 0' }}>✓ {prerequisIds.length} prérequis sélectionné{prerequisIds.length > 1 ? 's' : ''}</p>
+              <p style={{ fontSize: '11px', color: '#7c3aed', margin: '4px 0 0' }}>✓ {prerequisIds.length}{' '}{t('prérequis sélectionné')}{prerequisIds.length > 1 ? 's' : ''}</p>
             )}
           </div>
           </div>
@@ -798,7 +800,7 @@ export default function NouvelleFormationPage() {
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#111827' }}>Questionnaire (optionnel)</h2>
-          <button onClick={addQuestion} style={{ ...btnStyle, padding: '6px 12px', fontSize: '13px' }}>+ Question</button>
+          <button onClick={addQuestion} style={{ ...btnStyle, padding: '6px 12px', fontSize: '13px' }}>{t('+ Question')}</button>
         </div>
         <div style={{ marginBottom: '14px' }}>
           <label style={labelStyle}>Seuil de réussite (%)</label>
@@ -807,17 +809,17 @@ export default function NouvelleFormationPage() {
         {questions.map((q, qi) => (
           <div key={qi} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '14px', marginBottom: '10px', background: '#f9fafb' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Question {qi + 1}</span>
-              <button onClick={() => removeQuestion(qi)} style={btnDangerStyle}>Supprimer</button>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>{t('Question')}{' '}{qi + 1}</span>
+              <button onClick={() => removeQuestion(qi)} style={btnDangerStyle}>{t('Supprimer')}</button>
             </div>
             <input
               style={{ ...inputStyle, marginBottom: '8px', borderColor: q.texte.trim() && !q.reponses.some(r => r.est_correcte) ? '#ef4444' : '#d1d5db' }}
               value={q.texte}
               onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
-              placeholder="Texte de la question..."
+              placeholder={t('Texte de la question...')}
             />
             {q.texte.trim() && !q.reponses.some(r => r.est_correcte) && (
-              <p style={{ color: '#dc2626', fontSize: '11px', margin: '-4px 0 8px' }}>Aucune réponse correcte sélectionnée</p>
+              <p style={{ color: '#dc2626', fontSize: '11px', margin: '-4px 0 8px' }}>{t('Aucune réponse correcte sélectionnée')}</p>
             )}
             {q.reponses.map((r, ri) => (
               <div key={ri} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
@@ -844,16 +846,16 @@ export default function NouvelleFormationPage() {
               onClick={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: [...q2.reponses, { texte: '', est_correcte: false }] }))}
               style={{ ...btnSecStyle, fontSize: '12px', marginTop: '4px' }}
             >
-              + Réponse
+              {t('+ Réponse')}
             </button>
           </div>
         ))}
       </div>
 
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-        <a href="/admin/formations" style={{ ...btnSecStyle, textDecoration: 'none', display: 'inline-block', padding: '8px 18px' }}>Annuler</a>
+        <a href="/admin/formations" style={{ ...btnSecStyle, textDecoration: 'none', display: 'inline-block', padding: '8px 18px' }}>{t('Annuler')}</a>
         <button onClick={() => setShowPreview(true)} disabled={saving} style={{ ...btnStyle, opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Enregistrement...' : '✓ Créer la formation'}
+          {saving ? 'Enregistrement...' : t('✓ Créer la formation')}
         </button>
       </div>
     </div>

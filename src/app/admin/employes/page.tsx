@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import ToggleActifButton from './ToggleActifButton'
@@ -15,6 +16,7 @@ const roleStyles: Record<string, { bg: string; color: string; border: string }> 
 const roleLabel: Record<string, string> = ROLE_LABEL
 
 export default async function AdminEmployesPage({ searchParams }: { searchParams: Promise<{ clinique?: string }> }) {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
@@ -47,9 +49,9 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const peutGerer = (emp: any) => peutGererEmploye(acteur, emp)
   const peutCreer = !isGestionnaire || (!!acteur.departement_id && !!acteur.clinique)
 
-  const sousTitre = acteur.role === 'super_admin' && !acteur.vue ? 'dans les deux cliniques'
-    : acteur.role === 'super_admin' || acteur.role === 'admin' ? 'au ' + mesCliniques.join(' et au ')
-    : `dans votre département${acteur.clinique ? ' (' + acteur.clinique.replace('LES_DEUX', 'CMC + WSSC') + ')' : ''}`
+  const sousTitre = acteur.role === 'super_admin' && !acteur.vue ? t('dans les deux cliniques')
+    : acteur.role === 'super_admin' || acteur.role === 'admin' ? t('au {cliniques}', { cliniques: mesCliniques.join(t(' et au ')) })
+    : t('dans votre département') + (acteur.clinique ? ' (' + acteur.clinique.replace('LES_DEUX', 'CMC + WSSC') + ')' : '')
 
   const actifs = employes?.filter((e: any) => e.actif !== false) ?? []
   const archives = employes?.filter((e: any) => e.actif === false) ?? []
@@ -80,7 +82,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, letterSpacing: '-0.5px' }}>
-            Employés
+            {t('Employés')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', margin: '4px 0 0 0' }}>
             {actifs.length} employé(s) actif(s) {sousTitre}
@@ -100,7 +102,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
             fontWeight: '600',
             boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
           }}>
-            + Créer un employé
+            {t('+ Créer un employé')}
           </Link>
         )}
       </div>
@@ -125,16 +127,16 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
         <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
           <thead>
             <tr>
-              <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="actifs" aria-label="Sélectionner tous les employés actifs" /></th>
-              <th style={thStyle}>Nom</th>
-              <th style={thStyle}>Email</th>
-              <th style={thStyle}>Clinique</th>
-              <th style={thStyle}>Département</th>
-              <th style={thStyle}>Rôle</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>Formations</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>Certificats</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>Statut</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>Actions</th>
+              <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="actifs" aria-label={t('Sélectionner tous les employés actifs')} /></th>
+              <th style={thStyle}>{t('Nom')}</th>
+              <th style={thStyle}>{t('Email')}</th>
+              <th style={thStyle}>{t('Clinique')}</th>
+              <th style={thStyle}>{t('Département')}</th>
+              <th style={thStyle}>{t('Rôle')}</th>
+              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Formations')}</th>
+              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Certificats')}</th>
+              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Statut')}</th>
+              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -151,29 +153,29 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                   </td>
                   <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
                   <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
-                  <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
+                  <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? t('Non assigné')}</td>
                   <td style={tdStyle}>
                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
-                      {roleLabel[emp.role] ?? emp.role}
+                      {t(roleLabel[emp.role] ?? emp.role)}
                     </span>
                     {emp.role === 'gestionnaire' && emp.peut_creer_formations && (
-                      <span title="Peut créer des formations" style={{ display: 'inline-block', marginLeft: '6px', padding: '2px 8px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>
-                        ✏️ Formations
+                      <span title={t('Peut créer des formations')} style={{ display: 'inline-block', marginLeft: '6px', padding: '2px 8px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>
+                        {t('✏️ Formations')}
                       </span>
                     )}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbAssign(emp.id)}</td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbCerts(emp.id)}</td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const }}>
-                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', fontSize: '12px', fontWeight: '600', border: '1px solid #bbf7d0' }}>Actif</span>
+                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', fontSize: '12px', fontWeight: '600', border: '1px solid #bbf7d0' }}>{t('Actif')}</span>
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                       <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                        Dossier
+                        {t('Dossier')}
                       </Link>
                       <Link href={`/admin/employes/${emp.id}?onglet=preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
-                        Preuves
+                        {t('Preuves')}
                       </Link>
                       {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />}
                     </div>
@@ -189,23 +191,23 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
       {archives.length > 0 && (
         <div>
           <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#6b7280', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Employés archivés
+            {t('Employés archivés')}
             <span style={{ background: '#e5e7eb', color: '#6b7280', fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>{archives.length}</span>
           </h2>
           <div style={{ ...tableStyle, opacity: 0.8 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
               <thead>
                 <tr>
-                  <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="archives" aria-label="Sélectionner tous les employés archivés" /></th>
-                  <th style={thStyle}>Nom</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Clinique</th>
-              <th style={thStyle}>Département</th>
-                  <th style={thStyle}>Rôle</th>
-                  <th style={{ ...thStyle, textAlign: 'center' as const }}>Formations</th>
-                  <th style={{ ...thStyle, textAlign: 'center' as const }}>Certificats</th>
-                  <th style={{ ...thStyle, textAlign: 'center' as const }}>Statut</th>
-                  <th style={{ ...thStyle, textAlign: 'center' as const }}>Actions</th>
+                  <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="archives" aria-label={t('Sélectionner tous les employés archivés')} /></th>
+                  <th style={thStyle}>{t('Nom')}</th>
+                  <th style={thStyle}>{t('Email')}</th>
+                  <th style={thStyle}>{t('Clinique')}</th>
+              <th style={thStyle}>{t('Département')}</th>
+                  <th style={thStyle}>{t('Rôle')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Formations')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Certificats')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Statut')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -220,17 +222,17 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     </td>
                     <td style={tdStyle}>{emp.email}</td>
                     <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
-                    <td style={{ ...tdStyle, fontStyle: 'italic' }}>{emp.departements?.nom ?? 'Non assigné'}</td>
-                    <td style={tdStyle}>{roleLabel[emp.role] ?? emp.role}</td>
+                    <td style={{ ...tdStyle, fontStyle: 'italic' }}>{emp.departements?.nom ?? t('Non assigné')}</td>
+                    <td style={tdStyle}>{t(roleLabel[emp.role] ?? emp.role)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>{nbAssign(emp.id)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>{nbCerts(emp.id)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>
-                      <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f3f4f6', color: '#9ca3af', fontSize: '12px', fontWeight: '600', border: '1px solid #e5e7eb' }}>Archivé</span>
+                      <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f3f4f6', color: '#9ca3af', fontSize: '12px', fontWeight: '600', border: '1px solid #e5e7eb' }}>{t('Archivé')}</span>
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'center' as const }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#f3f4f6', color: '#6b7280', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #e5e7eb' }}>
-                          Dossier
+                          {t('Dossier')}
                         </Link>
                         {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={false} nom={`${emp.prenom} ${emp.nom}`} />}
                       </div>

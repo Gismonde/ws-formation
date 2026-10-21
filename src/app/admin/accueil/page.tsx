@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, cliniquesAdministrees } from '@/lib/permissions'
 import { estAdministrateur } from '@/lib/cliniques'
@@ -6,6 +7,7 @@ import { accueilParDefaut } from '@/lib/accueil'
 import EditeurAccueil from './EditeurAccueil'
 
 export default async function AdminAccueilPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!estAdministrateur(acteur.role)) redirect('/admin')

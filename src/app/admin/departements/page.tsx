@@ -1,9 +1,11 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, departementsVisibles, filtrerEmployes } from '@/lib/permissions'
 import { estAdministrateur, cliniquesDe } from '@/lib/cliniques'
 import DepartementsClient from './DepartementsClient'
 
 export default async function DepartementsPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!estAdministrateur(acteur.role)) redirect('/admin')
@@ -26,7 +28,7 @@ export default async function DepartementsPage() {
   return (
     <div>
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>Départements</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>{t('Départements')}</h1>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0 0' }}>
           Les départements sont communs aux deux cliniques. Chaque employé choisit d&apos;abord sa clinique, puis son département.
           Un gestionnaire ne voit que les employés de son département dans sa clinique.
