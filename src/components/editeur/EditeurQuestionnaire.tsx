@@ -113,7 +113,7 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
         <button type="button" onClick={() => { setEtat(''); setQuestions(qs => [...qs, vide()]) }} className="px-4 py-2 text-sm rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">{t('+ Ajouter une question')}</button>
         <span className="flex-1" />
         {etat === 'ok' && <span className="text-sm text-green-700">{t('✓ Enregistré')}</span>}
-        <button type="button" onClick={enregistrer} disabled={etat === 'envoi'} className="px-5 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white disabled:opacity-50">
+        <button type="button" onClick={enregistrer} disabled={etat === 'envoi'} className="px-5 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white disabled:opacity-50">
           {etat === 'envoi' ? t('Enregistrement…') : t('Enregistrer le questionnaire')}
         </button>
       </div>

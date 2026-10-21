@@ -278,7 +278,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
             {MODELES_LECON.map(m => (
               <button key={m.id} onClick={() => appliquerModele(m)} disabled={etat === 'en_cours'}
-                className="text-left p-3 rounded-xl border border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50">
+                className="text-left p-3 rounded-xl border border-gray-200 bg-white hover:border-indigo-400 hover:bg-indigo-50 disabled:opacity-50">
                 <span className="text-xl">{m.icone}</span>
                 <span className="block text-sm font-semibold text-gray-800 mt-1">{m.nom}</span>
                 <span className="block text-xs text-gray-500">{m.description}</span>
@@ -295,7 +295,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
       {blocs.map((b, i) => (
         <div key={b.id}>
           <div
-            className={'bg-white rounded-xl border shadow-sm transition-opacity ' + (glisse === b.id ? 'opacity-40 border-blue-300' : 'border-gray-200')}
+            className={'bg-white rounded-xl border shadow-sm transition-opacity ' + (glisse === b.id ? 'opacity-40 border-indigo-300' : 'border-gray-200')}
           >
             <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50 rounded-t-xl">
               <span
@@ -355,15 +355,15 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
       onDrop={e => { e.preventDefault(); onDrop() }}
       className={'relative py-2 ' + (actif ? 'py-4' : '')}
     >
-      {actif && <div className="h-1 rounded bg-blue-500" />}
+      {actif && <div className="h-1 rounded bg-indigo-500" />}
       {!actif && (
         <div className="flex items-center gap-2 group">
           <div className="flex-1 h-px bg-transparent group-hover:bg-gray-200" />
           <button
             onClick={() => setOuvert(ouvert ? null : index)}
             className={vide
-              ? 'px-4 py-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 text-sm font-semibold hover:bg-blue-50 w-full'
-              : 'w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 text-lg leading-none shadow-sm'}
+              ? 'px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 text-indigo-600 text-sm font-semibold hover:bg-indigo-50 w-full'
+              : 'w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-500 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 text-lg leading-none shadow-sm'}
             title={t('Ajouter un bloc ici')}
           >
             {vide ? t('+ Ajouter le premier bloc') : '+'}
@@ -375,7 +375,7 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
         <div className="mt-2 grid gap-2 bg-white border border-gray-200 rounded-xl p-3 shadow-lg" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
           {TYPES_MENU.map(t => (
             <button key={t.libelle} onClick={() => onChoisir(index, t.type, t.style)}
-              className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 text-left">
+              className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 text-left">
               <span className="text-xl">{t.icone}</span>
               <span className="text-sm font-semibold text-gray-800">{t.libelle}</span>
               <span className="text-xs text-gray-500">{t.aide}</span>
@@ -416,7 +416,7 @@ type PropsBloc = {
   setEtat: (e: EtatSauvegarde) => void
 }
 
-const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
 
 function ZoneTexteAuto(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { t } = useT()
@@ -437,7 +437,7 @@ function EditeurTexte({ bloc, modifier }: PropsBloc) {
       <div className="flex flex-wrap gap-1">
         {Object.entries(STYLES_ENCADRE).map(([cle, st]) => (
           <button key={cle} onClick={() => modifier(bloc.id, { metadata: { ...meta(bloc), style: cle } }, true)}
-            className={'text-xs px-2 py-1 rounded-md border ' + (style === cle ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
+            className={'text-xs px-2 py-1 rounded-md border ' + (style === cle ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
             {st.icone} {st.libelle}
           </button>
         ))}
@@ -480,13 +480,13 @@ function ZoneDepot({ genre, onFichier, texte, enCours }: {
         if (f) { e.preventDefault(); onFichier(f) }
       }}
       onClick={() => input.current?.click()}
-      className={'rounded-xl border-2 border-dashed p-6 text-center cursor-pointer outline-none focus:ring-2 focus:ring-blue-400 ' +
-        (dessus ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50')}
+      className={'rounded-xl border-2 border-dashed p-6 text-center cursor-pointer outline-none focus:ring-2 focus:ring-indigo-400 ' +
+        (dessus ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50')}
     >
       <input ref={input} type="file" hidden accept={REGLES_MEDIAS[genre].types.join(',')}
         onChange={e => { const f = e.target.files?.[0]; if (f) onFichier(f); e.target.value = '' }} />
       {enCours ? (
-        <p className="text-sm text-blue-700 font-medium">{t('Envoi en cours…')}</p>
+        <p className="text-sm text-indigo-700 font-medium">{t('Envoi en cours…')}</p>
       ) : (
         <>
           <p className="text-sm text-gray-700 font-medium">{texte}</p>
@@ -593,7 +593,7 @@ function EditeurVideo(p: PropsBloc) {
           </div>
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>{enLigne ? (enLigne.plateforme === 'youtube' ? '▶ YouTube' : '▶ Vimeo') : estMediaPrive(source) ? t('🔒 Vidéo privée hébergée') : ''}</span>
-            <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-blue-600 hover:underline">{t('Changer de vidéo')}</button>
+            <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-indigo-600 hover:underline">{t('Changer de vidéo')}</button>
           </div>
         </div>
       ) : (
@@ -601,7 +601,7 @@ function EditeurVideo(p: PropsBloc) {
           <div className="flex gap-1 text-xs">
             {(['lien', 'fichier'] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
-                className={'px-3 py-1.5 rounded-md border ' + (mode === m ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600')}>
+                className={'px-3 py-1.5 rounded-md border ' + (mode === m ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600')}>
                 {m === 'lien' ? '🔗 Lien YouTube / Vimeo' : t('⬆️ Envoyer un fichier')}
               </button>
             ))}
@@ -642,7 +642,7 @@ function EditeurFichier(p: PropsBloc) {
       {bloc.url || bloc.contenu ? (
         <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
           <span className="truncate">📎 {nom || (estMediaPrive(bloc.url) ? t('Document privé') : bloc.url ?? bloc.contenu)}</span>
-          <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">{t('Remplacer')}</button>
+          <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-xs text-indigo-600 hover:underline flex-shrink-0 ml-2">{t('Remplacer')}</button>
         </div>
       ) : (
         <ZoneDepot genre="fichier" enCours={enCours}
@@ -681,7 +681,7 @@ function EditeurQuiz({ bloc, modifier }: PropsBloc) {
       {quiz.questions.map((q, i) => (
         <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
           <div className="flex items-start gap-2">
-            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-1.5">{i + 1}</span>
+            <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-1.5">{i + 1}</span>
             <ZoneTexteAuto rows={1} value={q.question} onChange={e => majQuestion(i, { question: e.target.value })} placeholder={t('Écrivez la question…')} />
             <button title={t('Supprimer la question')} onClick={() => maj({ questions: quiz.questions.filter((_, j) => j !== i) })}
               className="text-red-400 hover:text-red-600 px-1 mt-1.5" disabled={quiz.questions.length === 1}>✕</button>
@@ -703,7 +703,7 @@ function EditeurQuiz({ bloc, modifier }: PropsBloc) {
               </div>
             ))}
             {q.reponses.length < 6 && (
-              <button onClick={() => majQuestion(i, { reponses: [...q.reponses, ''] })} className="text-xs text-blue-600 hover:underline">
+              <button onClick={() => majQuestion(i, { reponses: [...q.reponses, ''] })} className="text-xs text-indigo-600 hover:underline">
                 {t('+ Ajouter une réponse')}
               </button>
             )}
@@ -714,7 +714,7 @@ function EditeurQuiz({ bloc, modifier }: PropsBloc) {
         </div>
       ))}
       <button onClick={() => maj({ questions: [...quiz.questions, nouvelleQuestion()] })}
-        className="w-full text-sm font-medium text-blue-600 border border-dashed border-blue-300 rounded-lg py-2 hover:bg-blue-50">
+        className="w-full text-sm font-medium text-indigo-600 border border-dashed border-indigo-300 rounded-lg py-2 hover:bg-indigo-50">
         {t('+ Ajouter une question')}
       </button>
     </div>

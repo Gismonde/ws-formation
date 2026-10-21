@@ -73,7 +73,7 @@ export default function ListeConfirmations({ lignes, filtreInitial, titre, versi
             {visibles.map(l => (
               <tr key={l.id} className="border-t border-gray-100">
                 <td className="px-5 py-2.5">
-                  <a href={`/admin/employes/${l.id}`} className="text-gray-900 hover:text-blue-700">{l.nom}</a>
+                  <a href={`/admin/employes/${l.id}`} className="text-gray-900 hover:text-indigo-700">{l.nom}</a>
                   <div className="text-xs text-gray-400">{l.email}</div>
                 </td>
                 <td className="px-3 py-2.5 text-gray-600">{l.departement}</td>

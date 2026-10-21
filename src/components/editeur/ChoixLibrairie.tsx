@@ -90,7 +90,7 @@ export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, o
           <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-3">
             <span className="text-sm text-gray-600">{selection.length} élément{selection.length > 1 ? 's' : ''} sélectionné{selection.length > 1 ? 's' : ''}{' '}{t('— une leçon sera créée par élément, dans l’ordre de sélection.')}</span>
             <button type="button" disabled={selection.length === 0} onClick={() => onChoisirPlusieurs?.(selection)}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">{t('Ajouter')}</button>
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50">{t('Ajouter')}</button>
           </div>
         )}
         <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">{type === 'politique' ? t('Ajoute un lien vers la politique ; l’employé la lit et la confirme dans son espace Politiques.') : t('L’élément reste lié à la librairie : s’il y est modifié, cette leçon se met à jour.')}</p>

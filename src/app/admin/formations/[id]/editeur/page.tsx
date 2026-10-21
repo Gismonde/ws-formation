@@ -249,7 +249,7 @@ export default function EditeurFormationPage() {
   if (chargement) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
         <p className="text-gray-600">Chargement de l&apos;editeur...</p>
       </div>
     </div>
@@ -259,7 +259,7 @@ export default function EditeurFormationPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-8 shadow-sm text-center">
         <p className="text-red-600 mb-4">{erreur}</p>
-        <Link href="/admin/formations" className="text-blue-600 hover:underline">{t('Retour aux formations')}</Link>
+        <Link href="/admin/formations" className="text-indigo-600 hover:underline">{t('Retour aux formations')}</Link>
       </div>
     </div>
   )
@@ -291,7 +291,7 @@ export default function EditeurFormationPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {sauvegarde && <span className="text-sm text-blue-600 animate-pulse">{t('Sauvegarde...')}</span>}
+          {sauvegarde && <span className="text-sm text-indigo-600 animate-pulse">{t('Sauvegarde...')}</span>}
           {erreur && <span className="text-sm text-red-600">{erreur}</span>}
           <Link
             href={"/admin/formations/" + formationId + "/apercu"}
@@ -301,7 +301,7 @@ export default function EditeurFormationPage() {
           </Link>
           <Link
             href={"/admin/formations/" + formationId + "/modifier"}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             {t('Paramètres')}
           </Link>
@@ -315,7 +315,7 @@ export default function EditeurFormationPage() {
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('Structure')}</h2>
             <button
               onClick={ajouterModule}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -330,7 +330,7 @@ export default function EditeurFormationPage() {
               <p className="text-sm text-gray-500 mb-4">Aucun module pour l&apos;instant</p>
               <button
                 onClick={ajouterModule}
-                className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 {t('Ajouter le premier module')}
               </button>
@@ -341,7 +341,7 @@ export default function EditeurFormationPage() {
             <div key={mod.id} className="border-b border-gray-100">
               {/* En-tete module */}
               <div
-                className={"flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 " + (panneau.type === 'module' && panneau.moduleId === mod.id ? 'bg-blue-50 border-l-2 border-blue-500' : '')}
+                className={"flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 " + (panneau.type === 'module' && panneau.moduleId === mod.id ? 'bg-indigo-50 border-l-2 border-indigo-500' : '')}
                 onClick={() => selectionnerModule(mod)}
               >
                 <div className="flex flex-col gap-0.5 mr-1">
@@ -358,14 +358,14 @@ export default function EditeurFormationPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">M{modIndex + 1}</span>
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">M{modIndex + 1}</span>
                     <span className="text-sm font-medium text-gray-800 truncate">{mod.titre}</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">{mod.lecons?.length || 0} leçon{(mod.lecons?.length || 0) !== 1 ? 's' : ''}</p>
                 </div>
                 <button
                   onClick={e => { e.stopPropagation(); ajouterLecon(mod.id, mod.lecons || []) }}
-                  className="text-gray-400 hover:text-blue-600 p-1"
+                  className="text-gray-400 hover:text-indigo-600 p-1"
                   title={t('Ajouter une leçon')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,7 +378,7 @@ export default function EditeurFormationPage() {
               {mod.lecons?.map((lecon, lecIndex) => (
                 <div
                   key={lecon.id}
-                  className={"flex items-center gap-2 pl-8 pr-4 py-2 cursor-pointer hover:bg-gray-50 " + (panneau.type === 'lecon' && panneau.leconId === lecon.id ? 'bg-blue-50 border-l-2 border-blue-500' : '')}
+                  className={"flex items-center gap-2 pl-8 pr-4 py-2 cursor-pointer hover:bg-gray-50 " + (panneau.type === 'lecon' && panneau.leconId === lecon.id ? 'bg-indigo-50 border-l-2 border-indigo-500' : '')}
                   onClick={() => selectionnerLecon(lecon, mod.id)}
                 >
                   <div className="flex flex-col gap-0.5 mr-1">
@@ -407,7 +407,7 @@ export default function EditeurFormationPage() {
               {(mod.lecons?.length || 0) > 0 && (
                 <button
                   onClick={() => ajouterLecon(mod.id, mod.lecons || [])}
-                  className="w-full pl-10 pr-4 py-1.5 text-left text-xs text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                  className="w-full pl-10 pr-4 py-1.5 text-left text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 flex items-center gap-1"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -419,7 +419,7 @@ export default function EditeurFormationPage() {
           ))}
 
           <button type="button" onClick={() => setPanneau({ type: 'questionnaire' })}
-            className={'w-full text-left flex items-center gap-2 px-4 py-3 border-t border-gray-100 text-sm font-medium hover:bg-gray-50 ' + (panneau.type === 'questionnaire' ? 'bg-blue-50 border-l-2 border-l-blue-500 text-blue-800' : 'text-gray-800')}>
+            className={'w-full text-left flex items-center gap-2 px-4 py-3 border-t border-gray-100 text-sm font-medium hover:bg-gray-50 ' + (panneau.type === 'questionnaire' ? 'bg-indigo-50 border-l-2 border-l-indigo-500 text-indigo-800' : 'text-gray-800')}>
             📝 {t('Questionnaire de fin de formation')}
           </button>
 
@@ -436,7 +436,7 @@ export default function EditeurFormationPage() {
               </button>
               <button
                 onClick={ajouterModule}
-                className="w-full px-4 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -460,7 +460,7 @@ export default function EditeurFormationPage() {
                 <p className="text-gray-500 mb-6">Sélectionnez un module ou une leçon dans la colonne de gauche pour l&apos;éditer, ou ajoutez un nouveau module pour commencer.</p>
                 <button
                   onClick={ajouterModule}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                 >
                   {t('Créer le premier module')}
                 </button>
@@ -491,7 +491,7 @@ export default function EditeurFormationPage() {
                     type="text"
                     value={titreModule}
                     onChange={e => setTitreModule(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                     placeholder={t('Titre du module...')}
                   />
                 </div>
@@ -501,7 +501,7 @@ export default function EditeurFormationPage() {
                     value={descModule}
                     onChange={e => setDescModule(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
                     placeholder={t('Description du module...')}
                   />
                 </div>
@@ -509,7 +509,7 @@ export default function EditeurFormationPage() {
                   <button
                     onClick={sauvegarderModule}
                     disabled={sauvegarde}
-                    className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+                    className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
                   >
                     {sauvegarde ? 'Sauvegarde...' : 'Sauvegarder'}
                   </button>
@@ -541,7 +541,7 @@ export default function EditeurFormationPage() {
                     {moduleActif.lecons.map((lecon, i) => (
                       <div
                         key={lecon.id}
-                        className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3 cursor-pointer hover:border-blue-300 transition-colors"
+                        className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3 cursor-pointer hover:border-indigo-300 transition-colors"
                         onClick={() => selectionnerLecon(lecon, panneau.moduleId)}
                       >
                         <span className="text-xs text-gray-400 font-mono w-6">{i + 1}.</span>
@@ -584,7 +584,7 @@ export default function EditeurFormationPage() {
                     type="text"
                     value={titreLecon}
                     onChange={e => setTitreLecon(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                     placeholder={t('Titre de la leçon...')}
                   />
                 </div>
@@ -594,7 +594,7 @@ export default function EditeurFormationPage() {
                     value={descLecon}
                     onChange={e => setDescLecon(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
                     placeholder={t('Description de la leçon...')}
                   />
                 </div>
@@ -611,14 +611,14 @@ export default function EditeurFormationPage() {
                     value={texteAttestation}
                     onChange={e => setTexteAttestation(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
                     placeholder="Texte de l'attestation (laisser vide pour : J'ai lu et compris le contenu de cette leçon et je m'engage à l'appliquer.)"
                   />
                 )}
                 <button
                   onClick={sauvegarderLecon}
                   disabled={sauvegarde}
-                  className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+                  className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
                 >
                   {sauvegarde ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>

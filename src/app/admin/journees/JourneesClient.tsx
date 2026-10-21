@@ -187,7 +187,7 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
               <input type="date" value={f.date_echeance} onChange={e => setF({ ...f, date_echeance: e.target.value })} className={champ} />
             </div>
             <button type="button" disabled={envoi || !raisonFinale || contenu === 0 || f.employe_ids.length === 0} onClick={() => envoyer(false)}
-              className="w-full text-sm font-semibold px-4 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40">
+              className="w-full text-sm font-semibold px-4 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40">
               {envoi ? t('Lancement…') : t('Lancer la journée ({n} employé(s))', { n: f.employe_ids.length })}
             </button>
             <p className="text-xs text-gray-500">{contenu} élément(s) : {f.formation_ids.length} formation(s), {f.politique_ids.length} politique(s), {f.librairie_ids.length}{' '}{t('à visionner.')}</p>
@@ -207,7 +207,7 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
                   <div className="text-xs text-gray-500">{m.raison} · {CLINIQUE_CONTENU_LABEL[m.clinique]} · {m.formation_ids.length} formation(s), {m.politique_ids.length} politique(s), {m.librairie_ids.length}{' '}{t('à visionner')}</div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => { partirDe(m.id); setEnEdition(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-blue-600">{t('Utiliser')}</button>
+                  <button onClick={() => { partirDe(m.id); setEnEdition(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-indigo-600">{t('Utiliser')}</button>
                   <button onClick={() => { partirDe(m.id); setEnEdition(m.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-amber-700">{t('Modifier')}</button>
                   <button onClick={() => supprimer(m)} className="text-xs text-red-600">{t('Supprimer')}</button>
                 </div>

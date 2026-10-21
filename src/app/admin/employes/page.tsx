@@ -179,7 +179,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
+                      <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eef2ff', color: '#4f46e5', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #c7d2fe' }}>
                         {t('Dossier')}
                       </Link>
                       <Link href={`/admin/employes/${emp.id}?onglet=preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>

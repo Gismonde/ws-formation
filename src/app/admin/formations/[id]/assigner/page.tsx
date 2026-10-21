@@ -132,7 +132,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
 
   if (!formation) {
     return (
-      <div className="p-8">
+      <div>
         <div className="text-red-500">{t('Formation introuvable.')}</div>
         <Link href="/admin/formations" className="text-indigo-600 hover:underline mt-2 inline-block">
           {t('← Retour aux formations')}
@@ -142,7 +142,7 @@ export default function AssignerFormationPage({ params }: PageProps) {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="max-w-2xl">
       <div className="mb-6">
         <Link href="/admin/formations" className="text-sm text-indigo-600 hover:underline">
           {t('← Retour aux formations')}

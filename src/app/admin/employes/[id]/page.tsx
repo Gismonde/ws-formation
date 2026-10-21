@@ -32,7 +32,7 @@ const momentEn = (loc: string) => (d: string | null) => (d ? new Date(d).toLocal
 const COULEUR_STATUT: Record<string, string> = {
   non_commence: "bg-gray-100 text-gray-600",
   en_cours: "bg-amber-50 text-amber-700",
-  termine: "bg-blue-50 text-blue-700",
+  termine: "bg-indigo-50 text-indigo-700",
   certifie: "bg-green-50 text-green-700",
 }
 
@@ -234,7 +234,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
   const p = dossier.profil
   return (
     <div className="max-w-5xl">
-      <Link href="/admin/employes" className="text-sm text-blue-600 hover:underline">{t('← Retour aux employés')}</Link>
+      <Link href="/admin/employes" className="text-sm text-indigo-600 hover:underline">{t('← Retour aux employés')}</Link>
 
       {/* En-tête du dossier */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5 mt-3 mb-4 flex flex-wrap items-start gap-4">

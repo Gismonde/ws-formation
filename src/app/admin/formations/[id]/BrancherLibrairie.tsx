@@ -64,7 +64,7 @@ export default function BrancherLibrairie({ formationId, enAttente }: { formatio
             </div>
 
             {etat === 'chargement' && <p className="text-sm text-gray-500">{t('Recherche des correspondances…')}</p>}
-            {message && <p className="mb-4 text-sm rounded-lg bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2">{message}</p>}
+            {message && <p className="mb-4 text-sm rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 px-3 py-2">{message}</p>}
 
             {liste && (
               <>
@@ -92,7 +92,7 @@ export default function BrancherLibrairie({ formationId, enAttente }: { formatio
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setOuvert(false)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700">{t('Annuler')}</button>
                   <button disabled={choisis.size === 0 || etat === 'envoi'} onClick={appliquer}
-                    className="text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50">
+                    className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
                     {etat === 'envoi' ? t('Enregistrement…') : t('Brancher {n} élément(s)', { n: choisis.size })}
                   </button>
                 </div>

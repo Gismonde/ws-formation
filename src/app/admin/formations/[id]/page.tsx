@@ -159,13 +159,13 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           {peutCreer && (
             <Link
               href={"/admin/formations/" + id + "/editeur"}
-              className="flex flex-col items-center gap-2 p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-center"
+              className="flex flex-col items-center gap-2 p-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-center"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               <span className="text-sm font-semibold">{t('Éditeur de cours')}</span>
-              <span className="text-xs text-blue-200">{t('Modules et leçons')}</span>
+              <span className="text-xs text-indigo-200">{t('Modules et leçons')}</span>
             </Link>
           )}
           {peutCreer && (
@@ -223,7 +223,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             {peutCreer && (
               <Link
                 href={"/admin/formations/" + id + "/editeur"}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -240,7 +240,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               {peutCreer && (
                 <Link
                   href={"/admin/formations/" + id + "/editeur"}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -254,7 +254,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               {modulesAvecLecons.map((mod, i) => (
                 <div key={mod.id} className="p-0">
                   <div className="flex items-center gap-3 px-6 py-4 bg-gray-50">
-                    <span className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex-shrink-0">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex-shrink-0">
                       {i + 1}
                     </span>
                     <div className="flex-1">

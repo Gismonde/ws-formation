@@ -50,7 +50,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
             {voirArchives ? 'Politiques en vigueur' : 'Archives'}
           </Link>
           {peutPublier && (
-            <Link href="/admin/politiques/nouvelle" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">{t('+ Nouvelle politique')}</Link>
+            <Link href="/admin/politiques/nouvelle" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium">{t('+ Nouvelle politique')}</Link>
           )}
         </div>
       </div>
@@ -62,7 +62,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
       ) : politiques.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
           <p className="text-gray-500 text-sm">{voirArchives ? t('Aucune politique archivée.') : t('Aucune politique publiée pour le moment.')}</p>
-          {peutPublier && !voirArchives && <Link href="/admin/politiques/nouvelle" className="inline-block mt-3 text-blue-600 text-sm hover:underline">{t('Publier la première politique →')}</Link>}
+          {peutPublier && !voirArchives && <Link href="/admin/politiques/nouvelle" className="inline-block mt-3 text-indigo-600 text-sm hover:underline">{t('Publier la première politique →')}</Link>}
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
@@ -81,7 +81,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
                 return (
                   <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-5 py-3">
-                      <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{p.titre}</Link>
+                      <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-indigo-700">{p.titre}</Link>
                       <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
                     </td>
                     <td className="px-3 py-3 text-gray-600">{publicDe(p, noms)}</td>

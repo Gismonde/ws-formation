@@ -593,7 +593,7 @@ export default function GenererFormationPage() {
   }
 
   const btnPrimaryStyle: React.CSSProperties = {
-    background: '#2563eb',
+    background: '#4f46e5',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -658,11 +658,11 @@ export default function GenererFormationPage() {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             style={{
-              border: '2px dashed ' + (dragging ? '#2563eb' : '#d1d5db'),
+              border: '2px dashed ' + (dragging ? '#4f46e5' : '#d1d5db'),
               borderRadius: '12px',
               padding: '48px 32px',
               textAlign: 'center',
-              background: dragging ? '#eff6ff' : '#f9fafb',
+              background: dragging ? '#eef2ff' : '#f9fafb',
               transition: 'all 0.2s',
               cursor: 'pointer',
             }}
@@ -716,7 +716,7 @@ export default function GenererFormationPage() {
           <button onClick={() => setStep('upload')} style={{ ...btnSecondaryStyle, padding: '6px 14px', fontSize: '13px' }}>
             {t('← Changer de fichier')}
           </button>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
             {t('Vérifier et ajuster la formation')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
@@ -1146,7 +1146,7 @@ export default function GenererFormationPage() {
           <button onClick={() => setStep('review')} style={{ ...btnSecondaryStyle, padding: '6px 14px', fontSize: '13px' }}>
             {t('← Retour aux modules')}
           </button>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
             Questionnaire d&apos;évaluation
           </h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>

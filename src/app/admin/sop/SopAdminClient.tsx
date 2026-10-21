@@ -29,7 +29,7 @@ const ROLE_OPTIONS = [
 
 const BADGE: Record<string, { bg: string; color: string; label: string }> = {
   employe:      { bg: '#dcfce7', color: '#166534', label: 'Tous' },
-  gestionnaire: { bg: '#dbeafe', color: '#1e40af', label: 'Gestionnaires' },
+  gestionnaire: { bg: '#e0e7ff', color: '#1e40af', label: 'Gestionnaires' },
   admin:        { bg: '#fef3c7', color: '#92400e', label: 'Admin' },
 }
 
@@ -149,7 +149,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: 0 }}>{t('Gestion des SOP')}</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>{t('Gestion des SOP')}</h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>{t('Procédures opérationnelles normalisées —')}{' '}{sops.length}{' '}{t('SOP')}{sops.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
@@ -281,7 +281,7 @@ export default function SopAdminClient({ initialSops, cliniquesGerables }: { ini
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   {sop.fichier_url && (
-                    <a href={`/api/sop/${sop.id}/fichier`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>{t('Voir')}</a>
+                    <a href={`/api/sop/${sop.id}/fichier`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 12px', background: '#eef2ff', color: '#4f46e5', borderRadius: '6px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}>{t('Voir')}</a>
                   )}
                   {cliniquesGerables.includes(sop.clinique ?? 'LES_DEUX') && <>
                   <button onClick={() => openEdit(sop)} style={{ padding: '6px 12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>{t('Modifier')}</button>

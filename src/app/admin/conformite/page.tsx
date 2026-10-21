@@ -59,7 +59,7 @@ export default async function ConformitePage({ searchParams }: { searchParams: P
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1f36', margin: 0 }}>{t('Conformité')}</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>{t('Conformité')}</h1>
           <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
             Suivi de la conformité réglementaire — {s.employes} employé(s) actif(s)
           </p>
@@ -159,7 +159,7 @@ export default async function ConformitePage({ searchParams }: { searchParams: P
               </summary>
               <div style={{ padding: '8px 18px', borderTop: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <a href={`/api/admin/conformite/export?format=pdf&employe=${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fff', color: '#374151', textDecoration: 'none', fontSize: '12px', fontWeight: 600, border: '1px solid #e5e7eb' }}>{t('⬇ Fiche PDF')}</a>
-                <Link href={'/admin/employes/' + emp.id} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: 600, border: '1px solid #bfdbfe' }}>{t('Voir le dossier')}</Link>
+                <Link href={'/admin/employes/' + emp.id} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eef2ff', color: '#4f46e5', textDecoration: 'none', fontSize: '12px', fontWeight: 600, border: '1px solid #c7d2fe' }}>{t('Voir le dossier')}</Link>
               </div>
               <div style={{ borderTop: '1px solid #f3f4f6', overflowX: 'auto' }}>
                 {emp.assignations.length === 0 ? (
