@@ -189,7 +189,7 @@ export default function DepuisPPPage() {
           niveau,
           clinique,
           duree_estimee_minutes: 60,
-          publiee: publierImmediatement === true,
+          publiee: publierImmediatement === true, ...(publierImmediatement ? { publiee_le: new Date().toISOString(), version_le: new Date().toISOString() } : {}),
           tags: tags || [],
           objectifs: objectifs || [],
           image_couverture: imageCouverture || null,
@@ -302,7 +302,7 @@ export default function DepuisPPPage() {
   if (showPreview) {
     const validQs = questions.filter(q => q.texte.trim())
     return (
-      <div style={{ maxWidth: "600px", margin: "40px auto", padding: "32px", background: "#fff", borderRadius: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.1)", fontFamily: "system-ui, sans-serif" }}>
+      <div style={{ maxWidth: "600px", margin: "40px auto", padding: "32px", background: "#fff", borderRadius: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.1)" }}>
         <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#111827", margin: "0 0 4px" }}>{t('Aperçu avant création')}</h2>
         <p style={{ color: "#6b7280", fontSize: "14px", margin: "0 0 24px" }}>Vérifiez les informations avant de lancer l&apos;import.</p>
 
@@ -349,9 +349,8 @@ export default function DepuisPPPage() {
   }
 
   return (
-    <div style={{ maxWidth: "760px", margin: "0 auto", padding: "32px 20px", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ maxWidth: "760px", margin: "0 auto", padding: "32px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-        <Link href="/admin/formations" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>{t('← Retour')}</Link>
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: "700", color: "#111827", margin: 0 }}>{t('Créer depuis un PowerPoint')}</h1>
           <p style={{ color: "#6b7280", fontSize: "14px", margin: "4px 0 0 0" }}>{t('Importez un fichier .ppt ou .pptx pour générer une formation')}</p>

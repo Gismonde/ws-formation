@@ -1,5 +1,5 @@
-import GardeCreateurFormations from '@/components/GardeCreateurFormations'
+import { EnteteCreation } from '@/components/EnteteCreation'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <GardeCreateurFormations>{children}</GardeCreateurFormations>
+  return <><div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 20px' }}><EnteteCreation depart="presentation" /></div>{children}</>
 }

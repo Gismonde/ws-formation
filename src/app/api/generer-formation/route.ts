@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
       clinique,
       duree_estimee_minutes: Math.round((Number(duree_heures) || 1) * 60),
       publiee: publier_immediatement === true,
+      ...(publier_immediatement === true ? { publiee_le: new Date().toISOString(), version: 1, version_le: new Date().toISOString() } : {}),
       tags: tags || [],
       objectifs: objectifs || [],
       prerequis_ids: prerequis_ids || [],
@@ -95,6 +96,9 @@ export async function POST(req: NextRequest) {
 
   if (formationError || !formation) {
     return NextResponse.json({ error: formationError?.message || 'Erreur création formation' }, { status: 500 })
+  }
+  if (publier_immediatement === true) {
+    await adminClient.from('formations_versions').insert({ formation_id: formation.id, version: 1, note: 'Publication initiale' })
   }
 
   // 2. Create modules

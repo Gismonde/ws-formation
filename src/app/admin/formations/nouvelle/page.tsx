@@ -215,7 +215,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
+        .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true,  ...(publierImmediatement ? { publiee_le: new Date().toISOString(), version_le: new Date().toISOString() } : {}),tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || t('Erreur création formation'))
@@ -378,7 +378,7 @@ export default function NouvelleFormationPage() {
     const totalLecons = modules.reduce((sum, m) => sum + (m.lecons || []).length, 0)
     const validQs = questions.filter(q => q.texte.trim())
     return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>{t('Aperçu avant création')}</h2>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{t('Vérifiez les informations avant de créer la formation.')}</p>
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
@@ -420,11 +420,10 @@ export default function NouvelleFormationPage() {
   }
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px' }}>
       {choixLib && <ChoixLibrairie types={['video', 'lien', 'document', 'politique']} onChoisir={ajouterDepuisLibrairie} onFermer={() => setChoixLib(null)} />}
       <div style={{ marginBottom: '24px' }}>
-        <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>{t('← Retour')}</a>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>{t('Nouvelle formation')}</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>{t('Nouvelle formation')}</h1>
       </div>
 
       {error && <p style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>{error}</p>}
