@@ -50,7 +50,8 @@ jobs:
 
   bout-en-bout:
     name: Tests de bout en bout (Playwright)
-    runs-on: ubuntu-latest
+    # Version d'Ubuntu fixée : Playwright installe ses dépendances système pour les versions qu'il connaît
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://exemple.supabase.co
