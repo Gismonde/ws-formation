@@ -316,6 +316,7 @@ export default function GenererFormationPage() {
   const [dragging, setDragging] = useState(false)
   const [fileName, setFileName] = useState('')
   const [titre, setTitre] = useState('')
+  const [responsable, setResponsable] = useState('')
   const [description, setDescription] = useState('')
   const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
   const [categorie, setCategorie] = useState('Administration médicale')
@@ -533,7 +534,7 @@ export default function GenererFormationPage() {
       const res = await fetch('/api/generer-formation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre, description, categorie, niveau, clinique, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture, publier_immediatement: publierImmediatement }),
+        body: JSON.stringify({ titre, responsable_formation: responsable, description, categorie, niveau, clinique, duree_heures: dureeHeures, modules, questionnaire: questions.length > 0 ? { seuil_reussite: seuilReussite, questions } : null, tags, objectifs, prerequis_ids: prerequisIds, image_couverture: imageCouverture, publier_immediatement: publierImmediatement }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -732,6 +733,11 @@ export default function GenererFormationPage() {
             Informations générales
           </h2>
           <div style={{ display: 'grid', gap: '16px' }}>
+<div>
+            <label style={labelStyle}>Responsable de la formation</label>
+            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Ce nom apparaît sur le certificat remis aux employés.</span>
+          </div>
             <div>
               <label style={labelStyle}>Titre de la formation *</label>
               <input style={inputStyle} value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre de la formation" />

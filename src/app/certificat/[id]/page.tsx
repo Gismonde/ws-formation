@@ -18,7 +18,7 @@ export default async function CertificatPage({ params }: PageProps) {
   const sb = serviceClient()
   const { data: cert } = await sb
     .from('certificats')
-    .select('*, formations(titre, categorie, niveau, description)')
+    .select('*, formations(titre, categorie, niveau, description, responsable_formation)')
     .eq('id', id)
     .eq('valide', true)
     .maybeSingle()

@@ -53,6 +53,7 @@ export default function DepuisPPPage() {
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [titre, setTitre] = useState("")
+  const [responsable, setResponsable] = useState("")
   const [categorie, setCategorie] = useState("")
   const [niveau, setNiveau] = useState("debutant")
   const [isLoading, setIsLoading] = useState(false)
@@ -180,6 +181,7 @@ export default function DepuisPPPage() {
         .from("formations")
         .insert({
           titre,
+          responsable_formation: responsable.trim() || null,
           description: description || null,
           categorie,
           niveau,
@@ -384,6 +386,11 @@ export default function DepuisPPPage() {
         {/* Informations */}
         <div style={{ background: "#fff", borderRadius: "16px", border: "1px solid #e5e7eb", padding: "28px", marginBottom: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <h2 style={{ fontSize: "16px", fontWeight: "600", color: "#111827", margin: "0 0 20px" }}>Informations de la formation</h2>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>Responsable de la formation</label>
+            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Ce nom apparaît sur le certificat remis aux employés.</span>
+          </div>
           <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Titre de la formation *</label>
             <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Sécurité au travail — Niveau 1" style={{ ...inputStyle, borderColor: !titre.trim() ? "#ef4444" : "#d1d5db" }} />

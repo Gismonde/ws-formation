@@ -11,6 +11,8 @@ import type { CliniqueContenu } from '@/lib/cliniques'
 interface Formation {
   id: string
   titre: string
+  /** Absent tant que la migration formations_responsable.sql n'est pas exécutée */
+  responsable_formation?: string | null
   categorie: string
   description: string
   niveau: string
@@ -93,6 +95,7 @@ export default function ModifierFormationPage() {
     try {
       const { error: fErr } = await supabase.from('formations').update({
         titre: formation.titre,
+        ...(formation.responsable_formation !== undefined ? { responsable_formation: formation.responsable_formation?.trim() || null } : {}),
         categorie: formation.categorie,
         description: formation.description,
         niveau: formation.niveau,
@@ -186,6 +189,13 @@ export default function ModifierFormationPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea value={formation.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
             </div>
+            {formation.responsable_formation !== undefined && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Responsable de la formation</label>
+                <input value={formation.responsable_formation ?? ''} onChange={e => updateField('responsable_formation', e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <p className="text-xs text-gray-400 mt-1">Ce nom apparaît sur le certificat remis aux employés.</p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Section / Catégorie</label>
               <ChampCategorie valeur={formation.categorie || ''} onChange={v => updateField('categorie', v)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />

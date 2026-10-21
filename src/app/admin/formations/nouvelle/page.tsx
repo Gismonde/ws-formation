@@ -47,6 +47,7 @@ function extractYouTubeId(url: string): string | null {
 export default function NouvelleFormationPage() {
   const router = useRouter()
   const [titre, setTitre] = useState('')
+  const [responsable, setResponsable] = useState('')
   const [categorie, setCategorie] = useState('Administration médicale')
   const [description, setDescription] = useState('')
   const [niveau, setNiveau] = useState('debutant')
@@ -212,7 +213,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
+        .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || 'Erreur création formation')
@@ -430,6 +431,11 @@ export default function NouvelleFormationPage() {
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px', color: '#111827' }}>Informations générales</h2>
         <div style={{ display: 'grid', gap: '14px' }}>
+<div>
+            <label style={labelStyle}>Responsable de la formation</label>
+            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Ce nom apparaît sur le certificat remis aux employés.</span>
+          </div>
           <div>
             <label style={labelStyle}>Titre *</label>
             <input

@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
     .from('formations')
     .insert({
       titre: titre.trim(),
+      responsable_formation: typeof body.responsable_formation === 'string' && body.responsable_formation.trim() ? body.responsable_formation.trim().slice(0, 120) : null,
       description: description?.trim() || null,
       categorie: nettoyerCategorie(categorie) ?? 'Administration médicale',
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
