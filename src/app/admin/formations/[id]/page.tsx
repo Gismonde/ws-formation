@@ -72,7 +72,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                   className="text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ backgroundColor: niveauStyle.bg, color: niveauStyle.color }}
                 >
-                  {niveauStyle.label}
+                  {t(niveauStyle.label)}
                 </span>
                 {formation.publiee ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">{t('Publiée')}</span>

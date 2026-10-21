@@ -85,7 +85,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
             {t('Employés')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', margin: '4px 0 0 0' }}>
-            {actifs.length} employé(s) actif(s) {sousTitre}
+            {t('{n} employé(s) actif(s)', { n: actifs.length })} {sousTitre}
           </p>
         </div>
         {peutCreer && (
@@ -109,7 +109,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
 
       {afficherFiltre && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-          {[{ v: '', l: 'Toutes les cliniques' }, ...(['CMC', 'WSSC'] as Clinique[]).map(c => ({ v: c, l: CLINIQUE_INFO[c].nom }))].map(f => {
+          {[{ v: '', l: t('Toutes les cliniques') }, ...(['CMC', 'WSSC'] as Clinique[]).map(c => ({ v: c, l: CLINIQUE_INFO[c].nom }))].map(f => {
             const actif = (filtreClinique ?? '') === f.v
             return (
               <Link key={f.v} href={f.v ? `/admin/employes?clinique=${f.v}` : '/admin/employes'} style={{

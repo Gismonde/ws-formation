@@ -97,7 +97,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
             {t('Formations')}
           </h1>
           <p style={{ color: "#6b7280", fontSize: "14px", marginTop: "4px", margin: "4px 0 0 0" }}>
-            {formations?.length ?? 0} formation(s) disponible(s)
+            {t('{n} formation(s) disponible(s)', { n: formations?.length ?? 0 })}
           </p>
         </div>
         {isAdmin && (
@@ -115,7 +115,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
               fontSize: "14px",
               fontWeight: "600",
             }}>
-              Créer à partir d&apos;un document
+              {t('Créer à partir d’un document')}
             </Link>
             <Link href="/admin/formations/depuis-pp" style={{
               display: "inline-flex",
@@ -130,7 +130,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
               fontSize: "14px",
               fontWeight: "600",
             }}>
-              Créer à partir d&apos;un PP
+              {t('Créer à partir d’un PP')}
             </Link>
             <Link href="/admin/formations/nouvelle" style={{
               display: "inline-flex",
@@ -154,7 +154,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
       {/* Filtre par clinique */}
       {onglets.length > 1 && (
         <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-          {[{ v: null as CliniqueContenu | null, l: "Toutes" }, ...onglets.map(c => ({ v: c as CliniqueContenu | null, l: c === "LES_DEUX" ? "Communes (CMC + WSSC)" : CLINIQUE_INFO[c].nom }))].map(o => {
+          {[{ v: null as CliniqueContenu | null, l: t("Toutes") }, ...onglets.map(c => ({ v: c as CliniqueContenu | null, l: c === "LES_DEUX" ? t("Communes (CMC + WSSC)") : CLINIQUE_INFO[c].nom }))].map(o => {
             const actif = o.v === filtreActif
             return (
               <Link key={o.l} href={lien(o.v, vue)} style={{
@@ -201,13 +201,13 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                   )}
                   <span style={{ position: "absolute", top: "10px", left: "10px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></span>
                   <span style={{ position: "absolute", top: "10px", right: "10px", padding: "2px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: f.publiee ? "#16a34a" : "rgba(17,24,39,0.75)", color: "#fff" }}>
-                    {f.publiee ? "Publiée" : "Brouillon"}
+                    {f.publiee ? t("Publiée") : t("Brouillon")}
                   </span>
                 </Link>
                 <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
                     {f.categorie && <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: 600 }}>{f.categorie}</span>}
-                    <span style={{ padding: "1px 8px", borderRadius: "999px", background: st.bg, color: st.color, fontSize: "11px", fontWeight: 600 }}>{st.label}</span>
+                    <span style={{ padding: "1px 8px", borderRadius: "999px", background: st.bg, color: st.color, fontSize: "11px", fontWeight: 600 }}>{t(st.label)}</span>
                     {f.obligatoire && <span style={{ fontSize: "10px", fontWeight: 800, color: "#dc2626", textTransform: "uppercase" }}>{t('Obligatoire LSST')}</span>}
                   </div>
                   <Link href={`/admin/formations/${f.id}`} style={{ fontWeight: 700, color: "#111827", fontSize: "15px", lineHeight: 1.35, textDecoration: "none" }}>{f.titre}</Link>
@@ -272,7 +272,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                       color: style.color,
                       fontSize: "12px",
                       fontWeight: "600",
-                    }}>{style.label}</span>
+                    }}>{t(style.label)}</span>
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     {f.obligatoire
@@ -290,7 +290,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                       color: f.publiee ? "#16a34a" : "#9ca3af",
                       fontSize: "12px",
                       fontWeight: "600",
-                    }}>{f.publiee ? "Publié" : "Brouillon"}</span>
+                    }}>{f.publiee ? t("Publié") : t("Brouillon")}</span>
                   </td>
                   <td style={{ padding: "14px 20px", textAlign: "right", whiteSpace: "nowrap" }}>
                     <Link href={`/admin/formations/${f.id}`} style={{
