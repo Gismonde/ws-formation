@@ -81,3 +81,28 @@ export async function contenuJournee(sb: SupabaseClient, j: Pick<Journee, 'forma
     librairie: ordre((l ?? []) as { id: string; titre: string; type: 'video' | 'lien' | 'document'; url: string }[], j.librairie_ids),
   }
 }
+
+export type SuiviJournee = { employe_id: string; faits: number; total: number }
+
+/** Avancement de chaque employé dans des journées lancées : formations complétées + politiques confirmées. */
+export async function avancementJournees(sb: SupabaseClient, journees: Pick<Journee, 'id' | 'employe_ids' | 'formation_ids' | 'politique_ids'>[]): Promise<Record<string, SuiviJournee[]>> {
+  const { chargerEtatsFormations, estComplete } = await import('@/lib/etat-formations')
+  const employes = Array.from(new Set(journees.flatMap(j => j.employe_ids)))
+  const formations = Array.from(new Set(journees.flatMap(j => j.formation_ids)))
+  const politiques = Array.from(new Set(journees.flatMap(j => j.politique_ids)))
+  const etat = await chargerEtatsFormations(sb, employes, formations)
+  const { data: pols } = politiques.length ? await sb.from('politiques').select('id, version').in('id', politiques) : { data: [] as { id: string; version: number }[] }
+  const { data: confs } = politiques.length && employes.length
+    ? await sb.from('politiques_confirmations').select('employe_id, politique_id, version').in('politique_id', politiques).in('employe_id', employes)
+    : { data: [] as { employe_id: string; politique_id: string; version: number }[] }
+  const confirmee = (e: string, p: string) => (confs ?? []).some(c => c.employe_id === e && c.politique_id === p && c.version === (pols ?? []).find(x => x.id === p)?.version)
+  const res: Record<string, SuiviJournee[]> = {}
+  for (const j of journees) {
+    res[j.id] = j.employe_ids.map(e => ({
+      employe_id: e,
+      faits: j.formation_ids.filter(f => estComplete(etat(e, f).statut)).length + j.politique_ids.filter(p => confirmee(e, p)).length,
+      total: j.formation_ids.length + j.politique_ids.length,
+    }))
+  }
+  return res
+}

@@ -1,167 +1,151 @@
-'use client'
-
-import { useT } from '@/lib/i18n/client'
-import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
+// Tableau de bord de l'administration : ce qui demande une action, dans le périmètre de la personne connectée.
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { getActeur, serviceClient, cliniquesContenuVisibles } from '@/lib/permissions'
+import { aAccesAdmin } from '@/lib/cliniques'
+import { chargerConformite, synthese } from '@/lib/conformite'
+import { chargerExpirations } from '@/lib/expirations'
+import { employesDansPortee, statistiquesPolitiques, peutSuivrePolitique, type Politique } from '@/lib/politiques'
+import { avancementJournees, CHAMPS_JOURNEE, type Journee } from '@/lib/journees'
+import { i18n } from '@/lib/i18n/serveur'
 
-type Employe = {
-    id: string
-    auth_user_id: string
-    prenom: string
-    nom: string
-    email: string
-    role: string
-}
+const carte = 'bg-white rounded-2xl border border-gray-200 p-5'
+const MAX = 6
 
-const quickActions = [
-  {
-        href: '/admin/employes',
-        icon: 'people',
-        title: 'Employés',
-        desc: 'Gérer les comptes employés et leurs accès aux formations',
-        color: '#6366f1',
-        bg: '#f0f0ff',
-  },
-  {
-        href: '/admin/formations',
-        icon: 'school',
-        title: 'Formations',
-        desc: 'Créer et gérer les formations en ligne',
-        color: '#0ea5e9',
-        bg: '#f0f9ff',
-  },
-  {
-        href: '/admin/rapports',
-        icon: 'bar_chart',
-        title: 'Rapports',
-        desc: 'Suivre la progression et les certificats des employés',
-        color: '#10b981',
-        bg: '#f0fdf4',
-  },
-  {
-        href: '/admin/audit',
-        icon: 'history',
-        title: 'Audit Log',
-        desc: 'Journal immuable de toutes les actions et événements de la plateforme',
-        color: '#f59e0b',
-        bg: '#fffbeb',
-  },
+export default async function TableauDeBord() {
+  const acteur = await getActeur()
+  if (!acteur) redirect('/login')
+  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  const { t, loc } = await i18n()
+  const sb = serviceClient()
+  const jour = (d: string | null) => (d ? new Date(d.length === 10 ? d + 'T12:00:00' : d).toLocaleDateString(loc, { dateStyle: 'medium' }) : '—')
+
+  const [conformite, expirations, { data: pols }, portee, { data: journeesBrutes }] = await Promise.all([
+    chargerConformite(sb, acteur),
+    chargerExpirations(sb, acteur, 60),
+    sb.from('politiques').select('*').eq('actif', true),
+    employesDansPortee(sb, acteur),
+    sb.from('journees_formation').select(CHAMPS_JOURNEE).eq('modele', false).in('clinique', cliniquesContenuVisibles(acteur)).order('cree_le', { ascending: false }).limit(50),
+  ])
+  const s = synthese(conformite)
+
+  // Formations en retard
+  const retards = conformite.flatMap(e => e.assignations.filter(a => a.en_retard).map(a => ({ e, a })))
+    .sort((x, y) => (x.a.date_echeance ?? '').localeCompare(y.a.date_echeance ?? ''))
+
+  // Certificats expirés ou qui expirent dans 60 jours
+  const aRenouveler = expirations.filter(l => l.statut !== 'valide')
+
+  // Politiques : confirmations en attente
+  const politiques = ((pols ?? []) as Politique[]).filter(p => peutSuivrePolitique(acteur, p))
+  const stats = await statistiquesPolitiques(sb, politiques, portee)
+  const enAttente = politiques.map(p => ({ p, st: stats[p.id] })).filter(x => x.st && x.st.total > x.st.confirmes)
+    .sort((a, b) => (b.st.total - b.st.confirmes) - (a.st.total - a.st.confirmes))
+  const confirmationsManquantes = enAttente.reduce((n, x) => n + x.st.total - x.st.confirmes, 0)
+
+  // Journées de formation en cours (au moins un employé n'a pas tout terminé)
+  const journees = (journeesBrutes ?? []) as Journee[]
+  const avancement = journees.length ? await avancementJournees(sb, journees) : {}
+  const enCours = journees.map(j => {
+    const suivi = avancement[j.id] ?? []
+    return { j, finis: suivi.filter(x => x.total > 0 && x.faits === x.total).length, total: suivi.length }
+  }).filter(x => x.total > 0 && x.finis < x.total)
+
+  const indicateurs = [
+    { v: s.taux + ' %', l: t('Taux de complétion'), href: '/admin/conformite', couleur: '#4338ca' },
+    { v: retards.length, l: t('Formations en retard'), href: '/admin/conformite', couleur: retards.length ? '#dc2626' : '#16a34a' },
+    { v: aRenouveler.length, l: t('Certificats à renouveler (60 jours)'), href: '/admin/expirations', couleur: aRenouveler.length ? '#d97706' : '#16a34a' },
+    { v: confirmationsManquantes, l: t('Confirmations de politiques en attente'), href: '/admin/politiques', couleur: confirmationsManquantes ? '#d97706' : '#16a34a' },
+    { v: enCours.length, l: t('Journées de formation en cours'), href: '/admin/journees', couleur: '#0369a1' },
   ]
 
-export default function AdminPage() {
-  const { t } = useT()
-    const [employe, setEmploye] = useState<Employe | null>(null)
-    const [loading, setLoading] = useState(true)
-    const router = useRouter()
-
-  const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-
-  useEffect(() => {
-        async function loadUser() {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) { router.push('/login'); return }
-                setLoading(false)
-        }
-        loadUser()
-  }, [])
-
-  if (loading) return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-                <div style={{ textAlign: 'center' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid #e5e7eb', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }}></div>
-                          <p style={{ color: '#6b7280', fontSize: '14px' }}>{t('Chargement...')}</p>
-                </div>
-        </div>
-      )
+  const Vide = ({ texte }: { texte: string }) => <p className="text-sm text-gray-400 py-3">✓ {texte}</p>
+  const Titre = ({ titre, href, n }: { titre: string; href: string; n: number }) => (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="font-semibold text-gray-900">{titre} {n > 0 && <span className="text-sm font-normal text-gray-400">({n})</span>}</h2>
+      <Link href={href} className="text-sm font-medium text-indigo-600 hover:underline">{t('Tout voir →')}</Link>
+    </div>
+  )
 
   return (
-        <div>
-          {/* Page header */}
-              <div style={{ marginBottom: '32px' }}>
-                      <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, letterSpacing: '-0.5px' }}>
-                                {t('Tableau de bord')}
-                      </h1>
-                      <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>
-                                {t('Vue d\'ensemble de la plateforme de formation')}
-                      </p>
-              </div>
-        
-          {/* Quick action cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-                {quickActions.map((action) => (
-                    <Link key={action.href} href={action.href} style={{ textDecoration: 'none' }}>
-                                <div style={{
-                                    background: '#fff',
-                                    borderRadius: '16px',
-                                    padding: '28px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)',
-                                    border: '1px solid #f3f4f6',
-                                    transition: 'all 0.2s ease',
-                                    cursor: 'pointer',
-                    }}
-                                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 6px rgba(0,0,0,0.07), 0 10px 25px rgba(0,0,0,0.08)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)'; }}
-                                              >
-                                              <div style={{
-                                                                width: '48px',
-                                                                height: '48px',
-                                                                background: action.bg,
-                                                                borderRadius: '12px',
-                                                                display: 'flex',
-                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                marginBottom: '16px',
-                                              }}>
-                                                              <span className="material-icons" style={{ color: action.color, fontSize: '24px' }}>{action.icon}</span>
-                                              </div>
-                                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{t(action.title)}</h3>
-                                              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.5' }}>{t(action.desc)}</p>
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '16px', color: action.color, fontSize: '13px', fontWeight: '600' }}>
-                                                              {t('Accéder')} <span className="material-icons" style={{ fontSize: '16px' }}>arrow_forward</span>
-                                              </div>
-                                </div>
-                    </Link>
-                  ))}
-              </div>
-        
-          {/* Banner */}
-              <div style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                  borderRadius: '16px',
-                  padding: '28px 32px',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-        }}>
-                      <div>
-                                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>{t('Gérez votre équipe')}</h3>
-                                <p style={{ margin: 0, opacity: 0.85, fontSize: '14px' }}>{t('Assignez des formations, suivez la conformité et exportez des rapports.')}</p>
-                      </div>
-                      <Link href="/admin/employes" style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-        }}>
-                                {t('Voir les employés →')}
-                      </Link>
-              </div>
-        
-              <style>{`
-                      @keyframes spin { to { transform: rotate(360deg); } }
-                            `}</style>
-        </div>
-        )
+    <div className="max-w-6xl">
+      <h1 className="text-2xl font-bold text-gray-900">{t('Tableau de bord')}</h1>
+      <p className="text-sm text-gray-500 mt-1 mb-6">{t('Ce qui demande votre attention, dans votre périmètre ({n} employé(s) actif(s)).', { n: s.employes })}</p>
+
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-6">
+        {indicateurs.map(k => (
+          <Link key={k.l} href={k.href} className={carte + ' hover:shadow-sm transition-shadow'}>
+            <div className="text-2xl font-bold" style={{ color: k.couleur }}>{k.v}</div>
+            <div className="text-xs text-gray-500 mt-1">{k.l}</div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className={carte}>
+          <Titre titre={t('Formations en retard')} href="/admin/conformite" n={retards.length} />
+          {retards.length === 0 ? <Vide texte={t('Aucune formation en retard.')} /> : (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {retards.slice(0, MAX).map(({ e, a }) => (
+                <li key={e.id + a.formation_id} className="py-2 flex justify-between gap-3">
+                  <Link href={`/admin/employes/${e.id}?onglet=formations`} className="min-w-0"><span className="font-medium text-gray-900">{e.prenom} {e.nom}</span><span className="block text-xs text-gray-500 truncate">{a.formation_titre}</span></Link>
+                  <span className="text-xs text-red-600 whitespace-nowrap">{t('Échéance')} {jour(a.date_echeance)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className={carte}>
+          <Titre titre={t('Certificats à renouveler')} href="/admin/expirations" n={aRenouveler.length} />
+          {aRenouveler.length === 0 ? <Vide texte={t('Aucun certificat n’expire dans les 60 prochains jours.')} /> : (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {aRenouveler.slice(0, MAX).map(l => (
+                <li key={l.certificat_id} className="py-2 flex justify-between gap-3">
+                  <Link href={`/admin/employes/${l.employe_id}?onglet=certificats`} className="min-w-0"><span className="font-medium text-gray-900">{l.employe_nom}</span><span className="block text-xs text-gray-500 truncate">{l.formation_titre}</span></Link>
+                  <span className={'text-xs whitespace-nowrap ' + (l.statut === 'expire' ? 'text-red-600' : 'text-amber-700')}>
+                    {l.statut === 'expire' ? t('Expiré le {date}', { date: jour(l.date_expiration) }) : t('Expire le {date}', { date: jour(l.date_expiration) })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className={carte}>
+          <Titre titre={t('Politiques non confirmées')} href="/admin/politiques" n={enAttente.length} />
+          {enAttente.length === 0 ? <Vide texte={t('Toutes les politiques sont confirmées.')} /> : (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {enAttente.slice(0, MAX).map(({ p, st }) => (
+                <li key={p.id} className="py-2">
+                  <Link href={`/admin/politiques/${p.id}`} className="flex justify-between gap-3">
+                    <span className="font-medium text-gray-900 truncate">{p.titre}</span>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">{t('{n} en attente', { n: st.total - st.confirmes })} · {st.pourcentage} %</span>
+                  </Link>
+                  <div className="mt-1 h-1.5 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-amber-500" style={{ width: `${st.pourcentage}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className={carte}>
+          <Titre titre={t('Journées de formation en cours')} href="/admin/journees" n={enCours.length} />
+          {enCours.length === 0 ? <Vide texte={t('Aucune journée de formation en cours.')} /> : (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {enCours.slice(0, MAX).map(({ j, finis, total }) => (
+                <li key={j.id} className="py-2">
+                  <div className="flex justify-between gap-3">
+                    <span className="min-w-0"><span className="font-medium text-gray-900">{j.nom}</span><span className="block text-xs text-gray-500">{j.raison}{j.date_echeance ? ' · ' + t('À compléter avant le {date}', { date: jour(j.date_echeance) }) : ''}</span></span>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">{t('{f}/{n} ont terminé', { f: finis, n: total })}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-sky-600" style={{ width: `${Math.round((finis / total) * 100)}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </div>
+  )
 }
