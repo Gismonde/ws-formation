@@ -89,6 +89,13 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
           </p>
         </div>
         {peutCreer && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+          <Link href="/admin/employes/importer" style={{
+            display: 'inline-flex', alignItems: 'center', padding: '10px 18px', background: '#fff', color: '#374151',
+            border: '1px solid #d1d5db', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600',
+          }}>
+            {t('⬆ Importer (Excel/CSV)')}
+          </Link>
           <Link href="/admin/employes/nouveau" style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -104,6 +111,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
           }}>
             {t('+ Créer un employé')}
           </Link>
+          </div>
         )}
       </div>
 
