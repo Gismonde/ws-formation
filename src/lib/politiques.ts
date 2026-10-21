@@ -20,6 +20,8 @@ export type Politique = {
   description: string | null
   clinique: CliniqueEmploye
   departements: string[]
+  /** Employés visés individuellement (colonne ajoutée par politiques_employes.sql ; absente = aucun) */
+  employes?: string[] | null
   version: number
   fichier: string
   nom_fichier: string | null
@@ -50,10 +52,20 @@ function cliniquesEmploye(e: { clinique: string | null; role?: string | null }):
 }
 
 /** L'employé fait-il partie du public visé par la politique ? */
-export function estVise(p: Pick<Politique, 'clinique' | 'departements'>, e: { clinique: string | null; role?: string | null; departement_id: string | null }): boolean {
+export function estVise(
+  p: Pick<Politique, 'clinique' | 'departements'> & { employes?: string[] | null },
+  e: { id?: string; clinique: string | null; role?: string | null; departement_id: string | null },
+): boolean {
   if (!intersecte(cliniquesDe(p.clinique), cliniquesEmploye(e))) return false
-  if (!p.departements || p.departements.length === 0) return true
-  return !!e.departement_id && p.departements.includes(e.departement_id)
+  const depts = p.departements ?? []
+  const emps = p.employes ?? []
+  if (depts.length === 0 && emps.length === 0) return true
+  return (!!e.departement_id && depts.includes(e.departement_id)) || (!!e.id && emps.includes(e.id))
+}
+
+/** La politique s'adresse-t-elle à toute sa clinique (ni département ni employé précis) ? */
+export function estPourToute(p: { departements?: string[] | null; employes?: string[] | null }): boolean {
+  return (p.departements ?? []).length === 0 && (p.employes ?? []).length === 0
 }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +92,7 @@ export function peutGererPolitique(a: Acteur, p: Pick<Politique, 'clinique'>): b
 }
 
 /** Consulter la politique et ses statistiques (dans sa portée). */
-export function peutSuivrePolitique(a: Acteur, p: Pick<Politique, 'clinique' | 'departements'>): boolean {
+export function peutSuivrePolitique(a: Acteur, p: Pick<Politique, 'clinique' | 'departements'> & { employes?: string[] | null }): boolean {
   if (a.role === 'super_admin' || a.role === 'admin') return intersecte(cliniquesDe(p.clinique), cliniquesAdministrees(a))
   if (a.role === 'gestionnaire') {
     if (!a.departement_id) return false

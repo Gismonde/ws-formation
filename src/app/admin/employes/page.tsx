@@ -48,7 +48,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const peutCreer = !isGestionnaire || (!!acteur.departement_id && !!acteur.clinique)
 
   const sousTitre = acteur.role === 'super_admin' && !acteur.vue ? 'dans les deux cliniques'
-    : acteur.role === 'admin' ? 'à ' + mesCliniques.join(' et ')
+    : acteur.role === 'super_admin' || acteur.role === 'admin' ? 'au ' + mesCliniques.join(' et au ')
     : `dans votre département${acteur.clinique ? ' (' + acteur.clinique.replace('LES_DEUX', 'CMC + WSSC') + ')' : ''}`
 
   const actifs = employes?.filter((e: any) => e.actif !== false) ?? []
