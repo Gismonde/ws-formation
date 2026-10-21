@@ -57,6 +57,9 @@ export async function getActeur(): Promise<Acteur | null> {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
+  // Double authentification activée mais code pas encore saisi : pas d'accès
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return null
 
   const { data } = await serviceClient()
     .from('employes')

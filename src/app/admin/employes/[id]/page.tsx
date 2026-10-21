@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 import EditEmployeForm from "./EditEmployeForm"
 import SuiviFormationsEmploye from "./SuiviFormationsEmploye"
 import RenvoyerInvitation from "./RenvoyerInvitation"
+import DeuxFacteurs from "./DeuxFacteurs"
 import ListePreuvesAdmin from "./ListePreuvesAdmin"
 import ToggleActifButton from "../ToggleActifButton"
 import { CliniqueBadge } from "@/components/CliniqueBadge"
@@ -97,6 +98,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
         />
         {modifiable && employe.actif !== false && <RenvoyerInvitation employeId={id} email={employe.email} />}
+        {acteur.role === "super_admin" && <DeuxFacteurs employeId={id} nom={`${employe.prenom} ${employe.nom}`} />}
       </>
     )
   } else if (onglet === "formations") {

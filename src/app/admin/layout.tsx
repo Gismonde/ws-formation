@@ -8,6 +8,7 @@ import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import { RechercheGlobale } from '@/components/RechercheGlobale'
 import { MenuAdmin, type GroupeMenu } from '@/components/MenuAdmin'
+import { DEUX_FACTEURS_ADMIN_OBLIGATOIRE } from '@/lib/securite'
 import { i18n } from '@/lib/i18n/serveur'
 
 type EntreeNav = { href: string; label: string; icon: string; adminOnly?: boolean; createurs?: boolean; superAdmin?: boolean }
@@ -47,6 +48,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const employe = await getActeur()
   const { t } = await i18n()
   if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard/accueil')
+  // Double authentification des administrateurs : rappel tant qu'elle n'est pas activée,
+  // puis blocage quand DEUX_FACTEURS_ADMIN_OBLIGATOIRE est activé
+  let rappel2fa = false
+  if (estAdministrateur(employe.role)) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aal?.nextLevel !== 'aal2') {
+      if (DEUX_FACTEURS_ADMIN_OBLIGATOIRE) redirect('/dashboard/securite?obligatoire=1')
+      rappel2fa = true
+    }
+  }
 
   const isAdmin = estAdministrateur(employe.role)
   const perimetre = employe.vue
@@ -129,7 +140,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </form>
           </div>
         </header>
-        <div className='admin-contenu contenu-adaptatif'>{children}</div>
+        <div className='admin-contenu contenu-adaptatif'>
+          {rappel2fa && (
+            <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', fontSize: '14px' }}>
+              🛡️ <strong>{t('Activez la double authentification.')}</strong>{' '}{t('Elle sera bientôt obligatoire pour les administrateurs.')}{' '}
+              <Link href='/dashboard/securite?obligatoire=1' style={{ fontWeight: 600, color: 'inherit' }}>{t('L’activer maintenant →')}</Link>
+            </div>
+          )}
+          {children}
+        </div>
       </main>
     </div>
   )
