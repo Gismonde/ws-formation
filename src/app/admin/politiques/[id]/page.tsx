@@ -14,7 +14,7 @@ import ListeConfirmations, { LigneConfirmation } from './ListeConfirmations'
 export default async function PolitiqueAdminPage({ params, searchParams }: {
   params: Promise<{ id: string }>; searchParams: Promise<{ filtre?: string }>
 }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const { id } = await params
   const { filtre } = await searchParams
   const acteur = await getActeur()
@@ -62,7 +62,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
             {pol.titre} {!pol.actif && <span className="text-xs align-middle bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2">{t('Archivée')}</span>}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString('fr-CA', { dateStyle: 'long' })} · {publicDe(pol, noms)}
+            Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString(loc, { dateStyle: 'long' })} · {publicDe(pol, noms)}
           </p>
           {pol.description && <p className="text-sm text-gray-700 mt-2">{pol.description}</p>}
           {urls[pol.fichier] && (
@@ -115,7 +115,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
             {(versions ?? []).map(v => (
               <li key={v.version} className="px-5 py-3 flex flex-wrap gap-3 items-center">
                 <span className="font-semibold w-10">v{v.version}</span>
-                <span className="text-gray-500">{new Date(v.publiee_le).toLocaleDateString('fr-CA', { dateStyle: 'medium' })}</span>
+                <span className="text-gray-500">{new Date(v.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</span>
                 <span className="text-gray-700 flex-1">{v.note_version ?? ''}</span>
                 {urls[v.fichier] && <a href={urls[v.fichier]} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">📄 {v.nom_fichier ?? 'Document'}</a>}
               </li>

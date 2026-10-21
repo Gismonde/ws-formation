@@ -5,12 +5,13 @@ import { chargerEtatQuestionnaire, EtatQuestionnaire } from '@/lib/questionnaire
 import { getActeur, peutGererEmploye } from '@/lib/permissions'
 import ReinitialiserTentatives from './ReinitialiserTentatives'
 
-const date = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' }) : null
+const dateEn = (loc: string) => (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' }) : null
 
 /** Dossier employé : formations assignées, leçons terminées, vidéos obligatoires, attestations signées. */
 export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: SupabaseClient; employeId: string }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
+  const date = dateEn(loc)
   const { data: assignations } = await sb.from('assignations').select('formation_id, date_echeance').eq('employe_id', employeId)
   const formationIds = Array.from(new Set((assignations ?? []).map(a => a.formation_id as string)))
   const { data: formations } = formationIds.length

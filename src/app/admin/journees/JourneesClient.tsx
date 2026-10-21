@@ -11,7 +11,7 @@ export type Suivi = { employe_id: string; nom: string; faits: number; total: num
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 const champ = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
-const jour = (d: string | null) => (d ? new Date(d + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'medium' }) : null)
+const jourEn = (loc: string) => (d: string | null) => (d ? new Date(d + 'T12:00:00').toLocaleDateString(loc, { dateStyle: 'medium' }) : null)
 
 function Selection({ titre, options, choisis, onChange, vide }: { titre: string; options: Option[]; choisis: string[]; onChange: (ids: string[]) => void; vide: string }) {
   const { t } = useT()
@@ -52,7 +52,8 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
   librairie: Option[]
   employes: Option[]
 }) {
-  const { t } = useT()
+  const { t, loc } = useT()
+  const jour = jourEn(loc)
   const router = useRouter()
   const modeles = journees.filter(j => j.modele)
   const lancees = journees.filter(j => !j.modele)

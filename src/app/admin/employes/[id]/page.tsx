@@ -25,8 +25,8 @@ const ONGLETS = [
 ] as const
 type Onglet = (typeof ONGLETS)[number]["id"]
 
-const jour = (d: string | null) => (d ? new Date(d.length === 10 ? d + "T12:00:00" : d).toLocaleDateString("fr-CA", { dateStyle: "medium" }) : "—")
-const moment = (d: string | null) => (d ? new Date(d).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" }) : "—")
+const jourEn = (loc: string) => (d: string | null) => (d ? new Date(d.length === 10 ? d + "T12:00:00" : d).toLocaleDateString(loc, { dateStyle: "medium" }) : "—")
+const momentEn = (loc: string) => (d: string | null) => (d ? new Date(d).toLocaleString(loc, { dateStyle: "medium", timeStyle: "short" }) : "—")
 
 const COULEUR_STATUT: Record<string, string> = {
   non_commence: "bg-gray-100 text-gray-600",
@@ -39,7 +39,9 @@ export default async function FicheEmployePage({ params, searchParams }: {
   params: Promise<{ id: string }>
   searchParams: Promise<{ onglet?: string }>
 }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
+  const jour = jourEn(loc)
+  const moment = momentEn(loc)
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect("/login")
@@ -125,7 +127,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                     </td>
                     <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{jour(f.assignee_le)}</td>
                     <td className={"px-3 py-2.5 whitespace-nowrap " + (f.en_retard ? "text-red-600 font-semibold" : "text-gray-600")}>
-                      {jour(f.echeance)}{f.en_retard ? " · en retard" : ""}
+                      {jour(f.echeance)}{f.en_retard ? ' · ' + t('en retard') : ''}
                     </td>
                     <td className="px-3 py-2.5"><span className={"text-xs font-semibold px-2 py-1 rounded-full " + COULEUR_STATUT[f.statut]}>{f.statut_libelle}</span></td>
                     <td className="px-3 py-2.5">
@@ -168,7 +170,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                   <td className="px-4 py-2.5 font-medium text-gray-900">{c.formation}</td>
                   <td className="px-3 py-2.5 font-mono text-xs">{c.numero}</td>
                   <td className="px-3 py-2.5 text-gray-600">{jour(c.emis_le)}</td>
-                  <td className="px-3 py-2.5 text-gray-600">{c.expire_le ? jour(c.expire_le) : "Permanent"}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{c.expire_le ? jour(c.expire_le) : t('Permanent')}</td>
                   <td className="px-3 py-2.5 text-gray-600">{c.note != null ? `${c.note} %` : "—"}</td>
                   <td className="px-3 py-2.5">
                     <span className={"text-xs font-semibold px-2 py-1 rounded-full " + (c.etat === "Valide" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>{c.etat}</span>

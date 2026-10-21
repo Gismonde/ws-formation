@@ -9,7 +9,7 @@ import { chargerResultatsSondages } from '@/lib/sondages-admin'
 const couleur = (m: number | null) => (m === null ? '#9ca3af' : m >= 4 ? '#047857' : m >= 3 ? '#b45309' : '#b91c1c')
 
 export default async function SondagesPage({ searchParams }: { searchParams: Promise<{ formation?: string }> }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
@@ -87,7 +87,7 @@ export default async function SondagesPage({ searchParams }: { searchParams: Pro
                   {choisie.commentaires.map((c, i) => (
                     <li key={i} className="text-sm text-gray-700 bg-gray-50 rounded-lg px-4 py-3">
                       « {c.texte} »
-                      <span className="block text-xs text-gray-400 mt-1">{new Date(c.date).toLocaleDateString('fr-CA', { dateStyle: 'medium' })}</span>
+                      <span className="block text-xs text-gray-400 mt-1">{new Date(c.date).toLocaleDateString(loc, { dateStyle: 'medium' })}</span>
                     </li>
                   ))}
                 </ul>

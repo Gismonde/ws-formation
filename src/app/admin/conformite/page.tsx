@@ -14,13 +14,14 @@ const STYLE_STATUT: Record<StatutFormation, { bg: string; color: string }> = {
   certifie: { bg: '#e0e7ff', color: '#4338ca' },
 }
 
-const date = (iso: string | null) =>
-  iso ? new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { dateStyle: 'medium' }) : null
+const dateEn = (loc: string) => (iso: string | null) =>
+  iso ? new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString(loc, { dateStyle: 'medium' }) : null
 
 type Params = { clinique?: string; departement?: string; vue?: string }
 
 export default async function ConformitePage({ searchParams }: { searchParams: Promise<Params> }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
+  const date = dateEn(loc)
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
