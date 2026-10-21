@@ -25,9 +25,9 @@ export default function BoutonPublier({ formationId, publiee, enAttente }: { for
     <div className="flex flex-col items-end gap-1">
       <button onClick={basculer} disabled={envoi}
         className={'text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 ' + (publiee ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-green-600 text-white hover:bg-green-700')}>
-        {envoi ? '…' : publiee ? 'Repasser en brouillon' : confirmer ? 'Publier quand même' : 'Publier'}
+        {envoi ? '…' : publiee ? t('Repasser en brouillon') : confirmer ? t('Publier quand même') : t('Publier')}
       </button>
-      {confirmer && <p className="text-xs text-amber-700 max-w-xs text-right">{t('Il reste')}{' '}{enAttente} bloc(s) « à ajouter » : les employés les verront tels quels.</p>}
+      {confirmer && <p className="text-xs text-amber-700 max-w-xs text-right">{t('Il reste {n} bloc(s) « à ajouter » : les employés les verront tels quels.', { n: enAttente })}</p>}
       {!publiee && !confirmer && <p className="text-xs text-gray-400 max-w-xs text-right">{t('Les employés à qui elle est assignée la verront dans « Mes formations ».')}</p>}
       {erreur && <p className="text-xs text-red-600">{erreur}</p>}
     </div>
