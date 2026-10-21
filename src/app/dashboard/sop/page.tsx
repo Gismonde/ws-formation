@@ -116,7 +116,7 @@ export default async function SOPPage() {
                           </p>
                         </div>
                         {sop.fichier_url && (
-                          <a href={sop.fichier_url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--accent-clinique)', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
+                          <a href={`/api/sop/${sop.id}/fichier`} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--accent-clinique)', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', flexShrink: 0 }}>
                             {t('Consulter')}
                           </a>
                         )}
