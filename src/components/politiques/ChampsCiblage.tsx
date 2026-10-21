@@ -1,4 +1,5 @@
 'use client'
+import { useT } from '@/lib/i18n/client'
 import { CLINIQUE_EMPLOYE_LABEL, CliniqueEmploye } from '@/lib/cliniques'
 
 export type Ciblage = { clinique: CliniqueEmploye; tous: boolean; departements: string[] }
@@ -10,6 +11,7 @@ export default function ChampsCiblage({ valeur, onChange, cliniques, departement
   cliniques: CliniqueEmploye[]
   departements: { id: string; nom: string }[]
 }) {
+  const { t } = useT()
   const basculer = (id: string) => onChange({
     ...valeur,
     departements: valeur.departements.includes(id) ? valeur.departements.filter(d => d !== id) : [...valeur.departements, id],
@@ -17,7 +19,7 @@ export default function ChampsCiblage({ valeur, onChange, cliniques, departement
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Clinique *</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t('Clinique *')}</label>
         <div className="flex flex-wrap gap-2">
           {cliniques.map(c => (
             <button key={c} type="button" onClick={() => onChange({ ...valeur, clinique: c })}
@@ -28,15 +30,15 @@ export default function ChampsCiblage({ valeur, onChange, cliniques, departement
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">S’adresse à *</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t('S’adresse à *')}</label>
         <div className="flex flex-wrap gap-2 mb-3">
           <button type="button" onClick={() => onChange({ ...valeur, tous: true })}
             className={'px-4 py-2 rounded-lg text-sm border ' + (valeur.tous ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300')}>
-            Toute la clinique
+            {t('Toute la clinique')}
           </button>
           <button type="button" onClick={() => onChange({ ...valeur, tous: false })}
             className={'px-4 py-2 rounded-lg text-sm border ' + (!valeur.tous ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300')}>
-            Certains départements
+            {t('Certains départements')}
           </button>
         </div>
         {!valeur.tous && (
@@ -44,8 +46,8 @@ export default function ChampsCiblage({ valeur, onChange, cliniques, departement
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-gray-500">{valeur.departements.length} département(s) sélectionné(s)</span>
               <span className="text-xs space-x-3">
-                <button type="button" className="text-blue-600 hover:underline" onClick={() => onChange({ ...valeur, departements: departements.map(d => d.id) })}>Tout cocher</button>
-                <button type="button" className="text-blue-600 hover:underline" onClick={() => onChange({ ...valeur, departements: [] })}>Aucun</button>
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => onChange({ ...valeur, departements: departements.map(d => d.id) })}>{t('Tout cocher')}</button>
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => onChange({ ...valeur, departements: [] })}>{t('Aucun')}</button>
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">

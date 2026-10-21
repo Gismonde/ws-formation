@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { LIBELLES_AUDIT, GROUPES_AUDIT, libelleAudit, type LigneAudit } from '@/lib/audit-journal-libelles'
@@ -15,6 +16,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
   departements: { id: string; nom: string }[]
   cliniques: Clinique[]
 }) {
+  const { t } = useT()
   const [types, setTypes] = useState<string[]>([])
   const [clinique, setClinique] = useState('')
   const [departement, setDepartement] = useState('')
@@ -81,17 +83,17 @@ export default function JournalAudit({ employes, departements, cliniques }: {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Journal d&apos;audit</h1>
-          <p className="text-sm text-gray-500 mt-1">{total.toLocaleString('fr-CA')} événement{total > 1 ? 's' : ''} — journal immuable, conservé 5 ans.</p>
+          <p className="text-sm text-gray-500 mt-1">{total.toLocaleString('fr-CA')} événement{total > 1 ? 's' : ''}{' '}{t('— journal immuable, conservé 5 ans.')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {choisis.length > 0 && (
             <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
               <input type="checkbox" checked={parEmploye} onChange={e => setParEmploye(e.target.checked)} />
-              {choisis.length > 1 ? 'Séparer par employé (un onglet Excel / un CSV chacun)' : 'Fichier au nom de l’employé'}
+              {choisis.length > 1 ? t('Séparer par employé (un onglet Excel / un CSV chacun)') : t('Fichier au nom de l’employé')}
             </label>
           )}
-          <a href={lienExport('xlsx')} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">⬇ Excel</a>
-          <a href={lienExport('csv')} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">⬇ CSV{parEmploye && choisis.length > 1 ? ' (ZIP)' : ''}</a>
+          <a href={lienExport('xlsx')} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{t('⬇ Excel')}</a>
+          <a href={lienExport('csv')} className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{t('⬇ CSV')}{parEmploye && choisis.length > 1 ? ' (ZIP)' : ''}</a>
         </div>
       </div>
 
@@ -99,8 +101,8 @@ export default function JournalAudit({ employes, departements, cliniques }: {
         {/* Filtres */}
         <aside className="bg-white border border-gray-200 rounded-xl p-4 space-y-5 h-fit">
           <div className="flex justify-between items-center">
-            <h2 className="font-semibold text-gray-900 text-sm">Filtres</h2>
-            <button type="button" onClick={reinitialiser} className="text-xs text-indigo-600 hover:underline">Tout effacer</button>
+            <h2 className="font-semibold text-gray-900 text-sm">{t('Filtres')}</h2>
+            <button type="button" onClick={reinitialiser} className="text-xs text-indigo-600 hover:underline">{t('Tout effacer')}</button>
           </div>
 
           <div>
@@ -130,9 +132,9 @@ export default function JournalAudit({ employes, departements, cliniques }: {
 
           {cliniques.length > 1 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Clinique</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('Clinique')}</p>
               <select value={clinique} onChange={e => setClinique(e.target.value)} className={champ}>
-                <option value="">Toutes</option>
+                <option value="">{t('Toutes')}</option>
                 {cliniques.map(c => <option key={c} value={c}>{CLINIQUE_INFO[c].nom}</option>)}
               </select>
             </div>
@@ -140,16 +142,16 @@ export default function JournalAudit({ employes, departements, cliniques }: {
 
           {departements.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Département</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('Département')}</p>
               <select value={departement} onChange={e => setDepartement(e.target.value)} className={champ}>
-                <option value="">Tous</option>
+                <option value="">{t('Tous')}</option>
                 {departements.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
               </select>
             </div>
           )}
 
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Employés {choisis.length > 0 && <span className="text-indigo-600">({choisis.length})</span>}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('Employés')}{' '}{choisis.length > 0 && <span className="text-indigo-600">({choisis.length})</span>}</p>
             {choisis.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {choisis.map(id => (
@@ -159,9 +161,9 @@ export default function JournalAudit({ employes, departements, cliniques }: {
                 ))}
               </div>
             )}
-            <input value={rechercheEmp} onChange={e => setRechercheEmp(e.target.value)} placeholder="Rechercher un employé…" className={champ} />
+            <input value={rechercheEmp} onChange={e => setRechercheEmp(e.target.value)} placeholder={t('Rechercher un employé…')} className={champ} />
             <div className="mt-2 max-h-56 overflow-y-auto border border-gray-100 rounded-lg divide-y divide-gray-50">
-              {proposes.length === 0 && <p className="text-xs text-gray-400 p-3">Aucun employé</p>}
+              {proposes.length === 0 && <p className="text-xs text-gray-400 p-3">{t('Aucun employé')}</p>}
               {proposes.slice(0, 200).map(e => (
                 <label key={e.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50">
                   <input type="checkbox" checked={choisis.includes(e.id)} onChange={() => basculerEmploye(e.id)} />
@@ -172,16 +174,16 @@ export default function JournalAudit({ employes, departements, cliniques }: {
             {proposes.length > 1 && (
               <div className="flex gap-3 mt-1.5">
                 <button type="button" onClick={() => setChoisis(v => Array.from(new Set([...v, ...proposes.slice(0, 200).map(e => e.id)])))} className="text-xs text-indigo-600 hover:underline">Tout cocher ({Math.min(proposes.length, 200)})</button>
-                {choisis.length > 0 && <button type="button" onClick={() => setChoisis([])} className="text-xs text-gray-500 hover:underline">Aucun</button>}
+                {choisis.length > 0 && <button type="button" onClick={() => setChoisis([])} className="text-xs text-gray-500 hover:underline">{t('Aucun')}</button>}
               </div>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <label className="text-xs text-gray-500">Du<input type="date" value={dateDebut} onChange={e => setDateDebut(e.target.value)} className={champ + ' mt-1'} /></label>
-            <label className="text-xs text-gray-500">Au<input type="date" value={dateFin} onChange={e => setDateFin(e.target.value)} className={champ + ' mt-1'} /></label>
+            <label className="text-xs text-gray-500">{t('Du')}<input type="date" value={dateDebut} onChange={e => setDateDebut(e.target.value)} className={champ + ' mt-1'} /></label>
+            <label className="text-xs text-gray-500">{t('Au')}<input type="date" value={dateFin} onChange={e => setDateFin(e.target.value)} className={champ + ' mt-1'} /></label>
           </div>
-          <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="🔍 Rechercher dans les descriptions…" className={champ} />
+          <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder={t('🔍 Rechercher dans les descriptions…')} className={champ} />
         </aside>
 
         {/* Résultats */}
@@ -191,15 +193,15 @@ export default function JournalAudit({ employes, departements, cliniques }: {
             <table className="w-full text-sm min-w-[720px]">
               <thead>
                 <tr className="bg-gray-50 text-xs uppercase text-gray-500">
-                  <th className="text-left px-4 py-3 font-semibold">Date</th>
-                  <th className="text-left px-3 py-3 font-semibold">Type</th>
-                  <th className="text-left px-3 py-3 font-semibold">Auteur</th>
-                  <th className="text-left px-3 py-3 font-semibold">Description</th>
-                  <th className="text-left px-3 py-3 font-semibold">IP</th>
+                  <th className="text-left px-4 py-3 font-semibold">{t('Date')}</th>
+                  <th className="text-left px-3 py-3 font-semibold">{t('Type')}</th>
+                  <th className="text-left px-3 py-3 font-semibold">{t('Auteur')}</th>
+                  <th className="text-left px-3 py-3 font-semibold">{t('Description')}</th>
+                  <th className="text-left px-3 py-3 font-semibold">{t('IP')}</th>
                 </tr>
               </thead>
               <tbody className={chargement ? 'opacity-50' : ''}>
-                {!chargement && logs.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Aucun événement pour ces filtres.</td></tr>}
+                {!chargement && logs.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">{t('Aucun événement pour ces filtres.')}</td></tr>}
                 {logs.map(l => {
                   const s = LIBELLES_AUDIT[l.type_action] ?? { color: '#374151', bg: '#f3f4f6' }
                   return (
@@ -207,7 +209,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
                       <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{new Date(l.created_at).toLocaleString('fr-CA', { dateStyle: 'short', timeStyle: 'short' })}</td>
                       <td className="px-3 py-2.5"><span className="text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap" style={{ color: s.color, background: s.bg }}>{libelleAudit(l.type_action)}</span></td>
                       <td className="px-3 py-2.5">
-                        {l.acteur ? <Link href={`/admin/employes/${l.acteur.id}`} className="text-gray-900 hover:underline">{l.acteur.prenom} {l.acteur.nom}</Link> : <span className="text-gray-400">Système</span>}
+                        {l.acteur ? <Link href={`/admin/employes/${l.acteur.id}`} className="text-gray-900 hover:underline">{l.acteur.prenom} {l.acteur.nom}</Link> : <span className="text-gray-400">{t('Système')}</span>}
                         {l.cible && l.cible.id !== l.acteur?.id && <div className="text-xs text-gray-400">→ {l.cible.prenom} {l.cible.nom}</div>}
                       </td>
                       <td className="px-3 py-2.5 text-gray-700">{l.description}</td>
@@ -219,10 +221,10 @@ export default function JournalAudit({ employes, departements, cliniques }: {
             </table>
           </div>
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
-            <span className="text-gray-500">Page {page} / {pages}</span>
+            <span className="text-gray-500">{t('Page')}{' '}{page} / {pages}</span>
             <div className="flex gap-2">
-              <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40">← Précédente</button>
-              <button type="button" disabled={page >= pages} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40">Suivante →</button>
+              <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40">{t('← Précédente')}</button>
+              <button type="button" disabled={page >= pages} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40">{t('Suivante →')}</button>
             </div>
           </div>
         </section>

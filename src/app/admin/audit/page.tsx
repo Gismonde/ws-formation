@@ -1,9 +1,11 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient, filtrerEmployes, departementsVisibles, cliniquesAdministrees } from '@/lib/permissions'
 import { estAdministrateur } from '@/lib/cliniques'
 import JournalAudit from './JournalAudit'
 
 export default async function AuditPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!estAdministrateur(acteur.role)) redirect('/admin')

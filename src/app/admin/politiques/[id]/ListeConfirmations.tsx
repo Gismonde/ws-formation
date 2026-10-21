@@ -1,4 +1,5 @@
 'use client'
+import { useT } from '@/lib/i18n/client'
 import { useMemo, useState } from 'react'
 
 export type LigneConfirmation = {
@@ -15,6 +16,7 @@ const date = (iso: string) => new Date(iso).toLocaleString('fr-CA', { dateStyle:
 export default function ListeConfirmations({ lignes, filtreInitial, titre, version }: {
   lignes: LigneConfirmation[]; filtreInitial: 'tous' | 'confirmes' | 'attente'; titre: string; version: number
 }) {
+  const { t } = useT()
   const [filtre, setFiltre] = useState(filtreInitial)
   const [recherche, setRecherche] = useState('')
   const confirmes = lignes.filter(l => l.confirme_le).length
@@ -48,22 +50,22 @@ export default function ListeConfirmations({ lignes, filtreInitial, titre, versi
     <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
       <div className="flex flex-wrap items-center gap-2 p-4 border-b border-gray-100">
         {onglet('tous', 'Tous', lignes.length)}
-        {onglet('confirmes', '✅ Lu et compris', confirmes)}
+        {onglet('confirmes', t('✅ Lu et compris'), confirmes)}
         {onglet('attente', '⏳ En attente', lignes.length - confirmes)}
-        <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Rechercher un employé…"
+        <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder={t('Rechercher un employé…')}
           className="ml-auto border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-56" />
         <button type="button" onClick={exporter} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">⬇ Exporter (CSV)</button>
       </div>
       {visibles.length === 0 ? (
-        <p className="p-8 text-center text-sm text-gray-400">Aucun employé dans cette liste.</p>
+        <p className="p-8 text-center text-sm text-gray-400">{t('Aucun employé dans cette liste.')}</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-xs uppercase text-gray-500">
-              <th className="text-left px-5 py-2 font-semibold">Employé</th>
-              <th className="text-left px-3 py-2 font-semibold">Département</th>
-              <th className="text-left px-3 py-2 font-semibold">Clinique</th>
-              <th className="text-left px-3 py-2 font-semibold">Statut</th>
+              <th className="text-left px-5 py-2 font-semibold">{t('Employé')}</th>
+              <th className="text-left px-3 py-2 font-semibold">{t('Département')}</th>
+              <th className="text-left px-3 py-2 font-semibold">{t('Clinique')}</th>
+              <th className="text-left px-3 py-2 font-semibold">{t('Statut')}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +80,7 @@ export default function ListeConfirmations({ lignes, filtreInitial, titre, versi
                 <td className="px-3 py-2.5">
                   {l.confirme_le
                     ? <span className="text-green-700">✅ {date(l.confirme_le)}</span>
-                    : <span className="text-amber-700 font-medium">⏳ En attente</span>}
+                    : <span className="text-amber-700 font-medium">{t('⏳ En attente')}</span>}
                 </td>
               </tr>
             ))}
