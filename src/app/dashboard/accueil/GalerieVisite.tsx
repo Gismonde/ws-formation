@@ -22,7 +22,7 @@ export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
         {photos.map((p, i) => (
           <button key={p.url + i} type="button" onClick={() => setOuverte(i)} aria-label={p.legende || t('Photo {n}', { n: i + 1 })}
             style={{ position: 'relative', border: 'none', padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in', aspectRatio: '4 / 3', background: 'var(--accent-clinique-clair)' }}>
@@ -38,7 +38,7 @@ export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
         <div role="dialog" aria-modal="true" onClick={() => setOuverte(null)}
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photos[ouverte].url} alt={photos[ouverte].legende} style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '8px' }} onClick={e => e.stopPropagation()} />
+          <img src={photos[ouverte].url} alt={photos[ouverte].legende} style={{ width: 'min(92vw, 1200px)', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px' }} onClick={e => e.stopPropagation()} />
           {photos[ouverte].legende && <p style={{ position: 'absolute', bottom: '18px', color: '#fff', fontSize: '14px', margin: 0 }}>{photos[ouverte].legende}</p>}
           {photos.length > 1 && <>
             <button type="button" aria-label={t('Photo précédente')} onClick={e => { e.stopPropagation(); setOuverte((ouverte - 1 + photos.length) % photos.length) }} style={fleche('left')}>‹</button>
