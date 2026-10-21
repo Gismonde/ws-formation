@@ -12,6 +12,25 @@ export type ContenuAccueil = {
   infos: string
 }
 
+// Photos de l’aménagement du WSSC (Entre Quatre Murs / Espace 313), hébergées dans le stockage de la plateforme
+const B_WSSC = 'https://vtuegggoruiowjxoiocd.supabase.co/storage/v1/object/public/lesson-images/cdee052a-af6e-4209-a182-5f9aa074abf9/'
+const photosWssc = [
+  { url: B_WSSC + '1792597624209.webp', legende: 'Accueil' },
+  { url: B_WSSC + '1792597627366.webp', legende: 'Réception' },
+  { url: B_WSSC + '1792597629056.webp', legende: 'Salle d’attente' },
+  { url: B_WSSC + '1792597631315.webp', legende: 'Coin café' },
+  { url: B_WSSC + '1792597634377.webp', legende: 'Bibliothèque' },
+  { url: B_WSSC + '1792597641381.webp', legende: 'Salle de réunion' },
+  { url: B_WSSC + '1792597644117.webp', legende: 'Salon des patients' },
+  { url: B_WSSC + '1792597648047.webp', legende: 'Salle de réunion — mur terracotta' },
+  { url: B_WSSC + '1792597654000.webp', legende: 'Bureau de consultation' },
+  { url: B_WSSC + '1792597658524.webp', legende: 'Salon près des fenêtres' },
+  { url: B_WSSC + '1792597660158.webp', legende: 'Vestiaire' },
+  { url: B_WSSC + '1792597662415.webp', legende: 'Salle de traitement' },
+  { url: B_WSSC + '1792597663504.webp', legende: 'Corridor vers la salle d’examen' },
+  { url: B_WSSC + '1792597665360.webp', legende: 'Corridor' },
+]
+
 // Galerie « Enjoyable interior and experience » de wssurgical.com/about-us (images hébergées par le WSSC)
 const galerieWssc = [
   'YXNzZXRzL2ltYWdlcy93b3JrLXNwYWNlLWltZy0xLmpwZw==?fm=webp&s=4453a36bcfbf9a87e788700000452796',
@@ -55,22 +74,19 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
     banniere: {
       titre: 'Bienvenue au Westmount Square Surgical Center',
       texte: 'Votre portail de formation : retrouvez vos formations, les politiques et les procédures de la clinique, et découvrez nos installations.',
-      image: '/cliniques/wssc/salon.webp',
+      image: B_WSSC + '1792597627366.webp',
     },
     cartes: [
-      { titre: 'Visite virtuelle', texte: 'Découvrez nos installations en photos.', image: '/cliniques/wssc/entree.webp', lien: '#visite' },
-      { titre: 'Site du WSSC', texte: 'Chirurgies, informations aux patients et articles.', image: '/cliniques/wssc/bureau.webp', lien: 'https://wssurgical.com/' },
-      { titre: 'Bibliothèque', texte: 'Procédures (SOP) et documents de référence.', image: '/cliniques/wssc/salle-operation.webp', lien: '/dashboard/sop' },
-      { titre: 'À propos', texte: 'Notre équipe et nos salles d’opération.', image: '/cliniques/wssc/salle-reveil.webp', lien: 'https://wssurgical.com/about-us' },
+      { titre: 'Visite virtuelle', texte: 'Découvrez nos installations en photos.', image: B_WSSC + '1792597624209.webp', lien: '#visite' },
+      { titre: 'Site du WSSC', texte: 'Chirurgies, informations aux patients et articles.', image: B_WSSC + '1792597654000.webp', lien: 'https://wssurgical.com/' },
+      { titre: 'Bibliothèque', texte: 'Procédures (SOP) et documents de référence.', image: B_WSSC + '1792597634377.webp', lien: '/dashboard/sop' },
+      { titre: 'À propos', texte: 'Notre équipe et nos salles d’opération.', image: B_WSSC + '1792597662415.webp', lien: 'https://wssurgical.com/about-us' },
     ],
     visite: {
       titre: 'Visite virtuelle',
       texte: 'Un aperçu des lieux où vous travaillez.',
       photos: [
-        { url: '/cliniques/wssc/salon.webp', legende: 'Salon' },
-        { url: '/cliniques/wssc/entree.webp', legende: 'Entrée' },
-        { url: '/cliniques/wssc/salle-reveil.webp', legende: 'Salle de réveil' },
-        { url: '/cliniques/wssc/salle-operation.webp', legende: 'Salle d’opération' },
+        ...photosWssc,
         ...galerieWssc,
       ],
     },
@@ -112,6 +128,19 @@ const ACCUEIL_EN: Record<string, string> = {
   'Salon': 'Lounge',
   'Entrée': 'Entrance',
   'Salle de réveil': 'Recovery room',
+  'Accueil': 'Front desk',
+  'Réception': 'Reception',
+  'Salle d’attente': 'Waiting room',
+  'Coin café': 'Coffee corner',
+  'Salle de réunion': 'Meeting room',
+  'Salon des patients': 'Patient lounge',
+  'Salle de réunion — mur terracotta': 'Meeting room — terracotta wall',
+  'Bureau de consultation': 'Consultation office',
+  'Salon près des fenêtres': 'Lounge by the windows',
+  'Vestiaire': 'Locker room',
+  'Salle de traitement': 'Treatment room',
+  'Corridor vers la salle d’examen': 'Hallway to the exam room',
+  'Corridor': 'Hallway',
 }
 export const ACCUEIL_PAR_DEFAUT_EN: Record<Clinique, ContenuAccueil> = {
   CMC: traduireDefaut(ACCUEIL_PAR_DEFAUT.CMC, ACCUEIL_EN),
