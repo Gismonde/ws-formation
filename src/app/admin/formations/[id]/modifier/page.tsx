@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import { ChampPrerequis } from '@/components/ChampPrerequis'
+import { ChampCategorie } from '@/components/ChampCategorie'
 import type { CliniqueContenu } from '@/lib/cliniques'
 
 interface Formation {
@@ -21,6 +22,9 @@ interface Formation {
   image_couverture: string | null
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
+  obligatoire?: boolean | null
+  /** Absent tant que la migration formations_certificat.sql n'est pas exécutée */
+  delivre_certificat?: boolean
 }
 
 interface ModuleForm {
@@ -99,6 +103,8 @@ export default function ModifierFormationPage() {
         prerequis_ids: formation.prerequis_ids ?? [],
         image_couverture: formation.image_couverture || null,
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
+        obligatoire: formation.obligatoire === true,
+        ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
@@ -182,17 +188,7 @@ export default function ModifierFormationPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Section / Catégorie</label>
-              <select value={formation.categorie || ''} onChange={e => updateField('categorie', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                <option value="Administration médicale">Administration médicale</option>
-                <option value="Confidentialité &amp; Loi 25">Confidentialité &amp; Loi 25</option>
-                <option value="DSQ">DSQ</option>
-                <option value="Recherche clinique">Recherche clinique</option>
-                <option value="SOP &amp; politiques internes">SOP &amp; politiques internes</option>
-                <option value="Sécurité informatique">Sécurité informatique</option>
-                <option value="Santé &amp; sécurité">Santé &amp; sécurité</option>
-                <option value="Onboarding nouveaux employés">Onboarding nouveaux employés</option>
-                <option value="Formation continue">Formation continue</option>
-              </select>
+              <ChampCategorie valeur={formation.categorie || ''} onChange={v => updateField('categorie', v)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -246,6 +242,22 @@ export default function ModifierFormationPage() {
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="sondage" checked={formation.sondage_actif} onChange={e => updateField('sondage_actif', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
                 <label htmlFor="sondage" className="text-sm font-medium text-gray-700">Proposer le sondage de satisfaction à la fin de la formation</label>
+              </div>
+            )}
+            <div className="flex items-start gap-3">
+              <input type="checkbox" id="obligatoire" checked={formation.obligatoire === true} onChange={e => updateField('obligatoire', e.target.checked)} className="h-4 w-4 mt-0.5 text-blue-600 rounded" />
+              <label htmlFor="obligatoire" className="text-sm font-medium text-gray-700">
+                Formation obligatoire (LSST)
+                <span className="block text-xs font-normal text-gray-500">Signalée comme obligatoire dans « Mes formations », la conformité et les rapports. Une formation non cochée peut quand même être assignée.</span>
+              </label>
+            </div>
+            {formation.delivre_certificat !== undefined && (
+              <div className="flex items-start gap-3">
+                <input type="checkbox" id="certificat" checked={formation.delivre_certificat} onChange={e => updateField('delivre_certificat', e.target.checked)} className="h-4 w-4 mt-0.5 text-blue-600 rounded" />
+                <label htmlFor="certificat" className="text-sm font-medium text-gray-700">
+                  Délivrer un certificat de complétion
+                  <span className="block text-xs font-normal text-gray-500">Si décoché, la réussite est enregistrée mais aucun certificat n’est émis ni téléchargeable.</span>
+                </label>
               </div>
             )}
             <div className="flex items-center gap-3">

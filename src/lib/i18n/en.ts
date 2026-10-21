@@ -396,4 +396,5 @@ export const EN: Record<string, string> = {
   '← Retour à l’accueil': '← Back to home',
   'Cette politique est rédigée en français.': 'This privacy policy is published in French. For an English version, contact the privacy officer at confidentialite@wssurgical.com.',
   'Gestion des formations, suivi pédagogique, certificats, conformité à la Loi 25 (Québec).': 'Training management, learning follow-up, certificates, compliance with Quebec’s Law 25.',
+  'Formation réussie : votre réussite est enregistrée.': 'Training passed: your success has been recorded.',
 }
