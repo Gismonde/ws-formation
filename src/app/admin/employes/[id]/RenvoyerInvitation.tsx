@@ -1,16 +1,18 @@
 'use client'
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useState } from 'react'
 
 export default function RenvoyerInvitation({ employeId, email }: { employeId: string; email: string }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const [etat, setEtat] = useState<'repos' | 'envoi' | 'ok' | 'lien' | 'erreur'>('repos')
   const [lien, setLien] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
   const [copie, setCopie] = useState(false)
 
   async function envoyer() {
-    if (!confirm(t('Envoyer à {email} un lien pour créer ou réinitialiser son mot de passe ?', { email }))) return
+    if (!(await confirmer({ message: t('Envoyer à {email} un lien pour créer ou réinitialiser son mot de passe ?', { email }), bouton: t('Envoyer') }))) return
     setEtat('envoi')
     const res = await fetch('/api/admin/renvoyer-invitation', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeId }),

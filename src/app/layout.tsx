@@ -3,6 +3,7 @@ import Link from "next/link"
 import "./globals.css"
 import { i18n } from "@/lib/i18n/serveur"
 import { FournisseurLangue } from "@/lib/i18n/client"
+import { FournisseurConfirmation } from "@/components/Confirmation"
 
 export const metadata: Metadata = {
   title: "WS Formation",
@@ -15,6 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={langue}>
       <body style={{ display: "flex", flexDirection: "column", minHeight: "100vh", margin: 0 }}>
         <FournisseurLangue langue={langue}>
+        <FournisseurConfirmation>
           <main style={{ flex: 1 }}>
             {children}
           </main>
@@ -43,6 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </a>
             </span>
           </footer>
+        </FournisseurConfirmation>
         </FournisseurLangue>
       </body>
     </html>

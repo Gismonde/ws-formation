@@ -2,6 +2,7 @@
 // Sélection de plusieurs employés dans la liste (cases à cocher rendues par le serveur)
 // et actions groupées : exporter (Excel ou ZIP), archiver, réactiver.
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -10,6 +11,7 @@ const VIDE: Selection = { ids: [], archivables: [], reactivables: [] }
 
 export default function ZoneSelection({ children }: { children: React.ReactNode }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const zone = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const [sel, setSel] = useState<Selection>(VIDE)
@@ -57,7 +59,7 @@ export default function ZoneSelection({ children }: { children: React.ReactNode 
 
   async function archiver(actif: boolean) {
     const ids = actif ? sel.reactivables : sel.archivables
-    if (!window.confirm(actif ? t('Réactiver {n} employé(s) ?', { n: ids.length }) : t('Archiver {n} employé(s) ? Leurs sessions seront fermées.', { n: ids.length }))) return
+    if (!(await confirmer({ message: actif ? t('Réactiver {n} employé(s) ?', { n: ids.length }) : t('Archiver {n} employé(s) ? Leurs sessions seront fermées.', { n: ids.length }), bouton: actif ? t('Réactiver') : t('Archiver'), danger: !actif }))) return
     setEnCours(true); setMessage(null)
     const r = await fetch('/api/admin/employes/archiver', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, actif }),

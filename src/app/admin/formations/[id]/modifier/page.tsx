@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -33,6 +34,7 @@ interface Formation {
 
 export default function ModifierFormationPage() {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const params = useParams()
   const router = useRouter()
   const supabase = createClient()
@@ -104,7 +106,7 @@ export default function ModifierFormationPage() {
 
   async function handleDelete() {
     if (!formation) return
-    if (!confirm(t('Êtes-vous sûr de vouloir supprimer cette formation ? Cette action est irréversible.'))) return
+    if (!(await confirmer({ titre: t('Supprimer la formation'), message: t('Êtes-vous sûr de vouloir supprimer cette formation ? Cette action est irréversible.'), bouton: t('Supprimer'), danger: true }))) return
 
     const { error } = await supabase.from('formations').delete().eq('id', formation.id)
     if (error) { setError(error.message); return }

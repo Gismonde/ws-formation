@@ -9,6 +9,7 @@
 //  - quiz construit à la souris
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import {
@@ -59,6 +60,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   onModeleAttestation?: () => void
 }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const [blocs, setBlocs] = useState<Bloc[]>(() => [...blocsInitiaux].sort((a, b) => a.ordre - b.ordre))
   const [etat, setEtat] = useState<EtatSauvegarde>('ok')
   const [erreur, setErreur] = useState<string | null>(null)
@@ -159,13 +161,13 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   }, [blocs, leconId, renumeroter])
 
   const supprimer = useCallback(async (id: string) => {
-    if (!confirm('Supprimer ce bloc ?')) return
+    if (!(await confirmer({ message: t('Supprimer ce bloc ?'), bouton: t('Supprimer'), danger: true }))) return
     clearTimeout(minuteries.current[id]); delete enAttente.current[id]
     setEtat('en_cours')
     const res = await deleteContentBlock(id)
     if (!res.success) { setEtat('erreur'); setErreur(res.error); return }
     await renumeroter(blocs.filter(b => b.id !== id))
-  }, [blocs, renumeroter])
+  }, [blocs, renumeroter, confirmer, t])
 
   const dupliquer = useCallback(async (b: Bloc) => {
     const i = blocs.findIndex(x => x.id === b.id)
@@ -179,7 +181,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
     const [b] = liste.splice(de, 1)
     liste.splice(vers > de ? vers - 1 : vers, 0, b)
     renumeroter(liste)
-  }, [blocs, renumeroter])
+  }, [blocs, renumeroter, confirmer, t])
 
   // Coller une capture d'écran n'importe où dans l'éditeur (hors champ de texte) → nouveau bloc image
   useEffect(() => {

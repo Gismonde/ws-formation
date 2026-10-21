@@ -1,5 +1,6 @@
 'use client'
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChoixDocument, { DocumentEnvoye } from '@/components/politiques/ChoixDocument'
@@ -22,6 +23,7 @@ type Props = {
 
 export default function ActionsPolitique(p: Props) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const router = useRouter()
   const [panneau, setPanneau] = useState<null | 'version' | 'modifier'>(null)
   const [msg, setMsg] = useState<{ ok: boolean; texte: string } | null>(null)
@@ -52,7 +54,7 @@ export default function ActionsPolitique(p: Props) {
         {p.actif && p.enAttente > 0 && (
           <button className={btn + ' border-amber-500 text-amber-800 bg-amber-50 hover:bg-amber-100'} disabled={enCours || !p.courrielsActifs}
             title={p.courrielsActifs ? '' : t('Envoi de courriels pas encore configuré')}
-            onClick={() => confirm(t('Envoyer un rappel par courriel aux {n} employé(s) en attente ?', { n: p.enAttente })) &&
+            onClick={async () => (await confirmer({ message: t('Envoyer un rappel par courriel aux {n} employé(s) en attente ?', { n: p.enAttente }), bouton: t('Envoyer') })) &&
               appeler({ action: 'rappel' }, d => t('Rappel envoyé à {n} employé(s).', { n: Number(d.courriels) }))}>
             {t('📧 Relancer les {n} en attente', { n: p.enAttente })}
           </button>
@@ -62,7 +64,7 @@ export default function ActionsPolitique(p: Props) {
             <button className={btn + ' border-blue-600 text-blue-700 bg-white hover:bg-blue-50'} onClick={() => setPanneau(panneau === 'version' ? null : 'version')}>{t('⬆ Publier une nouvelle version')}</button>
             <button className={btn + ' border-gray-300 text-gray-700 bg-white hover:bg-gray-50'} onClick={() => setPanneau(panneau === 'modifier' ? null : 'modifier')}>{t('✏️ Modifier titre / public')}</button>
             <button className={btn + ' border-gray-300 text-gray-500 bg-white hover:bg-gray-50'} disabled={enCours}
-              onClick={() => confirm(t('Archiver cette politique ? Elle ne sera plus affichée aux employés (les confirmations sont conservées).')) &&
+              onClick={async () => (await confirmer({ message: t('Archiver cette politique ? Elle ne sera plus affichée aux employés (les confirmations sont conservées).'), bouton: t('Archiver') })) &&
                 appeler({ action: 'archiver' }, () => t('Politique archivée.'))}>{t('🗄 Archiver')}</button>
           </>
         )}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/lib/i18n/client'
+import { useConfirmer } from '@/components/Confirmation'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { CLINIQUE_INFO, type Clinique } from '@/lib/cliniques'
@@ -54,6 +55,7 @@ function deplacer<T>(liste: T[], i: number, d: -1 | 1): T[] {
 
 export default function EditeurAccueil({ pages }: { pages: Page[] }) {
   const { t } = useT()
+  const confirmer = useConfirmer()
   const cliniques = pages.map(p => p.clinique).filter((k, i, l) => l.indexOf(k) === i)
   const [clinique, setClinique] = useState(cliniques[0])
   const [langue, setLangue] = useState<'fr' | 'en'>('fr')
@@ -79,7 +81,7 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
     else setEtat({ type: 'erreur', texte: d.error ?? 'Enregistrement impossible' })
   }
   async function retablir() {
-    if (!confirm(t('Rétablir le contenu par défaut de cette page ? Vos modifications seront perdues.'))) return
+    if (!(await confirmer({ message: t('Rétablir le contenu par défaut de cette page ? Vos modifications seront perdues.'), bouton: t('Rétablir'), danger: true }))) return
     setEnCours(true); setEtat(null)
     const r = await fetch(`/api/admin/accueil?clinique=${clinique}&langue=${langue}`, { method: 'DELETE' })
     const d = await r.json().catch(() => ({}))
