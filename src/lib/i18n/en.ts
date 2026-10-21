@@ -1238,4 +1238,8 @@ export const EN: Record<string, string> = {
   '{n} tentative(s) déjà passée(s). Les résultats obtenus restent valides ; les nouvelles tentatives utiliseront la version modifiée.': '{n} attempt(s) already taken. Existing results stay valid; new attempts will use the updated version.',
   'L’employé y accède après avoir terminé tous les modules. Cochez la ou les bonnes réponses : l’employé en choisit une, et toute réponse cochée est acceptée.': 'Employees take it after completing all modules. Tick the correct answer(s): the employee picks one, and any ticked answer is accepted.',
   'L’employé y accède après avoir terminé tous les modules. Cochez la ou les bonnes réponses : l’employé en choisit une, et toute réponse cochée est acceptée.': 'Employees take it after completing all modules. Tick the correct answer(s): the employee picks one, and any ticked answer is accepted.',
+  'Le contenu de la formation se modifie dans l’éditeur de cours.': 'The training content is edited in the course editor.',
+  'Modules, leçons et questionnaire': 'Modules, lessons and quiz',
+  'Ouvrir l’éditeur de cours →': 'Open the course editor →',
+  'Sauvegarder': 'Save',
 }

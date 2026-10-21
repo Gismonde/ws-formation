@@ -5,11 +5,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
-import { getActeur, peutCreerFormations } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, cliniquesContenuGerables } from '@/lib/permissions'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
 import BoutonPublier from './BoutonPublier'
+import DupliquerFormation from './DupliquerFormation'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -24,7 +25,8 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const { data: emp } = await supabase.from('employes').select('role').eq('auth_user_id', user.id).single()
   if (!emp || !['super_admin', 'admin', 'gestionnaire'].includes(emp.role)) redirect('/dashboard/accueil')
 
-  const peutCreer = peutCreerFormations(await getActeur())
+  const acteurCourant = await getActeur()
+  const peutCreer = peutCreerFormations(acteurCourant)
 
   const res = await getFormationWithModules(id)
   if (!res.success || !res.data) notFound()
@@ -91,7 +93,12 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <p className="text-gray-600 leading-relaxed">{formation.description}</p>
               )}
             </div>
-            {peutCreer && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />}
+            {peutCreer && (
+              <div className="flex items-start gap-2">
+                <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
+                <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />
+              </div>
+            )}
           </div>
 
           {/* Statistiques */}
