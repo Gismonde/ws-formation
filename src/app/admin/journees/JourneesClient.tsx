@@ -59,6 +59,7 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
   const vierge = { raison: raisons[0], autre: '', nom: '', clinique: cliniques.includes('LES_DEUX') ? 'LES_DEUX' as CliniqueContenu : cliniques[0], formation_ids: [] as string[], politique_ids: [] as string[], librairie_ids: [] as string[], employe_ids: [] as string[], date_journee: '', date_echeance: '', note: '' }
   const [f, setF] = useState(vierge)
   const [modeleId, setModeleId] = useState('')
+  const [enEdition, setEnEdition] = useState<string | null>(null)
   const [envoi, setEnvoi] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null)
   const [ouverte, setOuverte] = useState<string | null>(null)
@@ -77,16 +78,16 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
       librairie_ids: m.librairie_ids.filter(i => librairie.some(o => o.id === i)), note: m.note ?? '' }))
   }
 
-  const envoyer = async (modele: boolean) => {
+  const envoyer = async (modele: boolean, miseAJour = false) => {
     setEnvoi(true); setMessage(null)
-    const r = await fetch('/api/admin/journees', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await fetch(miseAJour && enEdition ? `/api/admin/journees/${enEdition}` : '/api/admin/journees', {
+      method: miseAJour && enEdition ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...f, raison: raisonFinale, nom: f.nom.trim() || raisonFinale, modele }),
     })
     const d = await r.json().catch(() => ({}))
     setEnvoi(false)
     if (!r.ok) { setMessage({ ok: false, texte: d.error ?? t('Erreur') }); return }
-    if (modele) setMessage({ ok: true, texte: t('Modèle « {nom} » enregistré.', { nom: d.journee.nom }) })
+    if (modele) { setMessage({ ok: true, texte: t('Modèle « {nom} » enregistré.', { nom: d.journee.nom }) }); setEnEdition(null) }
     else {
       const nf = (d.formations as { creees: number }[]).reduce((s, x) => s + x.creees, 0)
       const np = (d.politiques as { ajoutes: number }[]).reduce((s, x) => s + x.ajoutes, 0)
@@ -150,13 +151,23 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
           <Selection titre={t('📚 Informations à visionner (librairie)')} options={librairie} choisis={f.librairie_ids} onChange={ids => setF({ ...f, librairie_ids: ids })} vide={t('Aucun élément')} />
         </div>
         <div className="mt-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Message aux employés (optionnel)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('Message aux employés (optionnel)')}</label>
           <textarea value={f.note} onChange={e => setF({ ...f, note: e.target.value })} rows={2} maxLength={1000} className={champ} placeholder={t('Ex. : Présentez-vous à 8 h à la réception ; la journée se termine vers 15 h.')} />
         </div>
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap justify-end items-center gap-2">
+          {enEdition && (
+            <>
+              <span className="text-sm text-amber-700 mr-auto">✏️ {t('Modification du modèle « {nom} »', { nom: modeles.find(m => m.id === enEdition)?.nom ?? '' })}</span>
+              <button type="button" onClick={() => setEnEdition(null)} className="text-sm px-3 py-2 text-gray-600">{t('Annuler la modification')}</button>
+              <button type="button" disabled={envoi || !raisonFinale || contenu === 0} onClick={() => envoyer(true, true)}
+                className="text-sm font-semibold px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40">
+                {t('Mettre à jour le modèle')}
+              </button>
+            </>
+          )}
           <button type="button" disabled={envoi || !raisonFinale || contenu === 0} onClick={() => envoyer(true)}
             className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-            {t('Enregistrer comme modèle')}
+            {enEdition ? t('Enregistrer comme nouveau modèle') : t('Enregistrer comme modèle')}
           </button>
         </div>
 
@@ -195,7 +206,8 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
                   <div className="text-xs text-gray-500">{m.raison} · {CLINIQUE_CONTENU_LABEL[m.clinique]} · {m.formation_ids.length} formation(s), {m.politique_ids.length} politique(s), {m.librairie_ids.length}{' '}{t('à visionner')}</div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => { partirDe(m.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-blue-600">{t('Utiliser')}</button>
+                  <button onClick={() => { partirDe(m.id); setEnEdition(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-blue-600">{t('Utiliser')}</button>
+                  <button onClick={() => { partirDe(m.id); setEnEdition(m.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-xs font-semibold text-amber-700">{t('Modifier')}</button>
                   <button onClick={() => supprimer(m)} className="text-xs text-red-600">{t('Supprimer')}</button>
                 </div>
               </div>
