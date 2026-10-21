@@ -6,6 +6,7 @@ import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO,
 import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
+import { RechercheGlobale } from '@/components/RechercheGlobale'
 import { i18n } from '@/lib/i18n/serveur'
 
 const adminNav = [
@@ -109,7 +110,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       <main className='admin-main-content'>
         <header className='admin-entete'>
-          <div style={{ fontWeight: '600', fontSize: '16px', color: '#1a1f36' }}>{t('WS Formation — Administration')}</div>
+          <div style={{ fontWeight: '600', fontSize: '16px', color: '#1a1f36', whiteSpace: 'nowrap' }}>{t('WS Formation — Administration')}</div>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}><RechercheGlobale /></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <ChoixLangue />
             <span style={{ fontSize: '14px', color: '#6b7280' }}>{user.email}</span>
