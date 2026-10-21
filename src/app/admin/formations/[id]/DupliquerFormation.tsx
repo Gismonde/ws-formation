@@ -41,7 +41,7 @@ export default function DupliquerFormation({ formationId, titre, clinique, clini
             {erreur && <p className="text-sm text-red-600 mb-3">{erreur}</p>}
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setOuvert(false)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700">{t('Annuler')}</button>
-              <button type="button" onClick={dupliquer} disabled={envoi || !nom.trim()} className="text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50">{envoi ? t('Copie en cours…') : t('Dupliquer')}</button>
+              <button type="button" onClick={dupliquer} disabled={envoi || !nom.trim()} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">{envoi ? t('Copie en cours…') : t('Dupliquer')}</button>
             </div>
           </div>
         </div>

@@ -94,7 +94,7 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
     <div className="max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Page d&apos;accueil des employés</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('Page d’accueil des employés')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('Première page affichée aux employés après la connexion. Une page par clinique.')}</p>
         </div>
         <Link href="/dashboard/accueil" className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{t('👁 Voir la page')}</Link>
@@ -118,7 +118,7 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
         </div>
       </div>
       {langue === 'en' && !perso[active] && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-3 text-sm mb-5">
+        <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl p-3 text-sm mb-5">
           {t('Version vue par les employés qui ont choisi l’anglais. Elle affiche le texte anglais par défaut tant qu’elle n’a pas été enregistrée ici.')}
         </div>
       )}

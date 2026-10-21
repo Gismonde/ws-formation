@@ -74,7 +74,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
               <div className="flex gap-2">
                 <input readOnly value={success.lien} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white" onFocus={e => e.target.select()} />
                 <button type="button" onClick={() => { navigator.clipboard.writeText(success.lien!); setCopie(true) }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{copie ? t('Copié ✓') : t('Copier')}</button>
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">{copie ? t('Copié ✓') : t('Copier')}</button>
               </div>
             )}
           </div>
@@ -87,7 +87,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
     )
   }
 
-  const inputCls = "w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  const inputCls = "w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
   const labelCls = "block text-sm font-medium text-gray-700 mb-1"
 
   return (
@@ -127,7 +127,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       />
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+          className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
           {loading ? t('Création en cours...') : t('Créer l’employé')}
         </button>
         <a href="/admin/employes"

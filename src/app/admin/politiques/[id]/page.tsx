@@ -55,7 +55,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
 
   return (
     <div className="max-w-5xl">
-      <a href="/admin/politiques" className="text-sm text-blue-600 hover:underline">{t('← Politiques')}</a>
+      <a href="/admin/politiques" className="text-sm text-indigo-600 hover:underline">{t('← Politiques')}</a>
       <div className="flex flex-wrap items-start gap-4 mt-2 mb-4">
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-2xl font-bold text-gray-900">
@@ -66,7 +66,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
           </p>
           {pol.description && <p className="text-sm text-gray-700 mt-2">{pol.description}</p>}
           {urls[pol.fichier] && (
-            <a href={urls[pol.fichier]} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm text-blue-700 hover:underline">
+            <a href={urls[pol.fichier]} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm text-indigo-700 hover:underline">
               📄 Ouvrir le document{pol.nom_fichier ? ` (${pol.nom_fichier})` : ''}
             </a>
           )}
@@ -117,7 +117,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
                 <span className="font-semibold w-10">v{v.version}</span>
                 <span className="text-gray-500">{new Date(v.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</span>
                 <span className="text-gray-700 flex-1">{v.note_version ?? ''}</span>
-                {urls[v.fichier] && <a href={urls[v.fichier]} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">📄 {v.nom_fichier ?? 'Document'}</a>}
+                {urls[v.fichier] && <a href={urls[v.fichier]} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline">📄 {v.nom_fichier ?? 'Document'}</a>}
               </li>
             ))}
           </ul>

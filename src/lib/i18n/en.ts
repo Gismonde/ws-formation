@@ -1370,4 +1370,7 @@ export const EN: Record<string, string> = {
   'Activez la double authentification.': 'Enable two-factor authentication.',
   'Elle sera bientôt obligatoire pour les administrateurs.': 'It will soon be required for administrators.',
   'L’activer maintenant →': 'Enable it now →',
+  'Créer un employé': 'Create an employee',
+  'Créer un nouveau compte employé': 'Create a new employee account',
+  'Page d’accueil des employés': 'Employee home page',
 }

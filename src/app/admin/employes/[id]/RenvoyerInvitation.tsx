@@ -31,7 +31,7 @@ export default function RenvoyerInvitation({ employeId, email }: { employeId: st
           <p className="text-xs text-gray-500">{t('L’employé n’a pas reçu son invitation ou a oublié son mot de passe ?')}</p>
         </div>
         <button type="button" onClick={envoyer} disabled={etat === 'envoi'}
-          className="px-4 py-2 border border-blue-600 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 disabled:opacity-50">
+          className="px-4 py-2 border border-indigo-600 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 disabled:opacity-50">
           {etat === 'envoi' ? 'Envoi…' : t('📧 Renvoyer l’invitation')}
         </button>
       </div>
@@ -43,7 +43,7 @@ export default function RenvoyerInvitation({ employeId, email }: { employeId: st
           <div className="flex gap-2">
             <input readOnly value={lien} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs" onFocus={e => e.target.select()} />
             <button type="button" onClick={() => { navigator.clipboard.writeText(lien); setCopie(true) }}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">{copie ? t('Copié ✓') : t('Copier')}</button>
+              className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm">{copie ? t('Copié ✓') : t('Copier')}</button>
           </div>
         </div>
       )}

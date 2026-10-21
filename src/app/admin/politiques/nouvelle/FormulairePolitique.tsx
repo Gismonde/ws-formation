@@ -42,7 +42,7 @@ export default function FormulairePolitique({ cliniques, departements, courriels
     router.refresh()
   }
 
-  const inputCls = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+  const inputCls = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
   return (
     <form onSubmit={publier} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
       {erreur && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{erreur}</div>}
@@ -67,7 +67,7 @@ export default function FormulairePolitique({ cliniques, departements, courriels
         </span>
       </label>
       <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={enCours} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm">
+        <button type="submit" disabled={enCours} className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm">
           {enCours ? 'Publication…' : t('Publier la politique')}
         </button>
         <a href="/admin/politiques" className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">{t('Annuler')}</a>

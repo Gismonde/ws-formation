@@ -67,7 +67,7 @@ export function RechercheGlobale() {
 
   const types = Array.from(new Set(res.map(r => r.type)))
   return (
-    <div ref={boite} className="relative w-full max-w-md">
+    <div ref={boite} className="relative w-full max-w-md min-w-[260px]">
       <input
         ref={champ} value={q} onChange={e => { setQ(e.target.value); setOuvert(true) }} onFocus={() => setOuvert(true)} onKeyDown={clavier}
         placeholder={t('Rechercher un employé, une formation, une politique…')} aria-label={t('Recherche globale')}

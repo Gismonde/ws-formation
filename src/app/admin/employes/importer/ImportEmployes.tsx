@@ -139,7 +139,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
               </tbody>
             </table>
           </div>
-          <button type="button" disabled={valides.length === 0 || envoi !== null} onClick={() => envoyer('creer')} className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50">
+          <button type="button" disabled={valides.length === 0 || envoi !== null} onClick={() => envoyer('creer')} className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
             {envoi === 'creer' ? t('Création en cours…') : t('Créer {n} employé(s) et envoyer les invitations', { n: valides.length })}
           </button>
         </div>

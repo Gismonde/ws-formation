@@ -264,7 +264,7 @@ export default function DepuisPPPage() {
   const labelStyle: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }
   const btnSecStyle: React.CSSProperties = { background: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db", borderRadius: "6px", padding: "6px 12px", fontSize: "13px", cursor: "pointer" }
   const btnDangerStyle: React.CSSProperties = { background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: "4px", padding: "3px 8px", fontSize: "12px", cursor: "pointer" }
-  const btnStyle: React.CSSProperties = { background: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", padding: "8px 18px", fontSize: "14px", cursor: "pointer", fontWeight: "600" }
+  const btnStyle: React.CSSProperties = { background: "#4f46e5", color: "#fff", border: "none", borderRadius: "6px", padding: "8px 18px", fontSize: "14px", cursor: "pointer", fontWeight: "600" }
 
   // Loading overlay
   if (isLoading) {
@@ -278,11 +278,11 @@ export default function DepuisPPPage() {
             const isDone = loadingStep > stepNum
             const isActive = loadingStep === stepNum
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: isDone ? "#f0fdf4" : isActive ? "#eff6ff" : "#f9fafb", border: "1px solid " + (isDone ? "#bbf7d0" : isActive ? "#bfdbfe" : "#e5e7eb") }}>
-                <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700", background: isDone ? "#16a34a" : isActive ? "#2563eb" : "#d1d5db", color: "#fff", flexShrink: 0 }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: isDone ? "#f0fdf4" : isActive ? "#eef2ff" : "#f9fafb", border: "1px solid " + (isDone ? "#bbf7d0" : isActive ? "#c7d2fe" : "#e5e7eb") }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700", background: isDone ? "#16a34a" : isActive ? "#4f46e5" : "#d1d5db", color: "#fff", flexShrink: 0 }}>
                   {isDone ? "✓" : stepNum}
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: isActive ? "600" : "400", color: isDone ? "#15803d" : isActive ? "#1d4ed8" : "#9ca3af" }}>
+                <span style={{ fontSize: "14px", fontWeight: isActive ? "600" : "400", color: isDone ? "#15803d" : isActive ? "#4338ca" : "#9ca3af" }}>
                   {step}{isActive ? "..." : ""}
                 </span>
               </div>
@@ -353,7 +353,7 @@ export default function DepuisPPPage() {
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
         <Link href="/admin/formations" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: "#f3f4f6", color: "#374151", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>{t('← Retour')}</Link>
         <div>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#111827", margin: 0 }}>{t('Créer depuis un PowerPoint')}</h1>
+          <h1 style={{ fontSize: "24px", fontWeight: "700", color: "#111827", margin: 0 }}>{t('Créer depuis un PowerPoint')}</h1>
           <p style={{ color: "#6b7280", fontSize: "14px", margin: "4px 0 0 0" }}>{t('Importez un fichier .ppt ou .pptx pour générer une formation')}</p>
         </div>
       </div>

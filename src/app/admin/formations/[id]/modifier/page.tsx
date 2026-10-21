@@ -113,7 +113,7 @@ export default function ModifierFormationPage() {
     router.push('/admin/formations')
   }
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>
+  if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
   if (!formation) return <div className="p-8 text-center text-gray-500">{t('Formation introuvable.')}</div>
 
   return (
@@ -147,27 +147,27 @@ export default function ModifierFormationPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('Titre *')}</label>
-              <input type="text" value={formation.titre} onChange={e => updateField('titre', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={formation.titre} onChange={e => updateField('titre', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('Description')}</label>
-              <textarea value={formation.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+              <textarea value={formation.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
             </div>
             {formation.responsable_formation !== undefined && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('Responsable de la formation')}</label>
-                <input value={formation.responsable_formation ?? ''} onChange={e => updateField('responsable_formation', e.target.value)} maxLength={120} placeholder={t('Ex. : Dre Julie Martin, directrice des soins infirmiers')} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <input value={formation.responsable_formation ?? ''} onChange={e => updateField('responsable_formation', e.target.value)} maxLength={120} placeholder={t('Ex. : Dre Julie Martin, directrice des soins infirmiers')} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
                 <p className="text-xs text-gray-400 mt-1">{t('Ce nom apparaît sur le certificat remis aux employés.')}</p>
               </div>
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('Section / Catégorie')}</label>
-              <ChampCategorie valeur={formation.categorie || ''} onChange={v => updateField('categorie', v)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+              <ChampCategorie valeur={formation.categorie || ''} onChange={v => updateField('categorie', v)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('Niveau')}</label>
-                <select value={formation.niveau} onChange={e => updateField('niveau', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <select value={formation.niveau} onChange={e => updateField('niveau', e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
                   <option value="debutant">{t('Débutant')}</option>
                   <option value="intermediaire">{t('Intermédiaire')}</option>
                   <option value="avance">{t('Avancé')}</option>
@@ -175,7 +175,7 @@ export default function ModifierFormationPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Durée (heures)</label>
-                <input type="number" value={Math.round(((formation.duree_estimee_minutes ?? 60) / 60) * 10) / 10} onChange={e => updateField('duree_estimee_minutes', Math.round(Number(e.target.value) * 60))} min={0.5} step={0.5} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={Math.round(((formation.duree_estimee_minutes ?? 60) / 60) * 10) / 10} onChange={e => updateField('duree_estimee_minutes', Math.round(Number(e.target.value) * 60))} min={0.5} step={0.5} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
             <ChampCliniqueFormation
@@ -214,12 +214,12 @@ export default function ModifierFormationPage() {
             <ChampPrerequis formationId={formation.id} valeur={formation.prerequis_ids ?? []} onChange={ids => updateField('prerequis_ids', ids)} />
             {formation.sondage_actif !== undefined && (
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="sondage" checked={formation.sondage_actif} onChange={e => updateField('sondage_actif', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
+                <input type="checkbox" id="sondage" checked={formation.sondage_actif} onChange={e => updateField('sondage_actif', e.target.checked)} className="h-4 w-4 text-indigo-600 rounded" />
                 <label htmlFor="sondage" className="text-sm font-medium text-gray-700">{t('Proposer le sondage de satisfaction à la fin de la formation')}</label>
               </div>
             )}
             <div className="flex items-start gap-3">
-              <input type="checkbox" id="obligatoire" checked={formation.obligatoire === true} onChange={e => updateField('obligatoire', e.target.checked)} className="h-4 w-4 mt-0.5 text-blue-600 rounded" />
+              <input type="checkbox" id="obligatoire" checked={formation.obligatoire === true} onChange={e => updateField('obligatoire', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
               <label htmlFor="obligatoire" className="text-sm font-medium text-gray-700">
                 Formation obligatoire (LSST)
                 <span className="block text-xs font-normal text-gray-500">{t('Signalée comme obligatoire dans « Mes formations », la conformité et les rapports. Une formation non cochée peut quand même être assignée.')}</span>
@@ -227,7 +227,7 @@ export default function ModifierFormationPage() {
             </div>
             {formation.delivre_certificat !== undefined && (
               <div className="flex items-start gap-3">
-                <input type="checkbox" id="certificat" checked={formation.delivre_certificat} onChange={e => updateField('delivre_certificat', e.target.checked)} className="h-4 w-4 mt-0.5 text-blue-600 rounded" />
+                <input type="checkbox" id="certificat" checked={formation.delivre_certificat} onChange={e => updateField('delivre_certificat', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
                 <label htmlFor="certificat" className="text-sm font-medium text-gray-700">
                   {t('Délivrer un certificat de complétion')}
                   <span className="block text-xs font-normal text-gray-500">{t('Si décoché, la réussite est enregistrée mais aucun certificat n’est émis ni téléchargeable.')}</span>
@@ -235,7 +235,7 @@ export default function ModifierFormationPage() {
               </div>
             )}
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="publiee" checked={formation.publiee} onChange={e => updateField('publiee', e.target.checked)} className="h-4 w-4 text-blue-600 rounded" />
+              <input type="checkbox" id="publiee" checked={formation.publiee} onChange={e => updateField('publiee', e.target.checked)} className="h-4 w-4 text-indigo-600 rounded" />
               <label htmlFor="publiee" className="text-sm font-medium text-gray-700">Formation publiée (visible par les employés)</label>
             </div>
           </div>
@@ -277,12 +277,12 @@ export default function ModifierFormationPage() {
             <h2 className="text-lg font-semibold text-gray-900">{t('Modules, leçons et questionnaire')}</h2>
             <p className="text-sm text-gray-500">{t('Le contenu de la formation se modifie dans l’éditeur de cours.')}</p>
           </div>
-          <a href={`/admin/formations/${formation.id}/editeur`} className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold hover:bg-blue-100">{t('Ouvrir l’éditeur de cours →')}</a>
+          <a href={`/admin/formations/${formation.id}/editeur`} className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-sm font-semibold hover:bg-indigo-100">{t('Ouvrir l’éditeur de cours →')}</a>
         </div>
 
         <div className="flex gap-3 justify-end">
           <button onClick={() => router.push('/admin/formations')} className="px-6 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">{t('Annuler')}</button>
-          <button onClick={handleSave} disabled={saving} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
+          <button onClick={handleSave} disabled={saving} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium">
             {saving ? t('Enregistrement...') : t('Sauvegarder')}
           </button>
         </div>

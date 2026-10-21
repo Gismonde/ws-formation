@@ -333,7 +333,7 @@ export default function NouvelleFormationPage() {
     marginBottom: '4px',
   }
   const btnStyle: React.CSSProperties = {
-    background: '#2563eb',
+    background: '#4f46e5',
     color: '#fff',
     border: 'none',
     borderRadius: '6px',
@@ -413,7 +413,7 @@ export default function NouvelleFormationPage() {
         </label>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>{t('← Modifier')}</button>
-          <button onClick={handleSave} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>{t('✓ Confirmer et créer')}</button>
+          <button onClick={handleSave} style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>{t('✓ Confirmer et créer')}</button>
         </div>
       </div>
     )
@@ -424,7 +424,7 @@ export default function NouvelleFormationPage() {
       {choixLib && <ChoixLibrairie types={['video', 'lien', 'document', 'politique']} onChoisir={ajouterDepuisLibrairie} onFermer={() => setChoixLib(null)} />}
       <div style={{ marginBottom: '24px' }}>
         <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>{t('← Retour')}</a>
-        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>{t('Nouvelle formation')}</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>{t('Nouvelle formation')}</h1>
       </div>
 
       {error && <p style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>{error}</p>}
