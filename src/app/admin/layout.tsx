@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getActeur } from '@/lib/permissions'
+import { getActeur, peutCreerFormations } from '@/lib/permissions'
 import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO, THEME_CLINIQUE, vuesAdminPossibles } from '@/lib/cliniques'
 import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 import { TiroirMenu } from '@/components/TiroirMenu'
@@ -11,6 +11,7 @@ const adminNav = [
   { href: '/admin/employes', label: 'Employés', icon: 'people' },
   { href: '/admin/formations', label: 'Formations', icon: 'school' },
   { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
+  { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
   { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
   { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
   { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
@@ -40,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Une seule clinique (choisie ou unique) : la barre prend ses couleurs
   const cliniqueTheme = employe.vue ?? (cliniquesDe(employe.clinique).length === 1 && employe.role !== 'super_admin' ? cliniquesDe(employe.clinique)[0] : null)
   const fondBarre = cliniqueTheme ? THEME_CLINIQUE[cliniqueTheme].fondBarre : 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)'
-  const visibleNav = adminNav.filter(item => !item.adminOnly || isAdmin)
+  const visibleNav = adminNav.filter(item => (!('adminOnly' in item) || !item.adminOnly || isAdmin) && (!('createurs' in item) || peutCreerFormations(employe)))
 
   return (
     <div className='coque-adaptative' style={{ display: 'flex', minHeight: '100vh', background: '#f0f2f5' }}>

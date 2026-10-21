@@ -5,6 +5,8 @@ import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import type { CliniqueContenu } from '@/lib/cliniques'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ChoixLibrairie, { type ElementChoisi } from '@/components/editeur/ChoixLibrairie'
+import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 
 const CATEGORIES = [
   'Administration médicale',
@@ -21,6 +23,9 @@ const CATEGORIES = [
 interface BlocData {
   type: 'video' | 'file' | 'code' | 'link'
   contenu: string
+  /** Élément choisi dans la librairie (titre affiché, lien vers l'élément) */
+  titre?: string
+  metadata?: Record<string, unknown>
 }
 
 interface LeconData {
@@ -58,6 +63,20 @@ export default function NouvelleFormationPage() {
   const [dureeHeures, setDureeHeures] = useState(1)
   const [dureeManuelle, setDureeManuelle] = useState(false)
   const [modules, setModules] = useState<ModuleForm[]>([{ titre: '', contenu: '', duree_minutes: 30, ordre: 1, lecons: [] }])
+  const [choixLib, setChoixLib] = useState<{ m: number; l: number } | null>(null)
+  function ajouterDepuisLibrairie(e: ElementChoisi) {
+    if (!choixLib) return
+    const integrable = e.type === 'video' && (estMediaPrive(e.url) || !!analyserVideoEnLigne(e.url))
+    const bloc: BlocData = {
+      type: integrable ? 'video' : 'file', contenu: e.url, titre: e.titre,
+      metadata: e.type === 'politique' ? { politique_id: e.id } : { librairie_id: e.id, ...(e.nom_fichier ? { nom_fichier: e.nom_fichier } : {}) },
+    }
+    const up = [...modules]
+    const lec = up[choixLib.m].lecons[choixLib.l]
+    up[choixLib.m].lecons[choixLib.l] = { ...lec, blocs: [...(lec.blocs || []), bloc] }
+    setModules(up)
+    setChoixLib(null)
+  }
   const [questions, setQuestions] = useState<QuestionForm[]>([
     { texte: '', reponses: [{ texte: '', est_correcte: true }, { texte: '', est_correcte: false }, { texte: '', est_correcte: false }] }
   ])
@@ -256,7 +275,9 @@ export default function NouvelleFormationPage() {
                 if (!leconData.blocs || leconData.blocs.length === 0) continue
                 const leconRow = insertedLecons?.[lIdx2]
                 if (!leconRow) continue
-                const extraBlocs = leconData.blocs.filter((b: any) => b.contenu?.trim()).map((b: any, bi: number) => ({ lesson_id: leconRow.id, type: b.type, contenu: b.contenu, ordre: bi + 2 }))
+                const extraBlocs = leconData.blocs.filter((b: any) => b.contenu?.trim()).map((b: any, bi: number) => b.metadata
+                  ? { lesson_id: leconRow.id, type: b.type, url: b.contenu, titre: b.titre ?? null, metadata: b.metadata, ordre: bi + 2 }
+                  : { lesson_id: leconRow.id, type: b.type === 'link' ? 'file' : b.type === 'code' ? 'text' : b.type, contenu: b.contenu, ordre: bi + 2 })
                 if (extraBlocs.length > 0) await supabase.from('content_blocks').insert(extraBlocs)
               }
             }
@@ -407,6 +428,7 @@ export default function NouvelleFormationPage() {
 
   return (
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 20px', fontFamily: 'system-ui, sans-serif' }}>
+      {choixLib && <ChoixLibrairie types={['video', 'lien', 'document', 'politique']} onChoisir={ajouterDepuisLibrairie} onFermer={() => setChoixLib(null)} />}
       <div style={{ marginBottom: '24px' }}>
         <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>← Retour</a>
         <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '8px 0 0' }}>Nouvelle formation</h1>
@@ -626,7 +648,7 @@ export default function NouvelleFormationPage() {
                       {(lecon.blocs || []).length > 0 && (lecon.blocs || []).map((bloc: any, bi: number) => (
                         <div key={bi} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '5px', padding: '6px 8px', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <span style={{ fontSize: '13px' }}>{bloc.type === 'video' ? '🎬' : bloc.type === 'file' ? '📎' : bloc.type === 'code' ? '💻' : '🔗'}</span>
-                          <input style={{ ...inputStyle, flex: 1, fontSize: '11px' }} value={bloc.contenu} onChange={e => { const up = [...modules]; const b = [...(up[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL PDF' : bloc.type === 'link' ? 'URL lien' : 'Code'} />
+                          {bloc.metadata ? <span style={{ flex: 1, fontSize: '11px', color: '#4338ca' }}>📚 {bloc.titre}</span> : <input style={{ ...inputStyle, flex: 1, fontSize: '11px' }} value={bloc.contenu} onChange={e => { const up = [...modules]; const b = [...(up[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs: b }; setModules(up) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL PDF' : bloc.type === 'link' ? 'URL lien' : 'Code'} />}
                           {bloc.type === 'video' && extractYouTubeId(bloc.contenu) && (
                             <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
                               <img
@@ -641,6 +663,9 @@ export default function NouvelleFormationPage() {
                         </div>
                       ))}
                       <div style={{ display: 'flex', gap: '3px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => setChoixLib({ m: idx, l: leconIdx })} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', color: '#4338ca', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>
+                          + 📚 Librairie
+                        </button>
                         {(['video', 'file', 'code', 'link'] as const).map(type => (
                           <button key={type} onClick={() => { const up = [...modules]; const blocs = [...(up[idx].lecons[leconIdx].blocs || []), { type, contenu: '' }]; up[idx].lecons[leconIdx] = { ...up[idx].lecons[leconIdx], blocs }; setModules(up) }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}>
                             + {type === 'video' ? '🎬' : type === 'file' ? '📎' : type === 'code' ? '💻' : '🔗'}
