@@ -10,6 +10,7 @@ import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from '@/components/
 import { createModule, updateModule, deleteModule, reorderModules } from '@/lib/actions/formations'
 import type { Formation, Module, Lesson, ContentBlock } from '@/lib/types/formation'
 import EditeurBlocs from '@/components/editeur/EditeurBlocs'
+import EditeurQuestionnaire from '@/components/editeur/EditeurQuestionnaire'
 
 type ModuleAvecLecons = Module & { lecons: (Lesson & { blocs: ContentBlock[] })[] }
 type FormationAvecModules = Formation & { modules: ModuleAvecLecons[] }
@@ -19,6 +20,7 @@ type PanneauActif =
   | { type: 'module'; moduleId: string }
   | { type: 'lecon'; leconId: string; moduleId: string }
   | { type: 'bloc'; blocId: string; leconId: string }
+  | { type: 'questionnaire' }
 
 export default function EditeurFormationPage() {
   const { t } = useT()
@@ -414,6 +416,11 @@ export default function EditeurFormationPage() {
             </div>
           ))}
 
+          <button type="button" onClick={() => setPanneau({ type: 'questionnaire' })}
+            className={'w-full text-left flex items-center gap-2 px-4 py-3 border-t border-gray-100 text-sm font-medium hover:bg-gray-50 ' + (panneau.type === 'questionnaire' ? 'bg-blue-50 border-l-2 border-l-blue-500 text-blue-800' : 'text-gray-800')}>
+            📝 {t('Questionnaire de fin de formation')}
+          </button>
+
           {(formation?.modules?.length || 0) > 0 && (
             <div className="p-4">
               <button
@@ -440,6 +447,9 @@ export default function EditeurFormationPage() {
 
         {/* Panneau principal: edition */}
         <div className="flex-1 overflow-y-auto p-6">
+          {panneau.type === 'questionnaire' && formation && (
+            <EditeurQuestionnaire formationId={formationId} titreFormation={formation.titre} />
+          )}
           {panneau.type === 'aucun' && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
