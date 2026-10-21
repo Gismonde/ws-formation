@@ -6,7 +6,7 @@ import { aAccesAdmin, CLINIQUE_INFO, estCliniqueEmploye } from '@/lib/cliniques'
 import { chargerConformite, synthese, rapportParFormation, formationsDuRapport } from '@/lib/conformite'
 
 export default async function AdminRapportsPage() {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
@@ -108,7 +108,7 @@ export default async function AdminRapportsPage() {
             {derniers.map(({ e, a }) => (
               <li key={e.id + a.formation_id} className="py-2 flex flex-wrap justify-between gap-2 text-sm">
                 <span><Link href={`/admin/employes/${e.id}`} className="font-medium text-gray-900 hover:underline">{e.prenom} {e.nom}</Link> — {a.formation_titre}</span>
-                <span className="text-gray-400">{new Date(a.certificat!.date_emission!).toLocaleDateString('fr-CA', { dateStyle: 'medium' })}</span>
+                <span className="text-gray-400">{new Date(a.certificat!.date_emission!).toLocaleDateString(loc, { dateStyle: 'medium' })}</span>
               </li>
             ))}
           </ul>

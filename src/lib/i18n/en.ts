@@ -1337,4 +1337,7 @@ export const EN: Record<string, string> = {
   'modèle': 'template',
   'publiée': 'published',
   'Aucun résultat pour « {q} ».': 'No results for “{q}”.',
+  'Soumise le {date}': 'Submitted on {date}',
+  'traitée le {date}': 'processed on {date}',
+  '{n} événement(s)': '{n} event(s)',
 }

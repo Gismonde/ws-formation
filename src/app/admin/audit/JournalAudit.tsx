@@ -16,7 +16,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
   departements: { id: string; nom: string }[]
   cliniques: Clinique[]
 }) {
-  const { t } = useT()
+  const { t, loc } = useT()
   const [types, setTypes] = useState<string[]>([])
   const [clinique, setClinique] = useState('')
   const [departement, setDepartement] = useState('')
@@ -83,7 +83,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Journal d&apos;audit</h1>
-          <p className="text-sm text-gray-500 mt-1">{total.toLocaleString('fr-CA')} événement{total > 1 ? 's' : ''}{' '}{t('— journal immuable, conservé 5 ans.')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('{n} événement(s)', { n: total.toLocaleString(loc) })}{' '}{t('— journal immuable, conservé 5 ans.')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {choisis.length > 0 && (
@@ -206,7 +206,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
                   const s = LIBELLES_AUDIT[l.type_action] ?? { color: '#374151', bg: '#f3f4f6' }
                   return (
                     <tr key={l.id} className="border-t border-gray-100 align-top">
-                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{new Date(l.created_at).toLocaleString('fr-CA', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{new Date(l.created_at).toLocaleString(loc, { dateStyle: 'short', timeStyle: 'short' })}</td>
                       <td className="px-3 py-2.5"><span className="text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap" style={{ color: s.color, background: s.bg }}>{libelleAudit(l.type_action)}</span></td>
                       <td className="px-3 py-2.5">
                         {l.acteur ? <Link href={`/admin/employes/${l.acteur.id}`} className="text-gray-900 hover:underline">{l.acteur.prenom} {l.acteur.nom}</Link> : <span className="text-gray-400">{t('Système')}</span>}

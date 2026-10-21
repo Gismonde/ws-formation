@@ -20,8 +20,8 @@ const STYLE_STATUT: Record<StatutExpiration, { classe: string; libelle: string }
   valide: { classe: 'bg-green-100 text-green-700', libelle: 'Valide' },
 }
 
-const dateLongue = (iso: string) =>
-  new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { dateStyle: 'medium' })
+const dateLongueEn = (loc: string) => (iso: string) =>
+  new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString(loc, { dateStyle: 'medium' })
 
 function libelleJours(j: number, t: (s: string, v?: Record<string, string | number>) => string): string {
   if (j < 0) return t('Expiré depuis {n} jour(s)', { n: -j })
@@ -30,7 +30,8 @@ function libelleJours(j: number, t: (s: string, v?: Record<string, string | numb
 }
 
 export default async function ExpirationsPage({ searchParams }: { searchParams: Promise<{ statut?: string; horizon?: string }> }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
+  const dateLongue = dateLongueEn(loc)
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')

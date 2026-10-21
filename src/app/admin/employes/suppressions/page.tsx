@@ -13,7 +13,7 @@ const TABLES: Record<string, string> = {
 }
 
 export default async function SuppressionsPage() {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutSupprimerEmployes(acteur)) redirect('/admin/employes')
@@ -60,7 +60,7 @@ export default async function SuppressionsPage() {
             <tbody>
               {(historique as Suppression[]).map(s => (
                 <tr key={s.id} className="border-t border-gray-100 align-top">
-                  <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{new Date(s.supprime_le).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Toronto' })}</td>
+                  <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{new Date(s.supprime_le).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Toronto' })}</td>
                   <td className="px-3 py-2.5"><div className="font-medium text-gray-900">{[s.prenom, s.nom].filter(Boolean).join(' ') || '—'}</div><div className="text-xs text-gray-500">{s.email} · {clinique(s.clinique)}</div></td>
                   <td className="px-3 py-2.5 text-gray-700 max-w-sm">{s.raison}</td>
                   <td className="px-3 py-2.5 text-xs text-gray-500">{Object.entries(s.resume ?? {}).map(([t, n]) => `${n} ${TABLES[t] ?? t}`).join(', ') || 'aucune'}</td>

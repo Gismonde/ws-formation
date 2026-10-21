@@ -20,7 +20,7 @@ function Barre({ pct }: { pct: number }) {
 }
 
 export default async function PolitiquesAdminPage({ searchParams }: { searchParams: Promise<{ archives?: string }> }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   const { archives } = await searchParams
@@ -82,7 +82,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
                   <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-5 py-3">
                       <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{p.titre}</Link>
-                      <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString('fr-CA', { dateStyle: 'medium' })}</div>
+                      <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
                     </td>
                     <td className="px-3 py-3 text-gray-600">{publicDe(p, noms)}</td>
                     <td className="px-3 py-3">

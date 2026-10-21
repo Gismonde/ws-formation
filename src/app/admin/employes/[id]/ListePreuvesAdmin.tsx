@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PreuveDossier } from '@/lib/dossier-employe'
 
-const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-CA', { dateStyle: 'medium' }) : '—')
+const dateEn = (loc: string) => (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(loc, { dateStyle: 'medium' }) : '—')
 const BADGE = {
   en_attente: 'bg-amber-50 text-amber-700 border-amber-200',
   valide: 'bg-green-50 text-green-700 border-green-200',
@@ -13,7 +13,8 @@ const BADGE = {
 } as const
 
 export default function ListePreuvesAdmin({ preuves, peutDecider }: { preuves: PreuveDossier[]; peutDecider: boolean }) {
-  const { t } = useT()
+  const { t, loc } = useT()
+  const date = dateEn(loc)
   const router = useRouter()
   const [commentaires, setCommentaires] = useState<Record<string, string>>({})
   const [enCours, setEnCours] = useState<string | null>(null)
@@ -45,7 +46,7 @@ export default function ListePreuvesAdmin({ preuves, peutDecider }: { preuves: P
           <div className="text-xs font-semibold text-indigo-600">{p.formation}</div>
           <div className="font-medium text-gray-900 break-all">📎 {p.fichier || 'Document'}</div>
           <div className="text-xs text-gray-500 mt-0.5">
-            Soumise le {date(p.soumis_le)}{p.traite_le ? ` · traitée le ${date(p.traite_le)}` : ''}
+            {t('Soumise le {date}', { date: date(p.soumis_le) })}{p.traite_le ? ' · ' + t('traitée le {date}', { date: date(p.traite_le) }) : ''}
           </div>
           {p.commentaire && <div className="text-xs text-gray-600 italic mt-1">« {p.commentaire} »</div>}
         </div>

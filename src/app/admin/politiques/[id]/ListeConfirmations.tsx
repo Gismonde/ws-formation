@@ -11,12 +11,13 @@ export type LigneConfirmation = {
   confirme_le: string | null
 }
 
-const date = (iso: string) => new Date(iso).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' })
+const dateEn = (loc: string) => (iso: string) => new Date(iso).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' })
 
 export default function ListeConfirmations({ lignes, filtreInitial, titre, version }: {
   lignes: LigneConfirmation[]; filtreInitial: 'tous' | 'confirmes' | 'attente'; titre: string; version: number
 }) {
-  const { t } = useT()
+  const { t, loc } = useT()
+  const date = dateEn(loc)
   const [filtre, setFiltre] = useState(filtreInitial)
   const [recherche, setRecherche] = useState('')
   const confirmes = lignes.filter(l => l.confirme_le).length
