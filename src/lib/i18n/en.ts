@@ -1353,4 +1353,6 @@ export const EN: Record<string, string> = {
   'Redonner toutes ses tentatives à cet employé ? Les tentatives échouées restent conservées dans l’historique.': 'Give this employee all their attempts back? Failed attempts remain in the history.',
   'Supprimer ce bloc ?': 'Delete this block?',
   'Supprimer cette SOP ?': 'Delete this SOP?',
+  'Formations & politiques': 'Training & policies',
+  'Suivi & conformité': 'Tracking & compliance',
 }
