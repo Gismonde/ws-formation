@@ -1,5 +1,6 @@
 'use server'
 
+import { serviceClient, peutGererContenu } from '@/lib/permissions'
 import { noterModification, formationDuModule, formationDeLaLecon, formationDuBloc } from '@/lib/historique-formation'
 import { createClient } from '@/lib/supabase/server'
 import { getCreateurFormations } from '@/lib/permissions'
@@ -65,7 +66,40 @@ export async function updateFormation(
 
 export async function togglePublierFormation(formationId: string, publiee: boolean): Promise<ActionResult> {
   const res = await updateFormation(formationId, { publiee })
-  return res.success ? { success: true, data: undefined } : res
+  if (!res.success) return res
+  // Première publication : date de publication initiale et version 1
+  if (publiee) {
+    const acteur = await getCreateurFormations()
+    const sb = serviceClient()
+    const { data: f } = await sb.from('formations').select('*').eq('id', formationId).single()
+    if (f && 'publiee_le' in f && !f.publiee_le) {
+      const maintenant = new Date().toISOString()
+      await sb.from('formations').update({ publiee_le: maintenant, version: 1, version_le: maintenant }).eq('id', formationId)
+      await sb.from('formations_versions').insert({ formation_id: formationId, version: 1, publiee_le: maintenant, note: 'Publication initiale', publiee_par: acteur?.id ?? null })
+    }
+  }
+  return { success: true, data: undefined }
+}
+
+/** Publie une nouvelle version d'une formation déjà publiée : version + 1, date de mise à jour et note. */
+export async function publierNouvelleVersion(formationId: string, note: string): Promise<ActionResult<{ version: number }>> {
+  const acteur = await getCreateurFormations()
+  if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  const sb = serviceClient()
+  const { data: f } = await sb.from('formations').select('*').eq('id', formationId).single()
+  if (!f) return { success: false, error: 'Formation introuvable' }
+  if (!peutGererContenu(acteur, f.clinique)) return { success: false, error: 'Formation hors de votre périmètre' }
+  if (!('version' in f)) return { success: false, error: 'Exécutez d’abord supabase/migrations/formations_versions.sql dans Supabase.' }
+  if (!f.publiee_le) return { success: false, error: 'Publiez d’abord la formation.' }
+  const texte = note.trim().slice(0, 1000)
+  if (!texte) return { success: false, error: 'Décrivez ce qui a changé dans cette version.' }
+  const version = (Number(f.version) || 1) + 1
+  const maintenant = new Date().toISOString()
+  const { error } = await sb.from('formations').update({ version, version_le: maintenant, publiee: true }).eq('id', formationId)
+  if (error) return { success: false, error: error.message }
+  await sb.from('formations_versions').insert({ formation_id: formationId, version, publiee_le: maintenant, note: texte, publiee_par: acteur.id })
+  await noterModification(acteur, formationId, `Version ${version} publiée : ${texte}`)
+  return { success: true, data: { version } }
 }
 
 export async function deleteFormation(formationId: string): Promise<ActionResult> {
