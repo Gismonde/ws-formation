@@ -157,6 +157,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                 <th className="px-3 py-2.5 font-semibold">Expire le</th>
                 <th className="px-3 py-2.5 font-semibold">Note</th>
                 <th className="px-3 py-2.5 font-semibold">État</th>
+                <th className="px-3 py-2.5 font-semibold"></th>
               </tr>
             </thead>
             <tbody>
@@ -169,6 +170,9 @@ export default async function FicheEmployePage({ params, searchParams }: {
                   <td className="px-3 py-2.5 text-gray-600">{c.note != null ? `${c.note} %` : "—"}</td>
                   <td className="px-3 py-2.5">
                     <span className={"text-xs font-semibold px-2 py-1 rounded-full " + (c.etat === "Valide" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>{c.etat}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    {c.etat !== "Révoqué" && <Link href={`/certificat/${c.id}`} className="text-xs font-semibold text-indigo-600 hover:underline">🏆 Voir / télécharger</Link>}
                   </td>
                 </tr>
               ))}

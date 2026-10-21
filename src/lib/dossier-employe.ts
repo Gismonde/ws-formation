@@ -49,6 +49,7 @@ export type LeconDossier = {
 }
 
 export type CertificatDossier = {
+  id: string
   formation: string
   numero: string
   emis_le: string | null
@@ -104,7 +105,7 @@ export async function chargerDossier(
 
   const [{ data: assignations }, { data: certs }, { data: preuves }, { data: confs }] = await Promise.all([
     sb.from('assignations').select('formation_id, date_assignation, date_echeance').eq('employe_id', employeId),
-    sb.from('certificats').select('formation_id, numero_certificat, date_emission, date_expiration, valide, note_finale').eq('employe_id', employeId)
+    sb.from('certificats').select('id, formation_id, numero_certificat, date_emission, date_expiration, valide, note_finale').eq('employe_id', employeId)
       .order('date_emission', { ascending: false }),
     sb.from('preuves_externes').select('id, formation_id, nom_fichier, fichier_url, statut, commentaire, soumis_le, valide_le').eq('employe_id', employeId)
       .order('soumis_le', { ascending: false }),
@@ -163,6 +164,7 @@ export async function chargerDossier(
   }
 
   const certificats: CertificatDossier[] = (certs ?? []).map(c => ({
+    id: c.id,
     formation: nomFormation(c.formation_id),
     numero: c.numero_certificat ?? '',
     emis_le: jourSeul(c.date_emission),
