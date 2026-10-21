@@ -1,18 +1,64 @@
-// Envoi de courriels (service Resend : https://resend.com — offre gratuite 3 000/mois, 100/jour).
-// Variables Vercel : RESEND_API_KEY et COURRIEL_EXPEDITEUR (ex. « WS Formation <formation@wssurgical.com> »).
+// Envoi de courriels. Deux fournisseurs possibles, choisis selon les variables Vercel :
+//  - Mailgun (prioritaire) : MAILGUN_API_KEY, MAILGUN_DOMAIN (ex. « mg.wssurgical.com »),
+//    MAILGUN_REGION (« us » par défaut, ou « eu »)
+//  - Resend : RESEND_API_KEY
+// Dans les deux cas : COURRIEL_EXPEDITEUR (ex. « WS Formation <formation@wssurgical.com> »).
 // Sans ces variables, rien n'est envoyé et l'application continue de fonctionner normalement.
 
 import { CLINIQUE_INFO, cliniquesDe } from '@/lib/cliniques'
 
 export type Courriel = { a: string; sujet: string; html: string; texte: string }
+type Resultat = { envoyes: number; erreur?: string }
 
-export function courrielsActifs(): boolean {
-  return !!process.env.RESEND_API_KEY && !!process.env.COURRIEL_EXPEDITEUR
+function fournisseur(): 'mailgun' | 'resend' | null {
+  if (!process.env.COURRIEL_EXPEDITEUR) return null
+  if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) return 'mailgun'
+  if (process.env.RESEND_API_KEY) return 'resend'
+  return null
 }
 
-/** Envoie un ou plusieurs courriels (par lots de 100). Renvoie le nombre envoyés. */
-export async function envoyerCourriels(courriels: Courriel[]): Promise<{ envoyes: number; erreur?: string }> {
-  if (!courrielsActifs() || courriels.length === 0) return { envoyes: 0, erreur: courrielsActifs() ? undefined : 'non_configure' }
+export function courrielsActifs(): boolean {
+  return fournisseur() !== null
+}
+
+/** Envoie un ou plusieurs courriels. Renvoie le nombre envoyés. */
+export async function envoyerCourriels(courriels: Courriel[]): Promise<Resultat> {
+  const f = fournisseur()
+  if (!f || courriels.length === 0) return { envoyes: 0, erreur: f ? undefined : 'non_configure' }
+  return f === 'mailgun' ? envoyerMailgun(courriels) : envoyerResend(courriels)
+}
+
+/** Mailgun : un message par destinataire (5 envois simultanés au maximum). */
+async function envoyerMailgun(courriels: Courriel[]): Promise<Resultat> {
+  const domaine = process.env.MAILGUN_DOMAIN!
+  const hote = process.env.MAILGUN_REGION?.toLowerCase() === 'eu' ? 'https://api.eu.mailgun.net' : 'https://api.mailgun.net'
+  const auth = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64')
+  let envoyes = 0
+  let erreur: string | undefined
+  for (let i = 0; i < courriels.length; i += 5) {
+    await Promise.all(courriels.slice(i, i + 5).map(async c => {
+      const corps = new URLSearchParams({ from: process.env.COURRIEL_EXPEDITEUR!, to: c.a, subject: c.sujet, html: c.html, text: c.texte })
+      try {
+        const res = await fetch(`${hote}/v3/${encodeURIComponent(domaine)}/messages`, {
+          method: 'POST', headers: { Authorization: auth, 'Content-Type': 'application/x-www-form-urlencoded' }, body: corps,
+        })
+        if (res.ok) { envoyes++; return }
+        const detail = await res.text().catch(() => '')
+        console.error('[Courriels] Mailgun a refusé l’envoi', res.status, detail)
+        erreur = `Envoi refusé (${res.status})`
+      } catch (e) {
+        console.error('[Courriels] Erreur réseau', e)
+        erreur = 'Erreur réseau'
+      }
+    }))
+    // Clé ou domaine invalide : inutile d'insister pour les suivants
+    if (erreur && envoyes === 0 && /\((401|403|404)\)/.test(erreur)) break
+  }
+  return { envoyes, erreur }
+}
+
+/** Resend : par lots de 100. */
+async function envoyerResend(courriels: Courriel[]): Promise<Resultat> {
   let envoyes = 0
   for (let i = 0; i < courriels.length; i += 100) {
     const lot = courriels.slice(i, i + 100).map(c => ({
