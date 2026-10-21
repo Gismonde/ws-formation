@@ -16,7 +16,7 @@ import {
 import type { ContentBlock, ContentBlockType } from '@/lib/types/formation'
 import { analyserVideoEnLigne, estMediaPrive, REGLES_MEDIAS, GenreMedia } from '@/lib/medias'
 import { envoyerMedia } from '@/lib/medias-client'
-import ChoixLibrairie, { type ElementChoisi } from './ChoixLibrairie'
+import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from './ChoixLibrairie'
 import { lireQuiz, nouvelleQuestion, Quiz } from '@/lib/quiz'
 import { STYLES_ENCADRE } from '@/lib/texte-riche'
 import { MODELES_LECON, ModeleLecon } from '@/lib/modeles-lecon'
@@ -201,9 +201,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
 
   // Élément de la librairie → bloc lié (vidéo intégrée si YouTube/Vimeo/fichier, sinon lien vers le document)
   const depuisLibrairie = (e: ElementChoisi) => {
-    const integrable = e.type === 'video' && (estMediaPrive(e.url) || !!analyserVideoEnLigne(e.url))
-    const type: ContentBlockType = integrable ? 'video' : 'file'
-    const metadata = e.type === 'politique' ? { politique_id: e.id } : { librairie_id: e.id, ...(e.nom_fichier ? { nom_fichier: e.nom_fichier } : {}) }
+    const { type, metadata } = blocPourChoix(e)
     const cible = choixLibrairie
     setChoixLibrairie(null)
     if (!cible) return

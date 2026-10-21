@@ -2,18 +2,30 @@
 // Fenêtre « Choisir dans la librairie » de l'éditeur de leçons.
 import { useEffect, useMemo, useState } from 'react'
 import { LIBELLE_TYPE_LIBRAIRIE, plateformeVideo, type ElementLibrairie, type TypeLibrairie } from '@/lib/librairie-commun'
+import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 
 export type TypeChoix = TypeLibrairie | 'politique'
 const ICONE: Record<TypeChoix, string> = { video: '🎬', lien: '🔗', document: '📄', politique: '📜' }
 const LIBELLE: Record<TypeChoix, string> = { ...LIBELLE_TYPE_LIBRAIRIE, politique: 'Politiques' }
 export type ElementChoisi = Omit<ElementLibrairie, 'type'> & { type: TypeChoix }
+/** Bloc de leçon pour un élément choisi : vidéo intégrée (YouTube, Vimeo, fichier) sinon bloc fichier/lien. */
+export function blocPourChoix(e: ElementChoisi): { type: 'video' | 'file'; titre: string; url: string; metadata: Record<string, unknown> } {
+  const integrable = e.type === 'video' && (estMediaPrive(e.url) || !!analyserVideoEnLigne(e.url))
+  const metadata = e.type === 'politique' ? { politique_id: e.id } : { librairie_id: e.id, ...(e.nom_fichier ? { nom_fichier: e.nom_fichier } : {}) }
+  return { type: integrable ? 'video' : 'file', titre: e.titre, url: e.url, metadata }
+}
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-export default function ChoixLibrairie({ types, onChoisir, onFermer }: {
+export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, onFermer }: {
   types: TypeChoix[]
-  onChoisir: (e: ElementChoisi) => void
+  onChoisir?: (e: ElementChoisi) => void
+  /** Sélection multiple : une case par élément et un bouton « Ajouter ». */
+  onChoisirPlusieurs?: (e: ElementChoisi[]) => void
   onFermer: () => void
 }) {
+  const multiple = !!onChoisirPlusieurs
+  const [selection, setSelection] = useState<ElementChoisi[]>([])
+  const basculer = (e: ElementChoisi) => setSelection(s => s.some(x => x.id === e.id) ? s.filter(x => x.id !== e.id) : [...s, e])
   const [type, setType] = useState<TypeChoix>(types[0])
   const [elements, setElements] = useState<ElementChoisi[] | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -62,7 +74,8 @@ export default function ChoixLibrairie({ types, onChoisir, onFermer }: {
           {elements === null && <p className="p-6 text-center text-sm text-gray-400">Chargement…</p>}
           {elements && !erreur && visibles.length === 0 && <p className="p-6 text-center text-sm text-gray-400">Aucun élément. Ajoutez-en dans Admin → Librairie.</p>}
           {visibles.map(e => (
-            <button key={e.id} type="button" onClick={() => onChoisir(e)} className="w-full text-left px-4 py-3 hover:bg-indigo-50 flex gap-3">
+            <button key={e.id} type="button" onClick={() => multiple ? basculer(e) : onChoisir?.(e)} className="w-full text-left px-4 py-3 hover:bg-indigo-50 flex gap-3">
+              {multiple && <input type="checkbox" readOnly tabIndex={-1} checked={selection.some(x => x.id === e.id)} className="mt-1.5" />}
               <span className="text-lg">{ICONE[e.type]}</span>
               <span className="flex-1 min-w-0">
                 <span className="block font-medium text-gray-900">{e.titre}</span>
@@ -71,6 +84,13 @@ export default function ChoixLibrairie({ types, onChoisir, onFermer }: {
             </button>
           ))}
         </div>
+        {multiple && (
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-3">
+            <span className="text-sm text-gray-600">{selection.length} élément{selection.length > 1 ? 's' : ''} sélectionné{selection.length > 1 ? 's' : ''} — une leçon sera créée par élément, dans l’ordre de sélection.</span>
+            <button type="button" disabled={selection.length === 0} onClick={() => onChoisirPlusieurs?.(selection)}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">Ajouter</button>
+          </div>
+        )}
         <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">{type === 'politique' ? 'Ajoute un lien vers la politique ; l’employé la lit et la confirme dans son espace Politiques.' : 'L’élément reste lié à la librairie : s’il y est modifié, cette leçon se met à jour.'}</p>
       </div>
     </div>
