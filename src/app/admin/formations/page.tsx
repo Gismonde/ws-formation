@@ -26,7 +26,7 @@ const niveauStyles: Record<string, { bg: string; color: string; label: string }>
 }
 
 export default async function AdminFormationsPage({ searchParams }: { searchParams: Promise<{ clinique?: string; vue?: string; statut?: string }> }) {
-  const { t } = await i18n()
+  const { t, loc } = await i18n()
   const { clinique: filtre, vue: vueDemandee, statut: statutDemande } = await searchParams
   const statut: "brouillon" | "publiee" | null = statutDemande === "brouillon" || statutDemande === "publiee" ? statutDemande : null
   const vueMemorisee = (await cookies()).get("ws_vue_formations")?.value
@@ -58,7 +58,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
 
   const { data: toutes } = await adminSupabase
     .from("formations")
-    .select("id, titre, description, categorie, niveau, publiee, obligatoire, clinique, image_couverture, duree_estimee_minutes")
+    .select("*")
     .in("clinique", filtreActif ? [filtreActif] : visibles)
     .order("created_at", { ascending: false })
   const nbBrouillons = (toutes ?? []).filter(f => !f.publiee).length
@@ -291,6 +291,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                       fontSize: "12px",
                       fontWeight: "600",
                     }}>{f.publiee ? t("Publié") : t("Brouillon")}</span>
+                    {f.publiee && f.version ? <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px", whiteSpace: "nowrap" }}>v{f.version}{f.version_le ? " · " + new Date(f.version_le).toLocaleDateString(loc, { dateStyle: "medium" }) : ""}</div> : null}
                   </td>
                   <td style={{ padding: "14px 20px", textAlign: "right", whiteSpace: "nowrap" }}>
                     <Link href={`/admin/formations/${f.id}`} style={{

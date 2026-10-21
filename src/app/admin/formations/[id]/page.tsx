@@ -11,6 +11,8 @@ import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
 import BoutonPublier from './BoutonPublier'
 import DupliquerFormation from './DupliquerFormation'
+import NouvelleVersion from './NouvelleVersion'
+import { serviceClient } from '@/lib/permissions'
 import { historiqueFormation } from '@/lib/historique-formation'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
@@ -30,10 +32,18 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const { loc } = await i18n()
   const peutCreer = peutCreerFormations(acteurCourant)
   const historique = peutCreer ? await historiqueFormation(id) : []
+  const { data: versionsBrutes } = await serviceClient().from('formations_versions').select('version, publiee_le, note, employes(prenom, nom)').eq('formation_id', id).order('version', { ascending: false })
+  const versions = (versionsBrutes ?? []).map(v => {
+    const e = v.employes as { prenom?: string; nom?: string } | { prenom?: string; nom?: string }[] | null
+    const p = Array.isArray(e) ? e[0] : e
+    return { version: v.version as number, le: v.publiee_le as string, note: (v.note as string | null) ?? '', par: [p?.prenom, p?.nom].filter(Boolean).join(' ') }
+  })
+  const date = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString(loc, { dateStyle: 'long', timeZone: 'America/Toronto' }) : null)
 
   const res = await getFormationWithModules(id)
   if (!res.success || !res.data) notFound()
   const formation = res.data as Formation & { modules: Module[] }
+  const suivi = formation as unknown as { publiee_le?: string | null; version?: number; version_le?: string | null }
 
   // Charger les leçons de chaque module
   const modulesAvecLecons: ModuleAvecLecons[] = []
@@ -92,12 +102,20 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                   : <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: CLINIQUE_INFO[formation.clinique].fond, color: CLINIQUE_INFO[formation.clinique].couleur }}>{CLINIQUE_INFO[formation.clinique].nom}</span>)}
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{formation.titre}</h1>
+              {suivi.publiee_le && (
+                <p className="text-sm text-gray-500 mb-2">
+                  {t('Publiée initialement le {date}', { date: date(suivi.publiee_le)! })}
+                  {' · '}<span className="font-semibold text-gray-700">{t('Version {n}', { n: suivi.version ?? 1 })}</span>
+                  {(suivi.version ?? 1) > 1 && suivi.version_le ? ' · ' + t('mise à jour le {date}', { date: date(suivi.version_le)! }) : ''}
+                </p>
+              )}
               {formation.description && (
                 <p className="text-gray-600 leading-relaxed">{formation.description}</p>
               )}
             </div>
             {peutCreer && (
               <div className="flex items-start gap-2">
+                {formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
                 <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />
               </div>
@@ -264,6 +282,23 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
           )}
         </div>
+
+        {/* Journal des versions */}
+        {versions.length > 0 && (
+          <details className="mt-6 bg-white rounded-2xl border border-gray-200 overflow-hidden" open>
+            <summary className="px-6 py-4 cursor-pointer text-base font-semibold text-gray-900">{t('Journal des versions')} <span className="text-sm font-normal text-gray-400">({versions.length})</span></summary>
+            <ul className="divide-y divide-gray-100 border-t border-gray-100">
+              {versions.map(v => (
+                <li key={v.version} className="px-6 py-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  <span className="font-semibold text-indigo-700 w-12">v{v.version}</span>
+                  <span className="text-gray-500 w-40 shrink-0">{date(v.le)}</span>
+                  <span className="text-gray-900 flex-1 min-w-[200px]">{v.note === 'Publication initiale' ? t('Publication initiale') : v.note}</span>
+                  <span className="text-gray-500">{v.par}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
 
         {/* Historique des modifications */}
         {peutCreer && (
