@@ -48,7 +48,10 @@ export default function MfaVerifyPage() {
       return
     }
 
-    router.push('/dashboard/accueil')
+    // Retour à la page demandée (chemin interne seulement)
+    const suite = new URLSearchParams(window.location.search).get('suite') ?? ''
+    router.replace(suite.startsWith('/') && !suite.startsWith('//') ? suite : '/dashboard/accueil')
+    router.refresh()
   }
 
   return (
@@ -116,6 +119,9 @@ export default function MfaVerifyPage() {
         <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
           {t('Problème d’accès ? Contactez votre administrateur.')}
         </p>
+        <form action="/api/auth/signout" method="POST" style={{ textAlign: 'center', marginTop: '12px' }}>
+          <button type="submit" style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}>{t('Se déconnecter')}</button>
+        </form>
       </div>
     </div>
   )

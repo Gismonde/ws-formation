@@ -24,11 +24,13 @@ export default function SecuritePage() {
   const [code, setCode] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [obligatoire, setObligatoire] = useState(false)
   const supabase = createClient()
   const { t, loc } = useT()
 
   useEffect(() => {
     chargerFacteurs()
+    setObligatoire(new URLSearchParams(window.location.search).get('obligatoire') === '1')
   }, [])
 
   async function chargerFacteurs() {
@@ -125,6 +127,16 @@ export default function SecuritePage() {
           {t('Gérez votre mot de passe et la double authentification (2FA) pour protéger votre compte.')}
         </p>
       </div>
+
+      {obligatoire && (
+        <div style={{ padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', backgroundColor: mfaActive ? '#f0fdf4' : '#fffbeb', border: mfaActive ? '1px solid #bbf7d0' : '1px solid #fde68a', color: mfaActive ? '#166534' : '#92400e', fontSize: '14px' }}>
+          {mfaActive ? (
+            <>{t('La double authentification est activée.')}{' '}<a href="/admin" style={{ fontWeight: 600, color: 'inherit' }}>{t('Aller à l’administration →')}</a></>
+          ) : (
+            <><strong>{t('Double authentification obligatoire.')}</strong>{' '}{t('Pour accéder à l’administration, activez la double authentification ci-dessous avec une application comme Google Authenticator, Microsoft Authenticator ou 1Password.')}</>
+          )}
+        </div>
+      )}
 
       {message && (
         <div style={{
