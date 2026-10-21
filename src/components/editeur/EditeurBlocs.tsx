@@ -8,6 +8,7 @@
 //  - vidéos : lien YouTube/Vimeo reconnu automatiquement, ou envoi d'un fichier
 //  - quiz construit à la souris
 
+import { useT } from '@/lib/i18n/client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import {
@@ -57,6 +58,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   /** Un modèle demande « J'ai lu et compris » : la page active l'option de la leçon */
   onModeleAttestation?: () => void
 }) {
+  const { t } = useT()
   const [blocs, setBlocs] = useState<Bloc[]>(() => [...blocsInitiaux].sort((a, b) => a.ordre - b.ordre))
   const [etat, setEtat] = useState<EtatSauvegarde>('ok')
   const [erreur, setErreur] = useState<string | null>(null)
@@ -210,7 +212,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
     } else {
       const bloc = blocs.find(b => b.id === cible.blocId)
       if (!bloc) return
-      if (bloc.type !== type) { setErreur(type === 'file' ? 'Cette vidéo ne peut pas être intégrée (lien SharePoint) : ajoutez-la comme bloc « Librairie » pour l’afficher en lien.' : 'Choisissez un document ou un lien pour ce bloc.'); return }
+      if (bloc.type !== type) { setErreur(type === 'file' ? 'Cette vidéo ne peut pas être intégrée (lien SharePoint) : ajoutez-la comme bloc « Librairie » pour l’afficher en lien.' : t('Choisissez un document ou un lien pour ce bloc.')); return }
       modifier(bloc.id, { url: e.url, contenu: null, titre: bloc.titre || e.titre, metadata: { ...meta(bloc), ...metadata } }, true)
     }
   }
@@ -244,15 +246,15 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
       )}
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Contenu de la leçon <span className="text-gray-400 font-normal normal-case">({blocs.length} bloc{blocs.length > 1 ? 's' : ''})</span>
+          {t('Contenu de la leçon')} <span className="text-gray-400 font-normal normal-case">({blocs.length} bloc{blocs.length > 1 ? 's' : ''})</span>
         </h3>
         <div className="flex items-center gap-3">
           <span className={'text-xs ' + (etat === 'erreur' ? 'text-red-600' : etat === 'en_cours' ? 'text-amber-600' : 'text-green-600')}>
-            {etat === 'erreur' ? '⚠️ Erreur d’enregistrement' : etat === 'en_cours' ? 'Enregistrement…' : '✓ Enregistré'}
+            {etat === 'erreur' ? t('⚠️ Erreur d’enregistrement') : etat === 'en_cours' ? t('Enregistrement…') : t('✓ Enregistré')}
           </span>
           <a href={`/formations/${formationId}/lecon/${leconId}?apercu=1`} target="_blank" rel="noopener noreferrer"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-            👁️ Aperçu employé
+            {t('👁️ Aperçu employé')}
           </a>
         </div>
       </div>
@@ -270,7 +272,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
 
       {blocs.length === 0 && (
         <div className="mb-4">
-          <p className="text-sm font-semibold text-gray-700 mb-2">Partir d’un modèle</p>
+          <p className="text-sm font-semibold text-gray-700 mb-2">{t('Partir d’un modèle')}</p>
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
             {MODELES_LECON.map(m => (
               <button key={m.id} onClick={() => appliquerModele(m)} disabled={etat === 'en_cours'}
@@ -281,7 +283,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-2">…ou commencez avec un bloc vide :</p>
+          <p className="text-xs text-gray-400 mt-2">{t('…ou commencez avec un bloc vide :')}</p>
         </div>
       )}
 
@@ -298,7 +300,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
                 draggable
                 onDragStart={e => { setGlisse(b.id); e.dataTransfer.effectAllowed = 'move' }}
                 onDragEnd={() => { setGlisse(null); setSurvol(null) }}
-                title="Glisser pour déplacer"
+                title={t('Glisser pour déplacer')}
                 className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 select-none px-1"
               >⋮⋮</span>
               <span className="text-xs font-semibold text-gray-500 uppercase">
@@ -344,6 +346,7 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
   onDrop: () => void
   vide?: boolean
 }) {
+  const { t } = useT()
   return (
     <div
       onDragOver={e => { e.preventDefault(); onDragOver() }}
@@ -359,9 +362,9 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
             className={vide
               ? 'px-4 py-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 text-sm font-semibold hover:bg-blue-50 w-full'
               : 'w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 text-lg leading-none shadow-sm'}
-            title="Ajouter un bloc ici"
+            title={t('Ajouter un bloc ici')}
           >
-            {vide ? '+ Ajouter le premier bloc' : '+'}
+            {vide ? t('+ Ajouter le premier bloc') : '+'}
           </button>
           <div className="flex-1 h-px bg-transparent group-hover:bg-gray-200" />
         </div>
@@ -379,8 +382,8 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
           <button onClick={() => onLibrairie(index)}
             className="flex flex-col items-start gap-0.5 p-3 rounded-lg border border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 hover:bg-indigo-50 text-left">
             <span className="text-xl">📚</span>
-            <span className="text-sm font-semibold text-gray-800">Librairie</span>
-            <span className="text-xs text-gray-500">Vidéo, lien, document ou politique</span>
+            <span className="text-sm font-semibold text-gray-800">{t('Librairie')}</span>
+            <span className="text-xs text-gray-500">{t('Vidéo, lien, document ou politique')}</span>
           </button>
         </div>
       )}
@@ -414,6 +417,7 @@ type PropsBloc = {
 const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 function ZoneTexteAuto(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const { t } = useT()
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     const t = ref.current
@@ -423,6 +427,7 @@ function ZoneTexteAuto(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>)
 }
 
 function EditeurTexte({ bloc, modifier }: PropsBloc) {
+  const { t } = useT()
   const style = String(meta(bloc).style ?? 'normal')
   const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
   return (
@@ -438,11 +443,11 @@ function EditeurTexte({ bloc, modifier }: PropsBloc) {
       <div className="rounded-lg p-3" style={{ background: s.fond, border: `1px solid ${s.bord}` }}>
         {style !== 'normal' && (
           <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value })}
-            placeholder="Titre de l'encadré" className="w-full bg-transparent font-semibold text-sm mb-2 focus:outline-none" style={{ color: s.titre }} />
+            placeholder={t('Titre de l\'encadré')} className="w-full bg-transparent font-semibold text-sm mb-2 focus:outline-none" style={{ color: s.titre }} />
         )}
         {style === 'normal' && (
           <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
-            placeholder="Sous-titre (optionnel)" className="w-full bg-transparent font-semibold text-base text-gray-900 mb-2 focus:outline-none" />
+            placeholder={t('Sous-titre (optionnel)')} className="w-full bg-transparent font-semibold text-base text-gray-900 mb-2 focus:outline-none" />
         )}
         <ZoneTexteAuto value={bloc.contenu ?? ''} onChange={e => modifier(bloc.id, { contenu: e.target.value })}
           placeholder={style === 'procedure' ? '1. Première étape\n2. Deuxième étape' : 'Écrivez ici… (**gras**, *italique*, « - » pour une liste, « 1. » pour une liste numérotée)'}
@@ -455,6 +460,7 @@ function EditeurTexte({ bloc, modifier }: PropsBloc) {
 function ZoneDepot({ genre, onFichier, texte, enCours }: {
   genre: GenreMedia; onFichier: (f: File) => void; texte: string; enCours: boolean
 }) {
+  const { t } = useT()
   const [dessus, setDessus] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   return (
@@ -478,7 +484,7 @@ function ZoneDepot({ genre, onFichier, texte, enCours }: {
       <input ref={input} type="file" hidden accept={REGLES_MEDIAS[genre].types.join(',')}
         onChange={e => { const f = e.target.files?.[0]; if (f) onFichier(f); e.target.value = '' }} />
       {enCours ? (
-        <p className="text-sm text-blue-700 font-medium">Envoi en cours…</p>
+        <p className="text-sm text-blue-700 font-medium">{t('Envoi en cours…')}</p>
       ) : (
         <>
           <p className="text-sm text-gray-700 font-medium">{texte}</p>
@@ -508,6 +514,7 @@ function adresse(url: string | null, urlsMedias: Record<string, string>) {
 }
 
 function EditeurImage(p: PropsBloc) {
+  const { t } = useT()
   const { bloc, modifier, urlsMedias } = p
   const { enCours, envoyer } = useEnvoi(p, 'image')
   const src = adresse(bloc.url ?? bloc.contenu, urlsMedias)
@@ -521,36 +528,38 @@ function EditeurImage(p: PropsBloc) {
             : <div className="h-40 rounded-lg bg-gray-100 animate-pulse" />}
           <button onClick={() => modifier(bloc.id, { url: null, contenu: null }, true)}
             className="absolute top-2 right-2 text-xs bg-white/90 border border-gray-300 rounded-md px-2 py-1 opacity-0 group-hover:opacity-100">
-            Remplacer
+            {t('Remplacer')}
           </button>
         </div>
       ) : (
         <ZoneDepot genre="image" enCours={enCours} onFichier={f => envoyer(f)}
-          texte="Glissez une image ici, cliquez pour choisir, ou collez une capture (Ctrl+V)" />
+          texte={t('Glissez une image ici, cliquez pour choisir, ou collez une capture (Ctrl+V)')} />
       )}
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
-        placeholder="Légende (affichée sous l'image)" className={champ} />
+        placeholder={t('Légende (affichée sous l\'image)')} className={champ} />
       <input value={String(meta(bloc).alt ?? '')} onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), alt: e.target.value } })}
-        placeholder="Description pour l'accessibilité (lecteurs d'écran)" className={champ + ' text-xs'} />
+        placeholder={t('Description pour l\'accessibilité (lecteurs d\'écran)')} className={champ + ' text-xs'} />
     </div>
   )
 }
 
 /** Bandeau d'un bloc lié à la librairie. */
 function LienLibrairie({ bloc, modifier }: PropsBloc) {
+  const { t } = useT()
   if (!meta(bloc).librairie_id) return null
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-lg px-3 py-2">
-      <span>📚 Lié à la librairie : se met à jour si l’élément y est modifié.</span>
+      <span>{t('📚 Lié à la librairie : se met à jour si l’élément y est modifié.')}</span>
       <button type="button" className="ml-auto underline" onClick={() => {
         const m = { ...meta(bloc) }; delete m.librairie_id
         modifier(bloc.id, { metadata: m }, true)
-      }}>Détacher</button>
+      }}>{t('Détacher')}</button>
     </div>
   )
 }
 
 function EditeurVideo(p: PropsBloc) {
+  const { t } = useT()
   const { bloc, modifier, urlsMedias } = p
   const { enCours, envoyer } = useEnvoi(p, 'video')
   const source = bloc.url ?? bloc.contenu ?? ''
@@ -561,7 +570,7 @@ function EditeurVideo(p: PropsBloc) {
   return (
     <div className="space-y-3">
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
-        placeholder="Titre de la vidéo" className={champ + ' font-medium'} />
+        placeholder={t('Titre de la vidéo')} className={champ + ' font-medium'} />
       <LienLibrairie {...p} />
 
       {source ? (
@@ -576,13 +585,13 @@ function EditeurVideo(p: PropsBloc) {
               <div className="w-full h-full animate-pulse bg-gray-800" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-gray-300 p-4 text-center">
-                Lien non reconnu. Collez un lien YouTube ou Vimeo, ou envoyez un fichier vidéo.
+                {t('Lien non reconnu. Collez un lien YouTube ou Vimeo, ou envoyez un fichier vidéo.')}
               </div>
             )}
           </div>
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>{enLigne ? (enLigne.plateforme === 'youtube' ? '▶ YouTube' : '▶ Vimeo') : estMediaPrive(source) ? '🔒 Vidéo privée hébergée' : ''}</span>
-            <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-blue-600 hover:underline">Changer de vidéo</button>
+            <span>{enLigne ? (enLigne.plateforme === 'youtube' ? '▶ YouTube' : '▶ Vimeo') : estMediaPrive(source) ? t('🔒 Vidéo privée hébergée') : ''}</span>
+            <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-blue-600 hover:underline">{t('Changer de vidéo')}</button>
           </div>
         </div>
       ) : (
@@ -591,26 +600,26 @@ function EditeurVideo(p: PropsBloc) {
             {(['lien', 'fichier'] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
                 className={'px-3 py-1.5 rounded-md border ' + (mode === m ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600')}>
-                {m === 'lien' ? '🔗 Lien YouTube / Vimeo' : '⬆️ Envoyer un fichier'}
+                {m === 'lien' ? '🔗 Lien YouTube / Vimeo' : t('⬆️ Envoyer un fichier')}
               </button>
             ))}
           </div>
           {mode === 'lien' ? (
-            <input autoFocus placeholder="Collez le lien de la vidéo (ex. https://youtu.be/…)" className={champ}
+            <input autoFocus placeholder={t('Collez le lien de la vidéo (ex. https://youtu.be/…)')} className={champ}
               onChange={e => { const v = e.target.value.trim(); if (analyserVideoEnLigne(v)) modifier(bloc.id, { url: v, contenu: null }, true) }} />
           ) : (
             <ZoneDepot genre="video" enCours={enCours} onFichier={f => envoyer(f, { contenu: null })}
               texte="Glissez une vidéo ici ou cliquez pour choisir (reste privée, visible seulement dans WS Formation)" />
           )}
-          <p className="text-xs text-gray-400">Pour une vidéo de plus de 50 Mo, publiez-la sur YouTube en « non répertoriée » et collez le lien.</p>
-          <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">📚 Choisir dans la librairie</button>
+          <p className="text-xs text-gray-400">{t('Pour une vidéo de plus de 50 Mo, publiez-la sur YouTube en « non répertoriée » et collez le lien.')}</p>
+          <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">{t('📚 Choisir dans la librairie')}</button>
         </>
       )}
       <label className="flex items-start gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
         <input type="checkbox" className="mt-0.5 w-4 h-4" checked={meta(bloc).obligatoire === true}
           onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), obligatoire: e.target.checked } }, true)} />
         <span>
-          <strong>Visionnement obligatoire</strong>
+          <strong>{t('Visionnement obligatoire')}</strong>
           <span className="block text-xs text-gray-500">L’employé doit regarder au moins 90 % de la vidéo (sans avancer rapidement) pour pouvoir terminer la leçon.</span>
         </span>
       </label>
@@ -619,42 +628,45 @@ function EditeurVideo(p: PropsBloc) {
 }
 
 function EditeurFichier(p: PropsBloc) {
+  const { t } = useT()
   const { bloc, modifier } = p
   const { enCours, envoyer } = useEnvoi(p, 'fichier')
   const nom = String(meta(bloc).nom_fichier ?? '')
   return (
     <div className="space-y-3">
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
-        placeholder="Nom affiché (ex. Politique de confidentialité 2026)" className={champ + ' font-medium'} />
+        placeholder={t('Nom affiché (ex. Politique de confidentialité 2026)')} className={champ + ' font-medium'} />
       <LienLibrairie {...p} />
       {bloc.url || bloc.contenu ? (
         <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
-          <span className="truncate">📎 {nom || (estMediaPrive(bloc.url) ? 'Document privé' : bloc.url ?? bloc.contenu)}</span>
-          <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">Remplacer</button>
+          <span className="truncate">📎 {nom || (estMediaPrive(bloc.url) ? t('Document privé') : bloc.url ?? bloc.contenu)}</span>
+          <button onClick={() => { const m = { ...meta(bloc) }; delete m.librairie_id; modifier(bloc.id, { url: null, contenu: null, metadata: m }, true) }} className="text-xs text-blue-600 hover:underline flex-shrink-0 ml-2">{t('Remplacer')}</button>
         </div>
       ) : (
         <ZoneDepot genre="fichier" enCours={enCours}
           onFichier={f => envoyer(f, { metadata: { ...meta(bloc), nom_fichier: f.name }, titre: bloc.titre || f.name.replace(/\.[^.]+$/, '') })}
-          texte="Glissez un document ici ou cliquez pour choisir" />
+          texte={t('Glissez un document ici ou cliquez pour choisir')} />
       )}
       {!(bloc.url || bloc.contenu) && (
-        <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">📚 Choisir dans la librairie</button>
+        <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">{t('📚 Choisir dans la librairie')}</button>
       )}
     </div>
   )
 }
 
 function EditeurLien({ bloc, modifier }: PropsBloc) {
+  const { t } = useT()
   return (
     <div className="space-y-2">
-      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })} placeholder="Titre" className={champ} />
+      <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })} placeholder={t('Titre')} className={champ} />
       <input value={bloc.url ?? bloc.contenu ?? ''} onChange={e => modifier(bloc.id, { url: e.target.value, contenu: null })}
-        placeholder="Lien de la présentation (Google Slides, Canva…)" className={champ} />
+        placeholder={t('Lien de la présentation (Google Slides, Canva…)')} className={champ} />
     </div>
   )
 }
 
 function EditeurQuiz({ bloc, modifier }: PropsBloc) {
+  const { t } = useT()
   const quiz = lireQuiz(bloc.contenu)
   const maj = (q: Quiz) => modifier(bloc.id, { contenu: JSON.stringify(q) })
   const majQuestion = (i: number, changes: Partial<Quiz['questions'][number]>) =>
@@ -663,24 +675,24 @@ function EditeurQuiz({ bloc, modifier }: PropsBloc) {
   return (
     <div className="space-y-4">
       <input value={bloc.titre ?? ''} onChange={e => modifier(bloc.id, { titre: e.target.value || null })}
-        placeholder="Titre du quiz (ex. Vérifiez vos connaissances)" className={champ + ' font-medium'} />
+        placeholder={t('Titre du quiz (ex. Vérifiez vos connaissances)')} className={champ + ' font-medium'} />
       {quiz.questions.map((q, i) => (
         <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
           <div className="flex items-start gap-2">
             <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-1.5">{i + 1}</span>
-            <ZoneTexteAuto rows={1} value={q.question} onChange={e => majQuestion(i, { question: e.target.value })} placeholder="Écrivez la question…" />
-            <button title="Supprimer la question" onClick={() => maj({ questions: quiz.questions.filter((_, j) => j !== i) })}
+            <ZoneTexteAuto rows={1} value={q.question} onChange={e => majQuestion(i, { question: e.target.value })} placeholder={t('Écrivez la question…')} />
+            <button title={t('Supprimer la question')} onClick={() => maj({ questions: quiz.questions.filter((_, j) => j !== i) })}
               className="text-red-400 hover:text-red-600 px-1 mt-1.5" disabled={quiz.questions.length === 1}>✕</button>
           </div>
           <div className="space-y-2 pl-8">
             {q.reponses.map((r, j) => (
               <div key={j} className="flex items-center gap-2">
                 <input type="radio" name={`bonne-${bloc.id}-${i}`} checked={q.bonne_reponse === j}
-                  onChange={() => majQuestion(i, { bonne_reponse: j })} title="Bonne réponse" className="w-4 h-4 accent-green-600" />
+                  onChange={() => majQuestion(i, { bonne_reponse: j })} title={t('Bonne réponse')} className="w-4 h-4 accent-green-600" />
                 <input value={r} onChange={e => majQuestion(i, { reponses: q.reponses.map((x, k) => k === j ? e.target.value : x) })}
                   placeholder={`Réponse ${j + 1}`}
                   className={champ + (q.bonne_reponse === j ? ' border-green-400 bg-green-50' : '')} />
-                <button title="Retirer" disabled={q.reponses.length <= 2}
+                <button title={t('Retirer')} disabled={q.reponses.length <= 2}
                   onClick={() => majQuestion(i, {
                     reponses: q.reponses.filter((_, k) => k !== j),
                     bonne_reponse: q.bonne_reponse === j ? 0 : q.bonne_reponse > j ? q.bonne_reponse - 1 : q.bonne_reponse,
@@ -690,18 +702,18 @@ function EditeurQuiz({ bloc, modifier }: PropsBloc) {
             ))}
             {q.reponses.length < 6 && (
               <button onClick={() => majQuestion(i, { reponses: [...q.reponses, ''] })} className="text-xs text-blue-600 hover:underline">
-                + Ajouter une réponse
+                {t('+ Ajouter une réponse')}
               </button>
             )}
-            <p className="text-xs text-gray-400">Cochez le rond de la bonne réponse.</p>
+            <p className="text-xs text-gray-400">{t('Cochez le rond de la bonne réponse.')}</p>
             <input value={q.explication ?? ''} onChange={e => majQuestion(i, { explication: e.target.value })}
-              placeholder="Explication affichée après la réponse (optionnel)" className={champ + ' text-xs'} />
+              placeholder={t('Explication affichée après la réponse (optionnel)')} className={champ + ' text-xs'} />
           </div>
         </div>
       ))}
       <button onClick={() => maj({ questions: [...quiz.questions, nouvelleQuestion()] })}
         className="w-full text-sm font-medium text-blue-600 border border-dashed border-blue-300 rounded-lg py-2 hover:bg-blue-50">
-        + Ajouter une question
+        {t('+ Ajouter une question')}
       </button>
     </div>
   )

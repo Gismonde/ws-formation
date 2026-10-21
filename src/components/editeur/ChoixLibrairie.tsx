@@ -1,5 +1,6 @@
 'use client'
 // Fenêtre « Choisir dans la librairie » de l'éditeur de leçons.
+import { useT } from '@/lib/i18n/client'
 import { useEffect, useMemo, useState } from 'react'
 import { LIBELLE_TYPE_LIBRAIRIE, plateformeVideo, type ElementLibrairie, type TypeLibrairie } from '@/lib/librairie-commun'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
@@ -23,6 +24,7 @@ export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, o
   onChoisirPlusieurs?: (e: ElementChoisi[]) => void
   onFermer: () => void
 }) {
+  const { t } = useT()
   const multiple = !!onChoisirPlusieurs
   const [selection, setSelection] = useState<ElementChoisi[]>([])
   const basculer = (e: ElementChoisi) => setSelection(s => s.some(x => x.id === e.id) ? s.filter(x => x.id !== e.id) : [...s, e])
@@ -52,12 +54,12 @@ export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, o
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/40 flex items-center justify-center p-4" onClick={onFermer}>
-      <div role="dialog" aria-modal="true" aria-label="Choisir dans la librairie" onClick={e => e.stopPropagation()}
+      <div role="dialog" aria-modal="true" aria-label={t('Choisir dans la librairie')} onClick={e => e.stopPropagation()}
         className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
         <div className="p-4 border-b border-gray-100 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">📚 Choisir dans la librairie</h2>
-            <button type="button" onClick={onFermer} aria-label="Fermer" className="text-gray-400 text-xl">×</button>
+            <h2 className="font-semibold text-gray-900">{t('📚 Choisir dans la librairie')}</h2>
+            <button type="button" onClick={onFermer} aria-label={t('Fermer')} className="text-gray-400 text-xl">{t('×')}</button>
           </div>
           <div className="flex flex-wrap gap-2">
             {types.length > 1 && types.map(t => (
@@ -66,13 +68,13 @@ export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, o
                 {ICONE[t]} {LIBELLE[t]}
               </button>
             ))}
-            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher…" className="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-3 py-1.5 text-sm" />
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher…')} className="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-3 py-1.5 text-sm" />
           </div>
         </div>
         <div className="overflow-y-auto divide-y divide-gray-100">
           {erreur && <p className="p-4 text-sm text-red-600">{erreur}</p>}
-          {elements === null && <p className="p-6 text-center text-sm text-gray-400">Chargement…</p>}
-          {elements && !erreur && visibles.length === 0 && <p className="p-6 text-center text-sm text-gray-400">Aucun élément. Ajoutez-en dans Admin → Librairie.</p>}
+          {elements === null && <p className="p-6 text-center text-sm text-gray-400">{t('Chargement…')}</p>}
+          {elements && !erreur && visibles.length === 0 && <p className="p-6 text-center text-sm text-gray-400">{t('Aucun élément. Ajoutez-en dans Admin → Librairie.')}</p>}
           {visibles.map(e => (
             <button key={e.id} type="button" onClick={() => multiple ? basculer(e) : onChoisir?.(e)} className="w-full text-left px-4 py-3 hover:bg-indigo-50 flex gap-3">
               {multiple && <input type="checkbox" readOnly tabIndex={-1} checked={selection.some(x => x.id === e.id)} className="mt-1.5" />}
@@ -86,12 +88,12 @@ export default function ChoixLibrairie({ types, onChoisir, onChoisirPlusieurs, o
         </div>
         {multiple && (
           <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-3">
-            <span className="text-sm text-gray-600">{selection.length} élément{selection.length > 1 ? 's' : ''} sélectionné{selection.length > 1 ? 's' : ''} — une leçon sera créée par élément, dans l’ordre de sélection.</span>
+            <span className="text-sm text-gray-600">{selection.length} élément{selection.length > 1 ? 's' : ''} sélectionné{selection.length > 1 ? 's' : ''}{' '}{t('— une leçon sera créée par élément, dans l’ordre de sélection.')}</span>
             <button type="button" disabled={selection.length === 0} onClick={() => onChoisirPlusieurs?.(selection)}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">Ajouter</button>
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">{t('Ajouter')}</button>
           </div>
         )}
-        <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">{type === 'politique' ? 'Ajoute un lien vers la politique ; l’employé la lit et la confirme dans son espace Politiques.' : 'L’élément reste lié à la librairie : s’il y est modifié, cette leçon se met à jour.'}</p>
+        <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">{type === 'politique' ? t('Ajoute un lien vers la politique ; l’employé la lit et la confirme dans son espace Politiques.') : t('L’élément reste lié à la librairie : s’il y est modifié, cette leçon se met à jour.')}</p>
       </div>
     </div>
   )

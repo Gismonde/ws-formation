@@ -1,8 +1,10 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ApercuFormationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await i18n()
   const { id } = await params
   const supabase = await createClient()
 
@@ -26,23 +28,23 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
         <div className="flex items-center gap-3">
           <span className="text-lg">👁️</span>
           <div>
-            <p className="font-semibold text-sm">Mode aperçu — Vue employé</p>
-            <p className="text-xs text-amber-100">Vous voyez exactement ce que verront les employés. Les progressions et boutons sont désactivés.</p>
+            <p className="font-semibold text-sm">{t('Mode aperçu — Vue employé')}</p>
+            <p className="text-xs text-amber-100">{t('Vous voyez exactement ce que verront les employés. Les progressions et boutons sont désactivés.')}</p>
           </div>
         </div>
         <Link
           href={`/admin/formations/${id}/modifier`}
           className="bg-white text-amber-600 hover:bg-amber-50 font-semibold text-sm px-4 py-2 rounded-lg transition-colors"
         >
-          ← Retour à l’éditeur
+          {t('← Retour à l’éditeur')}
         </Link>
       </div>
 
       {/* Navigation employé (simulée) */}
       <nav className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <span className="text-gray-400 text-sm cursor-not-allowed">← Dashboard</span>
-          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Aperçu</span>
+          <span className="text-gray-400 text-sm cursor-not-allowed">{t('← Dashboard')}</span>
+          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">{t('Aperçu')}</span>
         </div>
       </nav>
 
@@ -63,7 +65,7 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
           {/* Barre de progression simulée à 0% */}
           <div className="mt-5">
             <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Progression</span>
+              <span>{t('Progression')}</span>
               <span className="font-medium text-gray-400">0% (aperçu)</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2">
@@ -92,9 +94,9 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Modules ({modules?.length ?? 0})</h2>
           {(!modules || modules.length === 0) ? (
             <div className="bg-white border border-dashed border-gray-300 rounded-xl p-8 text-center text-gray-400">
-              <p className="text-sm">Aucun module ajouté pour l’instant.</p>
+              <p className="text-sm">{t('Aucun module ajouté pour l’instant.')}</p>
               <Link href={`/admin/formations/${id}/modifier`} className="text-indigo-600 text-sm mt-2 inline-block hover:underline">
-                + Ajouter des modules dans l’éditeur
+                {t('+ Ajouter des modules dans l’éditeur')}
               </Link>
             </div>
           ) : (
@@ -117,7 +119,7 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
                   <button
                     disabled
                     className="text-sm px-4 py-1.5 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
-                    title="Bouton désactivé en mode aperçu"
+                    title={t('Bouton désactivé en mode aperçu')}
                   >
                     {idx === 0 ? 'Commencer' : 'Verrouillé'}
                   </button>
@@ -135,17 +137,17 @@ export default async function ApercuFormationPage({ params }: { params: Promise<
               <p className="text-gray-500 text-sm mb-4">{questionnaire.description}</p>
             )}
             <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-              {questionnaire.note_passage && <span>Note de passage : {questionnaire.note_passage}%</span>}
-              {questionnaire.nb_tentatives_max && <span>Tentatives max : {questionnaire.nb_tentatives_max}</span>}
+              {questionnaire.note_passage && <span>{t('Note de passage :')}{' '}{questionnaire.note_passage}%</span>}
+              {questionnaire.nb_tentatives_max && <span>{t('Tentatives max :')}{' '}{questionnaire.nb_tentatives_max}</span>}
             </div>
             <button
               disabled
               className="bg-gray-300 text-gray-500 cursor-not-allowed font-semibold px-6 py-2.5 rounded-lg"
-              title="Désactivé en mode aperçu"
+              title={t('Désactivé en mode aperçu')}
             >
               Terminez tous les modules d’abord (0%)
             </button>
-            <p className="text-xs text-gray-400 mt-2">Le questionnaire sera disponible après avoir complété tous les modules.</p>
+            <p className="text-xs text-gray-400 mt-2">{t('Le questionnaire sera disponible après avoir complété tous les modules.')}</p>
           </div>
         )}
       </main>

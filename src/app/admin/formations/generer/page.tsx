@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState, useCallback, useEffect } from 'react'
 import { ChampCategorie } from '@/components/ChampCategorie'
 import { useRouter } from 'next/navigation'
@@ -311,6 +312,7 @@ function parseDocumentIntoModules(text: string): { titre: string; description: s
 type Step = 'upload' | 'review' | 'quiz' | 'creating' | 'done'
 
 export default function GenererFormationPage() {
+  const { t } = useT()
   const router = useRouter()
   const [step, setStep] = useState<Step>('upload')
   const [dragging, setDragging] = useState(false)
@@ -443,7 +445,7 @@ export default function GenererFormationPage() {
         setStep('review')
       } catch (err) {
         console.error('PDF error:', err)
-        setError("Erreur lors de la lecture du PDF. Vérifiez que le fichier n'est pas protégé.")
+        setError(t('Erreur lors de la lecture du PDF. Vérifiez que le fichier n\'est pas protégé.'))
       }
     } else {
       const reader = new FileReader()
@@ -460,7 +462,7 @@ export default function GenererFormationPage() {
         setModules(parsed.modules.length > 0 ? parsed.modules : [{ titre: 'Module 1', contenu: '', duree_minutes: 30, lecons: [] }])
         setStep('review')
       }
-      reader.onerror = () => setError('Erreur lors de la lecture du fichier.')
+      reader.onerror = () => setError(t('Erreur lors de la lecture du fichier.'))
       reader.readAsText(file, 'UTF-8')
     }
   }, [])
@@ -508,22 +510,22 @@ export default function GenererFormationPage() {
   const handleSubmit = async () => {
     // Validation renforcée
     const errors: string[] = []
-    if (!titre.trim()) errors.push('Le titre de la formation est requis.')
-    if (!clinique) errors.push('Choisissez la clinique de la formation.')
-    if (modules.length === 0) errors.push('Au moins un module est requis.')
+    if (!titre.trim()) errors.push(t('Le titre de la formation est requis.'))
+    if (!clinique) errors.push(t('Choisissez la clinique de la formation.'))
+    if (modules.length === 0) errors.push(t('Au moins un module est requis.'))
     const emptyModules = modules.filter(m => !m.titre.trim())
-    if (emptyModules.length > 0) errors.push('Chaque module doit avoir un titre.')
+    if (emptyModules.length > 0) errors.push(t('Chaque module doit avoir un titre.'))
     const invalidDurations = modules.filter(m => !m.duree_minutes || m.duree_minutes <= 0)
-    if (invalidDurations.length > 0) errors.push('Chaque module doit avoir une durée supérieure à 0.')
+    if (invalidDurations.length > 0) errors.push(t('Chaque module doit avoir une durée supérieure à 0.'))
     const emptyLecons = modules.flatMap(m => m.lecons || []).filter(l => !l.titre.trim())
-    if (emptyLecons.length > 0) errors.push('Chaque leçon doit avoir un titre.')
+    if (emptyLecons.length > 0) errors.push(t('Chaque leçon doit avoir un titre.'))
     if (questions.length > 0) {
       const emptyQ = questions.filter(q => !q.texte.trim())
-      if (emptyQ.length > 0) errors.push('Chaque question du questionnaire doit avoir un texte.')
+      if (emptyQ.length > 0) errors.push(t('Chaque question du questionnaire doit avoir un texte.'))
       const noCorrect = questions.filter(q => !q.reponses.some(r => r.est_correcte))
-      if (noCorrect.length > 0) errors.push('Chaque question doit avoir au moins une réponse correcte.')
+      if (noCorrect.length > 0) errors.push(t('Chaque question doit avoir au moins une réponse correcte.'))
       const emptyR = questions.filter(q => q.reponses.some(r => !r.texte.trim()))
-      if (emptyR.length > 0) errors.push('Chaque réponse doit avoir un texte.')
+      if (emptyR.length > 0) errors.push(t('Chaque réponse doit avoir un texte.'))
     }
     if (errors.length > 0) { setError(errors.join(' | ')); return }
 
@@ -538,7 +540,7 @@ export default function GenererFormationPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de la création.')
+        setError(data.error || t('Erreur lors de la création.'))
         setStep('review')
         return
       }
@@ -546,7 +548,7 @@ export default function GenererFormationPage() {
       localStorage.removeItem('generer-formation-draft')
       setStep('done')
     } catch {
-      setError('Erreur réseau.')
+      setError(t('Erreur réseau.'))
       setStep('review')
     }
   }
@@ -639,10 +641,10 @@ export default function GenererFormationPage() {
       <div style={containerStyle}>
         <div style={{ marginBottom: '24px' }}>
           <a href="/admin/formations" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>
-            ← Retour aux formations
+            {t('← Retour aux formations')}
           </a>
           <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: '8px 0 4px' }}>
-            Générer une formation depuis un document
+            {t('Générer une formation depuis un document')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
             Importez un fichier texte (.txt, .md) ou PDF contenant une procédure ou une politique.
@@ -668,10 +670,10 @@ export default function GenererFormationPage() {
           >
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
             <p style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: '0 0 8px' }}>
-              Glissez votre document ici
+              {t('Glissez votre document ici')}
             </p>
             <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 20px' }}>
-              ou cliquez pour sélectionner un fichier
+              {t('ou cliquez pour sélectionner un fichier')}
             </p>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
               Formats supportés: .txt, .md, .pdf (procédures, politiques, SOPs)
@@ -693,7 +695,7 @@ export default function GenererFormationPage() {
 
           <div style={{ marginTop: '24px', padding: '16px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
             <p style={{ fontSize: '13px', color: '#0369a1', margin: 0, lineHeight: '1.6' }}>
-              <strong>Conseil :</strong> Pour de meilleurs résultats, utilisez un document avec des titres de sections clairs
+              <strong>{t('Conseil :')}</strong> Pour de meilleurs résultats, utilisez un document avec des titres de sections clairs
               (ex: &quot;1. Introduction&quot;, &quot;## Procédure&quot;, &quot;SECTION: Sécurité&quot;).
               Chaque section deviendra un module de formation.
             </p>
@@ -712,13 +714,13 @@ export default function GenererFormationPage() {
       <div style={containerStyle}>
         <div style={{ marginBottom: '24px' }}>
           <button onClick={() => setStep('upload')} style={{ ...btnSecondaryStyle, padding: '6px 14px', fontSize: '13px' }}>
-            ← Changer de fichier
+            {t('← Changer de fichier')}
           </button>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
-            Vérifier et ajuster la formation
+            {t('Vérifier et ajuster la formation')}
           </h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
-            Fichier: <strong>{fileName}</strong> — {modules.length} module(s) détecté(s)
+            {t('Fichier:')} <strong>{fileName}</strong> — {modules.length} module(s) détecté(s)
           </p>
         </div>
 
@@ -730,40 +732,40 @@ export default function GenererFormationPage() {
 
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 20px' }}>
-            Informations générales
+            {t('Informations générales')}
           </h2>
           <div style={{ display: 'grid', gap: '16px' }}>
 <div>
-            <label style={labelStyle}>Responsable de la formation</label>
-            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder="Ex. : Dre Julie Martin, directrice des soins infirmiers" />
-            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Ce nom apparaît sur le certificat remis aux employés.</span>
+            <label style={labelStyle}>{t('Responsable de la formation')}</label>
+            <input style={inputStyle} value={responsable} onChange={e => setResponsable(e.target.value)} maxLength={120} placeholder={t('Ex. : Dre Julie Martin, directrice des soins infirmiers')} />
+            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>{t('Ce nom apparaît sur le certificat remis aux employés.')}</span>
           </div>
             <div>
-              <label style={labelStyle}>Titre de la formation *</label>
-              <input style={inputStyle} value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre de la formation" />
+              <label style={labelStyle}>{t('Titre de la formation *')}</label>
+              <input style={inputStyle} value={titre} onChange={e => setTitre(e.target.value)} placeholder={t('Titre de la formation')} />
             </div>
             <div>
-              <label style={labelStyle}>Description</label>
+              <label style={labelStyle}>{t('Description')}</label>
               <textarea
                 style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer, ex: \n\n- Point 1\n- Point 2)"
+                placeholder={t('Description de la formation... (Astuce : utilisez des retours à la ligne pour structurer)')}
               />
-              <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes</span>
+              <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'block' }}>{t('Mise en forme: **gras**, *italique*, - liste, laisser une ligne vide entre paragraphes')}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
               <ChampCliniqueFormation valeur={clinique} onChange={setClinique} style={selectStyle} labelStyle={labelStyle} />
               <div>
-                <label style={labelStyle}>Catégorie</label>
+                <label style={labelStyle}>{t('Catégorie')}</label>
                 <ChampCategorie valeur={categorie} onChange={setCategorie} style={selectStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Niveau</label>
+                <label style={labelStyle}>{t('Niveau')}</label>
                 <select style={selectStyle} value={niveau} onChange={e => setNiveau(e.target.value)}>
-                  <option value="debutant">Débutant</option>
-                  <option value="intermediaire">Intermédiaire</option>
-                  <option value="avance">Avancé</option>
+                  <option value="debutant">{t('Débutant')}</option>
+                  <option value="intermediaire">{t('Intermédiaire')}</option>
+                  <option value="avance">{t('Avancé')}</option>
                 </select>
               </div>
               <div>
@@ -789,9 +791,9 @@ export default function GenererFormationPage() {
                     <button
                       onClick={() => { setDureeManuelle(false); setDureeHeures(autoHeures) }}
                       style={{ ...btnSecondaryStyle, padding: '8px 10px', fontSize: '12px', whiteSpace: 'nowrap' }}
-                      title="Recalculer automatiquement"
+                      title={t('Recalculer automatiquement')}
                     >
-                      🔄 Auto
+                      {t('🔄 Auto')}
                     </button>
                   )}
                 </div>
@@ -803,21 +805,21 @@ export default function GenererFormationPage() {
         {/* Image de couverture + Tags + Objectifs */}
         <div style={{ ...cardStyle, marginBottom: '20px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 20px' }}>
-            Enrichissement
+            {t('Enrichissement')}
           </h2>
           <div style={{ display: 'grid', gap: '20px' }}>
 
             {/* Image de couverture */}
             <div>
-              <label style={labelStyle}>Image de couverture</label>
+              <label style={labelStyle}>{t('Image de couverture')}</label>
               {imageCouverture ? (
                 <div>
-                  <img src={imageCouverture} alt="Couverture" style={{ maxWidth: '240px', maxHeight: '140px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '8px' }} />
-                  <button onClick={() => setImageCouverture(null)} style={btnDangerStyle}>Retirer</button>
+                  <img src={imageCouverture} alt={t('Couverture')} style={{ maxWidth: '240px', maxHeight: '140px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block', marginBottom: '8px' }} />
+                  <button onClick={() => setImageCouverture(null)} style={btnDangerStyle}>{t('Retirer')}</button>
                 </div>
               ) : (
                 <label htmlFor="cover-img" style={{ ...btnSecondaryStyle, display: 'inline-block', cursor: 'pointer', fontSize: '13px' }}>
-                  + Ajouter une image de couverture
+                  {t('+ Ajouter une image de couverture')}
                   <input id="cover-img" type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
                     const f = e.target.files?.[0]
                     if (!f) return
@@ -832,12 +834,12 @@ export default function GenererFormationPage() {
 
             {/* Tags */}
             <div>
-              <label style={labelStyle}>Tags / mots-clés</label>
+              <label style={labelStyle}>{t('Tags / mots-clés')}</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
                 {tags.map((tag, ti) => (
                   <span key={ti} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '12px', padding: '3px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {tag}
-                    <button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '14px', padding: 0, lineHeight: 1 }}>×</button>
+                    <button onClick={() => setTags(prev => prev.filter((_, i) => i !== ti))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', fontSize: '14px', padding: 0, lineHeight: 1 }}>{t('×')}</button>
                   </span>
                 ))}
               </div>
@@ -847,7 +849,7 @@ export default function GenererFormationPage() {
                   value={tagInput}
                   onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => { if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); setTags(prev => [...prev, tagInput.trim()]); setTagInput('') } }}
-                  placeholder="Ajouter un tag (Entrée ou virgule)"
+                  placeholder={t('Ajouter un tag (Entrée ou virgule)')}
                 />
                 <button onClick={() => { if (tagInput.trim()) { setTags(prev => [...prev, tagInput.trim()]); setTagInput('') } }} style={{ ...btnSecondaryStyle, padding: '10px 14px' }}>+</button>
               </div>
@@ -855,13 +857,13 @@ export default function GenererFormationPage() {
 
             {/* Objectifs pédagogiques */}
             <div>
-              <label style={labelStyle}>Objectifs pédagogiques</label>
+              <label style={labelStyle}>{t('Objectifs pédagogiques')}</label>
               <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 8px' }}>À la fin de cette formation, l&apos;apprenant saura...</p>
               {objectifs.map((obj, oi) => (
                 <div key={oi} style={{ display: 'flex', gap: '8px', marginBottom: '6px', alignItems: 'flex-start' }}>
                   <span style={{ color: '#10b981', marginTop: '2px' }}>✓</span>
                   <span style={{ flex: 1, fontSize: '14px', color: '#374151' }}>{obj}</span>
-                  <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 6px' }}>×</button>
+                  <button onClick={() => setObjectifs(prev => prev.filter((_, i) => i !== oi))} style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 6px' }}>{t('×')}</button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -870,7 +872,7 @@ export default function GenererFormationPage() {
                   value={objectifInput}
                   onChange={e => setObjectifInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && objectifInput.trim()) { e.preventDefault(); setObjectifs(prev => [...prev, objectifInput.trim()]); setObjectifInput('') } }}
-                  placeholder="Ex: utiliser le logiciel X de manière autonome"
+                  placeholder={t('Ex: utiliser le logiciel X de manière autonome')}
                 />
                 <button onClick={() => { if (objectifInput.trim()) { setObjectifs(prev => [...prev, objectifInput.trim()]); setObjectifInput('') } }} style={{ ...btnSecondaryStyle, padding: '10px 14px' }}>+</button>
               </div>
@@ -885,7 +887,7 @@ export default function GenererFormationPage() {
               Modules ({modules.length}) — Durée totale: {totalMinutes} min
             </h2>
             <button onClick={addModule} style={{ ...btnPrimaryStyle, padding: '6px 14px', fontSize: '13px' }}>
-              + Ajouter un module
+              {t('+ Ajouter un module')}
             </button>
           </div>
 
@@ -903,33 +905,33 @@ export default function GenererFormationPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title="Monter">▲</button>
-                    <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title="Descendre">▼</button>
+                    <button onClick={() => moveModule(idx, -1)} style={btnMoveStyle} disabled={idx === 0} title={t('Monter')}>▲</button>
+                    <button onClick={() => moveModule(idx, 1)} style={btnMoveStyle} disabled={idx === modules.length - 1} title={t('Descendre')}>▼</button>
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Module {idx + 1}</span>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>{t('Module')}{' '}{idx + 1}</span>
                 </div>
                 <button onClick={() => removeModule(idx)} style={btnDangerStyle}>
-                  Supprimer
+                  {t('Supprimer')}
                 </button>
               </div>
               <div style={{ display: 'grid', gap: '10px' }}>
                 <div>
-                  <label style={{ ...labelStyle, fontSize: '13px' }}>Titre *</label>
+                  <label style={{ ...labelStyle, fontSize: '13px' }}>{t('Titre *')}</label>
                   <input
                     style={{ ...inputStyle, borderColor: !mod.titre.trim() ? '#ef4444' : '#d1d5db' }}
                     value={mod.titre}
                     onChange={e => updateModule(idx, 'titre', e.target.value)}
-                    placeholder="Titre du module"
+                    placeholder={t('Titre du module')}
                   />
-                  {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '2px 0 0' }}>Le titre est requis</p>}
+                  {!mod.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '2px 0 0' }}>{t('Le titre est requis')}</p>}
                 </div>
                 <div>
-                  <label style={{ ...labelStyle, fontSize: '13px' }}>Contenu</label>
+                  <label style={{ ...labelStyle, fontSize: '13px' }}>{t('Contenu')}</label>
                   <textarea
                     style={{ ...inputStyle, minHeight: '100px', resize: 'vertical', fontSize: '13px' }}
                     value={mod.contenu}
                     onChange={e => updateModule(idx, 'contenu', e.target.value)}
-                    placeholder="Contenu du module..."
+                    placeholder={t('Contenu du module...')}
                   />
                 </div>
                 <div style={{ maxWidth: '180px' }}>
@@ -956,7 +958,7 @@ export default function GenererFormationPage() {
                       }}
                       style={{ ...btnSecondaryStyle, fontSize: '12px', padding: '4px 10px' }}
                     >
-                      + Ajouter une leçon
+                      {t('+ Ajouter une leçon')}
                     </button>
                   </div>
                   {(mod.lecons || []).length === 0 && (
@@ -969,10 +971,10 @@ export default function GenererFormationPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === 0} title="Monter">▲</button>
-                              <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title="Descendre">▼</button>
+                              <button onClick={() => moveLecon(idx, leconIdx, -1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === 0} title={t('Monter')}>▲</button>
+                              <button onClick={() => moveLecon(idx, leconIdx, 1)} style={{ ...btnMoveStyle, fontSize: '11px', padding: '1px 5px' }} disabled={leconIdx === (mod.lecons || []).length - 1} title={t('Descendre')}>▼</button>
                             </div>
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Leçon {leconIdx + 1}</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>{t('Leçon')}{' '}{leconIdx + 1}</span>
                           </div>
                           <button
                             onClick={() => {
@@ -983,7 +985,7 @@ export default function GenererFormationPage() {
                             }}
                             style={{ ...btnDangerStyle, fontSize: '11px', padding: '2px 8px' }}
                           >
-                            Supprimer
+                            {t('Supprimer')}
                           </button>
                         </div>
                         <input
@@ -994,7 +996,7 @@ export default function GenererFormationPage() {
                             updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], titre: e.target.value }
                             setModules(updated)
                           }}
-                          placeholder="Titre de la leçon *"
+                          placeholder={t('Titre de la leçon *')}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                           <input
@@ -1007,11 +1009,11 @@ export default function GenererFormationPage() {
                               updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], duree_minutes: parseInt(e.target.value) || 0 }
                               setModules(updated)
                             }}
-                            placeholder="min"
+                            placeholder={t('min')}
                           />
-                          <span style={{ fontSize: '11px', color: '#6b7280' }}>min / leçon</span>
+                          <span style={{ fontSize: '11px', color: '#6b7280' }}>{t('min / leçon')}</span>
                         </div>
-                        {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 6px' }}>Titre requis</p>}
+                        {!lecon.titre.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 6px' }}>{t('Titre requis')}</p>}
                         <textarea
                           style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '13px' }}
                           value={lecon.description}
@@ -1020,7 +1022,7 @@ export default function GenererFormationPage() {
                             updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], description: e.target.value }
                             setModules(updated)
                           }}
-                          placeholder="Description de la leçon..."
+                          placeholder={t('Description de la leçon...')}
                         />
                         {/* Blocs de contenu enrichis */}
                         {(lecon.blocs || []).length > 0 && (
@@ -1032,9 +1034,9 @@ export default function GenererFormationPage() {
                                 </span>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', fontWeight: '600', textTransform: 'uppercase' }}>{bloc.type}</div>
-                                  <input style={{ ...inputStyle, fontSize: '12px' }} value={bloc.contenu} onChange={e => { const updated = [...modules]; const b = [...(updated[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? 'URL du PDF' : bloc.type === 'link' ? 'URL du lien' : 'Code...'} />
+                                  <input style={{ ...inputStyle, fontSize: '12px' }} value={bloc.contenu} onChange={e => { const updated = [...modules]; const b = [...(updated[idx].lecons[leconIdx].blocs || [])]; b[bi] = { ...b[bi], contenu: e.target.value }; updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} placeholder={bloc.type === 'video' ? 'URL YouTube/Vimeo' : bloc.type === 'file' ? t('URL du PDF') : bloc.type === 'link' ? t('URL du lien') : 'Code...'} />
                                 </div>
-                                <button onClick={() => { const updated = [...modules]; const b = (updated[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '2px 6px', flexShrink: 0 }}>×</button>
+                                <button onClick={() => { const updated = [...modules]; const b = (updated[idx].lecons[leconIdx].blocs || []).filter((_: any, i: number) => i !== bi); updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs: b }; setModules(updated) }} style={{ ...btnDangerStyle, fontSize: '10px', padding: '2px 6px', flexShrink: 0 }}>{t('×')}</button>
                               </div>
                             ))}
                           </div>
@@ -1042,7 +1044,7 @@ export default function GenererFormationPage() {
                         <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
                           {(['video', 'file', 'code', 'link'] as const).map(type => (
                             <button key={type} onClick={() => { const updated = [...modules]; const blocs = [...(updated[idx].lecons[leconIdx].blocs || []), { type, contenu: '' }]; updated[idx].lecons[leconIdx] = { ...updated[idx].lecons[leconIdx], blocs }; setModules(updated) }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer', color: '#374151' }}>
-                              + {type === 'video' ? '🎬 Vidéo' : type === 'file' ? '📎 PDF' : type === 'code' ? '💻 Code' : '🔗 Lien'}
+                              + {type === 'video' ? t('🎬 Vidéo') : type === 'file' ? '📎 PDF' : type === 'code' ? '💻 Code' : '🔗 Lien'}
                             </button>
                           ))}
                         </div>
@@ -1052,7 +1054,7 @@ export default function GenererFormationPage() {
                             <div style={{ position: 'relative', display: 'inline-block' }}>
                               <img
                                 src={lecon.image_url}
-                                alt="Aperçu"
+                                alt={t('Aperçu')}
                                 style={{ maxWidth: '200px', maxHeight: '120px', borderRadius: '4px', border: '1px solid #d1d5db', display: 'block' }}
                               />
                               <button
@@ -1073,7 +1075,7 @@ export default function GenererFormationPage() {
                               htmlFor={leconImgId}
                               style={{ ...btnSecondaryStyle, fontSize: '12px', padding: '4px 10px', cursor: 'pointer', display: 'inline-block' }}
                             >
-                              + Ajouter une image
+                              {t('+ Ajouter une image')}
                               <input
                                 id={leconImgId}
                                 type="file"
@@ -1098,7 +1100,7 @@ export default function GenererFormationPage() {
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setStep('upload')} style={btnSecondaryStyle}>
-            Annuler
+            {t('Annuler')}
           </button>
           <button onClick={() => setStep('quiz')} style={btnPrimaryStyle}>
             → Questionnaire &amp; Créer
@@ -1109,7 +1111,7 @@ export default function GenererFormationPage() {
               <label style={labelStyle}>Prérequis (formations obligatoires avant)</label>
               <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>Sélectionnez les formations que l&apos;apprenant doit avoir terminées avant d&apos;accéder à celle-ci.</p>
               {formationsDisponibles.length === 0 ? (
-                <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Aucune formation publiée disponible.</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>{t('Aucune formation publiée disponible.')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
                   {formationsDisponibles.map(f => (
@@ -1128,7 +1130,7 @@ export default function GenererFormationPage() {
                 </div>
               )}
               {prerequisIds.length > 0 && (
-                <p style={{ fontSize: '11px', color: '#7c3aed', margin: '4px 0 0' }}>✓ {prerequisIds.length} prérequis sélectionné{prerequisIds.length > 1 ? 's' : ''}</p>
+                <p style={{ fontSize: '11px', color: '#7c3aed', margin: '4px 0 0' }}>✓ {prerequisIds.length}{' '}{t('prérequis sélectionné')}{prerequisIds.length > 1 ? 's' : ''}</p>
               )}
             </div>
         </div>
@@ -1142,13 +1144,13 @@ export default function GenererFormationPage() {
       <div style={containerStyle}>
         <div style={{ marginBottom: '24px' }}>
           <button onClick={() => setStep('review')} style={{ ...btnSecondaryStyle, padding: '6px 14px', fontSize: '13px' }}>
-            ← Retour aux modules
+            {t('← Retour aux modules')}
           </button>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '12px 0 4px' }}>
             Questionnaire d&apos;évaluation
           </h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
-            Optionnel — ajoutez des questions QCM pour évaluer les apprenants à la fin de la formation.
+            {t('Optionnel — ajoutez des questions QCM pour évaluer les apprenants à la fin de la formation.')}
           </p>
         </div>
 
@@ -1158,7 +1160,7 @@ export default function GenererFormationPage() {
               Questions ({questions.length})
             </h2>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <label style={{ fontSize: '13px', color: '#374151' }}>Seuil réussite :</label>
+              <label style={{ fontSize: '13px', color: '#374151' }}>{t('Seuil réussite :')}</label>
               <input
                 type="number"
                 min={0}
@@ -1172,36 +1174,36 @@ export default function GenererFormationPage() {
                 onClick={() => setQuestions(prev => [...prev, { texte: '', reponses: [{ texte: '', est_correcte: true }, { texte: '', est_correcte: false }, { texte: '', est_correcte: false }] }])}
                 style={{ ...btnPrimaryStyle, padding: '6px 12px', fontSize: '13px' }}
               >
-                + Question
+                {t('+ Question')}
               </button>
             </div>
           </div>
 
           {questions.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af', fontSize: '14px' }}>
-              <p style={{ margin: '0 0 8px' }}>Aucune question — la formation sera créée sans questionnaire.</p>
-              <p style={{ margin: 0, fontSize: '12px' }}>Vous pourrez en ajouter plus tard depuis la page de la formation.</p>
+              <p style={{ margin: '0 0 8px' }}>{t('Aucune question — la formation sera créée sans questionnaire.')}</p>
+              <p style={{ margin: 0, fontSize: '12px' }}>{t('Vous pourrez en ajouter plus tard depuis la page de la formation.')}</p>
             </div>
           )}
 
           {questions.map((q, qi) => (
             <div key={qi} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '14px', marginBottom: '10px', background: '#f9fafb' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>Question {qi + 1}</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280' }}>{t('Question')}{' '}{qi + 1}</span>
                 <button
                   onClick={() => setQuestions(prev => prev.filter((_, i) => i !== qi))}
                   style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', cursor: 'pointer' }}
                 >
-                  Supprimer
+                  {t('Supprimer')}
                 </button>
               </div>
               <input
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid ' + (!q.texte.trim() ? '#ef4444' : '#d1d5db'), borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '8px' }}
                 value={q.texte}
                 onChange={e => setQuestions(prev => prev.map((q2, i) => i === qi ? { ...q2, texte: e.target.value } : q2))}
-                placeholder="Texte de la question... *"
+                placeholder={t('Texte de la question... *')}
               />
-              {!q.texte.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 8px' }}>Le texte est requis</p>}
+              {!q.texte.trim() && <p style={{ color: '#dc2626', fontSize: '12px', margin: '-4px 0 8px' }}>{t('Le texte est requis')}</p>}
               {q.reponses.map((r, ri) => (
                 <div key={ri} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                   <input
@@ -1228,7 +1230,7 @@ export default function GenererFormationPage() {
                 onClick={() => setQuestions(prev => prev.map((q2, i) => i !== qi ? q2 : { ...q2, reponses: [...q2.reponses, { texte: '', est_correcte: false }] }))}
                 style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', marginTop: '4px' }}
               >
-                + Réponse
+                {t('+ Réponse')}
               </button>
             </div>
           ))}
@@ -1242,10 +1244,10 @@ export default function GenererFormationPage() {
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setStep('review')} style={btnSecondaryStyle}>
-            Annuler
+            {t('Annuler')}
           </button>
           <button onClick={() => setShowPreview(true)} style={btnPrimaryStyle}>
-            ✓ Créer la formation
+            {t('✓ Créer la formation')}
           </button>
         </div>
       </div>
@@ -1258,32 +1260,32 @@ export default function GenererFormationPage() {
     const validQs = questions.filter(q => q.texte.trim())
     return (
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontFamily: 'system-ui, sans-serif' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>Aperçu avant création</h2>
-        <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>Vérifiez le récapitulatif avant de soumettre.</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>{t('Aperçu avant création')}</h2>
+        <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{t('Vérifiez le récapitulatif avant de soumettre.')}</p>
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
             <div className='grille-2-colonnes' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Titre</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Niveau</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Modules</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Leçons</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>Durée</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Titre')}</span><p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: '4px 0 0' }}>{titre}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Niveau')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Modules')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Leçons')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Durée')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
             </div>
           </div>
           {(tags.length > 0 || objectifs.length > 0) && (
             <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
-              {tags.length > 0 && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', fontWeight: '600' }}>Tags</span><div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>{tags.map((t, i) => <span key={i} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '11px', padding: '1px 8px', borderRadius: '20px' }}>{t}</span>)}</div></div>}
+              {tags.length > 0 && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', fontWeight: '600' }}>{t('Tags')}</span><div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>{tags.map((t, i) => <span key={i} style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '11px', padding: '1px 8px', borderRadius: '20px' }}>{t}</span>)}</div></div>}
               {objectifs.length > 0 && <div><span style={{ fontSize: '12px', fontWeight: '600' }}>Objectifs ({objectifs.length})</span>{objectifs.map((o, i) => <p key={i} style={{ fontSize: '12px', color: '#374151', margin: '4px 0 0' }}>✓ {o}</p>)}</div>}
             </div>
           )}
           {prerequisIds.length > 0 && (
             <div style={{ padding: '12px 16px', background: '#fefce8', borderRadius: '10px', border: '1px solid #fef08a' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#713f12' }}>⚠️ {prerequisIds.length} prérequis obligatoire{prerequisIds.length > 1 ? 's' : ''}</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#713f12' }}>⚠️ {prerequisIds.length}{' '}{t('prérequis obligatoire')}{prerequisIds.length > 1 ? 's' : ''}</span>
             </div>
           )}
           {validQs.length > 0 && (
             <div style={{ padding: '12px 16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#15803d' }}>✓ Questionnaire : {validQs.length} question{validQs.length > 1 ? 's' : ''}, seuil {seuilReussite}%</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#15803d' }}>{t('✓ Questionnaire :')}{' '}{validQs.length} question{validQs.length > 1 ? 's' : ''}{t(', seuil')}{' '}{seuilReussite}%</span>
             </div>
           )}
         </div>
@@ -1292,8 +1294,8 @@ export default function GenererFormationPage() {
           <span>Publier immédiatement (visible par les apprenants)</span>
         </label>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>← Modifier</button>
-          <button onClick={handleSubmit} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>✓ Confirmer et créer</button>
+          <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>{t('← Modifier')}</button>
+          <button onClick={handleSubmit} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>{t('✓ Confirmer et créer')}</button>
         </div>
       </div>
     )
@@ -1304,8 +1306,8 @@ export default function GenererFormationPage() {
     return (
       <div style={{ ...containerStyle, textAlign: 'center', paddingTop: '80px' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>Création en cours...</h2>
-        <p style={{ color: '#6b7280' }}>La formation et ses modules sont en cours de création.</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>{t('Création en cours...')}</h2>
+        <p style={{ color: '#6b7280' }}>{t('La formation et ses modules sont en cours de création.')}</p>
       </div>
     )
   }
@@ -1316,21 +1318,21 @@ export default function GenererFormationPage() {
       <div style={cardStyle}>
         <div style={{ fontSize: '64px', marginBottom: '16px' }}>✅</div>
         <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '0 0 8px' }}>
-          Formation créée avec succès!
+          {t('Formation créée avec succès!')}
         </h2>
         <p style={{ color: '#6b7280', marginBottom: '28px' }}>
-          La formation <strong>{titre}</strong> a été créée avec {modules.length} module(s).
+          {t('La formation')} <strong>{titre}</strong>{t('a été créée avec')}{' '}{modules.length} module(s).
           Elle est en brouillon — vous pouvez maintenant l&apos;éditer et la publier.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <button onClick={() => router.push('/admin/formations/' + formationId)} style={btnPrimaryStyle}>
-            Voir la formation
+            {t('Voir la formation')}
           </button>
           <button onClick={() => router.push('/admin/formations')} style={btnSecondaryStyle}>
-            Liste des formations
+            {t('Liste des formations')}
           </button>
           <button onClick={() => { setStep('upload'); setFileName(''); setModules([]); setTitre(''); setDescription(''); setTags([]); setObjectifs([]); setPrerequisIds([]); setImageCouverture(null) }} style={btnSecondaryStyle}>
-            Générer une autre
+            {t('Générer une autre')}
           </button>
         </div>
       </div>
