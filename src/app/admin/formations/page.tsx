@@ -223,7 +223,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
         background: "#fff",
         borderRadius: "16px",
         border: "1px solid #e5e7eb",
-        overflow: "hidden",
+        overflowX: "auto",
         boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03)",
       }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>

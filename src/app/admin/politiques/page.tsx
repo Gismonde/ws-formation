@@ -63,7 +63,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
           {peutPublier && !voirArchives && <Link href="/admin/politiques/nouvelle" className="inline-block mt-3 text-blue-600 text-sm hover:underline">Publier la première politique →</Link>}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase text-gray-500">
