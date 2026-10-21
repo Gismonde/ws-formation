@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFormationWithModules } from '@/lib/actions/formations'
-import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons } from '@/lib/actions/lessons'
+import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock } from '@/lib/actions/lessons'
+import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from '@/components/editeur/ChoixLibrairie'
 import { createModule, updateModule, deleteModule, reorderModules } from '@/lib/actions/formations'
 import type { Formation, Module, Lesson, ContentBlock } from '@/lib/types/formation'
 import EditeurBlocs from '@/components/editeur/EditeurBlocs'
@@ -166,6 +167,24 @@ export default function EditeurFormationPage() {
     else setErreur(res.error)
   }
 
+  // Ajout depuis la librairie au niveau du module : une leçon par élément choisi
+  const [librairieModule, setLibrairieModule] = useState<string | null>(null)
+  const ajouterDepuisLibrairie = async (moduleId: string, elements: ElementChoisi[]) => {
+    setLibrairieModule(null)
+    const mod = formation?.modules?.find(m => m.id === moduleId)
+    let ordre = mod?.lecons?.length || 0
+    setSauvegarde(true)
+    for (const e of elements) {
+      ordre++
+      const l = await createLesson({ module_id: moduleId, titre: e.titre, ordre })
+      if (!l.success) { setErreur(l.error); break }
+      const b = await createContentBlock({ lesson_id: (l.data as Lesson).id, ordre: 1, ...blocPourChoix(e) })
+      if (!b.success) { setErreur(b.error); break }
+    }
+    setSauvegarde(false)
+    chargerFormation()
+  }
+
   const sauvegarderLecon = async () => {
     if (panneau.type !== 'lecon') return
     setSauvegarde(true)
@@ -248,6 +267,10 @@ export default function EditeurFormationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {librairieModule && (
+        <ChoixLibrairie types={['video', 'lien', 'document', 'politique']}
+          onChoisirPlusieurs={els => ajouterDepuisLibrairie(librairieModule, els)} onFermer={() => setLibrairieModule(null)} />
+      )}
       {/* En-tete */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
@@ -484,6 +507,12 @@ export default function EditeurFormationPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Ajouter une leçon
+                  </button>
+                  <button
+                    onClick={() => setLibrairieModule(panneau.moduleId)}
+                    className="px-6 py-2 bg-indigo-50 text-indigo-700 text-sm rounded-lg hover:bg-indigo-100 transition-colors font-medium"
+                  >
+                    📚 Ajouter depuis la librairie
                   </button>
                 </div>
               </div>
