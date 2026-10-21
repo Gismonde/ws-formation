@@ -1,4 +1,5 @@
 'use client'
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation }: Props) {
+  const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -66,7 +68,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       }
     } catch (err) {
       console.error('handleSubmit error:', err)
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError(t('Une erreur est survenue. Veuillez réessayer.'))
     } finally {
       setLoading(false)
     }
@@ -78,8 +80,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
   if (success) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-        <p className="text-green-800 font-medium">Modifications enregistrées !</p>
-        <p className="text-green-600 text-sm mt-1">Redirection en cours...</p>
+        <p className="text-green-800 font-medium">{t('Modifications enregistrées !')}</p>
+        <p className="text-green-600 text-sm mt-1">{t('Redirection en cours...')}</p>
       </div>
     )
   }
@@ -88,7 +90,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
     <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
       {!modifiable && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600">
-          Consultation seulement : ce dossier est hors de ce que vous pouvez modifier.
+          {t('Consultation seulement : ce dossier est hors de ce que vous pouvez modifier.')}
         </div>
       )}
       <fieldset disabled={!modifiable} className="space-y-5">
@@ -97,22 +99,22 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Prénom *</label>
+          <label className={labelCls}>{t('Prénom *')}</label>
           <input className={inputCls} value={prenom} onChange={e => setPrenom(e.target.value)} required />
         </div>
         <div>
-          <label className={labelCls}>Nom *</label>
+          <label className={labelCls}>{t('Nom *')}</label>
           <input className={inputCls} value={nom} onChange={e => setNom(e.target.value)} required />
         </div>
       </div>
       <div>
-        <label className={labelCls}>Courriel</label>
+        <label className={labelCls}>{t('Courriel')}</label>
         <input className={inputCls + ' bg-gray-50 text-gray-400 cursor-not-allowed'} value={employe.email} disabled />
-        <p className="text-xs text-gray-400 mt-1">Le courriel ne peut pas être modifié</p>
+        <p className="text-xs text-gray-400 mt-1">{t('Le courriel ne peut pas être modifié')}</p>
       </div>
       <div>
-        <label className={labelCls}>Poste</label>
-        <input className={inputCls} value={poste} onChange={e => setPoste(e.target.value)} placeholder="Ex : Infirmier(e)..." />
+        <label className={labelCls}>{t('Poste')}</label>
+        <input className={inputCls} value={poste} onChange={e => setPoste(e.target.value)} placeholder={t('Ex : Infirmier(e)...')} />
       </div>
       <ChampsAcces
         role={role} clinique={clinique} departementId={departementId}
@@ -126,13 +128,13 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-blue-600 rounded border-gray-300" />
-        <label htmlFor="actif" className="text-sm font-medium text-gray-700">Employé actif</label>
+        <label htmlFor="actif" className="text-sm font-medium text-gray-700">{t('Employé actif')}</label>
       </div>
       </fieldset>
       <div className="flex gap-3 pt-2">
         {modifiable && <button type="submit" disabled={loading}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
-          {loading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+          {loading ? t('Enregistrement...') : t('Enregistrer les modifications')}
         </button>}
         <a href="/admin/employes"
           className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">

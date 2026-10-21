@@ -1,5 +1,6 @@
 'use client'
 // Onglet « Preuves » de la fiche employé : consulter le document, valider ou refuser avec un commentaire.
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PreuveDossier } from '@/lib/dossier-employe'
@@ -12,6 +13,7 @@ const BADGE = {
 } as const
 
 export default function ListePreuvesAdmin({ preuves, peutDecider }: { preuves: PreuveDossier[]; peutDecider: boolean }) {
+  const { t } = useT()
   const router = useRouter()
   const [commentaires, setCommentaires] = useState<Record<string, string>>({})
   const [enCours, setEnCours] = useState<string | null>(null)
@@ -25,12 +27,12 @@ export default function ListePreuvesAdmin({ preuves, peutDecider }: { preuves: P
     })
     const d = await r.json().catch(() => ({}))
     setEnCours(null)
-    if (!r.ok) return setErreur(d.error ?? 'Opération impossible')
+    if (!r.ok) return setErreur(d.error ?? t('Opération impossible'))
     router.refresh()
   }
 
   if (preuves.length === 0) {
-    return <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">Aucune preuve externe soumise.</div>
+    return <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucune preuve externe soumise.')}</div>
   }
 
   const enAttente = preuves.filter(p => p.statut === 'en_attente')
@@ -50,13 +52,13 @@ export default function ListePreuvesAdmin({ preuves, peutDecider }: { preuves: P
         <span className={'text-xs font-semibold px-2.5 py-1 rounded-full border ' + BADGE[p.statut]}>{p.statut_libelle}</span>
         {p.chemin && (
           <a href={`/api/preuves/${p.id}/fichier`} target="_blank" rel="noopener noreferrer"
-            className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Ouvrir le document</a>
+            className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{t('Ouvrir le document')}</a>
         )}
       </div>
       {p.statut === 'en_attente' && peutDecider && (
         <div className="mt-3 flex flex-wrap gap-2">
           <input value={commentaires[p.id] ?? ''} onChange={e => setCommentaires(c => ({ ...c, [p.id]: e.target.value }))}
-            placeholder="Commentaire pour l’employé (facultatif)" maxLength={500}
+            placeholder={t('Commentaire pour l’employé (facultatif)')} maxLength={500}
             className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <button type="button" onClick={() => decider(p.id, 'valide')} disabled={!!enCours}
             className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-50">

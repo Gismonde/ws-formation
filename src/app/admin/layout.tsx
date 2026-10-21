@@ -5,6 +5,8 @@ import { getActeur, peutCreerFormations } from '@/lib/permissions'
 import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO, THEME_CLINIQUE, vuesAdminPossibles } from '@/lib/cliniques'
 import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 import { TiroirMenu } from '@/components/TiroirMenu'
+import { ChoixLangue } from '@/components/ChoixLangue'
+import { i18n } from '@/lib/i18n/serveur'
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
@@ -32,6 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login')
 
   const employe = await getActeur()
+  const { t } = await i18n()
   if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard/accueil')
 
   const isAdmin = estAdministrateur(employe.role)
@@ -65,9 +68,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       <TiroirMenu classe='admin-sidebar' fond={fondBarre} titre='WS Formation — Administration'>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff' }}>WS Formation</div>
+          <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff' }}>{t('WS Formation')}</div>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
-            Administration{cliniqueTheme ? ` — ${CLINIQUE_INFO[cliniqueTheme].nom}` : ''}
+            {t('Administration')}{cliniqueTheme ? ` — ${CLINIQUE_INFO[cliniqueTheme].nom}` : ''}
           </div>
           <ChoixVueAdmin vue={employe.vue ?? null} possibles={vuesAdminPossibles(employe.clinique, employe.role)} />
         </div>
@@ -76,28 +79,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {visibleNav.map((item) => (
             <Link key={item.href} href={item.href} className='admin-nav-link'>
               <span className='material-icons' style={{ fontSize: '18px' }}>{item.icon}</span>
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </nav>
 
         <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className='langue-tiroir' style={{ marginBottom: '12px' }}><ChoixLangue sombre /></div>
           {employe && (
             <div style={{ marginBottom: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
               {employe.prenom} {employe.nom}
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
-                {ROLE_LABEL[employe.role]}{perimetre ? ' · ' + perimetre : ''}
+                {t(ROLE_LABEL[employe.role])}{perimetre ? ' · ' + perimetre : ''}
               </div>
             </div>
           )}
           <Link href='/dashboard/accueil' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', marginBottom: '6px' }}>
             <span className='material-icons' style={{ fontSize: '16px' }}>person</span>
-            Mon espace
+            {t('Mon espace')}
           </Link>
           <form action='/api/auth/signout' method='POST'>
             <button type='submit' style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', width: '100%' }}>
               <span className='material-icons' style={{ fontSize: '16px' }}>logout</span>
-              Déconnexion
+              {t('Déconnexion')}
             </button>
           </form>
         </div>
@@ -105,11 +109,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       <main className='admin-main-content'>
         <header className='admin-entete'>
-          <div style={{ fontWeight: '600', fontSize: '16px', color: '#1a1f36' }}>WS Formation — Administration</div>
+          <div style={{ fontWeight: '600', fontSize: '16px', color: '#1a1f36' }}>{t('WS Formation — Administration')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <ChoixLangue />
             <span style={{ fontSize: '14px', color: '#6b7280' }}>{user.email}</span>
             <form action='/api/auth/signout' method='POST'>
-              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Déconnexion</button>
+              <button type='submit' style={{ padding: '7px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>{t('Déconnexion')}</button>
             </form>
           </div>
         </header>

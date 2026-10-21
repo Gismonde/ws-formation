@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -12,12 +13,12 @@ export default function ToggleActifButton({
   actif: boolean
   nom: string
 }) {
+  const { t } = useT()
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function handleToggle() {
-    const action = actif ? 'archiver' : 'réactiver'
-    if (!confirm(`Voulez-vous vraiment ${action} ${nom} ?`)) return
+    if (!confirm(actif ? t('Voulez-vous vraiment archiver {nom} ?', { nom }) : t('Voulez-vous vraiment réactiver {nom} ?', { nom }))) return
     setLoading(true)
 
     const res = await fetch('/api/admin/toggle-employe-actif', {
@@ -68,7 +69,7 @@ export default function ToggleActifButton({
       disabled={loading}
       style={actif ? archiveStyle : reactiveStyle}
     >
-      {loading ? '...' : actif ? 'Archiver' : 'Réactiver'}
+      {loading ? '...' : actif ? t('Archiver') : t('Réactiver')}
     </button>
   )
 }

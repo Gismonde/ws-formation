@@ -1,3 +1,4 @@
+import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -12,6 +13,7 @@ const TABLES: Record<string, string> = {
 }
 
 export default async function SuppressionsPage() {
+  const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutSupprimerEmployes(acteur)) redirect('/admin/employes')
@@ -26,8 +28,8 @@ export default async function SuppressionsPage() {
 
   return (
     <div className="max-w-6xl">
-      <Link href="/admin/employes" className="text-sm text-gray-500 hover:text-gray-800">← Employés</Link>
-      <h1 className="text-2xl font-bold text-gray-900 mt-2">Suppression définitive des employés archivés</h1>
+      <Link href="/admin/employes" className="text-sm text-gray-500 hover:text-gray-800">{t('← Employés')}</Link>
+      <h1 className="text-2xl font-bold text-gray-900 mt-2">{t('Suppression définitive des employés archivés')}</h1>
       <p className="text-sm text-gray-500 mt-1 mb-6 max-w-3xl">
         Réservé aux administrateurs globaux. La suppression efface le compte et toutes les données de formation de la personne
         (assignations, progression, certificats, preuves, confirmations de politiques). Elle est irréversible.
@@ -35,24 +37,24 @@ export default async function SuppressionsPage() {
       </p>
 
       {migration ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-8">Exécutez d’abord <code>supabase/migrations/suppressions_employes.sql</code> dans Supabase.</div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-8">{t('Exécutez d’abord')} <code>{t('supabase/migrations/suppressions_employes.sql')}</code> {t('dans Supabase.')}</div>
       ) : (
         <SupprimerArchives employes={(archives ?? []).map(e => ({ id: e.id, nom: [e.prenom, e.nom].filter(Boolean).join(' ') || '—', email: e.email, detail: [ROLE_LABEL[e.role as keyof typeof ROLE_LABEL] ?? e.role, clinique(e.clinique)].join(' · ') }))} />
       )}
 
-      <h2 className="text-lg font-semibold text-gray-900 mt-10 mb-3">Traçabilité des suppressions</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mt-10 mb-3">{t('Traçabilité des suppressions')}</h2>
       {(historique ?? []).length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">Aucune suppression.</div>
+        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucune suppression.')}</div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
           <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
-                <th className="px-4 py-2.5 font-semibold">Date</th>
-                <th className="px-3 py-2.5 font-semibold">Employé supprimé</th>
-                <th className="px-3 py-2.5 font-semibold">Raison</th>
-                <th className="px-3 py-2.5 font-semibold">Données effacées</th>
-                <th className="px-3 py-2.5 font-semibold">Par</th>
+                <th className="px-4 py-2.5 font-semibold">{t('Date')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Employé supprimé')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Raison')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Données effacées')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Par')}</th>
               </tr>
             </thead>
             <tbody>

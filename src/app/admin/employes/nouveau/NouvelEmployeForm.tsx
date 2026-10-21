@@ -1,4 +1,5 @@
 'use client'
+import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation }: Props) {
+  const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,7 +50,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       }
     } catch (err) {
       console.error('handleSubmit error:', err)
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError(t('Une erreur est survenue. Veuillez réessayer.'))
     } finally {
       setLoading(false)
     }
@@ -57,10 +59,10 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
   if (success) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-        <p className="text-green-800 font-semibold text-center">Employé créé avec succès !</p>
+        <p className="text-green-800 font-semibold text-center">{t('Employé créé avec succès !')}</p>
         {success.courrielEnvoye ? (
           <p className="text-green-700 text-sm mt-2 text-center">
-            📧 Un courriel d’invitation a été envoyé à <b>{form.email}</b> pour qu’il crée son mot de passe.
+            {t('📧 Un courriel d’invitation a été envoyé à')} <b>{form.email}</b> {t('pour qu’il crée son mot de passe.')}
           </p>
         ) : (
           <div className="mt-4 space-y-3">
@@ -72,14 +74,14 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
               <div className="flex gap-2">
                 <input readOnly value={success.lien} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white" onFocus={e => e.target.select()} />
                 <button type="button" onClick={() => { navigator.clipboard.writeText(success.lien!); setCopie(true) }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{copie ? 'Copié ✓' : 'Copier'}</button>
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{copie ? t('Copié ✓') : t('Copier')}</button>
               </div>
             )}
           </div>
         )}
         <div className="flex justify-center gap-3 mt-5">
-          {success.employeId && <a href={`/admin/employes/${success.employeId}`} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white">Voir le dossier</a>}
-          <a href="/admin/employes" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm">Retour aux employés</a>
+          {success.employeId && <a href={`/admin/employes/${success.employeId}`} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white">{t('Voir le dossier')}</a>}
+          <a href="/admin/employes" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm">{t('Retour aux employés')}</a>
         </div>
       </div>
     )
@@ -95,24 +97,24 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Prénom *</label>
+          <label className={labelCls}>{t('Prénom *')}</label>
           <input className={inputCls} value={form.prenom} onChange={e => set('prenom', e.target.value)} required />
         </div>
         <div>
-          <label className={labelCls}>Nom *</label>
+          <label className={labelCls}>{t('Nom *')}</label>
           <input className={inputCls} value={form.nom} onChange={e => set('nom', e.target.value)} required />
         </div>
       </div>
       <div>
-        <label className={labelCls}>Courriel *</label>
+        <label className={labelCls}>{t('Courriel *')}</label>
         <input type="email" className={inputCls} value={form.email} onChange={e => set('email', e.target.value)} required />
       </div>
       <p className="text-xs text-gray-500 -mt-2">
-        📧 L’employé recevra un courriel avec un lien pour créer lui-même son mot de passe.
+        {t('📧 L’employé recevra un courriel avec un lien pour créer lui-même son mot de passe.')}
       </p>
       <div>
-        <label className={labelCls}>Poste / Titre</label>
-        <input className={inputCls} value={form.poste} onChange={e => set('poste', e.target.value)} placeholder="Ex : Infirmier(e), Technicien(ne)..." />
+        <label className={labelCls}>{t('Poste / Titre')}</label>
+        <input className={inputCls} value={form.poste} onChange={e => set('poste', e.target.value)} placeholder={t('Ex : Infirmier(e), Technicien(ne)...')} />
       </div>
       <ChampsAcces
         role={form.role} clinique={form.clinique} departementId={form.departement_id}
@@ -126,11 +128,11 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
-          {loading ? 'Création en cours...' : 'Créer l’employé'}
+          {loading ? t('Création en cours...') : t('Créer l’employé')}
         </button>
         <a href="/admin/employes"
           className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-          Annuler
+          {t('Annuler')}
         </a>
       </div>
     </form>

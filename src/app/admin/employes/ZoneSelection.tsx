@@ -1,6 +1,7 @@
 'use client'
 // Sélection de plusieurs employés dans la liste (cases à cocher rendues par le serveur)
 // et actions groupées : exporter (Excel ou ZIP), archiver, réactiver.
+import { useT } from '@/lib/i18n/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -8,6 +9,7 @@ type Selection = { ids: string[]; archivables: string[]; reactivables: string[] 
 const VIDE: Selection = { ids: [], archivables: [], reactivables: [] }
 
 export default function ZoneSelection({ children }: { children: React.ReactNode }) {
+  const { t } = useT()
   const zone = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const [sel, setSel] = useState<Selection>(VIDE)
@@ -55,15 +57,15 @@ export default function ZoneSelection({ children }: { children: React.ReactNode 
 
   async function archiver(actif: boolean) {
     const ids = actif ? sel.reactivables : sel.archivables
-    if (!window.confirm(`${actif ? 'Réactiver' : 'Archiver'} ${ids.length} employé(s) ?${actif ? '' : ' Leurs sessions seront fermées.'}`)) return
+    if (!window.confirm(actif ? t('Réactiver {n} employé(s) ?', { n: ids.length }) : t('Archiver {n} employé(s) ? Leurs sessions seront fermées.', { n: ids.length }))) return
     setEnCours(true); setMessage(null)
     const r = await fetch('/api/admin/employes/archiver', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, actif }),
     })
     const d = await r.json().catch(() => ({}))
     setEnCours(false)
-    if (!r.ok) return setMessage({ type: 'erreur', texte: d.error ?? 'Opération impossible' })
-    setMessage({ type: 'ok', texte: `${d.traites} employé(s) ${actif ? 'réactivé(s)' : 'archivé(s)'}.` + (d.ignores ? ` ${d.ignores} ignoré(s) (hors de votre périmètre ou déjà dans cet état).` : '') })
+    if (!r.ok) return setMessage({ type: 'erreur', texte: d.error ?? t('Opération impossible') })
+    setMessage({ type: 'ok', texte: (actif ? t('{n} employé(s) réactivé(s).', { n: d.traites }) : t('{n} employé(s) archivé(s).', { n: d.traites })) + (d.ignores ? ' ' + t('{n} ignoré(s) (hors de votre périmètre ou déjà dans cet état).', { n: d.ignores }) : '') })
     toutDecocher()
     router.refresh()
   }
@@ -80,20 +82,20 @@ export default function ZoneSelection({ children }: { children: React.ReactNode 
       {n > 0 && (
         <div className="sticky top-14 md:top-16 z-40 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 shadow-sm">
           <span className="text-sm font-semibold text-indigo-900 mr-2">{n} sélectionné(s)</span>
-          <a href={`/admin/assigner?employes=${sel.ids.join(',')}`} className={bouton + ' bg-indigo-600 border-indigo-600 text-white'}>Assigner…</a>
-          <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('xlsx')} disabled={enCours}>⬇ Excel</button>
-          <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('zip')} disabled={enCours} title="Classeur Excel et documents de preuves">⬇ Dossiers complets (ZIP)</button>
+          <a href={`/admin/assigner?employes=${sel.ids.join(',')}`} className={bouton + ' bg-indigo-600 border-indigo-600 text-white'}>{t('Assigner…')}</a>
+          <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('xlsx')} disabled={enCours}>{t('⬇ Excel')}</button>
+          <button type="button" className={bouton + ' bg-white border-gray-300 text-gray-700'} onClick={() => exporter('zip')} disabled={enCours} title={t('Classeur Excel et documents de preuves')}>{t('⬇ Dossiers complets (ZIP)')}</button>
           {sel.archivables.length > 0 && (
             <button type="button" className={bouton + ' bg-white border-orange-200 text-orange-700'} onClick={() => archiver(false)} disabled={enCours}>
-              Archiver ({sel.archivables.length})
+              {t('Archiver')} ({sel.archivables.length})
             </button>
           )}
           {sel.reactivables.length > 0 && (
             <button type="button" className={bouton + ' bg-white border-green-200 text-green-700'} onClick={() => archiver(true)} disabled={enCours}>
-              Réactiver ({sel.reactivables.length})
+              {t('Réactiver')} ({sel.reactivables.length})
             </button>
           )}
-          <button type="button" className="ml-auto text-sm text-indigo-700 underline" onClick={toutDecocher}>Tout désélectionner</button>
+          <button type="button" className="ml-auto text-sm text-indigo-700 underline" onClick={toutDecocher}>{t('Tout désélectionner')}</button>
         </div>
       )}
       {children}
