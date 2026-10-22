@@ -13,7 +13,7 @@ export type Cible =
   | { type: 'departements'; ids: string[] }
   | { type: 'clinique'; clinique: Clinique }
 
-export type EmployeCible = { id: string; prenom: string | null; nom: string | null; email: string | null; role: string | null; clinique: string | null; departement_id: string | null }
+export type EmployeCible = { id: string; prenom: string | null; nom: string | null; email: string | null; role: string | null; clinique: string | null; departement_id: string | null; poste?: string | null }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MAX_IDS = 500
@@ -36,7 +36,7 @@ export function ciblePermise(a: Acteur, c: Cible): boolean {
 
 /** Employés actifs visés par la cible, dans le périmètre de l'acteur. */
 export async function employesDeLaCible(sb: SupabaseClient, a: Acteur, c: Cible): Promise<{ employes: EmployeCible[]; erreur?: string }> {
-  const champs = 'id, prenom, nom, email, role, clinique, departement_id'
+  const champs = 'id, prenom, nom, email, role, clinique, departement_id, poste'
   if (c.type === 'employes') {
     const { data } = await sb.from('employes').select(champs + ', actif').in('id', c.ids)
     const lignes = (data ?? []) as unknown as (EmployeCible & { actif: boolean | null })[]
@@ -120,7 +120,7 @@ export function nouveauCiblage(
   }
 
   // Départements / employés : uniquement dans la clinique de la politique
-  const vise = (e: EmployeCible) => estVise({ clinique: p.clinique, departements: [], employes: [] }, e)
+  const vise = (e: EmployeCible) => estVise({ clinique: p.clinique, departements: [], employes: [], roles: [], postes: [] }, e)
   const horsClinique = pasEncore.filter(e => !vise(e))
   const ajoutes = pasEncore.filter(vise)
   if (ajoutes.length === 0) return { clinique: p.clinique, departements: depts, employes: emps, ajoutes, deja: deja.length, autre_clinique: horsClinique.length, elargie: false }

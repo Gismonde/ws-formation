@@ -25,6 +25,7 @@ export type Acteur = {
   role: Role
   clinique: CliniqueEmploye | null
   departement_id: string | null
+  poste?: string | null
   /** Gestionnaire autorisé à créer/modifier des formations (les admins le sont toujours) */
   peut_creer_formations: boolean
   /**
@@ -92,6 +93,7 @@ async function lireActeur(): Promise<Acteur | null> {
     role: data.role,
     clinique,
     departement_id: data.departement_id ?? null,
+    poste: data.poste ?? null,
     peut_creer_formations: data.peut_creer_formations === true,
     vue,
   }

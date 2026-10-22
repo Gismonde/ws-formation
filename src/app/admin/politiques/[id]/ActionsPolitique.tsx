@@ -4,7 +4,7 @@ import { useConfirmer } from '@/components/Confirmation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChoixDocument, { DocumentEnvoye } from '@/components/politiques/ChoixDocument'
-import ChampsCiblage, { Ciblage } from '@/components/politiques/ChampsCiblage'
+import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from '@/components/politiques/ChampsCiblage'
 import { CliniqueEmploye } from '@/lib/cliniques'
 
 type Props = {
@@ -12,13 +12,13 @@ type Props = {
   titre: string
   description: string | null
   clinique: CliniqueEmploye
-  departementsChoisis: string[]
+  ciblage: Ciblage
+  options: { departements: { id: string; nom: string }[]; postes: string[]; employes: EmployeOption[]; rolesPostes: boolean } | null
   actif: boolean
   enAttente: number
   peutGerer: boolean
   courrielsActifs: boolean
   cliniques: CliniqueEmploye[]
-  departements: { id: string; nom: string }[]
 }
 
 export default function ActionsPolitique(p: Props) {
@@ -35,7 +35,7 @@ export default function ActionsPolitique(p: Props) {
   // Modifier
   const [titre, setTitre] = useState(p.titre)
   const [description, setDescription] = useState(p.description ?? '')
-  const [ciblage, setCiblage] = useState<Ciblage>({ clinique: p.clinique, tous: p.departementsChoisis.length === 0, departements: p.departementsChoisis })
+  const [ciblage, setCiblage] = useState<Ciblage>(p.ciblage)
 
   async function appeler(corps: Record<string, unknown>, succes: (d: Record<string, unknown>) => string) {
     setEnCours(true); setMsg(null)
@@ -108,11 +108,11 @@ export default function ActionsPolitique(p: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('Résumé')}</label>
             <textarea className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
-          <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.departements} />
+          {p.options && <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.options.departements} postes={p.options.postes} employes={p.options.employes} rolesPostes={p.options.rolesPostes} />}
           <p className="text-xs text-gray-500">Les employés ajoutés au public devront confirmer ; les confirmations déjà faites sont conservées.</p>
           <button className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-            disabled={enCours || (!ciblage.tous && ciblage.departements.length === 0)}
-            onClick={() => appeler({ action: 'modifier', titre, description, clinique: ciblage.clinique, departements: ciblage.tous ? [] : ciblage.departements }, () => t('Modifications enregistrées.'))}>
+            disabled={enCours || ciblageVide(ciblage)}
+            onClick={() => appeler({ action: 'modifier', titre, description, ...corpsCiblage(ciblage) }, () => t('Modifications enregistrées.'))}>
             {t('Enregistrer')}
           </button>
         </div>

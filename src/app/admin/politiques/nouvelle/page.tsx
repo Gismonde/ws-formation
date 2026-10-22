@@ -1,7 +1,7 @@
 import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { cliniquesPolitiquePossibles, peutPublierPolitiques } from '@/lib/politiques'
+import { cliniquesPolitiquePossibles, peutPublierPolitiques, optionsCiblage } from '@/lib/politiques'
 import { courrielsActifs } from '@/lib/courriels'
 import FormulairePolitique from './FormulairePolitique'
 
@@ -10,7 +10,7 @@ export default async function NouvellePolitiquePage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutPublierPolitiques(acteur)) redirect('/admin/politiques')
-  const { data: departements } = await serviceClient().from('departements').select('id, nom').order('nom')
+  const options = await optionsCiblage(serviceClient(), acteur)
 
   return (
     <div className="max-w-3xl">
@@ -21,7 +21,7 @@ export default async function NouvellePolitiquePage() {
       </p>
       <FormulairePolitique
         cliniques={cliniquesPolitiquePossibles(acteur)}
-        departements={departements ?? []}
+        options={options}
         courrielsActifs={courrielsActifs()}
       />
     </div>
