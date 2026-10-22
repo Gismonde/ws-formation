@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import {
   cliniquesPolitiquePossibles, employesDansPortee, peutGererPolitique, peutSuivrePolitique, Politique, statistiquesPolitiques,
+  estPourToute, optionsCiblage,
 } from '@/lib/politiques'
 import { publicDe } from '@/lib/politiques-affichage'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
@@ -32,6 +33,7 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
   ])
   const noms = new Map((deps ?? []).map(d => [d.id as string, d.nom as string]))
   const stat = (await statistiquesPolitiques(sb, [pol], employes))[pol.id]
+  const estPdf = (pol.nom_fichier ?? pol.fichier).toLowerCase().endsWith('.pdf')
   const urls = await signerUrlsMedias([pol.fichier, ...(versions ?? []).map(v => v.fichier)])
 
   const lignes: LigneConfirmation[] = stat.vises.map(e => ({
@@ -62,32 +64,42 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
             {pol.titre} {!pol.actif && <span className="text-xs align-middle bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2">{t('Archivée')}</span>}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString(loc, { dateStyle: 'long' })} · {publicDe(pol, noms)}
+            Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString(loc, { dateStyle: 'long' })} · {publicDe(pol, noms, t)}
           </p>
           {pol.description && <p className="text-sm text-gray-700 mt-2">{pol.description}</p>}
           {urls[pol.fichier] && (
             <a href={urls[pol.fichier]} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm text-indigo-700 hover:underline">
-              📄 Ouvrir le document{pol.nom_fichier ? ` (${pol.nom_fichier})` : ''}
+              📄 {t('Ouvrir dans un nouvel onglet')}{pol.nom_fichier ? ` (${pol.nom_fichier})` : ''}
             </a>
           )}
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-5 text-center min-w-[200px]">
-          <div className="text-4xl font-bold" style={{ color: couleur }}>{stat.pourcentage}%</div>
+          {stat.total === 0
+            ? <div className="text-xl font-bold text-gray-500">{t('Aucun employé visé')}</div>
+            : <div className="text-4xl font-bold" style={{ color: couleur }}>{stat.pourcentage}%</div>}
           <div className="text-xs uppercase tracking-wide text-gray-500 mt-1">{t('Lu et compris')}</div>
-          <div className="text-sm text-gray-700 mt-2">{stat.confirmes} / {stat.total} employés</div>
+          <div className="text-sm text-gray-700 mt-2">{stat.total === 0 ? t('Vérifiez le public visé : personne n’a cette politique à confirmer.') : t('{c} / {n} employé(s)', { c: stat.confirmes, n: stat.total })}</div>
           <div className="h-2 bg-gray-100 rounded-full mt-3 overflow-hidden"><div className="h-full" style={{ width: `${stat.pourcentage}%`, background: couleur }} /></div>
         </div>
       </div>
 
       <ActionsPolitique
         id={pol.id} titre={pol.titre} description={pol.description} clinique={pol.clinique}
-        departementsChoisis={pol.departements ?? []} actif={pol.actif}
+        ciblage={{ clinique: pol.clinique, tous: estPourToute(pol), departements: pol.departements ?? [], employes: pol.employes ?? [], roles: pol.roles ?? [], postes: pol.postes ?? [] }}
+        options={peutGererPolitique(acteur, pol) ? await optionsCiblage(sb, acteur) : null}
+        actif={pol.actif}
         enAttente={stat.total - stat.confirmes}
         peutGerer={peutGererPolitique(acteur, pol)}
         courrielsActifs={courrielsActifs()}
         cliniques={cliniquesPolitiquePossibles(acteur)}
-        departements={deps ?? []}
       />
+
+      {estPdf && urls[pol.fichier] && (
+        <details open className="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
+          <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-900">📄 {t('Aperçu du document')}{pol.nom_fichier ? <span className="font-normal text-gray-500"> · {pol.nom_fichier}</span> : null}</summary>
+          <iframe src={urls[pol.fichier]} title={pol.titre} className="w-full border-t border-gray-200" style={{ height: '75vh' }} />
+        </details>
+      )}
 
       {parDep.size > 1 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

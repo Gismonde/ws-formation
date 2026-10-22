@@ -7,7 +7,7 @@ import { REGLES_MEDIAS } from '@/lib/medias'
 export type DocumentEnvoye = { reference: string; nom: string }
 
 /** Envoie le document d'une politique directement dans l'espace privé. */
-async function envoyerDocument(fichier: File): Promise<DocumentEnvoye> {
+export async function envoyerDocument(fichier: File): Promise<DocumentEnvoye> {
   const regle = REGLES_MEDIAS.fichier
   if (!regle.types.includes(fichier.type)) throw new Error(`Format non accepté (${regle.libelle})`)
   if (fichier.size > regle.tailleMaxMo * 1024 * 1024) throw new Error(`Fichier trop volumineux (${regle.libelle})`)

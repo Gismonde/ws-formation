@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
-import { peutPublierPolitiques, Politique, validerCiblage } from '@/lib/politiques'
+import { peutPublierPolitiques, Politique, validerCiblage, colonnesRolesPostes, estPourToute } from '@/lib/politiques'
 import { avertirPolitique } from '@/lib/politiques-courriels'
 import { origineDepuis } from '@/lib/courriels'
 import { estMediaPrive } from '@/lib/medias'
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const body = await request.json()
   const sb = serviceClient()
 
-  const v = await validerCiblage(acteur, body, sb)
+  const v = await validerCiblage(acteur, body, sb, await colonnesRolesPostes(sb))
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   if (!estMediaPrive(body.fichier) || !String(body.fichier).startsWith('media:politiques/')) {
     return NextResponse.json({ error: 'Le document de la politique est obligatoire' }, { status: 400 })
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'POLITIQUE_PUBLIEE',
-    description: `Politique publiée : ${pol.titre} (${pol.clinique}${pol.departements.length ? `, ${pol.departements.length} departement(s)` : ', toute la clinique'})`,
+    description: `Politique publiée : ${pol.titre} (${pol.clinique}${estPourToute(pol) ? ', toute la clinique' : ', public ciblé'})`,
     metadata: { politique_id: pol.id, version: 1 },
     ...ipEtAgent(request),
   })

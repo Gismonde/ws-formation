@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import {
-  employesDansPortee, peutGererPolitique, validerCiblage, peutSuivrePolitique, Politique, statistiquesPolitiques,
+  employesDansPortee, peutGererPolitique, validerCiblage, colonnesRolesPostes, peutSuivrePolitique, Politique, statistiquesPolitiques,
 } from '@/lib/politiques'
 import { avertirPolitique } from '@/lib/politiques-courriels'
 import { origineDepuis } from '@/lib/courriels'
@@ -41,7 +41,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!peutGererPolitique(acteur, pol)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   if (action === 'modifier') {
-    const v = await validerCiblage(acteur, body, sb)
+    const v = await validerCiblage(acteur, body, sb, await colonnesRolesPostes(sb))
     if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
     const { error } = await sb.from('politiques').update({ ...v.valeurs, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

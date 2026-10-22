@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, nom, prenom, role, clinique, departement_id')
+    .select('id, nom, prenom, role, clinique, departement_id, poste')
     .eq('auth_user_id', user.id)
     .single()
 

@@ -84,10 +84,12 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
                       <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-indigo-700">{p.titre}</Link>
                       <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
                     </td>
-                    <td className="px-3 py-3 text-gray-600">{publicDe(p, noms)}</td>
+                    <td className="px-3 py-3 text-gray-600">{publicDe(p, noms, t)}</td>
                     <td className="px-3 py-3">
-                      <Barre pct={s.pourcentage} />
-                      <div className="text-xs text-gray-400 mt-0.5">{s.confirmes} / {s.total} employés</div>
+                      {s.total === 0 ? <span className="text-xs text-gray-500">{t('Aucun employé visé')}</span> : (<>
+                        <Barre pct={s.pourcentage} />
+                        <div className="text-xs text-gray-400 mt-0.5">{t('{c} / {n} employé(s)', { c: s.confirmes, n: s.total })}</div>
+                      </>)}
                     </td>
                     <td className="px-3 py-3 text-center">
                       <Link href={`/admin/politiques/${p.id}?filtre=attente`} className={'font-semibold ' + (s.total - s.confirmes > 0 ? 'text-amber-700 hover:underline' : 'text-gray-300')}>
