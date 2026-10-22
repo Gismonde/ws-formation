@@ -6,6 +6,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { serviceClient } from '@/lib/permissions'
 import { origineDepuis } from '@/lib/courriels'
 import { executerRappels } from '@/lib/rappels'
+import { tachesEvenements } from '@/lib/evenements-courriels'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -20,7 +21,10 @@ function autorise(req: NextRequest): boolean {
 
 export async function GET(req: NextRequest) {
   if (!autorise(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  const resultat = await executerRappels(serviceClient(), origineDepuis(req))
+  const sb = serviceClient()
+  const resultat = await executerRappels(sb, origineDepuis(req))
+  const evenements = await tachesEvenements(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
+  console.log('[Événements]', JSON.stringify(evenements))
   console.log('[Rappels]', JSON.stringify(resultat))
-  return NextResponse.json(resultat)
+  return NextResponse.json({ ...resultat, evenements })
 }
