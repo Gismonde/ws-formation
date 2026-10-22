@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import ToggleActifButton from './ToggleActifButton'
 import ZoneSelection from './ZoneSelection'
 import { getActeur, serviceClient, filtrerEmployes, peutGererEmploye, cliniquesAdministrees } from '@/lib/permissions'
-import { aAccesAdmin, ROLE_LABEL, CLINIQUE_INFO, Clinique } from '@/lib/cliniques'
+import { aAccesAdmin, ROLE_LABEL, CLINIQUE_INFO, Clinique, gestionnaireAvecDroits } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
 
 const roleStyles: Record<string, { bg: string; color: string; border: string }> = {
@@ -19,7 +19,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
 
   const { clinique: filtreClinique } = await searchParams
   const sb = serviceClient()
@@ -166,10 +166,14 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
                       {t(roleLabel[emp.role] ?? emp.role)}
                     </span>
-                    {emp.role === 'gestionnaire' && emp.peut_creer_formations && (
-                      <span title={t('Peut créer des formations')} style={{ display: 'inline-block', marginLeft: '6px', padding: '2px 8px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>
-                        {t('✏️ Formations')}
-                      </span>
+                    {emp.role === 'gestionnaire' && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {([['peut_suivre_employes', '👥', t('Suivi')], ['peut_creer_formations', '✏️', t('Formations')], ['peut_valider_formations', '✅', t('Validation')], ['peut_creer_evenements', '📅', t('Événements')]] as const)
+                          .filter(([cle]) => emp[cle]).map(([cle, icone, libelle]) => (
+                            <span key={cle} style={{ padding: '1px 7px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>{icone} {libelle}</span>
+                          ))}
+                        {!gestionnaireAvecDroits(emp) && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{t('Sans accès admin')}</span>}
+                      </div>
                     )}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbAssign(emp.id)}</td>

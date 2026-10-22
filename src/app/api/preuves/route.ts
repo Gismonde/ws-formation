@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   const acteur = await getActeur()
   if (!acteur) return NextResponse.json({ error: 'Employé non trouvé' }, { status: 404 })
 
-  if (!aAccesAdmin(acteur.role)) {
+  if (!aAccesAdmin(acteur)) {
     // Employé : uniquement ses propres preuves
     query = query.eq('employe_id', employe.id)
   } else if (employeId) {

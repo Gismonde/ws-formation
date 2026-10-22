@@ -34,7 +34,7 @@ export default async function ExpirationsPage({ searchParams }: { searchParams: 
   const dateLongue = dateLongueEn(loc)
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
 
   const sp = await searchParams
   const horizon = HORIZONS.includes(Number(sp.horizon) as 30) ? Number(sp.horizon) : 60

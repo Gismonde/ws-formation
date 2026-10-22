@@ -22,7 +22,7 @@ const COLONNES: Colonne<LigneExpiration>[] = [
 
 export async function GET(req: NextRequest) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const sp = req.nextUrl.searchParams
   const horizon = [30, 60, 90].includes(Number(sp.get('horizon'))) ? Number(sp.get('horizon')) : 60

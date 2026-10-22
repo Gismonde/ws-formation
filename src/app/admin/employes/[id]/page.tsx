@@ -46,7 +46,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect("/login")
-  if (!aAccesAdmin(acteur.role)) redirect("/dashboard/accueil")
+  if (!aAccesAdmin(acteur)) redirect("/dashboard/accueil")
 
   const sb = serviceClient()
   const { data: employe } = await sb

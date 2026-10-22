@@ -48,9 +48,27 @@ export function estRole(v: unknown): v is Role {
   return v === 'super_admin' || v === 'admin' || v === 'gestionnaire' || v === 'employe'
 }
 
-/** Accès à l'espace Admin (gestion des formations, équipe, rapports). */
-export function aAccesAdmin(role: string | null | undefined): boolean {
-  return role === 'super_admin' || role === 'admin' || role === 'gestionnaire'
+export type DroitsGestionnaire = {
+  role: string | null | undefined
+  peut_creer_formations?: boolean | null
+  peut_suivre_employes?: boolean | null
+  peut_valider_formations?: boolean | null
+  peut_creer_evenements?: boolean | null
+}
+
+/** Le gestionnaire a-t-il au moins un droit dans l'admin ? Sans droit, il n'a que le portail employé. */
+export function gestionnaireAvecDroits(d: DroitsGestionnaire): boolean {
+  return d.role === 'gestionnaire' && !!(d.peut_creer_formations || d.peut_suivre_employes || d.peut_valider_formations || d.peut_creer_evenements)
+}
+
+/**
+ * Accès à l'espace Admin. Administrateurs : toujours.
+ * Gestionnaires : seulement avec au moins un droit (passer la personne, pas seulement son rôle).
+ * Avec un rôle seul (chaîne), un gestionnaire est considéré sans droit.
+ */
+export function aAccesAdmin(x: string | null | undefined | DroitsGestionnaire): boolean {
+  const d: DroitsGestionnaire = typeof x === 'object' && x !== null ? x : { role: x as string | null | undefined }
+  return d.role === 'super_admin' || d.role === 'admin' || gestionnaireAvecDroits(d)
 }
 
 /** Administrateur (global ou de clinique). */
@@ -93,7 +111,7 @@ export const VUE_ADMIN_COOKIE = 'ws_vue_admin'
 /** Vues Admin possibles : seulement pour l'équipe rattachée aux deux cliniques (ou l'admin global). */
 export function vuesAdminPossibles(cliniqueEmploye: string | null | undefined, role: string | null | undefined): Clinique[] {
   if (role === 'super_admin') return ['CMC', 'WSSC']
-  if (!aAccesAdmin(role)) return []
+  if (role !== 'admin' && role !== 'gestionnaire') return []
   const cl = cliniquesDe(cliniqueEmploye)
   return cl.length > 1 ? cl : []
 }

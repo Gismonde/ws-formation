@@ -15,7 +15,7 @@ const MAX = 6
 export default async function TableauDeBord() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   const { t, loc } = await i18n()
   const sb = serviceClient()
   const jour = (d: string | null) => (d ? new Date(d.length === 10 ? d + 'T12:00:00' : d).toLocaleDateString(loc, { dateStyle: 'medium' }) : '—')

@@ -2,6 +2,7 @@
 
 import { useT } from '@/lib/i18n/client'
 import { CLINIQUE_EMPLOYE_LABEL, ROLE_LABEL, CliniqueEmploye, Role } from '@/lib/cliniques'
+import { DROITS_GESTIONNAIRE, type Droits } from '@/lib/droits'
 
 export interface DepartementOption { id: string; nom: string; clinique: string | null }
 
@@ -17,10 +18,10 @@ interface Props {
   departements: DepartementOption[]
   estGestionnaire: boolean
   disabled?: boolean
-  /** Case « peut créer des formations » (visible pour les admins quand le rôle est gestionnaire) */
+  /** Droits du gestionnaire (cases visibles pour les admins quand le rôle est gestionnaire) */
   afficherAutorisationCreation?: boolean
-  peutCreerFormations?: boolean
-  setPeutCreerFormations?: (v: boolean) => void
+  droits?: Droits
+  setDroits?: (d: Droits) => void
   inputCls: string
   labelCls: string
 }
@@ -28,7 +29,7 @@ interface Props {
 const AIDE_ROLE: Record<Role, string> = {
   super_admin: 'Accès complet aux deux cliniques.',
   admin: 'Accès complet, limité à la clinique choisie.',
-  gestionnaire: 'Gère les employés de son département et peut en créer.',
+  gestionnaire: 'Accès à l’admin selon les droits cochés ci-dessous. Sans aucun droit : portail employé avec le titre de gestionnaire.',
   employe: 'Accès à son propre profil et à ses formations.',
 }
 
@@ -86,17 +87,23 @@ export default function ChampsAcces(p: Props) {
         </select>
         {AIDE_ROLE[p.role as Role] && <p className="text-xs text-gray-400 mt-1">{t(AIDE_ROLE[p.role as Role])}</p>}
       </div>
-      {p.afficherAutorisationCreation && p.role === 'gestionnaire' && (
-        <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
-          <input type="checkbox" className="mt-0.5 w-4 h-4" disabled={p.disabled}
-            checked={!!p.peutCreerFormations} onChange={e => p.setPeutCreerFormations?.(e.target.checked)} />
-          <span className="text-sm text-gray-700">
-            <strong>{t('Peut créer et modifier des formations')}</strong>
-            <span className="block text-xs text-gray-500 mt-0.5">
-              {t('Sans cette autorisation, le gestionnaire peut assigner des formations et gérer ses employés, mais pas en créer.')}
-            </span>
-          </span>
-        </label>
+      {p.afficherAutorisationCreation && p.role === 'gestionnaire' && p.droits && (
+        <fieldset className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
+          <legend className="text-sm font-semibold text-gray-800 px-1">{t('Droits du gestionnaire')}</legend>
+          {DROITS_GESTIONNAIRE.map(d => (
+            <label key={d.cle} className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" className="mt-0.5 w-4 h-4" disabled={p.disabled}
+                checked={p.droits![d.cle]} onChange={e => p.setDroits?.({ ...p.droits!, [d.cle]: e.target.checked })} />
+              <span className="text-sm text-gray-700">
+                <strong>{t(d.libelle)}</strong>
+                <span className="block text-xs text-gray-500 mt-0.5">{t(d.aide)}</span>
+              </span>
+            </label>
+          ))}
+          {!Object.values(p.droits).some(Boolean) && (
+            <p className="text-xs text-amber-700">{t('Aucun droit coché : cette personne n’aura pas accès à l’admin (portail employé, avec le titre de gestionnaire).')}</p>
+          )}
+        </fieldset>
       )}
     </>
   )

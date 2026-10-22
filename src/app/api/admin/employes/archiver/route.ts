@@ -9,7 +9,7 @@ const MAX = 200
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const corps = await request.json().catch(() => ({}))
   const ids: string[] = Array.isArray(corps.ids) ? Array.from(new Set(corps.ids.filter((x: unknown) => typeof x === 'string'))) : []

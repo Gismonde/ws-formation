@@ -8,7 +8,7 @@ import ImportEmployes from './ImportEmployes'
 export default async function ImporterEmployesPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   if (acteur.role === 'gestionnaire' && (!acteur.departement_id || !acteur.clinique)) redirect('/admin/employes')
   const { t } = await i18n()
   return (

@@ -16,7 +16,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(req: NextRequest) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const ids = Array.from(new Set((req.nextUrl.searchParams.get('ids') ?? '').split(',').map(s => s.trim()).filter(s => UUID.test(s))))
   if (ids.length === 0) return NextResponse.json({ error: 'Aucun employé sélectionné' }, { status: 400 })

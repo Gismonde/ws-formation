@@ -9,7 +9,7 @@ export default async function AdminRapportsPage() {
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const perimetre = acteur.role === 'super_admin' && !acteur.vue ? null
     : acteur.role === 'gestionnaire' ? t('Vous consultez les données de votre département uniquement.')

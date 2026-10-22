@@ -7,7 +7,7 @@ import { i18n } from '@/lib/i18n/serveur'
 export default async function NouvelEmployePage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   if (acteur.role === 'gestionnaire' && (!acteur.departement_id || !acteur.clinique)) redirect('/admin/employes')
 
   const { t } = await i18n()

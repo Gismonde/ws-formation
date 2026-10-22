@@ -4,11 +4,12 @@ import { getActeur, serviceClient, validerAttribution, ipEtAgent } from '@/lib/p
 import { aAccesAdmin, ROLE_LABEL } from '@/lib/cliniques'
 import { inviterEmploye } from '@/lib/invitations'
 import { origineDepuis } from '@/lib/courriels'
+import { droitsAEnregistrer, AUCUN_DROIT, changementsDroits } from '@/lib/droits'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
   if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-  if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const body = await request.json()
   const { prenom, nom, poste } = body
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       clinique,
       departement_id,
       poste: poste || null,
-      peut_creer_formations: (acteur.role === 'super_admin' || acteur.role === 'admin') && role === 'gestionnaire' && body.peut_creer_formations === true,
+      ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT),
       actif: true,
     })
     .select('id')
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
     type_action: 'EMPLOYE_CREE',
     description: `Nouvel employé créé : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
     cible_employe_id: newEmp?.id ?? null,
-    metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye },
+    metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye, droits: changementsDroits(AUCUN_DROIT, (acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT) },
     ...ipEtAgent(request),
   })
 

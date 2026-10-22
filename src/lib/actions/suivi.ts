@@ -100,7 +100,7 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
   if (!lecon) return { ok: false, erreur: 'Leçon introuvable' }
 
   // Prérequis bloquants (l'équipe garde l'accès pour prévisualiser)
-  if (!aAccesAdmin(ctx.acteur.role)) {
+  if (!aAccesAdmin(ctx.acteur)) {
     const { data: mod } = await sb.from('lessons').select('modules(formation_id)').eq('id', lessonId).single()
     const formationId = (mod?.modules as { formation_id?: string } | null)?.formation_id
     if (formationId) {

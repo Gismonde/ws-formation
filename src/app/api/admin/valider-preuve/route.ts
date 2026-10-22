@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest) {
       )
 
   const admin = await getActeur()
-  if (!admin || !aAccesAdmin(admin.role)) {
+  if (!admin || !aAccesAdmin(admin)) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 

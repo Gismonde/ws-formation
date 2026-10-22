@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const moi = await getActeur()
-    if (!moi || !aAccesAdmin(moi.role)) {
+    if (!moi || !aAccesAdmin(moi)) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 

@@ -9,7 +9,7 @@ import { i18n } from '@/lib/i18n/serveur'
 export default async function GardePrerequis({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
-  if (!acteur || aAccesAdmin(acteur.role)) return <>{children}</>
+  if (!acteur || aAccesAdmin(acteur)) return <>{children}</>
 
   const sb = serviceClient()
   const manquants = await prerequisManquants(sb, acteur.id, id)

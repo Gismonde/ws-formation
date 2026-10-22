@@ -43,7 +43,7 @@ async function lireFichier(f: File): Promise<string[][]> {
 
 export async function POST(req: Request) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   if (acteur.role === 'gestionnaire' && (!acteur.departement_id || !acteur.clinique)) {
     return NextResponse.json({ error: 'Aucun département ou aucune clinique ne vous est attribué.' }, { status: 403 })
   }
