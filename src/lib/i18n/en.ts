@@ -1390,4 +1390,10 @@ export const EN: Record<string, string> = {
   '← Changer de point de départ': '← Change starting point',
   'Importez une présentation : chaque diapositive devient du contenu de formation, que vous pouvez ajuster.': 'Import a presentation: each slide becomes training content that you can adjust.',
   'Vous construisez la formation vous-même : modules, leçons, vidéos, documents de la librairie et questionnaire.': 'You build the training yourself: modules, lessons, videos, library documents and quiz.',
+  'Un problème momentané est survenu': 'A temporary problem occurred',
+  'La connexion au serveur a été interrompue. Vous êtes toujours connecté : réessayez dans un instant.': 'The connection to the server was interrupted. You are still signed in: try again in a moment.',
+  'Réessayer': 'Try again',
+  'Référence : {ref}': 'Reference: {ref}',
+  'La connexion au serveur a été interrompue. Vous êtes toujours connecté : réessayez dans un instant.': 'The connection to the server was interrupted. You are still signed in: try again in a moment.',
+  'Référence : {ref}': 'Reference: {ref}',
 }
