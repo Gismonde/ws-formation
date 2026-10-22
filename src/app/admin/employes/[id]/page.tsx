@@ -6,6 +6,7 @@ import EditEmployeForm from "./EditEmployeForm"
 import SuiviFormationsEmploye from "./SuiviFormationsEmploye"
 import RenvoyerInvitation from "./RenvoyerInvitation"
 import DeuxFacteurs from "./DeuxFacteurs"
+import { chargerPostes, parFamille } from "@/lib/postes"
 import ListePreuvesAdmin from "./ListePreuvesAdmin"
 import ToggleActifButton from "../ToggleActifButton"
 import { CliniqueBadge } from "@/components/CliniqueBadge"
@@ -96,6 +97,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           cliniquesPossibles={cliniquesAttribuables(acteur)}
           estGestionnaire={acteur.role === "gestionnaire"}
           afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
+          postes={parFamille(await chargerPostes(serviceClient()))}
         />
         {modifiable && employe.actif !== false && <RenvoyerInvitation employeId={id} email={employe.email} />}
         {acteur.role === "super_admin" && <DeuxFacteurs employeId={id} nom={`${employe.prenom} ${employe.nom}`} />}

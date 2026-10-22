@@ -62,3 +62,15 @@ describe('analyserImport', () => {
     expect(lignes[0]).toMatchObject({ clinique: 'CMC', departement_id: 'd3', departement_nom: 'Réception', role: 'employe', erreurs: [] })
   })
 })
+
+describe('postes officiels à l’import', () => {
+  it('reconnaît le poste sans tenir compte des accents ; refuse un poste inconnu', () => {
+    const { lignes } = analyserImport([
+      ['Prénom', 'Nom', 'Courriel', 'Poste', 'Clinique'],
+      ['A', 'B', 'a@ex.com', 'infirmiere auxiliaire', 'CMC'],
+      ['C', 'D', 'c@ex.com', 'Plombier', 'CMC'],
+    ], ctx({ postes: ['Infirmière auxiliaire'] }))
+    expect(lignes[0]).toMatchObject({ poste: 'Infirmière auxiliaire', erreurs: [] })
+    expect(lignes[1].erreurs).toEqual(['poste_inconnu'])
+  })
+})

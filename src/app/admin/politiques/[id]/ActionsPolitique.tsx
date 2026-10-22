@@ -13,7 +13,7 @@ type Props = {
   description: string | null
   clinique: CliniqueEmploye
   ciblage: Ciblage
-  options: { departements: { id: string; nom: string }[]; postes: string[]; employes: EmployeOption[]; rolesPostes: boolean } | null
+  options: { departements: { id: string; nom: string }[]; postes: string[]; familles: { famille: string; postes: string[] }[]; employes: EmployeOption[]; rolesPostes: boolean } | null
   actif: boolean
   enAttente: number
   peutGerer: boolean
@@ -108,7 +108,7 @@ export default function ActionsPolitique(p: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('Résumé')}</label>
             <textarea className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
-          {p.options && <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.options.departements} postes={p.options.postes} employes={p.options.employes} rolesPostes={p.options.rolesPostes} />}
+          {p.options && <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.options.departements} postes={p.options.postes} familles={p.options.familles} employes={p.options.employes} rolesPostes={p.options.rolesPostes} />}
           <p className="text-xs text-gray-500">Les employés ajoutés au public devront confirmer ; les confirmations déjà faites sont conservées.</p>
           <button className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
             disabled={enCours || ciblageVide(ciblage)}

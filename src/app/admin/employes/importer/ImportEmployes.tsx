@@ -30,6 +30,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
     role_invalide: t('Rôle invalide'),
     role_non_autorise: t('Vous ne pouvez pas attribuer ce rôle'),
     gestionnaire_sans_departement: t('Un gestionnaire doit avoir un département'),
+    poste_inconnu: t('Poste absent de la liste officielle (menu Employés → Postes)'),
   }[e])
 
   const libelleErreurFichier = (code: string, manquantes?: string[]) => ({

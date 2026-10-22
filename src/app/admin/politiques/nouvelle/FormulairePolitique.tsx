@@ -23,7 +23,7 @@ type Ligne = {
 
 export default function FormulairePolitique({ cliniques, options, courrielsActifs }: {
   cliniques: CliniqueEmploye[]
-  options: { departements: { id: string; nom: string }[]; postes: string[]; employes: EmployeOption[]; rolesPostes: boolean }
+  options: { departements: { id: string; nom: string }[]; postes: string[]; familles: { famille: string; postes: string[] }[]; employes: EmployeOption[]; rolesPostes: boolean }
   courrielsActifs: boolean
 }) {
   const { t } = useT()
@@ -118,7 +118,7 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
         </div>
       )}
 
-      <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={cliniques} departements={options.departements} postes={options.postes} employes={options.employes} rolesPostes={options.rolesPostes} />
+      <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={cliniques} departements={options.departements} postes={options.postes} familles={options.familles} employes={options.employes} rolesPostes={options.rolesPostes} />
 
       <label className={'flex items-start gap-2 text-sm ' + (courrielsActifs ? 'text-gray-700' : 'text-gray-400')}>
         <input type="checkbox" className="mt-0.5" checked={notifier && courrielsActifs} disabled={!courrielsActifs} onChange={e => setNotifier(e.target.checked)} />

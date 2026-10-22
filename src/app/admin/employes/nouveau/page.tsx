@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import NouvelEmployeForm from './NouvelEmployeForm'
-import { getActeur, departementsVisibles, rolesAttribuables, cliniquesAttribuables } from '@/lib/permissions'
+import { getActeur, departementsVisibles, rolesAttribuables, cliniquesAttribuables, serviceClient } from '@/lib/permissions'
+import { chargerPostes, parFamille } from '@/lib/postes'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { i18n } from '@/lib/i18n/serveur'
 
@@ -31,6 +32,7 @@ export default async function NouvelEmployePage() {
         cliniqueParDefaut={acteur.role === 'gestionnaire' ? acteur.clinique ?? '' : cliniques.length === 2 ? cliniques[0] : ''}
         departementParDefaut={acteur.role === 'gestionnaire' ? acteur.departement_id ?? '' : ''}
         afficherAutorisationCreation={acteur.role === 'super_admin' || acteur.role === 'admin'}
+        postes={parFamille(await chargerPostes(serviceClient()))}
       />
     </div>
   )

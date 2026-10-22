@@ -31,12 +31,14 @@ const basculer = (liste: string[], v: string) => (liste.includes(v) ? liste.filt
  * Choix du public : clinique, puis toute la clinique ou un public ciblé.
  * Public ciblé = les personnes qui correspondent à AU MOINS un critère (département, rôle, poste, employé désigné).
  */
-export default function ChampsCiblage({ valeur, onChange, cliniques, departements, postes = [], employes = [], rolesPostes = true }: {
+export default function ChampsCiblage({ valeur, onChange, cliniques, departements, postes = [], familles = [], employes = [], rolesPostes = true }: {
   valeur: Ciblage
   onChange: (c: Ciblage) => void
   cliniques: CliniqueEmploye[]
   departements: { id: string; nom: string }[]
   postes?: string[]
+  /** Postes officiels groupés par famille (prioritaire sur `postes`) */
+  familles?: { famille: string; postes: string[] }[]
   employes?: EmployeOption[]
   /** Colonnes roles / postes présentes en base */
   rolesPostes?: boolean
@@ -111,6 +113,29 @@ export default function ChampsCiblage({ valeur, onChange, cliniques, departement
             <div className={carte}>
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('Postes / titres')} <span className="text-xs font-normal text-gray-500">({valeur.postes.length})</span></span>
               {!rolesPostes ? <p className="text-xs text-amber-700">{t('Disponible après la mise à jour de la base de données (politiques_roles_postes.sql).')}</p>
+                : familles.length > 0 ? (
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {familles.map(f => {
+                      const tous = f.postes.every(p => valeur.postes.includes(p))
+                      return (
+                        <div key={f.famille}>
+                          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
+                            <input type="checkbox" checked={tous} onChange={() => set({ postes: tous ? valeur.postes.filter(p => !f.postes.includes(p)) : Array.from(new Set([...valeur.postes, ...f.postes])) })} />
+                            {f.famille} <span className="font-normal text-gray-400">({t('toute la famille')})</span>
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-5">
+                            {f.postes.map(p => (
+                              <label key={p} className={coche}>
+                                <input type="checkbox" checked={valeur.postes.includes(p)} onChange={() => set({ postes: basculer(valeur.postes, p) })} />
+                                {p}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
                 : postes.length === 0 ? <p className="text-xs text-gray-500">{t('Aucun poste renseigné dans les fiches employés.')}</p> : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-56 overflow-y-auto">
                     {postes.map(p => (

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
+import ChoixPoste from '@/components/ChoixPoste'
 import { AUCUN_DROIT, type Droits } from '@/lib/droits'
 import { CliniqueEmploye, Role } from '@/lib/cliniques'
 
@@ -15,9 +16,10 @@ interface Props {
   cliniqueParDefaut: string
   departementParDefaut: string
   afficherAutorisationCreation: boolean
+  postes: { famille: string; postes: string[] }[]
 }
 
-export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation }: Props) {
+export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation, postes }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
