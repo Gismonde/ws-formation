@@ -7,6 +7,7 @@
 //
 // Toutes les pages/API Admin passent par ce module : ne pas dupliquer ces règles ailleurs.
 
+import { cache } from 'react'
 import { createClient as createServiceClient, SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
@@ -53,7 +54,10 @@ export function serviceClient(): SupabaseClient {
 }
 
 /** Employé connecté (null si non connecté, introuvable ou archivé). */
-export async function getActeur(): Promise<Acteur | null> {
+/** Personne connectée (une seule lecture par requête grâce à cache()). */
+export const getActeur = cache(lireActeur)
+
+async function lireActeur(): Promise<Acteur | null> {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -61,11 +65,16 @@ export async function getActeur(): Promise<Acteur | null> {
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return null
 
-  const { data } = await serviceClient()
+  const { data, error } = await serviceClient()
     .from('employes')
     .select('*')
     .eq('auth_user_id', user.id)
-    .single()
+    .maybeSingle()
+  // Erreur de base de données passagère : on ne déconnecte pas la personne pour autant
+  if (error) {
+    console.error('[auth] lecture de l’employé impossible', error.code, error.message)
+    throw new Error('Base de données momentanément indisponible')
+  }
 
   if (!data || data.actif === false || !estRole(data.role)) return null
   const clinique = estCliniqueEmploye(data.clinique) ? data.clinique : null
