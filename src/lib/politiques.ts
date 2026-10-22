@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Acteur, cliniquesAdministrees, filtrerEmployes } from '@/lib/permissions'
 import { Clinique, CliniqueEmploye, cliniquesDe } from '@/lib/cliniques'
+import { chargerPostes, parFamille } from '@/lib/postes'
 
 export const TEXTE_CONFIRMATION_POLITIQUE =
   'J’ai lu et compris cette politique et je m’engage à la respecter.'
@@ -259,9 +260,12 @@ export async function optionsCiblage(sb: SupabaseClient, a: Acteur) {
     const p = (e.poste ?? '').trim()
     if (p && !postes.has(normPoste(p))) postes.set(normPoste(p), p)
   }
+  // Liste officielle des postes (par famille) ; à défaut, les postes saisis dans les fiches
+  const officiels = await chargerPostes(sb)
   return {
     departements: (departements ?? []) as { id: string; nom: string }[],
-    postes: Array.from(postes.values()).sort((x, y) => x.localeCompare(y, 'fr')),
+    postes: officiels.length ? officiels.map(p => p.nom) : Array.from(postes.values()).sort((x, y) => x.localeCompare(y, 'fr')),
+    familles: officiels.length ? parFamille(officiels) : [],
     employes: employes.map(e => ({
       id: e.id, nom: `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() || (e.email ?? ''), poste: e.poste ?? null,
       clinique: e.clinique, departement: (e.departement_id && nomDep.get(e.departement_id)) || null,

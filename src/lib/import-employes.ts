@@ -10,7 +10,7 @@ export type ColonneImport = 'prenom' | 'nom' | 'email' | 'poste' | 'clinique' | 
 export type ErreurImport =
   | 'prenom_manquant' | 'nom_manquant' | 'email_manquant' | 'email_invalide' | 'email_double_fichier'
   | 'email_existant' | 'clinique_invalide' | 'clinique_hors_perimetre' | 'departement_introuvable'
-  | 'role_invalide' | 'role_non_autorise' | 'gestionnaire_sans_departement'
+  | 'role_invalide' | 'role_non_autorise' | 'gestionnaire_sans_departement' | 'poste_inconnu'
 
 export type LigneImport = {
   numero: number // numéro de ligne dans le fichier (en-tête = 1)
@@ -32,6 +32,8 @@ export type ContexteImport = {
   emailsExistants: Set<string>
   /** Gestionnaire : tous les employés importés vont dans son département et sa clinique. */
   imposer?: { clinique: CliniqueEmploye; departement_id: string } | null
+  /** Liste officielle des postes : le poste doit en faire partie (majuscules et accents ignorés) */
+  postes?: string[]
 }
 
 export const sansAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
@@ -156,7 +158,13 @@ export function analyserImport(brutes: string[][], ctx: ContexteImport): { ligne
       if (role === 'gestionnaire' && !departement_id && !erreurs.includes('departement_introuvable')) erreurs.push('gestionnaire_sans_departement')
     }
 
-    return { numero: i + 2, prenom, nom, email, poste: val(l, 'poste'), role, clinique, departement_id, departement_nom, erreurs }
+    let poste = val(l, 'poste')
+    if (poste && ctx.postes?.length) {
+      const officiel = ctx.postes.find(p => sansAccents(p).replace(/\s+/g, ' ') === sansAccents(poste).replace(/\s+/g, ' '))
+      if (officiel) poste = officiel
+      else erreurs.push('poste_inconnu')
+    }
+    return { numero: i + 2, prenom, nom, email, poste, role, clinique, departement_id, departement_nom, erreurs }
   })
   return { lignes, colonnesManquantes }
 }

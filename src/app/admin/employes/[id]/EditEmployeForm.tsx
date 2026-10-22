@@ -1,6 +1,7 @@
 'use client'
 import { useT } from '@/lib/i18n/client'
 import { droitsDe, type Droits } from '@/lib/droits'
+import ChoixPoste from '@/components/ChoixPoste'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
@@ -28,9 +29,10 @@ interface Props {
   cliniquesPossibles: CliniqueEmploye[]
   estGestionnaire: boolean
   afficherAutorisationCreation: boolean
+  postes?: { famille: string; postes: string[] }[]
 }
 
-export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)

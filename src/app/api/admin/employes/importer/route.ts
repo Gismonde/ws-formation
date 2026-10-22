@@ -8,6 +8,7 @@ import { analyserImport, lireCsv, type LigneImport } from '@/lib/import-employes
 import { inviterEmploye } from '@/lib/invitations'
 import { origineDepuis } from '@/lib/courriels'
 import { logAudit } from '@/lib/audit'
+import { chargerPostes } from '@/lib/postes'
 
 export const maxDuration = 300
 const TAILLE_MAX = 5 * 1024 * 1024
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
     cliniquesPossibles: cliniquesAttribuables(acteur),
     rolesPossibles: rolesAttribuables(acteur),
     emailsExistants: new Set((existants ?? []).map(e => String(e.email).toLowerCase())),
+    postes: (await chargerPostes(sb)).map(p => p.nom),
     imposer: acteur.role === 'gestionnaire' ? { clinique: acteur.clinique!, departement_id: acteur.departement_id! } : null,
   })
   if (colonnesManquantes.length) return NextResponse.json({ error: 'colonnes', colonnesManquantes }, { status: 400 })

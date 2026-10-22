@@ -19,6 +19,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
   { id: 'employes', label: 'Employés', icon: 'people', liens: [
     { href: '/admin/employes', label: 'Employés', icon: 'people', droits: ['suivi'] },
     { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
+    { href: '/admin/postes', label: 'Postes', icon: 'badge', adminOnly: true },
     { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
   ] },
   { id: 'contenus', label: 'Formations & politiques', icon: 'school', liens: [
