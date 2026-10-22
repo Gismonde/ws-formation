@@ -67,7 +67,7 @@ const COL_ATT: Colonne<LigneAtt>[] = [
 
 export async function GET(req: NextRequest) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const sb = serviceClient()
   const sp = req.nextUrl.searchParams
   const format = ['csv', 'pdf'].includes(sp.get('format') ?? '') ? sp.get('format')! : 'xlsx'

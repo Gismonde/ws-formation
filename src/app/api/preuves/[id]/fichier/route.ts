@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   if (preuve.employe_id !== acteur.id) {
     const { data: proprietaire } = await sb.from('employes').select('id, role, clinique, departement_id').eq('id', preuve.employe_id).maybeSingle()
-    if (!aAccesAdmin(acteur.role) || !proprietaire || !peutVoirEmploye(acteur, proprietaire)) {
+    if (!aAccesAdmin(acteur) || !proprietaire || !peutVoirEmploye(acteur, proprietaire)) {
       return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
     }
   }

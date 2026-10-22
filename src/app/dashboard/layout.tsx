@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { CliniqueLogos } from '@/components/CliniqueBadge'
 import { serviceClient } from '@/lib/permissions'
 import { nombrePolitiquesEnAttente } from '@/lib/politiques'
+import { aAccesAdmin } from '@/lib/cliniques'
 import { getEspace } from '@/lib/espace'
 import { ChoixEspace } from '@/components/ChoixEspace'
 import { TiroirMenu } from '@/components/TiroirMenu'
@@ -30,14 +31,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, nom, prenom, role, clinique, departement_id, poste')
+    .select('*')
     .eq('auth_user_id', user.id)
     .single()
 
   const espace = await getEspace(employe)
   const { t } = await i18n()
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
-  const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe?.role ?? '')
+  // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
+  const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
   const cliniqueAffichee = espace.actif
   const theme = espace.actif ? THEME_CLINIQUE[espace.actif] : THEME_NEUTRE

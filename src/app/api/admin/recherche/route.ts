@@ -14,7 +14,7 @@ const motif = (q: string) => `%${q.replace(/[%_\\]/g, m => '\\' + m).replace(/[,
 
 export async function GET(req: Request) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const q = (new URL(req.url).searchParams.get('q') ?? '').trim().slice(0, 80)
   if (q.length < 2) return NextResponse.json({ resultats: [] })
 

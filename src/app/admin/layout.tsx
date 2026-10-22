@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getActeur, peutCreerFormations } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, peutSuivreEmployes, peutValiderFormations, peutCreerEvenements } from '@/lib/permissions'
 import { aAccesAdmin, estAdministrateur, ROLE_LABEL, cliniquesDe, CLINIQUE_INFO, THEME_CLINIQUE, vuesAdminPossibles } from '@/lib/cliniques'
 import { ChoixVueAdmin } from '@/components/ChoixVueAdmin'
 import { TiroirMenu } from '@/components/TiroirMenu'
@@ -11,27 +11,29 @@ import { MenuAdmin, type GroupeMenu } from '@/components/MenuAdmin'
 import { DEUX_FACTEURS_ADMIN_OBLIGATOIRE } from '@/lib/securite'
 import { i18n } from '@/lib/i18n/serveur'
 
-type EntreeNav = { href: string; label: string; icon: string; adminOnly?: boolean; createurs?: boolean; superAdmin?: boolean }
+type Droit = 'suivi' | 'formations' | 'validation' | 'evenements'
+/** droits : il suffit d'en avoir un (les administrateurs les ont tous) */
+type EntreeNav = { href: string; label: string; icon: string; adminOnly?: boolean; createurs?: boolean; superAdmin?: boolean; droits?: Droit[] }
 const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[] = [
   { id: 'accueil', label: 'Tableau de bord', icon: 'dashboard', liens: [{ href: '/admin', label: 'Tableau de bord', icon: 'dashboard' }] },
   { id: 'employes', label: 'Employés', icon: 'people', liens: [
-    { href: '/admin/employes', label: 'Employés', icon: 'people' },
+    { href: '/admin/employes', label: 'Employés', icon: 'people', droits: ['suivi'] },
     { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
     { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
   ] },
   { id: 'contenus', label: 'Formations & politiques', icon: 'school', liens: [
-    { href: '/admin/formations', label: 'Formations', icon: 'school' },
+    { href: '/admin/formations', label: 'Formations', icon: 'school', droits: ['formations', 'suivi', 'validation'] },
     { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
-    { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available' },
-    { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind' },
-    { href: '/admin/politiques', label: 'Politiques', icon: 'policy' },
-    { href: '/admin/sop', label: 'SOP', icon: 'description' },
+    { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available', droits: ['suivi'] },
+    { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind', droits: ['suivi'] },
+    { href: '/admin/politiques', label: 'Politiques', icon: 'policy', droits: ['suivi'] },
+    { href: '/admin/sop', label: 'SOP', icon: 'description', adminOnly: true },
   ] },
   { id: 'suivi', label: 'Suivi & conformité', icon: 'verified', liens: [
-    { href: '/admin/conformite', label: 'Conformité', icon: 'verified' },
-    { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy' },
-    { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart' },
-    { href: '/admin/sondages', label: 'Sondages', icon: 'reviews' },
+    { href: '/admin/conformite', label: 'Conformité', icon: 'verified', droits: ['suivi'] },
+    { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy', droits: ['suivi'] },
+    { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart', droits: ['suivi'] },
+    { href: '/admin/sondages', label: 'Sondages', icon: 'reviews', droits: ['suivi', 'formations'] },
   ] },
   { id: 'administration', label: 'Administration', icon: 'settings', liens: [
     { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
@@ -47,7 +49,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const employe = await getActeur()
   const { t } = await i18n()
-  if (!employe || !aAccesAdmin(employe.role)) redirect('/dashboard/accueil')
+  if (!employe || !aAccesAdmin(employe)) redirect('/dashboard/accueil')
   // Double authentification des administrateurs : rappel tant qu'elle n'est pas activée,
   // puis blocage quand DEUX_FACTEURS_ADMIN_OBLIGATOIRE est activé
   let rappel2fa = false
@@ -68,7 +70,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Une seule clinique (choisie ou unique) : la barre prend ses couleurs
   const cliniqueTheme = employe.vue ?? (cliniquesDe(employe.clinique).length === 1 && employe.role !== 'super_admin' ? cliniquesDe(employe.clinique)[0] : null)
   const fondBarre = cliniqueTheme ? THEME_CLINIQUE[cliniqueTheme].fondBarre : 'linear-gradient(180deg, #1a1f36 0%, #0d1117 100%)'
+  const droits: Record<Droit, boolean> = {
+    suivi: peutSuivreEmployes(employe), formations: peutCreerFormations(employe),
+    validation: peutValiderFormations(employe), evenements: peutCreerEvenements(employe),
+  }
   const visible = (l: EntreeNav) => (!l.adminOnly || isAdmin) && (!l.createurs || peutCreerFormations(employe)) && (!l.superAdmin || employe.role === 'super_admin')
+    && (!l.droits || l.droits.some(d => droits[d]))
   const groupes: GroupeMenu[] = adminNav
     .map(g => ({ id: g.id, label: t(g.label), icon: g.icon, liens: g.liens.filter(visible).map(l => ({ href: l.href, label: t(l.label), icon: l.icon })) }))
     .filter(g => g.liens.length > 0)

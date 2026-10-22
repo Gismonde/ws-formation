@@ -32,7 +32,7 @@ export default async function CertificatPage({ params }: PageProps) {
   if (!employe) notFound()
 
   const proprietaire = employe.id === acteur.id
-  if (!proprietaire && !(aAccesAdmin(acteur.role) && peutVoirEmploye(acteur, employe))) notFound()
+  if (!proprietaire && !(aAccesAdmin(acteur) && peutVoirEmploye(acteur, employe))) notFound()
 
   if (!proprietaire) {
     await logAudit({

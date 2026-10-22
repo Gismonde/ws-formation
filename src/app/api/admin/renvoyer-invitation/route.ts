@@ -9,7 +9,7 @@ import { origineDepuis } from '@/lib/courriels'
 export async function POST(request: Request) {
   const acteur = await getActeur()
   if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-  if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { employeId } = await request.json()
   const sb = serviceClient()

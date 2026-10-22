@@ -28,6 +28,12 @@ export type Acteur = {
   poste?: string | null
   /** Gestionnaire autorisé à créer/modifier des formations (les admins le sont toujours) */
   peut_creer_formations: boolean
+  /** Gestionnaire autorisé à suivre les employés de son département */
+  peut_suivre_employes?: boolean
+  /** Gestionnaire autorisé à valider les formations des autres */
+  peut_valider_formations?: boolean
+  /** Gestionnaire autorisé à créer des événements en présentiel */
+  peut_creer_evenements?: boolean
   /**
    * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
    * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
@@ -95,6 +101,9 @@ async function lireActeur(): Promise<Acteur | null> {
     departement_id: data.departement_id ?? null,
     poste: data.poste ?? null,
     peut_creer_formations: data.peut_creer_formations === true,
+    peut_suivre_employes: data.peut_suivre_employes === true,
+    peut_valider_formations: data.peut_valider_formations === true,
+    peut_creer_evenements: data.peut_creer_evenements === true,
     vue,
   }
 }
@@ -108,6 +117,28 @@ export function peutCreerFormations(a: Acteur | null): boolean {
   if (!a) return false
   if (a.role === 'super_admin' || a.role === 'admin') return true
   return a.role === 'gestionnaire' && a.peut_creer_formations
+}
+
+const estAdmin = (a: { role: string }) => a.role === 'super_admin' || a.role === 'admin'
+
+/** Gestionnaire qui a le droit de suivre les employés de son département. */
+function gestionnaireSuivi(a: Acteur): boolean {
+  return a.role === 'gestionnaire' && a.peut_suivre_employes === true
+}
+
+/** Suivre les employés (liste, progression, conformité, rappels). Admins : toujours. */
+export function peutSuivreEmployes(a: Acteur | null): boolean {
+  return !!a && (estAdmin(a) || gestionnaireSuivi(a))
+}
+
+/** Valider les formations créées par d'autres. Admins : toujours. */
+export function peutValiderFormations(a: Pick<Acteur, 'role' | 'peut_valider_formations'> | null): boolean {
+  return !!a && (estAdmin(a) || (a.role === 'gestionnaire' && a.peut_valider_formations === true))
+}
+
+/** Créer des événements en présentiel. Admins : toujours. */
+export function peutCreerEvenements(a: Acteur | null): boolean {
+  return !!a && (estAdmin(a) || (a.role === 'gestionnaire' && a.peut_creer_evenements === true))
 }
 
 /** Acteur connecté s'il peut créer/modifier des formations, sinon null. */
@@ -183,7 +214,7 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
     return query.in('clinique', [...cl, 'LES_DEUX'])
   }
-  if (a.role === 'gestionnaire' && a.departement_id) {
+  if (gestionnaireSuivi(a) && a.departement_id) {
     // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
     const cl = dansLaVue(a, cliniquesDe(a.clinique))
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
@@ -196,7 +227,7 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
 export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
   if (a.role === 'super_admin') return !a.vue || cliniquesDe(c.clinique).includes(a.vue)
   if (a.role === 'admin') return intersecte(cliniquesDe(c.clinique), cliniquesAdministrees(a))
-  if (a.role === 'gestionnaire') {
+  if (gestionnaireSuivi(a)) {
     return !!a.departement_id && c.departement_id === a.departement_id
       && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))
   }
@@ -215,7 +246,7 @@ export async function departementsVisibles(a: Acteur, sb = serviceClient()): Pro
   let q = sb.from('departements').select('id, nom, clinique').order('nom')
   if (a.role === 'admin') {
     if (cliniquesAdministrees(a).length === 0) q = q.eq('id', AUCUN_ID)
-  } else if (a.role === 'gestionnaire') {
+  } else if (gestionnaireSuivi(a)) {
     q = q.eq('id', a.departement_id ?? AUCUN_ID)
   } else if (a.role !== 'super_admin') {
     q = q.eq('id', AUCUN_ID)
@@ -227,7 +258,7 @@ export async function departementsVisibles(a: Acteur, sb = serviceClient()): Pro
 export function peutVoirDepartement(a: Acteur, d: { id: string; clinique: string | null }): boolean {
   if (a.role === 'super_admin') return true
   if (a.role === 'admin') return cliniquesAdministrees(a).length > 0
-  if (a.role === 'gestionnaire') return d.id === a.departement_id
+  if (gestionnaireSuivi(a)) return d.id === a.departement_id
   return false
 }
 
@@ -246,14 +277,14 @@ export function peutGererEmploye(a: Acteur, c: CibleEmploye): boolean {
     if (c.role === 'admin') return inclus(cliniquesDe(c.clinique), cliniquesAdministrees(a))
     return true
   }
-  if (a.role === 'gestionnaire') return c.role === 'employe' && peutVoirEmploye(a, c)
+  if (gestionnaireSuivi(a)) return c.role === 'employe' && peutVoirEmploye(a, c)
   return false
 }
 
 export function rolesAttribuables(a: Acteur): Role[] {
   if (a.role === 'super_admin') return ['super_admin', 'admin', 'gestionnaire', 'employe']
   if (a.role === 'admin') return ['admin', 'gestionnaire', 'employe']
-  if (a.role === 'gestionnaire') return ['employe']
+  if (gestionnaireSuivi(a)) return ['employe']
   return []
 }
 
@@ -263,7 +294,7 @@ export function cliniquesAttribuables(a: Acteur): CliniqueEmploye[] {
     const cl = cliniquesAdministrees(a)
     return cl.length ? [...cl, 'LES_DEUX'] : []
   }
-  if (a.role === 'gestionnaire') return a.clinique ? [a.clinique] : []
+  if (gestionnaireSuivi(a)) return a.clinique ? [a.clinique] : []
   return []
 }
 

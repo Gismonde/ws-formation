@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, peutGererEmploye, validerAttribution, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
+import { droitsDe, droitsAEnregistrer, changementsDroits, AUCUN_DROIT } from '@/lib/droits'
 
 export async function PUT(request: Request) {
   try {
     const acteur = await getActeur()
     if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    if (!aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
     const body = await request.json()
     const { id, prenom, nom, poste, actif } = body
@@ -16,7 +17,7 @@ export async function PUT(request: Request) {
     const sb = serviceClient()
     const { data: cible } = await sb
       .from('employes')
-      .select('id, auth_user_id, role, clinique, departement_id, actif')
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -37,21 +38,26 @@ export async function PUT(request: Request) {
     if (nom !== undefined) updateData.nom = nom
     if (poste !== undefined) updateData.poste = poste
     if (typeof actif === 'boolean') updateData.actif = actif
-    // Autorisation de créer des formations : réservée aux administrateurs, et seulement pour un gestionnaire
-    if (acteur.role === 'super_admin' || acteur.role === 'admin') {
-      if (typeof body.peut_creer_formations === 'boolean') {
-        updateData.peut_creer_formations = attribution.valeurs.role === 'gestionnaire' && body.peut_creer_formations
-      } else if (attribution.valeurs.role !== 'gestionnaire') {
-        updateData.peut_creer_formations = false
-      }
-    } else if (attribution.valeurs.role !== 'gestionnaire') {
-      updateData.peut_creer_formations = false
-    }
+    // Droits du gestionnaire : modifiables par les administrateurs seulement ; retirés si la personne n'est plus gestionnaire
+    const avant = droitsDe(cible)
+    const apres = (acteur.role === 'super_admin' || acteur.role === 'admin')
+      ? droitsAEnregistrer(attribution.valeurs.role, body, avant)
+      : attribution.valeurs.role === 'gestionnaire' ? avant : { ...AUCUN_DROIT }
+    Object.assign(updateData, apres)
+    const changements = changementsDroits(avant, apres)
 
     const { error } = await sb.from('employes').update(updateData).eq('id', id)
     if (error) {
       console.error('Supabase update error:', error)
       return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
+    if (changements.length) {
+      await logAudit({
+        acteur_id: acteur.id, type_action: 'EMPLOYE_MODIFIE', cible_employe_id: id,
+        description: `Droits modifiés pour ${cible.prenom ?? ''} ${cible.nom ?? ''} : ${changements.join(', ')}`.replace('  ', ' '),
+        metadata: { droits: { avant, apres } }, ...ipEtAgent(request),
+      })
     }
 
     if (actif === false && cible.actif !== false && cible.auth_user_id) {

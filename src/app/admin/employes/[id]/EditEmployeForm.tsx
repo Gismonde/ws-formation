@@ -1,5 +1,6 @@
 'use client'
 import { useT } from '@/lib/i18n/client'
+import { droitsDe, type Droits } from '@/lib/droits'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
@@ -17,6 +18,9 @@ interface Props {
     departement_id: string | null
     clinique: string | null
     peut_creer_formations?: boolean | null
+    peut_suivre_employes?: boolean | null
+    peut_valider_formations?: boolean | null
+    peut_creer_evenements?: boolean | null
   }
   departements: DepartementOption[]
   modifiable: boolean
@@ -39,7 +43,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
   const [departementId, setDepartementId] = useState(employe.departement_id || '')
   const [clinique, setClinique] = useState(employe.clinique || '')
   const [actif, setActif] = useState(employe.actif)
-  const [peutCreer, setPeutCreer] = useState(employe.peut_creer_formations === true)
+  const [droits, setDroits] = useState<Droits>(droitsDe(employe))
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -55,7 +59,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
           nom,
           poste: poste || null,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
-          ...(afficherAutorisationCreation ? { peut_creer_formations: role === 'gestionnaire' && peutCreer } : {}),
+          ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
           actif
         })
       })
@@ -123,7 +127,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
         departements={departements} estGestionnaire={estGestionnaire}
         disabled={!modifiable} inputCls={inputCls} labelCls={labelCls}
         afficherAutorisationCreation={afficherAutorisationCreation}
-        peutCreerFormations={peutCreer} setPeutCreerFormations={setPeutCreer}
+        droits={droits} setDroits={setDroits}
       />
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}

@@ -9,7 +9,7 @@ import { aAccesAdmin } from '@/lib/cliniques'
  */
 export async function POST(request: Request) {
   const acteur = await getActeur()
-  if (!acteur || !aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { employeId, formationId } = await request.json()
   const sb = serviceClient()

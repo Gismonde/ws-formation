@@ -12,7 +12,7 @@ export default async function SondagesPage({ searchParams }: { searchParams: Pro
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   const { formation } = await searchParams
   const { actif, lignes } = await chargerResultatsSondages(serviceClient(), acteur)
   const choisie = lignes.find(l => l.formation_id === formation) ?? null

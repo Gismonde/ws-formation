@@ -24,7 +24,7 @@ export default async function ConformitePage({ searchParams }: { searchParams: P
   const date = dateEn(loc)
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  if (!aAccesAdmin(acteur.role)) redirect('/dashboard/accueil')
+  if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const sp = await searchParams
 

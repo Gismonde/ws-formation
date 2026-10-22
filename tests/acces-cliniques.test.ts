@@ -9,7 +9,7 @@ import {
   employeConcerneParClinique, peutVoirEmploye, peutGererEmploye, filtrerEmployes,
   cliniquesAttribuables, rolesAttribuables, peutCreerFormations,
 } from '@/lib/permissions'
-import { espaceActif, espacesPossibles, cliniquesContenuDeLEspace } from '@/lib/cliniques'
+import { espaceActif, espacesPossibles, cliniquesContenuDeLEspace, aAccesAdmin } from '@/lib/cliniques'
 import { estVise } from '@/lib/politiques'
 
 // ---------------------------------------------------------------------------
@@ -28,8 +28,9 @@ const superAdmin = acteur({ role: 'super_admin' })
 const adminCMC = acteur({ role: 'admin', clinique: 'CMC' })
 const adminWSSC = acteur({ role: 'admin', clinique: 'WSSC' })
 const adminDeux = acteur({ role: 'admin', clinique: 'LES_DEUX' })
-const gestCMC = acteur({ role: 'gestionnaire', clinique: 'CMC', departement_id: 'dept-bloc' })
-const gestCMCCreateur = acteur({ role: 'gestionnaire', clinique: 'CMC', departement_id: 'dept-bloc', peut_creer_formations: true })
+const gestCMC = acteur({ role: 'gestionnaire', clinique: 'CMC', departement_id: 'dept-bloc', peut_suivre_employes: true })
+const gestSansDroit = acteur({ role: 'gestionnaire', clinique: 'CMC', departement_id: 'dept-bloc' })
+const gestCMCCreateur = acteur({ role: 'gestionnaire', clinique: 'CMC', departement_id: 'dept-bloc', peut_creer_formations: true, peut_suivre_employes: true })
 const employeCMC = acteur({ role: 'employe', clinique: 'CMC', departement_id: 'dept-bloc' })
 const employeWSSC = acteur({ role: 'employe', clinique: 'WSSC', departement_id: 'dept-bloc' })
 const employeDeux = acteur({ role: 'employe', clinique: 'LES_DEUX' })
@@ -285,3 +286,20 @@ describe('Administrateur global', () => {
     expect(cliniqueAffichee('WSSC', 'admin')).toBe('WSSC')
   })
 })
+
+describe('Droits des gestionnaires', () => {
+  it('sans droit : aucun accès admin ni employé visible', () => {
+    expect(aAccesAdmin(gestSansDroit)).toBe(false)
+    expect(aAccesAdmin('gestionnaire')).toBe(false)
+    expect(peutVoirEmploye(gestSansDroit, { clinique: 'CMC', departement_id: 'dept-bloc', role: 'employe' })).toBe(false)
+    expect(rolesAttribuables(gestSansDroit)).toEqual([])
+  })
+  it('avec le suivi : son département seulement', () => {
+    expect(aAccesAdmin(gestCMC)).toBe(true)
+    expect(peutVoirEmploye(gestCMC, { clinique: 'CMC', departement_id: 'dept-bloc', role: 'employe' })).toBe(true)
+  })
+  it('les administrateurs ont tous les droits', () => {
+    expect(aAccesAdmin({ role: 'admin' })).toBe(true)
+  })
+})
+

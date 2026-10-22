@@ -7,7 +7,7 @@ export async function PATCH(request: Request) {
   try {
     const acteur = await getActeur()
     if (!acteur) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    if (!aAccesAdmin(acteur.role)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    if (!aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
     const { id, actif } = await request.json()
     if (!id || typeof actif !== 'boolean') {
