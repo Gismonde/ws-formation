@@ -62,7 +62,6 @@ export default function DepuisPPPage() {
   const [loadingStep, setLoadingStep] = useState(0) // 0=idle, 1=creation, 2=import, 3=questionnaire
   const [error, setError] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
-  const [publierImmediatement, setPublierImmediatement] = useState(false)
   const [description, setDescription] = useState("")
   const [clinique, setClinique] = useState<CliniqueContenu | null>(null)
   // Enrichissement
@@ -189,7 +188,7 @@ export default function DepuisPPPage() {
           niveau,
           clinique,
           duree_estimee_minutes: 60,
-          publiee: publierImmediatement === true, ...(publierImmediatement ? { publiee_le: new Date().toISOString(), version_le: new Date().toISOString() } : {}),
+          publiee: false,
           tags: tags || [],
           objectifs: objectifs || [],
           image_couverture: imageCouverture || null,
@@ -334,10 +333,7 @@ export default function DepuisPPPage() {
           )}
         </div>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#374151", marginBottom: "16px", cursor: "pointer" }}>
-          <input type="checkbox" checked={publierImmediatement} onChange={e => setPublierImmediatement(e.target.checked)} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
-          <span>Publier immédiatement (visible par les apprenants)</span>
-        </label>
+        <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>{t('La formation est créée en brouillon. Elle devra être approuvée par un validateur avant d’être publiée.')}</p>
         <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
           <button type="button" onClick={() => setShowPreview(false)} style={btnSecStyle}>{t('← Modifier')}</button>
           <button type="button" onClick={handleSubmit} style={{ ...btnStyle, background: "#7c3aed", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }}>

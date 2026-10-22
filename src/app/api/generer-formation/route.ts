@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, publier_immediatement, clinique } = body
+  const { titre, description, categorie, niveau, duree_heures, modules, questionnaire, tags, objectifs, prerequis_ids, image_couverture, clinique } = body
 
   // Clinique de la formation : la clé de service contourne la RLS, on applique donc ici la même règle
   // que peut_gerer_contenu_clinique (admin global : tout ; sinon sa clinique, ou les deux s'il est rattaché aux deux)
@@ -84,8 +84,7 @@ export async function POST(req: NextRequest) {
       niveau: ['debutant', 'intermediaire', 'avance'].includes(niveau) ? niveau : 'debutant',
       clinique,
       duree_estimee_minutes: Math.round((Number(duree_heures) || 1) * 60),
-      publiee: publier_immediatement === true,
-      ...(publier_immediatement === true ? { publiee_le: new Date().toISOString(), version: 1, version_le: new Date().toISOString() } : {}),
+      publiee: false, // publication seulement après validation
       tags: tags || [],
       objectifs: objectifs || [],
       prerequis_ids: prerequis_ids || [],
@@ -96,9 +95,6 @@ export async function POST(req: NextRequest) {
 
   if (formationError || !formation) {
     return NextResponse.json({ error: formationError?.message || 'Erreur création formation' }, { status: 500 })
-  }
-  if (publier_immediatement === true) {
-    await adminClient.from('formations_versions').insert({ formation_id: formation.id, version: 1, note: 'Publication initiale' })
   }
 
   // 2. Create modules

@@ -5,6 +5,8 @@ import type { CliniqueContenu } from '@/lib/cliniques'
 type Ligne = Record<string, unknown>
 const sans = (l: Ligne, ...cles: string[]) => Object.fromEntries(Object.entries(l).filter(([k]) => !cles.includes(k)))
 const SYSTEME = ['id', 'created_at', 'updated_at']
+// La copie repart de zéro : ni validation, ni publication, ni versions
+const VALIDATION_ET_PUBLICATION = ['statut_validation', 'validateur_id', 'validation_demandee_le', 'validation_demandee_par', 'validation_le', 'validation_commentaire', 'validee_par', 'publiee_le', 'version', 'version_le']
 
 export async function dupliquerFormation(
   sb: SupabaseClient, formationId: string, options: { clinique: CliniqueContenu; titre: string; creePar: string },
@@ -13,7 +15,7 @@ export async function dupliquerFormation(
   if (error || !f) throw new Error('Formation introuvable')
 
   const { data: nouvelle, error: eF } = await sb.from('formations')
-    .insert({ ...sans(f, ...SYSTEME, 'creee_par'), titre: options.titre, clinique: options.clinique, publiee: false, creee_par: options.creePar })
+    .insert({ ...sans(f, ...SYSTEME, ...VALIDATION_ET_PUBLICATION, 'creee_par'), titre: options.titre, clinique: options.clinique, publiee: false, creee_par: options.creePar })
     .select('id').single()
   if (eF || !nouvelle) throw new Error(eF?.message ?? 'Copie impossible')
   const nid = nouvelle.id as string

@@ -33,9 +33,12 @@ export async function POST(req: NextRequest) {
 
     // La formation doit appartenir à une clinique de l'acteur
     const { data: formationCible } = await serviceRole
-      .from('formations').select('id, clinique').eq('id', formationId).single()
+      .from('formations').select('id, clinique, publiee').eq('id', formationId).single()
     if (!formationCible || !peutVoirContenu(moi, formationCible.clinique)) {
       return NextResponse.json({ error: 'Formation introuvable ou hors de votre périmètre' }, { status: 403 })
+    }
+    if (!formationCible.publiee) {
+      return NextResponse.json({ error: 'Cette formation doit être validée puis publiée avant d’être assignée.' }, { status: 400 })
     }
 
     let employeIds: string[] = []

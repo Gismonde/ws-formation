@@ -5,12 +5,14 @@ import { createClient } from '@/lib/supabase/server'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
-import { getActeur, peutCreerFormations, cliniquesContenuGerables } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, cliniquesContenuGerables, peutGererContenu } from '@/lib/permissions'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
 import BoutonPublier from './BoutonPublier'
 import DupliquerFormation from './DupliquerFormation'
+import PanneauValidation from './PanneauValidation'
+import { statutDe, validationActive, type FormationValidation } from '@/lib/validation-formation'
 import NouvelleVersion from './NouvelleVersion'
 import { serviceClient } from '@/lib/permissions'
 import { historiqueFormation } from '@/lib/historique-formation'
@@ -44,6 +46,15 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   if (!res.success || !res.data) notFound()
   const formation = res.data as Formation & { modules: Module[] }
   const suivi = formation as unknown as { publiee_le?: string | null; version?: number; version_le?: string | null }
+  // Validation avant publication
+  const fv = formation as unknown as FormationValidation
+  const avecValidation = validationActive(fv)
+  const statut = statutDe(fv)
+  const idsNoms = [fv.validateur_id, fv.validation_demandee_par, fv.validee_par].filter(Boolean) as string[]
+  const { data: nomsBruts } = idsNoms.length ? await serviceClient().from('employes').select('id, prenom, nom').in('id', idsNoms) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }
+  const nomDe = (i: string | null | undefined) => { const e = (nomsBruts ?? []).find(x => x.id === i); return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : null }
+  const peutGererCetteFormation = !!acteurCourant && peutCreer && peutGererContenu(acteurCourant, formation.clinique)
+  const approuvee = !avecValidation || statut === 'approuvee'
 
   // Charger les leçons de chaque module
   const modulesAvecLecons: ModuleAvecLecons[] = []
@@ -115,9 +126,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
             {peutCreer && (
               <div className="flex items-start gap-2">
-                {formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} />}
+                {formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
-                <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} />
+                <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} />
               </div>
             )}
           </div>
@@ -153,6 +164,15 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             
           </div>
         </div>
+
+        {avecValidation && (peutGererCetteFormation || fv.validateur_id === acteurCourant?.id) && (
+          <PanneauValidation
+            formationId={id} statut={statut} publiee={!!formation.publiee}
+            peutGerer={peutGererCetteFormation} estValidateur={!!acteurCourant && fv.validateur_id === acteurCourant.id}
+            validateur={nomDe(fv.validateur_id)} demandeur={nomDe(fv.validation_demandee_par)} demandeeLe={fv.validation_demandee_le ?? null}
+            decisionLe={fv.validation_le ?? null} valideePar={nomDe(fv.validee_par)} commentaire={fv.validation_commentaire ?? null}
+          />
+        )}
 
         {/* Actions principales */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
