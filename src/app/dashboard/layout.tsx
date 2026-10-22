@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { CliniqueLogos } from '@/components/CliniqueBadge'
 import { serviceClient } from '@/lib/permissions'
 import { nombrePolitiquesEnAttente } from '@/lib/politiques'
+import { nombreEvenementsAInscrire } from '@/lib/evenements'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { getEspace } from '@/lib/espace'
 import { ChoixEspace } from '@/components/ChoixEspace'
@@ -16,6 +17,7 @@ const employeNav = [
   { href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' },
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
+  { href: '/dashboard/evenements', label: 'Événements', emoji: '📅' },
   { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
   { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
   { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
@@ -38,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const espace = await getEspace(employe)
   const { t } = await i18n()
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
+  const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe) : 0
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
@@ -69,6 +72,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link key={item.href} href={item.href} className="sidebar-nav-item">
               <span className="sidebar-emoji">{item.emoji}</span>
               <span>{t(item.label)}</span>
+              {item.href === '/dashboard/evenements' && evenementsAInscrire > 0 && (
+                <span style={{ marginLeft: 'auto', background: '#4f46e5', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{evenementsAInscrire}</span>
+              )}
               {item.href === '/dashboard/politiques' && politiquesEnAttente > 0 && (
                 <span style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{politiquesEnAttente}</span>
               )}

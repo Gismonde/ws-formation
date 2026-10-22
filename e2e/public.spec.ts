@@ -25,7 +25,7 @@ test.describe('Connexion', () => {
 })
 
 test.describe('Pages protégées sans connexion', () => {
-  for (const chemin of ['/admin', '/admin/employes', '/admin/formations', '/admin/formations/creer', '/dashboard/accueil', '/dashboard/securite']) {
+  for (const chemin of ['/admin', '/admin/employes', '/admin/formations', '/admin/formations/creer', '/admin/evenements', '/admin/postes', '/admin/formations/a-valider', '/dashboard/evenements', '/dashboard/accueil', '/dashboard/securite']) {
     test(`${chemin} renvoie vers la connexion`, async ({ page }) => {
       await page.goto(chemin)
       await expect(page).toHaveURL(/\/login/)
