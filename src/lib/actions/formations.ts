@@ -1,6 +1,7 @@
 'use server'
 
 import { serviceClient, peutGererContenu } from '@/lib/permissions'
+import { peutEtrePubliee, type FormationValidation } from '@/lib/validation-formation'
 import { noterModification, formationDuModule, formationDeLaLecon, formationDuBloc } from '@/lib/historique-formation'
 import { createClient } from '@/lib/supabase/server'
 import { getCreateurFormations } from '@/lib/permissions'
@@ -58,9 +59,17 @@ export async function updateFormation(
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  // Publication : seulement une formation approuvée par un validateur
+  if (payload.publiee === true) {
+    const { data: f } = await serviceClient().from('formations').select('*').eq('id', formationId).single()
+    if (f && !f.publiee && !peutEtrePubliee(f as FormationValidation)) {
+      return { success: false, error: 'Cette formation doit être approuvée par un validateur avant d’être publiée.' }
+    }
+  }
   const { data, error } = await supabase.from('formations').update(payload).eq('id', formationId).select().single()
   if (error) return { success: false, error: error.message }
-  await noterModification(acteur, formationId, 'publiee' in payload && Object.keys(payload).length === 1 ? (payload.publiee ? `Formation publiée` : `Formation repassée en brouillon`) : `Réglages modifiés : ${Object.keys(payload).map(c => LIBELLE_REGLAGE[c] ?? c).join(', ')}`)
+  const seulementPublication = 'publiee' in payload && Object.keys(payload).length === 1
+  await noterModification(acteur, formationId, seulementPublication ? (payload.publiee ? `Formation publiée` : `Formation repassée en brouillon`) : `Réglages modifiés : ${Object.keys(payload).map(c => LIBELLE_REGLAGE[c] ?? c).join(', ')}`, undefined, { invalider: !seulementPublication })
   return { success: true, data: data as Formation }
 }
 
@@ -93,12 +102,13 @@ export async function publierNouvelleVersion(formationId: string, note: string):
   if (!f.publiee_le) return { success: false, error: 'Publiez d’abord la formation.' }
   const texte = note.trim().slice(0, 1000)
   if (!texte) return { success: false, error: 'Décrivez ce qui a changé dans cette version.' }
+  if (!peutEtrePubliee(f as FormationValidation)) return { success: false, error: 'Cette nouvelle version doit être approuvée par un validateur avant d’être publiée.' }
   const version = (Number(f.version) || 1) + 1
   const maintenant = new Date().toISOString()
   const { error } = await sb.from('formations').update({ version, version_le: maintenant, publiee: true }).eq('id', formationId)
   if (error) return { success: false, error: error.message }
   await sb.from('formations_versions').insert({ formation_id: formationId, version, publiee_le: maintenant, note: texte, publiee_par: acteur.id })
-  await noterModification(acteur, formationId, `Version ${version} publiée : ${texte}`)
+  await noterModification(acteur, formationId, `Version ${version} publiée : ${texte}`, undefined, { invalider: false })
   return { success: true, data: { version } }
 }
 

@@ -173,6 +173,11 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                   <span style={{ position: "absolute", top: "10px", right: "10px", padding: "2px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: f.publiee ? "#16a34a" : "rgba(17,24,39,0.75)", color: "#fff" }}>
                     {f.publiee ? t("Publiée") : t("Brouillon")}
                   </span>
+                  {f.statut_validation && f.statut_validation !== "brouillon" && !(f.publiee && f.statut_validation === "approuvee") && (
+                    <span style={{ position: "absolute", bottom: "10px", right: "10px", padding: "2px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: f.statut_validation === "approuvee" ? "#dcfce7" : f.statut_validation === "a_modifier" ? "#fee2e2" : "#fef3c7", color: f.statut_validation === "approuvee" ? "#166534" : f.statut_validation === "a_modifier" ? "#b91c1c" : "#92400e" }}>
+                      {f.statut_validation === "approuvee" ? t("Approuvée") : f.statut_validation === "a_modifier" ? t("Modifications demandées") : t("En validation")}
+                    </span>
+                  )}
                 </Link>
                 <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
@@ -261,6 +266,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                       fontSize: "12px",
                       fontWeight: "600",
                     }}>{f.publiee ? t("Publié") : t("Brouillon")}</span>
+                    {f.statut_validation && f.statut_validation !== "brouillon" && !(f.publiee && f.statut_validation === "approuvee") ? <div style={{ fontSize: "11px", marginTop: "3px", color: f.statut_validation === "approuvee" ? "#166534" : f.statut_validation === "a_modifier" ? "#b91c1c" : "#92400e" }}>{f.statut_validation === "approuvee" ? t("Approuvée") : f.statut_validation === "a_modifier" ? t("Modifications demandées") : t("En validation")}</div> : null}
                     {f.publiee && f.version ? <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px", whiteSpace: "nowrap" }}>v{f.version}{f.version_le ? " · " + new Date(f.version_le).toLocaleDateString(loc, { dateStyle: "medium" }) : ""}</div> : null}
                   </td>
                   <td style={{ padding: "14px 20px", textAlign: "right", whiteSpace: "nowrap" }}>

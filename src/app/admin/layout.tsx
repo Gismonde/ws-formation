@@ -23,6 +23,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
   ] },
   { id: 'contenus', label: 'Formations & politiques', icon: 'school', liens: [
     { href: '/admin/formations', label: 'Formations', icon: 'school', droits: ['formations', 'suivi', 'validation'] },
+    { href: '/admin/formations/a-valider', label: 'À valider', icon: 'fact_check', droits: ['validation', 'formations'] },
     { href: '/admin/librairie', label: 'Librairie', icon: 'video_library', createurs: true },
     { href: '/admin/journees', label: 'Journées de formation', icon: 'event_available', droits: ['suivi'] },
     { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind', droits: ['suivi'] },

@@ -62,7 +62,7 @@ export type ResultatFormation = { formation_id: string; titre: string; creees: n
 export async function assignerFormations(
   sb: SupabaseClient, a: Acteur, formationIds: string[], employes: EmployeCible[], dateEcheance: string | null,
 ): Promise<{ resultats: ResultatFormation[]; nouvelles: Map<string, string[]> }> {
-  const { data: formations } = await sb.from('formations').select('id, titre, clinique').in('id', formationIds)
+  const { data: formations } = await sb.from('formations').select('id, titre, clinique, publiee').in('id', formationIds)
   const { data: existantes } = employes.length
     ? await sb.from('assignations').select('employe_id, formation_id').in('formation_id', formationIds).in('employe_id', employes.map(e => e.id))
     : { data: [] as { employe_id: string; formation_id: string }[] }
@@ -76,6 +76,11 @@ export async function assignerFormations(
     const f = (formations ?? []).find(x => x.id === id)
     if (!f || !peutVoirContenu(a, f.clinique)) {
       resultats.push({ formation_id: id, titre: f?.titre ?? 'Formation introuvable', creees: 0, deja: 0, autre_clinique: 0, refusee: 'Hors de votre périmètre' })
+      continue
+    }
+    // Seules les formations validées et publiées peuvent être assignées
+    if (!f.publiee) {
+      resultats.push({ formation_id: id, titre: f.titre, creees: 0, deja: 0, autre_clinique: 0, refusee: 'Formation non publiée (validation requise avant publication)' })
       continue
     }
     const r: ResultatFormation = { formation_id: id, titre: f.titre, creees: 0, deja: 0, autre_clinique: 0 }

@@ -3,6 +3,7 @@
 // sont regroupés : une seule ligne par personne, leçon et quart d'heure.
 import { serviceClient, type Acteur } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
+import { invaliderApprobation } from '@/lib/validation-formation'
 
 const REGROUPEMENT_MS = 15 * 60 * 1000
 
@@ -25,9 +26,19 @@ export async function formationDuBloc(blocId: string) {
   return l ? { ...l, leconId: data.lesson_id as string } : null
 }
 
-/** Note une modification. `regrouper` : clé d'un changement répété (ex. contenu d'une leçon) noté au plus une fois par quart d'heure. */
-export async function noterModification(acteur: Acteur, formationId: string | null | undefined, description: string, regrouper?: string) {
+/**
+ * Note une modification. `regrouper` : clé d'un changement répété (ex. contenu d'une leçon) noté au plus une fois par quart d'heure.
+ * Une modification remet une formation approuvée en brouillon (sauf `invalider: false`, ex. publication).
+ */
+export async function noterModification(acteur: Acteur, formationId: string | null | undefined, description: string, regrouper?: string, options: { invalider?: boolean } = {}) {
   if (!formationId) return
+  if (options.invalider !== false) {
+    try {
+      if (await invaliderApprobation(formationId)) {
+        await logAudit({ acteur_id: acteur.id, formation_id: formationId, type_action: 'FORMATION_MODIFIEE', description: 'Approbation annulée : la formation a été modifiée après sa validation', metadata: { historique: true, validation: 'invalidee' } })
+      }
+    } catch { /* colonne absente : validation non activée */ }
+  }
   try {
     if (regrouper) {
       const depuis = new Date(Date.now() - REGROUPEMENT_MS).toISOString()

@@ -29,6 +29,13 @@ export default async function TableauDeBord() {
   ])
   const s = synthese(conformite)
 
+  // Validation des formations : à valider par moi, et mes demandes qui attendent une action
+  const [{ data: aValider }, { data: mesDemandes }] = await Promise.all([
+    sb.from('formations').select('id, titre, validation_demandee_le').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
+    sb.from('formations').select('id, titre, statut_validation, publiee').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']),
+  ])
+  const demandes = (mesDemandes ?? []).filter(f => !(f.statut_validation === 'approuvee' && f.publiee))
+
   // Formations en retard
   const retards = conformite.flatMap(e => e.assignations.filter(a => a.en_retard).map(a => ({ e, a })))
     .sort((x, y) => (x.a.date_echeance ?? '').localeCompare(y.a.date_echeance ?? ''))
@@ -57,6 +64,7 @@ export default async function TableauDeBord() {
     { v: aRenouveler.length, l: t('Certificats à renouveler (60 jours)'), href: '/admin/expirations', couleur: aRenouveler.length ? '#d97706' : '#16a34a' },
     { v: confirmationsManquantes, l: t('Confirmations de politiques en attente'), href: '/admin/politiques', couleur: confirmationsManquantes ? '#d97706' : '#16a34a' },
     { v: enCours.length, l: t('Journées de formation en cours'), href: '/admin/journees', couleur: '#0369a1' },
+    ...((aValider ?? []).length || demandes.length ? [{ v: (aValider ?? []).length, l: t('Formations à valider'), href: '/admin/formations/a-valider', couleur: (aValider ?? []).length ? '#7c3aed' : '#16a34a' }] : []),
   ]
 
   const Vide = ({ texte }: { texte: string }) => <p className="text-sm text-gray-400 py-3">✓ {texte}</p>
@@ -72,7 +80,7 @@ export default async function TableauDeBord() {
       <h1 className="text-2xl font-bold text-gray-900">{t('Tableau de bord')}</h1>
       <p className="text-sm text-gray-500 mt-1 mb-6">{t('Ce qui demande votre attention, dans votre périmètre ({n} employé(s) actif(s)).', { n: s.employes })}</p>
 
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-5 mb-6">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6 mb-6">
         {indicateurs.map(k => (
           <Link key={k.l} href={k.href} className={carte + ' hover:shadow-sm transition-shadow'}>
             <div className="text-2xl font-bold" style={{ color: k.couleur }}>{k.v}</div>
@@ -80,6 +88,39 @@ export default async function TableauDeBord() {
           </Link>
         ))}
       </div>
+
+      {((aValider ?? []).length > 0 || demandes.length > 0) && (
+        <div className="grid gap-4 lg:grid-cols-2 mb-4">
+          <section className={carte}>
+            <Titre titre={t('Formations à valider')} href="/admin/formations/a-valider" n={(aValider ?? []).length} />
+            {(aValider ?? []).length === 0 ? <Vide texte={t('Aucune formation en attente de votre validation.')} /> : (
+              <ul className="divide-y divide-gray-100 text-sm">
+                {(aValider ?? []).slice(0, MAX).map(f => (
+                  <li key={f.id} className="py-2 flex justify-between gap-3">
+                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}</Link>
+                    <span className="text-xs text-violet-700 whitespace-nowrap">{t('Depuis le {date}', { date: jour(f.validation_demandee_le) })}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className={carte}>
+            <Titre titre={t('En attente de validation')} href="/admin/formations/a-valider" n={demandes.length} />
+            {demandes.length === 0 ? <Vide texte={t('Aucune demande en cours.')} /> : (
+              <ul className="divide-y divide-gray-100 text-sm">
+                {demandes.slice(0, MAX).map(f => (
+                  <li key={f.id} className="py-2 flex justify-between gap-3">
+                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}</Link>
+                    <span className={'text-xs whitespace-nowrap ' + (f.statut_validation === 'approuvee' ? 'text-green-700' : f.statut_validation === 'a_modifier' ? 'text-red-600' : 'text-amber-700')}>
+                      {f.statut_validation === 'approuvee' ? t('Approuvée — à publier') : f.statut_validation === 'a_modifier' ? t('Modifications demandées') : t('En attente')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className={carte}>

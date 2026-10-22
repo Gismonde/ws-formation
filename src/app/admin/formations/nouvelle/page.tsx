@@ -79,7 +79,6 @@ export default function NouvelleFormationPage() {
   const [prerequisIds, setPrerequisIds] = useState<string[]>([])
   const [formationsDisponibles, setFormationsDisponibles] = useState<{id: string, titre: string}[]>([])
   const [showPreview, setShowPreview] = useState(false)
-  const [publierImmediatement, setPublierImmediatement] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [objectifs, setObjectifs] = useState<string[]>([])
@@ -215,7 +214,7 @@ export default function NouvelleFormationPage() {
     try {
       const { data: formation, error: errF } = await supabase
         .from('formations')
-        .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: publierImmediatement === true,  ...(publierImmediatement ? { publiee_le: new Date().toISOString(), version_le: new Date().toISOString() } : {}),tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
+        .insert({ titre, responsable_formation: responsable.trim() || null, categorie, description, niveau, clinique, duree_estimee_minutes: Math.round(dureeHeures * 60), publiee: false, tags: tags || [], objectifs: objectifs || [], image_couverture: imageCouverture || null, prerequis_ids: prerequisIds || [] })
         .select()
         .single()
       if (errF || !formation) throw new Error(errF?.message || t('Erreur création formation'))
@@ -407,10 +406,7 @@ export default function NouvelleFormationPage() {
             </div>
           )}
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#374151', marginBottom: '16px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={publierImmediatement} onChange={e => setPublierImmediatement(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-          <span>Publier immédiatement (visible par les apprenants)</span>
-        </label>
+        <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>{t('La formation est créée en brouillon. Elle devra être approuvée par un validateur avant d’être publiée.')}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button onClick={() => setShowPreview(false)} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '10px 20px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>{t('← Modifier')}</button>
           <button onClick={handleSave} style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>{t('✓ Confirmer et créer')}</button>
