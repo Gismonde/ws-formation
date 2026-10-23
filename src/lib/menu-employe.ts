@@ -21,6 +21,7 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
   { id: 'compte', label: 'Mon compte', emoji: '👤', onglets: [
     { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
     { href: '/dashboard/securite', label: 'Sécurité', emoji: '🔐' },
+    { href: '/dashboard/suggestions', label: 'Aidez-nous à nous améliorer', emoji: '💡' },
   ] },
 ]
 

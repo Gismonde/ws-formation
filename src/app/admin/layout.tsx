@@ -37,6 +37,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
     { href: '/admin/expirations', label: 'Expirations', icon: 'event_busy', droits: ['suivi'] },
     { href: '/admin/rapports', label: 'Rapports', icon: 'bar_chart', droits: ['suivi'] },
     { href: '/admin/sondages', label: 'Sondages', icon: 'reviews', droits: ['suivi', 'formations'] },
+    { href: '/admin/suggestions', label: 'Suggestions', icon: 'lightbulb', adminOnly: true },
   ] },
   { id: 'administration', label: 'Administration', icon: 'settings', liens: [
     { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
