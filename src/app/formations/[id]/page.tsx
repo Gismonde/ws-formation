@@ -64,6 +64,21 @@ export default async function FormationDetailPage({ params }: { params: Promise<
   const derniere = etatQ.tentatives[0] ?? null
   const resultatQ = derniere ? { score: etatQ.reussi ? (etatQ.meilleure ?? derniere.pourcentage) : derniere.pourcentage, reussi: etatQ.reussi, created_at: derniere.date } : null
 
+  // Leçons de chaque module (contenu construit dans l'éditeur) et leçons terminées
+  const { data: leconsBrutes } = modules?.length
+    ? await serviceClient().from('lessons').select('id, titre, module_id, ordre').in('module_id', modules.map((m: { id: string }) => m.id)).order('ordre')
+    : { data: [] as { id: string; titre: string; module_id: string; ordre: number }[] }
+  const leconsParModule = new Map<string, { id: string; titre: string }[]>()
+  for (const l of leconsBrutes ?? []) leconsParModule.set(l.module_id, [...(leconsParModule.get(l.module_id) ?? []), { id: l.id, titre: l.titre }])
+  const ordreLecons = (modules ?? []).flatMap((m: { id: string }) => leconsParModule.get(m.id) ?? [])
+  let leconsFaites = new Set<string>()
+  if (apercu.actif) leconsFaites = apercu.lecons
+  else if (ordreLecons.length) {
+    const { data: lp } = await serviceClient().from('lesson_progressions').select('lesson_id').eq('employe_id', employe.id).eq('statut', 'termine').in('lesson_id', ordreLecons.map(l => l.id))
+    leconsFaites = new Set((lp ?? []).map(x => x.lesson_id as string))
+  }
+  const prochaineLecon = ordreLecons.find(l => !leconsFaites.has(l.id)) ?? null
+
   let modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
   let progressionPct = Math.max(etatQ.progressionPct, modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0)
   if (apercu.actif) {
@@ -73,6 +88,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
     modulesTermines = new Set((modules ?? []).filter(m => { const l = toutes.filter(x => x.module_id === m.id); return l.length > 0 && l.every(x => apercu.lecons.has(x.id)) }).map(m => m.id))
     progressionPct = toutes.length ? Math.round((toutes.filter(x => apercu.lecons.has(x.id)).length / toutes.length) * 100) : 0
   }
+  for (const m of modules ?? []) { const l = leconsParModule.get(m.id) ?? []; if (l.length && l.every(x => leconsFaites.has(x.id))) modulesTermines.add(m.id) }
   const estTerminee = progressionPct === 100
   const sondage = isAdmin || apercu.actif ? 'inactif' : await etatSondage(serviceClient(), employe.id, id)
 
@@ -146,30 +162,47 @@ export default async function FormationDetailPage({ params }: { params: Promise<
               />
             </div>
           </div>
+          {prochaineLecon && (
+            <Link href={`/formations/${id}/lecon/${prochaineLecon.id}`} className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold" style={{ background: 'var(--accent-clinique, #4f46e5)' }}>
+              {leconsFaites.size === 0 ? t('Commencer la formation') : t('Continuer : {titre}', { titre: prochaineLecon.titre })} →
+            </Link>
+          )}
         </div>
 
         {/* Modules */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('Modules')}</h2>
           <div className="space-y-3">
-            {modules?.map((module: any) => {
+            {modules?.map((module: any, iModule: number) => {
               const isTermine = modulesTermines.has(module.id)
+              const lecons = leconsParModule.get(module.id) ?? []
+              const lien = lecons.length ? `/formations/${id}/lecon/${(lecons.find(l => !leconsFaites.has(l.id)) ?? lecons[0]).id}` : `/formations/${id}/module/${module.id}`
               return (
-                <Link key={module.id} href={'/formations/' + id + '/module/' + module.id} style={{ textDecoration: 'none' }}>
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors cursor-pointer" style={{ marginBottom: '8px' }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isTermine ? '#10b981' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {isTermine ? (
-                          <span style={{ color: '#fff', fontSize: '14px' }}>✓</span>
-                        ) : (
-                          <span style={{ color: '#9ca3af', fontSize: '12px' }}>○</span>
-                        )}
+                <div key={module.id} className="rounded-lg border border-gray-100" style={{ marginBottom: '8px' }}>
+                  <Link href={lien} style={{ textDecoration: 'none' }}>
+                    <div className="flex items-center justify-between p-4 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isTermine ? '#10b981' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {isTermine ? <span style={{ color: '#fff', fontSize: '14px' }}>✓</span> : <span style={{ color: '#6b7280', fontSize: '12px', fontWeight: 700 }}>{iModule + 1}</span>}
+                        </div>
+                        <span className="font-medium text-gray-900 text-sm">{module.titre}</span>
                       </div>
-                      <span className="font-medium text-gray-900 text-sm">{module.titre}</span>
+                      <span className="text-xs text-gray-400 whitespace-nowrap">{lecons.length > 0 ? t('{f}/{n} leçon(s)', { f: lecons.filter(l => leconsFaites.has(l.id)).length, n: lecons.length }) + ' · ' : ''}{module.duree_minutes} min</span>
                     </div>
-                    <span className="text-xs text-gray-400">{module.duree_minutes} min</span>
-                  </div>
-                </Link>
+                  </Link>
+                  {lecons.length > 1 && (
+                    <ul className="pb-3 pl-14 pr-4 space-y-1">
+                      {lecons.map(l => (
+                        <li key={l.id}>
+                          <Link href={`/formations/${id}/lecon/${l.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700">
+                            <span className={leconsFaites.has(l.id) ? 'text-green-600' : 'text-gray-300'}>{leconsFaites.has(l.id) ? '✓' : '○'}</span>
+                            {l.titre}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )
             })}
           </div>
