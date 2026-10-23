@@ -7,7 +7,7 @@ export type Role = 'super_admin' | 'admin' | 'gestionnaire' | 'employe'
 export const CLINIQUES: Clinique[] = ['CMC', 'WSSC']
 
 export const CLINIQUE_INFO: Record<Clinique, { nom: string; court: string; logo: string; couleur: string; fond: string; partenaires?: { logo: string; nom: string }[] }> = {
-  CMC: { nom: 'Centre Métropolitain de Chirurgie', court: 'CMC', logo: '/logos/cmc.png', couleur: '#8a7a6b', fond: '#f5f1ec', partenaires: [{ logo: '/logos/grs-montreal.png', nom: 'GrS Montréal' }] },
+  CMC: { nom: 'Centre Métropolitain de Chirurgie', court: 'CMC', logo: '/logos/cmc.png', couleur: '#7d5a8e', fond: '#f7eef6', partenaires: [{ logo: '/logos/grs-montreal.png', nom: 'GrS Montréal' }] },
   WSSC: { nom: 'Westmount Square Surgical Center', court: 'WSSC', logo: '/logos/wssc.png', couleur: '#1e3a6e', fond: '#eef2fa' },
 }
 
@@ -149,18 +149,23 @@ export type ThemeClinique = {
   accentClair: string
   /** Dégradé des vignettes de formation */
   degrade: string
+  /** Bande de couleurs de la marque, en haut de la barre latérale (facultatif) */
+  bande?: string
   /** Fond clair de la zone principale */
   fondPage: string
 }
 
 export const THEME_CLINIQUE: Record<Clinique, ThemeClinique> = {
+  // Couleurs GrS Montréal / CMC : rose #F7CBD6, mauve #BB9DC6, bleu #A9DAF6.
+  // Textes blancs (barre, boutons) sur un mauve foncé pour rester lisibles (contraste AA).
   CMC: {
-    fondBarre: 'linear-gradient(160deg, #8a7a6b 0%, #5e5246 55%, #3b332b 100%)',
-    accent: '#8a7a6b',
-    accentFonce: '#5e5246',
-    accentClair: '#f3eee8',
-    degrade: 'linear-gradient(135deg, #a8988a 0%, #6f6154 100%)',
-    fondPage: '#faf8f5',
+    fondBarre: 'linear-gradient(160deg, #7d5a8e 0%, #5b3f6b 60%, #432e52 100%)',
+    accent: '#7d5a8e',
+    accentFonce: '#5b3f6b',
+    accentClair: '#f4ecf7',
+    degrade: 'linear-gradient(135deg, #F7CBD6 0%, #BB9DC6 50%, #A9DAF6 100%)',
+    fondPage: '#fcf8fb',
+    bande: 'linear-gradient(90deg, #F7CBD6 0%, #BB9DC6 50%, #A9DAF6 100%)',
   },
   WSSC: {
     fondBarre: 'linear-gradient(160deg, #1e3a6e 0%, #142a52 55%, #0b1a36 100%)',
