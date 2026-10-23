@@ -16,7 +16,7 @@ export default async function JourneesPage() {
   const politiquesPermises = peutPublierPolitiques(acteur)
 
   const [{ data: formations }, { data: politiques }, { data: librairie }, { data: employes }, { data: journees, error }] = await Promise.all([
-    sb.from('formations').select('id, titre, categorie, clinique, publiee').in('clinique', visibles).order('titre'),
+    sb.from('formations').select('id, titre, categorie, clinique, publiee').is('copie_de', null).in('clinique', visibles).order('titre'),
     politiquesPermises ? sb.from('politiques').select('*').eq('actif', true).order('titre') : Promise.resolve({ data: [] as Politique[] }),
     sb.from('librairie').select('id, titre, type, categorie').eq('archive', false).in('clinique', visibles).order('titre'),
     filtrerEmployes(sb.from('employes').select('id, prenom, nom, role, clinique, departements(nom)').or('actif.is.null,actif.eq.true').order('nom'), acteur),

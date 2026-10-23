@@ -31,8 +31,8 @@ export default async function TableauDeBord() {
 
   // Validation des formations : à valider par moi, et mes demandes qui attendent une action
   const [{ data: aValider }, { data: mesDemandes }] = await Promise.all([
-    sb.from('formations').select('id, titre, validation_demandee_le').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
-    sb.from('formations').select('id, titre, statut_validation, publiee').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']),
+    sb.from('formations').select('id, titre, validation_demandee_le, copie_de').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
+    sb.from('formations').select('id, titre, statut_validation, publiee, copie_de').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']),
   ])
   const demandes = (mesDemandes ?? []).filter(f => !(f.statut_validation === 'approuvee' && f.publiee))
 
@@ -97,7 +97,7 @@ export default async function TableauDeBord() {
               <ul className="divide-y divide-gray-100 text-sm">
                 {(aValider ?? []).slice(0, MAX).map(f => (
                   <li key={f.id} className="py-2 flex justify-between gap-3">
-                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}</Link>
+                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}{f.copie_de ? ' — ' + t('copie de travail') : ''}</Link>
                     <span className="text-xs text-violet-700 whitespace-nowrap">{t('Depuis le {date}', { date: jour(f.validation_demandee_le) })}</span>
                   </li>
                 ))}
@@ -110,7 +110,7 @@ export default async function TableauDeBord() {
               <ul className="divide-y divide-gray-100 text-sm">
                 {demandes.slice(0, MAX).map(f => (
                   <li key={f.id} className="py-2 flex justify-between gap-3">
-                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}</Link>
+                    <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}{f.copie_de ? ' — ' + t('copie de travail') : ''}</Link>
                     <span className={'text-xs whitespace-nowrap ' + (f.statut_validation === 'approuvee' ? 'text-green-700' : f.statut_validation === 'a_modifier' ? 'text-red-600' : 'text-amber-700')}>
                       {f.statut_validation === 'approuvee' ? t('Approuvée — à publier') : f.statut_validation === 'a_modifier' ? t('Modifications demandées') : t('En attente')}
                     </span>

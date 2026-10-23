@@ -10,7 +10,7 @@ export default async function CreerFormationPage() {
   if (!acteur) redirect('/login')
   if (!peutCreerFormations(acteur)) redirect('/admin/formations')
   const { t } = await i18n()
-  const { data: formations } = await serviceClient().from('formations').select('id, titre, clinique')
+  const { data: formations } = await serviceClient().from('formations').select('id, titre, clinique').is('copie_de', null)
     .in('clinique', cliniquesContenuVisibles(acteur)).order('titre')
 
   const departs = [

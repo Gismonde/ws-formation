@@ -17,7 +17,7 @@ export default async function AssignerPage({ searchParams }: { searchParams: Pro
 
   const politiquesPermises = peutPublierPolitiques(acteur)
   const [{ data: formations }, { data: employes }, departements, { data: politiques }] = await Promise.all([
-    sb.from('formations').select('id, titre, categorie, clinique, publiee, obligatoire').in('clinique', cliniquesContenuVisibles(acteur)).order('titre'),
+    sb.from('formations').select('id, titre, categorie, clinique, publiee, obligatoire').is('copie_de', null).in('clinique', cliniquesContenuVisibles(acteur)).order('titre'),
     filtrerEmployes(sb.from('employes').select('id, prenom, nom, role, clinique, departement_id, departements(nom)').or('actif.is.null,actif.eq.true').order('nom'), acteur),
     departementsVisibles(acteur, sb),
     politiquesPermises ? sb.from('politiques').select('*').eq('actif', true).order('titre') : Promise.resolve({ data: [] as Politique[] }),

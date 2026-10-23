@@ -1,4 +1,5 @@
 'use client'
+import BandeauPublication from '@/components/editeur/BandeauPublication'
 
 import { useT } from '@/lib/i18n/client'
 import { useConfirmer } from '@/components/Confirmation'
@@ -128,6 +129,7 @@ export default function ModifierFormationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <BandeauPublication formationId={formation.id} publiee={!!formation.publiee} copieDe={(formation as { copie_de?: string | null }).copie_de ?? null} />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>

@@ -47,7 +47,10 @@ export async function noterModification(acteur: Acteur, formationId: string | nu
         .eq('metadata->>regrouper', regrouper).gte('created_at', depuis).limit(1)
       if (data?.length) return
     }
-    await logAudit({ acteur_id: acteur.id, formation_id: formationId, type_action: 'FORMATION_MODIFIEE', description, metadata: { historique: true, ...(regrouper ? { regrouper } : {}) } })
+    // Copie de travail : l'historique reste rattaché à la formation publiée une fois la copie appliquée
+    const { data: f } = await serviceClient().from('formations').select('copie_de').eq('id', formationId).maybeSingle()
+    const original = (f as { copie_de?: string | null } | null)?.copie_de ?? null
+    await logAudit({ acteur_id: acteur.id, formation_id: formationId, type_action: 'FORMATION_MODIFIEE', description: original ? `[Copie de travail] ${description}` : description, metadata: { historique: true, ...(regrouper ? { regrouper } : {}), ...(original ? { formation_originale: original } : {}) } })
   } catch {
     // L'historique ne doit jamais bloquer une modification
   }
@@ -59,7 +62,7 @@ export type LigneHistorique = { id: string; quand: string; qui: string; quoi: st
 export async function historiqueFormation(formationId: string, limite = 60): Promise<LigneHistorique[]> {
   const sb = serviceClient()
   const { data } = await sb.from('audit_logs').select('id, created_at, acteur_id, description, type_action')
-    .eq('formation_id', formationId).in('type_action', ['FORMATION_CREEE', 'FORMATION_MODIFIEE'])
+    .or(`formation_id.eq.${formationId},metadata->>formation_originale.eq.${formationId}`).in('type_action', ['FORMATION_CREEE', 'FORMATION_MODIFIEE'])
     .order('created_at', { ascending: false }).limit(limite)
   const ids = Array.from(new Set((data ?? []).map(l => l.acteur_id as string).filter(Boolean)))
   const { data: emps } = ids.length ? await sb.from('employes').select('id, prenom, nom').in('id', ids) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }

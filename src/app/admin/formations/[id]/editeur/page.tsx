@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock } from '@/lib/actions/lessons'
+import BandeauPublication from '@/components/editeur/BandeauPublication'
 import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from '@/components/editeur/ChoixLibrairie'
 import { createModule, updateModule, deleteModule, reorderModules } from '@/lib/actions/formations'
 import type { Formation, Module, Lesson, ContentBlock } from '@/lib/types/formation'
@@ -280,6 +281,7 @@ export default function EditeurFormationPage() {
         <ChoixLibrairie types={['video', 'lien', 'document', 'politique']}
           onChoisirPlusieurs={els => ajouterDepuisLibrairie(librairieModule, els)} onFermer={() => setLibrairieModule(null)} />
       )}
+      {formation && <BandeauPublication formationId={formation.id} publiee={!!formation.publiee} copieDe={(formation as { copie_de?: string | null }).copie_de ?? null} />}
       {/* En-tete */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
