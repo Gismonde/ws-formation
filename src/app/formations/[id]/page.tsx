@@ -5,6 +5,7 @@ import { serviceClient } from '@/lib/permissions'
 import { chargerEtatQuestionnaire } from '@/lib/questionnaire-serveur'
 import { etatSondage } from '@/lib/sondages'
 import { i18n } from '@/lib/i18n/serveur'
+import { modeApercu } from '@/lib/apercu-employe'
 
 export default async function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -23,8 +24,11 @@ export default async function FormationDetailPage({ params }: { params: Promise<
 
   // Admins/gestionnaires peuvent accéder sans assignation
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe.role)
+  // Mode employé (aperçu) : brouillon autorisé, progression simulée, rien n'est enregistré
+  const { data: brut } = await serviceClient().from('formations').select('id, clinique').eq('id', id).maybeSingle()
+  const apercu = brut ? await modeApercu(brut) : { actif: false, lecons: new Set<string>() }
 
-  if (!isAdmin) {
+  if (!isAdmin && !apercu.actif) {
     const { data: assignation } = await supabase
       .from('assignations')
       .select('formation_id')
@@ -34,12 +38,9 @@ export default async function FormationDetailPage({ params }: { params: Promise<
     if (!assignation) notFound()
   }
 
-  const { data: formation } = await supabase
-    .from('formations')
-    .select('*')
-    .eq('id', id)
-    .eq('publiee', true)
-    .single()
+  const { data: formation } = apercu.actif
+    ? await serviceClient().from('formations').select('*').eq('id', id).single()
+    : await supabase.from('formations').select('*').eq('id', id).eq('publiee', true).single()
 
   if (!formation) notFound()
 
@@ -55,17 +56,25 @@ export default async function FormationDetailPage({ params }: { params: Promise<
     .eq('employe_id', employe.id)
     .eq('formation_id', id)
 
-  // Questionnaire, tentatives et certificat : calculés côté serveur
-  const etatQ = await chargerEtatQuestionnaire(serviceClient(), employe.id, id)
+  // Questionnaire, tentatives et certificat : calculés côté serveur (aperçu : comme un employé qui commence)
+  const etatReel = await chargerEtatQuestionnaire(serviceClient(), employe.id, id)
+  const etatQ = apercu.actif ? { ...etatReel, certificat: null, tentatives: [], reussi: false, meilleure: null, tentativesRestantes: etatReel.questionnaire?.nb_tentatives_max ?? null } : etatReel
   const questionnaire = etatQ.questionnaire
   const certificat = etatQ.certificat
   const derniere = etatQ.tentatives[0] ?? null
   const resultatQ = derniere ? { score: etatQ.reussi ? (etatQ.meilleure ?? derniere.pourcentage) : derniere.pourcentage, reussi: etatQ.reussi, created_at: derniere.date } : null
 
-  const modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
-  const progressionPct = Math.max(etatQ.progressionPct, modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0)
+  let modulesTermines = new Set(progressions?.filter((p: any) => p.statut === 'termine').map((p: any) => p.module_id) ?? [])
+  let progressionPct = Math.max(etatQ.progressionPct, modules?.length ? Math.round((modulesTermines.size / modules.length) * 100) : 0)
+  if (apercu.actif) {
+    // Progression simulée : leçons terminées pendant l'aperçu
+    const { data: lecons } = modules?.length ? await serviceClient().from('lessons').select('id, module_id').in('module_id', modules.map(m => m.id)) : { data: [] as { id: string; module_id: string }[] }
+    const toutes = lecons ?? []
+    modulesTermines = new Set((modules ?? []).filter(m => { const l = toutes.filter(x => x.module_id === m.id); return l.length > 0 && l.every(x => apercu.lecons.has(x.id)) }).map(m => m.id))
+    progressionPct = toutes.length ? Math.round((toutes.filter(x => apercu.lecons.has(x.id)).length / toutes.length) * 100) : 0
+  }
   const estTerminee = progressionPct === 100
-  const sondage = isAdmin ? 'inactif' : await etatSondage(serviceClient(), employe.id, id)
+  const sondage = isAdmin || apercu.actif ? 'inactif' : await etatSondage(serviceClient(), employe.id, id)
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' })

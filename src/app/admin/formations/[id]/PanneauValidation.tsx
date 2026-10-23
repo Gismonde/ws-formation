@@ -97,7 +97,7 @@ export default function PanneauValidation(p: Props) {
       {p.estValidateur && p.statut === 'en_validation' && (
         <div className="mt-4 bg-white border border-amber-200 rounded-xl p-4">
           <p className="text-sm font-semibold text-gray-900 mb-2">{t('Vous êtes le validateur de cette formation')}</p>
-          <p className="text-xs text-gray-500 mb-2">{t('Parcourez la formation (bouton « Aperçu ») puis donnez votre décision.')}</p>
+          <p className="text-xs text-gray-500 mb-2">{t('Parcourez la formation comme un employé (bouton « Mode employé ») puis donnez votre décision.')} <a href={`/api/admin/formations/${p.formationId}/mode-employe?retour=fiche`} className="font-semibold text-amber-700 hover:underline">👁 {t('Mode employé')}</a></p>
           <textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} rows={3} maxLength={2000}
             placeholder={t('Commentaire (obligatoire pour demander des modifications)')}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />

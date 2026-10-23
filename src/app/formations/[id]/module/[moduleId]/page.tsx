@@ -48,7 +48,9 @@ export default function ModulePage() {
       if (form) setFormation(form)
       if (mods) setModules(mods)
 
-      if (mod) {
+      // Mode employé (aperçu de l'équipe) : rien n'est enregistré
+      const enApercu = document.cookie.split('; ').some(c => c === `ws_apercu=${formationId}`)
+      if (mod && !enApercu) {
         const { data: emp } = await supabase
           .from('employes').select('id').eq('auth_user_id', user.id).single()
         if (emp) {

@@ -185,7 +185,9 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
 // ---------------------------------------------------------------------------
 // Fin de leçon
 
-export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, videosObligatoires, etat, suiviActif }: {
+export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, videosObligatoires, etat, suiviActif, simulation }: {
+  /** Mode employé : le parcours est simulé (progression gardée dans un cookie, rien en base) */
+  simulation?: { formationId: string }
   lessonId: string
   attestationRequise: boolean
   texteAttestation: string
@@ -205,7 +207,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
   const pret = videosRestantes.length === 0 && (!attestationRequise || coche)
   const date = (iso: string) => new Date(iso).toLocaleString(loc, { dateStyle: 'long', timeStyle: 'short' })
 
-  if (!suiviActif) {
+  if (!suiviActif && !simulation) {
     return (
       <div className="mt-8 rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
         {attestationRequise
@@ -229,6 +231,13 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
 
   async function terminer() {
     setEnCours(true); setErreur(null)
+    if (simulation) {
+      const r = await fetch('/api/apercu/progression', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formationId: simulation.formationId, leconId: lessonId }) })
+      setEnCours(false)
+      if (r.ok) { if (attestationRequise) setAttestationLe(new Date().toISOString()); setTermineeLe(new Date().toISOString()) }
+      else setErreur(t('Erreur'))
+      return
+    }
     if (attestationRequise && !attestationLe) {
       const r = await attesterLecture(lessonId)
       if (!r.ok) { setErreur(r.erreur); setEnCours(false); return }

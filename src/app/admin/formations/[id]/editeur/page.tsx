@@ -299,6 +299,7 @@ export default function EditeurFormationPage() {
           >
             {t('Aperçu')}
           </Link>
+          <a href={`/api/admin/formations/${formationId}/mode-employe`} className="px-4 py-2 text-sm bg-amber-100 text-amber-900 rounded-lg hover:bg-amber-200 transition-colors">👁 {t('Mode employé')}</a>
           <Link
             href={"/admin/formations/" + formationId + "/modifier"}
             className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
