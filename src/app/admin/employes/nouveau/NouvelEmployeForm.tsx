@@ -120,7 +120,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       </p>
       <div>
         <label className={labelCls}>{t('Poste / Titre')}</label>
-        <input className={inputCls} value={form.poste} onChange={e => set('poste', e.target.value)} placeholder={t('Ex : Infirmier(e), Technicien(ne)...')} />
+        <ChoixPoste className={inputCls} valeur={form.poste} onChange={v => set('poste', v)} familles={postes} />
       </div>
       <ChampsAcces
         role={form.role} clinique={form.clinique} departementId={form.departement_id}

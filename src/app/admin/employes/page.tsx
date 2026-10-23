@@ -30,9 +30,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   let query = filtrerEmployes(sb.from('employes').select('*, departements(nom)').order('nom'), acteur)
   if (afficherFiltre && (filtreClinique === 'CMC' || filtreClinique === 'WSSC')) {
     // L'administrateur global (sans clinique enregistrée) couvre les deux cliniques
-    query = acteur.role === 'super_admin'
-      ? query.or(`clinique.in.(${filtreClinique},LES_DEUX),role.eq.super_admin`)
-      : query.in('clinique', [filtreClinique, 'LES_DEUX'])
+    query = query.or(`clinique.in.(${filtreClinique},LES_DEUX),role.eq.super_admin`)
   }
   if (filtreType === 'externes') query = query.eq('externe', true)
   if (filtreType === 'employes') query = query.or('externe.is.null,externe.eq.false')
