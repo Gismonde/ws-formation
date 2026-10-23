@@ -8,8 +8,9 @@ import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import { avancementJournees } from '@/lib/journees'
 import { politiquesDeLEmploye } from '@/lib/politiques'
 import { joursRestants } from '@/lib/expirations'
+import { cliniquesDe } from '@/lib/cliniques'
 
-export type Famille = 'parcours' | 'palier' | 'excellence' | 'conformite' | 'participation'
+export type Famille = 'parcours' | 'palier' | 'excellence' | 'conformite' | 'participation' | 'perso'
 export type Badge = {
   id: string
   famille: Famille
@@ -32,12 +33,73 @@ export const PALIERS: { n: number; icone: string; titre: string }[] = [
 ]
 
 /** Badges de palier pour un nombre de formations terminées (fonction pure, testée) */
-export function badgesPaliers(terminees: number): Badge[] {
-  return PALIERS.map(p => ({
-    id: 'palier:' + p.n, famille: 'palier' as const, icone: p.icone, titre: p.titre,
-    description: p.n === 1 ? 'Terminer une première formation' : `Terminer ${p.n} formations`,
-    obtenu: terminees >= p.n, progression: { fait: Math.min(terminees, p.n), total: p.n },
-  }))
+export function badgesPaliers(terminees: number, seuils: number[] = PALIERS.map(p => p.n)): Badge[] {
+  return seuils.map((n, i) => {
+    const p = PALIERS[Math.min(i, PALIERS.length - 1)]
+    return {
+      id: 'palier:' + n, famille: 'palier' as const, icone: p.icone, titre: i < PALIERS.length ? p.titre : 'Palier {n}', vars: { n },
+      description: n === 1 ? 'Terminer une première formation' : 'Terminer {n} formations',
+      obtenu: terminees >= n, progression: { fait: Math.min(terminees, n), total: n },
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Réglages modifiables par l'administration (table badges_reglages) et badges créés par les cliniques (badges_perso)
+
+export type ReglageBadge = { actif: boolean; icone?: string | null; titre?: string | null; description?: string | null; seuils?: number[] | null }
+export type BadgePerso = { id: string; nom: string; description: string | null; icone: string; clinique: string; formation_ids: string[]; actif: boolean }
+export type ConfigBadges = { reglages: Record<string, ReglageBadge>; perso: BadgePerso[] }
+export const CONFIG_VIDE: ConfigBadges = { reglages: {}, perso: [] }
+
+/** Badges intégrés que l'administration peut régler (seuils : valeurs par défaut) */
+export const BADGES_INTEGRES: { cle: string; icone: string; titre: string; description: string; seuils?: number[]; multiples?: boolean }[] = [
+  { cle: 'journee', icone: '🏅', titre: 'Parcours terminés', description: 'Un badge par journée de formation terminée (icône choisie dans la journée)', multiples: true },
+  { cle: 'palier', icone: '🌱', titre: 'Paliers de formations terminées', description: 'Nombre de formations terminées', seuils: [1, 5, 10, 25], multiples: true },
+  { cle: 'sans_faute', icone: '🎯', titre: 'Sans faute', description: '100 % à un questionnaire dès le premier essai' },
+  { cle: 'politiques', icone: '📜', titre: 'Politiques à jour', description: 'Toutes vos politiques lues et confirmées' },
+  { cle: 'conformite', icone: '🛡️', titre: 'Conformité à jour', description: 'Au moins {n} formations terminées, aucune en retard ni certificat expiré', seuils: [2] },
+  { cle: 'sst', icone: '🦺', titre: 'SST formé', description: 'Toutes vos formations obligatoires LSST terminées' },
+  { cle: 'infections', icone: '🧼', titre: 'Prévention des infections', description: 'Vos formations en prévention et contrôle des infections terminées' },
+  { cle: 'confidentialite', icone: '🔐', titre: 'Gardien de la confidentialité', description: 'Formations sur la confidentialité (Loi 25) terminées et politiques confirmées' },
+  { cle: 'toujours_certifie', icone: '♻️', titre: 'Toujours certifié', description: 'Un certificat renouvelé avant son expiration' },
+  { cle: 'evenements', icone: '📅', titre: 'Événements en présentiel', description: 'Présences confirmées à des formations en présentiel', seuils: [1, 3, 10], multiples: true },
+  { cle: 'voix', icone: '💬', titre: 'Voix de l’équipe', description: '{n} sondages de satisfaction remplis', seuils: [3] },
+  { cle: 'externe', icone: '📎', titre: 'Formation externe', description: 'Une preuve de formation externe validée (congrès, cours…)' },
+  { cle: 'regulier', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée {n} mois de suite', seuils: [3] },
+]
+
+/** Seuils en vigueur pour un badge intégré */
+export function seuilsDe(config: ConfigBadges, cle: string): number[] {
+  const r = config.reglages[cle]?.seuils
+  const def = BADGES_INTEGRES.find(b => b.cle === cle)?.seuils ?? []
+  const v = (r ?? def).filter(n => Number.isInteger(n) && n > 0)
+  return v.length ? Array.from(new Set(v)).sort((a, b) => a - b) : def
+}
+
+/** Applique les réglages : badges désactivés retirés, icône / titre / description remplacés (fonction pure, testée) */
+export function appliquerReglages(badges: Badge[], config: ConfigBadges): Badge[] {
+  return badges.flatMap(b => {
+    const cle = b.id.split(':')[0]
+    const r = config.reglages[cle]
+    if (!r) return [b]
+    if (r.actif === false) return []
+    const multiple = BADGES_INTEGRES.find(x => x.cle === cle)?.multiples
+    if (multiple) return [b] // badges à plusieurs niveaux : seuls l'activation et les seuils se règlent
+    return [{ ...b, icone: r.icone || b.icone, titre: r.titre || b.titre, description: r.description || b.description }]
+  })
+}
+
+/** Réglages et badges des cliniques (tables absentes : valeurs par défaut) */
+export async function chargerConfigBadges(sb: SupabaseClient): Promise<ConfigBadges> {
+  const [{ data: reg, error: e1 }, { data: perso, error: e2 }] = await Promise.all([
+    sb.from('badges_reglages').select('*'),
+    sb.from('badges_perso').select('*').order('nom'),
+  ])
+  return {
+    reglages: e1 ? {} : Object.fromEntries((reg ?? []).map(r => [r.cle as string, r as ReglageBadge])),
+    perso: e2 ? [] : (perso ?? []) as BadgePerso[],
+  }
 }
 
 /** Plus longue suite de mois consécutifs contenant au moins une date (fonction pure, testée) */
@@ -66,7 +128,8 @@ export function badgeTheme(formations: { complete: boolean }[], politiques: { co
 
 type EmployeBadges = { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }
 
-export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promise<Badge[]> {
+export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, configFournie?: ConfigBadges): Promise<Badge[]> {
+  const config = configFournie ?? await chargerConfigBadges(sb)
   const badges: Badge[] = []
 
   // Formations suivies (assignées, commencées ou certifiées)
@@ -95,7 +158,7 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promi
   }
 
   // 2. Paliers
-  badges.push(...badgesPaliers(terminees))
+  badges.push(...badgesPaliers(terminees, seuilsDe(config, 'palier')))
 
   // 3. Excellence
   const { data: tentatives } = await sb.from('tentatives_questionnaire').select('note_obtenue, note_maximale, reussi, numero_tentative, date_fin')
@@ -115,14 +178,15 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promi
   })
 
   // 4. Conformité à jour
+  const minConformite = seuilsDe(config, 'conformite')[0] ?? 2
   const enRetard = (assignations ?? []).filter(a => a.date_echeance && !estComplete(etat(e.id, a.formation_id as string).statut) && joursRestants(a.date_echeance as string) < 0).length
   const expires = formationIds.filter(f => { const s = etat(e.id, f); return !!s.certificat && !s.certificat_valide }).length
   badges.push({
     id: 'conformite', famille: 'conformite', icone: '🛡️', titre: 'Conformité à jour',
-    description: 'Au moins 2 formations terminées, aucune en retard ni certificat expiré',
-    // Pas dès le départ : au moins deux formations terminées
-    obtenu: terminees >= 2 && enRetard === 0 && expires === 0,
-    progression: terminees < 2 ? { fait: terminees, total: 2 } : undefined,
+    description: 'Au moins {n} formations terminées, aucune en retard ni certificat expiré', vars: { n: minConformite },
+    // Pas dès le départ : un minimum de formations terminées (2 par défaut)
+    obtenu: terminees >= minConformite && enRetard === 0 && expires === 0,
+    progression: terminees < minConformite ? { fait: terminees, total: minConformite } : undefined,
   })
 
   // 5. Santé, sécurité et confidentialité
@@ -151,15 +215,18 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promi
     sb.from('lesson_progressions').select('date_fin, lessons(modules(formation_id))').eq('employe_id', e.id).eq('statut', 'termine'),
   ])
   const nbPresences = (presences ?? []).length
-  for (const [n, icone, titre] of [[1, '📅', 'Présent à un événement'], [3, '🗓️', 'Habitué des événements'], [10, '🎪', 'Pilier des événements']] as const) {
+  const NIVEAUX_EVT = [['📅', 'Présent à un événement'], ['🗓️', 'Habitué des événements'], ['🎪', 'Pilier des événements']] as const
+  for (const [i, n] of seuilsDe(config, 'evenements').map((n, i) => [i, n] as const)) {
+    const [icone, titre] = NIVEAUX_EVT[Math.min(i, NIVEAUX_EVT.length - 1)]
     badges.push({
-      id: 'evenements:' + n, famille: 'participation', icone, titre,
-      description: n === 1 ? 'Présence confirmée à une formation en présentiel' : `Présence confirmée à ${n} formations en présentiel`,
+      id: 'evenements:' + n, famille: 'participation', icone, titre, vars: { n },
+      description: n === 1 ? 'Présence confirmée à une formation en présentiel' : 'Présence confirmée à {n} formations en présentiel',
       obtenu: nbPresences >= n, progression: { fait: Math.min(nbPresences, n), total: n },
     })
   }
   const nbSondages = (sondages.data ?? []).length
-  badges.push({ id: 'voix', famille: 'participation', icone: '💬', titre: 'Voix de l’équipe', description: '3 sondages de satisfaction remplis', obtenu: nbSondages >= 3, progression: { fait: Math.min(nbSondages, 3), total: 3 } })
+  const minVoix = seuilsDe(config, 'voix')[0] ?? 3
+  badges.push({ id: 'voix', famille: 'participation', icone: '💬', titre: 'Voix de l’équipe', description: '{n} sondages de satisfaction remplis', vars: { n: minVoix }, obtenu: nbSondages >= minVoix, progression: { fait: Math.min(nbSondages, minVoix), total: minVoix } })
   badges.push({ id: 'externe', famille: 'participation', icone: '📎', titre: 'Formation externe', description: 'Une preuve de formation externe validée (congrès, cours…)', obtenu: (preuves ?? []).length > 0, le: (preuves?.[0]?.valide_le as string | null) ?? null })
   // Régulier : date de fin de chaque formation terminée (certificat, sinon dernière leçon terminée)
   const finParFormation = new Map<string, string>()
@@ -171,7 +238,20 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promi
   const datesFin = formationIds.filter(f => estComplete(etat(e.id, f).statut))
     .map(f => etat(e.id, f).certificat?.date_emission ?? finParFormation.get(f)).filter((d): d is string => !!d)
   const suite = moisConsecutifs(datesFin)
-  badges.push({ id: 'regulier', famille: 'participation', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée 3 mois de suite', obtenu: suite >= 3, progression: { fait: Math.min(suite, 3), total: 3 } })
+  const minMois = seuilsDe(config, 'regulier')[0] ?? 3
+  badges.push({ id: 'regulier', famille: 'participation', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée {n} mois de suite', vars: { n: minMois }, obtenu: suite >= minMois, progression: { fait: Math.min(suite, minMois), total: minMois } })
 
-  return badges
+  // 7. Badges créés par les cliniques : terminer toutes les formations choisies
+  const mesCliniques = cliniquesDe(e.clinique ?? 'LES_DEUX')
+  const persoActifs = config.perso.filter(p => p.actif && (p.clinique === 'LES_DEUX' || mesCliniques.includes(p.clinique as never)) && p.formation_ids.length)
+  if (persoActifs.length) {
+    const ids = Array.from(new Set(persoActifs.flatMap(p => p.formation_ids)))
+    const etatPerso = await chargerEtatsFormations(sb, [e.id], ids)
+    for (const p of persoActifs) {
+      const faites = p.formation_ids.filter(f => estComplete(etatPerso(e.id, f).statut)).length
+      badges.push({ id: 'perso:' + p.id, famille: 'perso', icone: p.icone || '⭐', titre: p.nom, description: p.description || 'Terminer les formations du badge', obtenu: faites === p.formation_ids.length, progression: { fait: faites, total: p.formation_ids.length } })
+    }
+  }
+
+  return appliquerReglages(badges, config)
 }
