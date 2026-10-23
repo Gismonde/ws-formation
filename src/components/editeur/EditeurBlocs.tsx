@@ -14,7 +14,7 @@ import ReglagesVideo from './ReglagesVideo'
 import EditeurInteractif from './EditeurInteractif'
 import { GENRES, donneesInitiales, refsMedias as refsDansDonnees, type DonneesInteractif, type GenreInteractif } from '@/lib/blocs-interactifs'
 import { useConfirmer } from '@/components/Confirmation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import {
   createContentBlock, updateContentBlock, deleteContentBlock, reorderContentBlocks, getLessonWithBlocks,
@@ -24,7 +24,9 @@ import { analyserVideoEnLigne, estMediaPrive, REGLES_MEDIAS, GenreMedia } from '
 import { envoyerMedia } from '@/lib/medias-client'
 import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from './ChoixLibrairie'
 import { lireQuiz, nouvelleQuestion, Quiz } from '@/lib/quiz'
-import { STYLES_ENCADRE } from '@/lib/texte-riche'
+import { STYLES_ENCADRE, styleEncadre } from '@/lib/texte-riche'
+import { CLINIQUE_INFO } from '@/lib/cliniques'
+import { listerModelesPerso, enregistrerModeleLecon, supprimerModeleLecon } from '@/lib/actions/modeles-lecons'
 import { MODELES_LECON, ModeleLecon } from '@/lib/modeles-lecon'
 
 type Bloc = ContentBlock
@@ -38,6 +40,7 @@ const TYPES_MENU: { type: ContentBlockType; style?: string; icone: string; libel
   { type: 'text', style: 'a_retenir', icone: '💡', libelle: 'À retenir', aide: 'Encadré bleu' },
   { type: 'text', style: 'attention', icone: '⚠️', libelle: 'Attention', aide: 'Encadré orange' },
   { type: 'text', style: 'procedure', icone: '✅', libelle: 'Procédure', aide: 'Étapes numérotées' },
+  { type: 'text', style: 'clinique', icone: '🏥', libelle: 'Encadré clinique', aide: 'Aux couleurs de la clinique' },
   { type: 'file', icone: '📎', libelle: 'Document', aide: 'PDF, Word, Excel…' },
 ]
 
@@ -50,14 +53,19 @@ const supabaseNavigateur = () => createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+/** Couleurs de la clinique de la formation (aperçu des encadrés « clinique ») */
+const ThemeClinique = createContext<{ couleur: string; fond: string } | null>(null)
+
 function meta(b: Bloc): Record<string, unknown> {
   return (b.metadata && typeof b.metadata === 'object') ? b.metadata as Record<string, unknown> : {}
 }
 
 // ---------------------------------------------------------------------------
 
-export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onModeleAttestation }: {
+export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onModeleAttestation, clinique = null }: {
   leconId: string
+  /** Clinique de la formation : couleurs des encadrés « clinique » et modèles proposés */
+  clinique?: string | null
   formationId: string
   blocsInitiaux: Bloc[]
   /** Un modèle demande « J'ai lu et compris » : la page active l'option de la leçon */
@@ -224,6 +232,29 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
     }
   }
 
+  // Modèles enregistrés par l'équipe
+  const [modelesPerso, setModelesPerso] = useState<ModeleLecon[]>([])
+  const chargerModelesPerso = useCallback(async () => {
+    const r = await listerModelesPerso(formationId)
+    if (r.success) setModelesPerso(r.data)
+  }, [formationId])
+  useEffect(() => { if (blocs.length === 0) chargerModelesPerso() }, [blocs.length, chargerModelesPerso])
+  const retirerModele = async (m: ModeleLecon) => {
+    if (!(await confirmer({ message: t('Supprimer le modèle « {nom} » ? Les leçons déjà créées avec ce modèle ne changent pas.', { nom: m.nom }), bouton: t('Supprimer'), danger: true }))) return
+    const r = await supprimerModeleLecon(m.id)
+    if (!r.success) { setErreur(r.error); return }
+    chargerModelesPerso()
+  }
+  const [enregistrement, setEnregistrement] = useState<null | { nom: string; description: string; clinique: string; envoi: boolean; fait: boolean }>(null)
+  const enregistrerModele = async () => {
+    if (!enregistrement) return
+    setEnregistrement({ ...enregistrement, envoi: true })
+    const r = await enregistrerModeleLecon(leconId, { nom: enregistrement.nom, description: enregistrement.description, clinique: enregistrement.clinique })
+    if (!r.success) { setErreur(r.error); setEnregistrement({ ...enregistrement, envoi: false }); return }
+    setEnregistrement({ ...enregistrement, envoi: false, fait: true })
+  }
+  const theme = clinique === 'CMC' || clinique === 'WSSC' ? CLINIQUE_INFO[clinique] : null
+
   // Partir d'un modèle : crée tous les blocs du modèle d'un coup
   const appliquerModele = async (modele: ModeleLecon) => {
     setEtat('en_cours')
@@ -232,7 +263,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
       const b = modele.blocs[i]
       const res = await createContentBlock({
         lesson_id: leconId, type: b.type, ordre: i + 1,
-        titre: b.titre, contenu: b.contenu, metadata: b.metadata ?? null,
+        titre: b.titre ?? undefined, contenu: b.contenu ?? undefined, url: b.url ?? undefined, metadata: b.metadata ?? null,
       })
       if (!res.success) { setEtat('erreur'); setErreur(res.error); break }
       crees.push(res.data)
@@ -243,6 +274,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   }
 
   return (
+    <ThemeClinique.Provider value={theme}>
     <div>
       {choixLibrairie && (
         <ChoixLibrairie
@@ -259,6 +291,12 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
           <span className={'text-xs ' + (etat === 'erreur' ? 'text-red-600' : etat === 'en_cours' ? 'text-amber-600' : 'text-green-600')}>
             {etat === 'erreur' ? t('⚠️ Erreur d’enregistrement') : etat === 'en_cours' ? t('Enregistrement…') : t('✓ Enregistré')}
           </span>
+          {blocs.length > 0 && (
+            <button type="button" onClick={() => setEnregistrement({ nom: '', description: '', clinique: clinique ?? 'LES_DEUX', envoi: false, fait: false })}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+              ⭐ {t('Enregistrer comme modèle')}
+            </button>
+          )}
           <a href={`/formations/${formationId}/lecon/${leconId}?apercu=1`} target="_blank" rel="noopener noreferrer"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
             {t('👁️ Aperçu employé')}
@@ -270,6 +308,35 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
         <div className="mb-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 flex justify-between gap-2">
           <span>{erreur}</span>
           <button onClick={() => setErreur(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
+      {enregistrement && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+          {enregistrement.fait ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-amber-900">✓ {t('Modèle « {nom} » enregistré : il sera proposé à la création des prochaines leçons.', { nom: enregistrement.nom })}</p>
+              <button type="button" onClick={() => setEnregistrement(null)} className="text-sm text-amber-700 hover:underline">{t('Fermer')}</button>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-amber-900">⭐ {t('Enregistrer cette leçon comme modèle')}</p>
+              <p className="text-xs text-amber-800">{t('Tous les blocs (textes, médias, exercices) et l’option « J’ai lu et compris » sont repris. Les leçons créées ensuite à partir du modèle sont indépendantes.')}</p>
+              <div className="grid sm:grid-cols-3 gap-2">
+                <input value={enregistrement.nom} onChange={e => setEnregistrement({ ...enregistrement, nom: e.target.value })} maxLength={120} placeholder={t('Nom du modèle *')} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white" />
+                <input value={enregistrement.description} onChange={e => setEnregistrement({ ...enregistrement, description: e.target.value })} maxLength={300} placeholder={t('Description courte (facultatif)')} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white" />
+                <select value={enregistrement.clinique} onChange={e => setEnregistrement({ ...enregistrement, clinique: e.target.value })} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white">
+                  <option value="CMC">{t('Proposé pour : CMC')}</option>
+                  <option value="WSSC">{t('Proposé pour : WSSC')}</option>
+                  <option value="LES_DEUX">{t('Proposé pour : les deux cliniques')}</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setEnregistrement(null)} className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 bg-white">{t('Annuler')}</button>
+                <button type="button" onClick={enregistrerModele} disabled={enregistrement.envoi || !enregistrement.nom.trim()} className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white disabled:opacity-50">{enregistrement.envoi ? t('Enregistrement…') : t('Enregistrer le modèle')}</button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -285,11 +352,30 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               <button key={m.id} onClick={() => appliquerModele(m)} disabled={etat === 'en_cours'}
                 className="text-left p-3 rounded-xl border border-gray-200 bg-white hover:border-indigo-400 hover:bg-indigo-50 disabled:opacity-50">
                 <span className="text-xl">{m.icone}</span>
-                <span className="block text-sm font-semibold text-gray-800 mt-1">{m.nom}</span>
-                <span className="block text-xs text-gray-500">{m.description}</span>
+                <span className="block text-sm font-semibold text-gray-800 mt-1">{t(m.nom)}</span>
+                <span className="block text-xs text-gray-500">{t(m.description)}</span>
               </button>
             ))}
           </div>
+          {modelesPerso.length > 0 && (
+            <>
+              <p className="text-sm font-semibold text-gray-700 mt-4 mb-2">⭐ {t('Modèles de l’équipe')}</p>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
+                {modelesPerso.map(m => (
+                  <div key={m.id} className="relative">
+                    <button onClick={() => appliquerModele(m)} disabled={etat === 'en_cours'}
+                      className="w-full h-full text-left p-3 rounded-xl border border-amber-200 bg-amber-50/50 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50">
+                      <span className="text-xl">{m.icone}</span>
+                      <span className="block text-sm font-semibold text-gray-800 mt-1 pr-5">{m.nom}</span>
+                      <span className="block text-xs text-gray-500">{m.description || t('{n} bloc(s)', { n: m.blocs.length })}</span>
+                      {m.perso && m.perso.clinique !== 'LES_DEUX' && <span className="block text-[10px] font-bold mt-1" style={{ color: CLINIQUE_INFO[m.perso.clinique as 'CMC' | 'WSSC']?.couleur }}>{m.perso.clinique}</span>}
+                    </button>
+                    <button type="button" onClick={() => retirerModele(m)} title={t('Supprimer le modèle')} className="absolute top-2 right-2 text-xs text-gray-400 hover:text-red-600">✕</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <p className="text-xs text-gray-400 mt-2">{t('…ou commencez avec un bloc vide :')}</p>
         </div>
       )}
@@ -341,6 +427,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
         </div>
       ))}
     </div>
+    </ThemeClinique.Provider>
   )
 }
 
@@ -450,14 +537,14 @@ function ZoneTexteAuto(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>)
 function EditeurTexte({ bloc, modifier }: PropsBloc) {
   const { t } = useT()
   const style = String(meta(bloc).style ?? 'normal')
-  const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
+  const s = styleEncadre(style, useContext(ThemeClinique))
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1">
         {Object.entries(STYLES_ENCADRE).map(([cle, st]) => (
           <button key={cle} onClick={() => modifier(bloc.id, { metadata: { ...meta(bloc), style: cle } }, true)}
             className={'text-xs px-2 py-1 rounded-md border ' + (style === cle ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
-            {st.icone} {st.libelle}
+            {st.icone} {t(st.libelle)}
           </button>
         ))}
       </div>

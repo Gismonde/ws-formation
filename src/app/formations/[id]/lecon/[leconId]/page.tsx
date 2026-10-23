@@ -17,7 +17,10 @@ import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { lireQuiz } from '@/lib/quiz'
 import { passageDe, questionsDe } from '@/lib/video-passage'
-import { TexteRiche, STYLES_ENCADRE } from '@/lib/texte-riche'
+import { TexteRiche, styleEncadre } from '@/lib/texte-riche'
+import { CLINIQUE_INFO } from '@/lib/cliniques'
+
+type Theme = { couleur: string; fond: string; logo: string; court: string } | null
 
 type ContentBlock = {
   id: string
@@ -55,9 +58,9 @@ function estVide(bloc: ContentBlock): boolean {
   return !(bloc.url || bloc.contenu)
 }
 
-function BlocTexte({ bloc }: { bloc: ContentBlock }) {
+function BlocTexte({ bloc, theme }: { bloc: ContentBlock; theme: Theme }) {
   const style = String(bloc.metadata?.style ?? 'normal')
-  const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
+  const s = styleEncadre(style, theme)
   return (
     <div className="rounded-xl p-6" style={{ background: s.fond, border: `1px solid ${s.bord}`, borderLeftWidth: style === 'normal' ? 1 : 4 }}>
       {bloc.titre && (
@@ -135,10 +138,10 @@ function BlocSlide({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Tradu
   )
 }
 
-function RenduBloc({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Traducteur }) {
+function RenduBloc({ bloc, urls, t, theme }: { bloc: ContentBlock; urls: Urls; t: Traducteur; theme: Theme }) {
   if (estVide(bloc)) return null
   switch (bloc.type) {
-    case 'text': return <BlocTexte bloc={bloc} />
+    case 'text': return <BlocTexte bloc={bloc} theme={theme} />
     case 'video': return <BlocVideo bloc={bloc} urls={urls} />
     case 'image': return <BlocImage bloc={bloc} urls={urls} />
     case 'file': return <BlocFichier bloc={bloc} urls={urls} t={t} />
@@ -164,7 +167,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: emp } = await supabase.from('employes').select('id, role').eq('auth_user_id', user.id).single()
+  const { data: emp } = await supabase.from('employes').select('id, role, clinique').eq('auth_user_id', user.id).single()
   if (!emp) redirect('/login')
 
   // Charger la lecon avec ses blocs
@@ -176,6 +179,10 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   // Charger la formation pour le contexte
   const { data: formation } = await serviceClient().from('formations').select('id, titre').eq('id', formationId).single()
   if (!formation) notFound()
+  // Couleurs de la clinique : celle de la formation, sinon (formation commune) celle de l'employé
+  const cliniqueTheme = fClinique?.clinique === 'CMC' || fClinique?.clinique === 'WSSC' ? fClinique.clinique
+    : emp.clinique === 'CMC' || emp.clinique === 'WSSC' ? emp.clinique : null
+  const theme: Theme = cliniqueTheme ? CLINIQUE_INFO[cliniqueTheme as 'CMC' | 'WSSC'] : null
 
   // Charger toutes les lecons du module pour la navigation
   const resLecons = await getLessonsWithBlocks(lecon.module_id)
@@ -203,7 +210,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* En-tete */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10" style={theme ? { borderTop: `4px solid ${theme.couleur}` } : undefined}>
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <Link href={baseUrl} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
@@ -211,6 +218,8 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {theme && <img src={theme.logo} alt={theme.court} className="h-7 w-auto flex-shrink-0 hidden sm:block" />}
             <div className="min-w-0">
               <p className="text-xs text-gray-500 truncate">{formation.titre}</p>
               <h1 className="text-base font-semibold text-gray-900 truncate">{lecon.titre}</h1>
@@ -231,7 +240,8 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             {leconSuivante && (
               <Link
                 href={baseUrl + '/lecon/' + leconSuivante.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                style={theme ? { background: theme.couleur } : undefined}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 hover:opacity-90 rounded-lg transition-colors"
               >
                 <span className="hidden sm:inline">{t('Suivante')}</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +256,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Titre et description de la lecon */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{lecon.titre}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2" style={theme ? { color: theme.couleur } : undefined}>{lecon.titre}</h2>
           {lecon.description && (
             <p className="text-gray-600 leading-relaxed">{lecon.description}</p>
           )}
@@ -267,7 +277,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         ) : (
           <div className="space-y-6">
             {lecon.blocs.sort((a, b) => a.ordre - b.ordre).map(bloc => (
-              <Apparition key={bloc.id} actif={(lecon as { apparition_progressive?: boolean }).apparition_progressive === true}><RenduBloc bloc={bloc} urls={urlsMedias} t={t} /></Apparition>
+              <Apparition key={bloc.id} actif={(lecon as { apparition_progressive?: boolean }).apparition_progressive === true}><RenduBloc bloc={bloc} urls={urlsMedias} t={t} theme={theme} /></Apparition>
             ))}
           </div>
         )}
