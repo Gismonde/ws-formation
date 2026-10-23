@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       .eq('id', preuve_id)
       .single()
   const { data: proprietaire } = existante
-    ? await serviceClient.from('employes').select('id, clinique, departement_id').eq('id', existante.employe_id).single()
+    ? await serviceClient.from('employes').select('id, role, clinique, departement_id, externe').eq('id', existante.employe_id).single()
     : { data: null }
   if (!existante || !proprietaire || existante.employe_id === admin.id || !peutVoirEmploye(admin, proprietaire)) {
         return NextResponse.json({ error: 'Accès refusé - preuve hors de votre périmètre' }, { status: 403 })
