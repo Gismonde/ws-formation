@@ -20,7 +20,7 @@ import { passageDe, questionsDe } from '@/lib/video-passage'
 import { TexteRiche, styleEncadre } from '@/lib/texte-riche'
 import { CLINIQUE_INFO } from '@/lib/cliniques'
 
-type Theme = { couleur: string; fond: string; logo: string; court: string } | null
+type Theme = { couleur: string; fond: string; logo: string; court: string; partenaires?: { logo: string; nom: string }[] } | null
 
 type ContentBlock = {
   id: string
@@ -220,6 +220,8 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             </Link>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {theme && <img src={theme.logo} alt={theme.court} className="h-7 w-auto flex-shrink-0 hidden sm:block" />}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {(theme?.partenaires ?? []).map(p => <img key={p.nom} src={p.logo} alt={p.nom} className="h-6 w-auto flex-shrink-0 hidden md:block" />)}
             <div className="min-w-0">
               <p className="text-xs text-gray-500 truncate">{formation.titre}</p>
               <h1 className="text-base font-semibold text-gray-900 truncate">{lecon.titre}</h1>
