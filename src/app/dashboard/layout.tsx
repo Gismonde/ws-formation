@@ -12,6 +12,7 @@ import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import { i18n } from '@/lib/i18n/serveur'
 import { MenuEmploye, OngletsEmploye } from '@/components/NavEmploye'
+import EnteteEmploye from '@/components/EnteteEmploye'
 import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
 
@@ -80,6 +81,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </TiroirMenu>
 
       <main className="dashboard-main contenu-adaptatif">
+        <EnteteEmploye />
         <OngletsEmploye compteurs={compteurs} />
         {children}
       </main>
