@@ -15,13 +15,13 @@ const roleStyles: Record<string, { bg: string; color: string; border: string }> 
 }
 const roleLabel: Record<string, string> = ROLE_LABEL
 
-export default async function AdminEmployesPage({ searchParams }: { searchParams: Promise<{ clinique?: string }> }) {
+export default async function AdminEmployesPage({ searchParams }: { searchParams: Promise<{ clinique?: string; type?: string }> }) {
   const { t } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur)) redirect('/dashboard/accueil')
 
-  const { clinique: filtreClinique } = await searchParams
+  const { clinique: filtreClinique, type: filtreType } = await searchParams
   const sb = serviceClient()
   const isGestionnaire = acteur.role === 'gestionnaire'
   const mesCliniques = cliniquesAdministrees(acteur)
@@ -34,7 +34,11 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
       ? query.or(`clinique.in.(${filtreClinique},LES_DEUX),role.eq.super_admin`)
       : query.in('clinique', [filtreClinique, 'LES_DEUX'])
   }
+  if (filtreType === 'externes') query = query.eq('externe', true)
+  if (filtreType === 'employes') query = query.or('externe.is.null,externe.eq.false')
   const { data: employes } = await query
+  const avecExternes = mesCliniques.includes('CMC')
+  const lienFiltre = (c: string, ty: string) => { const q = [c && `clinique=${c}`, ty && `type=${ty}`].filter(Boolean).join('&'); return '/admin/employes' + (q ? '?' + q : '') }
   const ids = (employes ?? []).map((e: any) => e.id)
 
   const { data: assignations } = ids.length
@@ -120,9 +124,23 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
           {[{ v: '', l: t('Toutes les cliniques') }, ...(['CMC', 'WSSC'] as Clinique[]).map(c => ({ v: c, l: CLINIQUE_INFO[c].nom }))].map(f => {
             const actif = (filtreClinique ?? '') === f.v
             return (
-              <Link key={f.v} href={f.v ? `/admin/employes?clinique=${f.v}` : '/admin/employes'} style={{
+              <Link key={f.v} href={lienFiltre(f.v, filtreType ?? '')} style={{
                 padding: '7px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
                 background: actif ? '#1a1f36' : '#fff', color: actif ? '#fff' : '#374151', border: '1px solid #e5e7eb',
+              }}>{f.l}</Link>
+            )
+          })}
+        </div>
+      )}
+
+      {avecExternes && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {[{ v: '', l: t('Tous') }, { v: 'employes', l: t('Employés') }, { v: 'externes', l: t('Membres externes') }].map(f => {
+            const actif = (filtreType ?? '') === f.v
+            return (
+              <Link key={f.v} href={lienFiltre(filtreClinique ?? '', f.v)} style={{
+                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, textDecoration: 'none',
+                background: actif ? '#7d5a8e' : '#fff', color: actif ? '#fff' : '#374151', border: '1px solid #e5e7eb',
               }}>{f.l}</Link>
             )
           })}
@@ -157,7 +175,8 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                   </td>
                   <td style={tdStyle}>
                     <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
-                    {emp.poste && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{emp.poste}</div>}
+                    {emp.externe && <span title={emp.organisation ?? undefined} style={{ marginLeft: '6px', display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: '#f4ecf7', color: '#5b3f6b', border: '1px solid #e2d2ea', verticalAlign: 'middle' }}>{t('Externe')}</span>}
+                    {(emp.poste || (emp.externe && emp.organisation)) && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{[emp.poste, emp.externe ? emp.organisation : null].filter(Boolean).join(' · ')}</div>}
                   </td>
                   <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
                   <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
@@ -230,6 +249,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     </td>
                     <td style={tdStyle}>
                       <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '500', color: 'inherit', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
+                      {emp.externe && <span title={emp.organisation ?? undefined} style={{ marginLeft: '6px', display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: '#f4ecf7', color: '#5b3f6b', border: '1px solid #e2d2ea', verticalAlign: 'middle' }}>{t('Externe')}</span>}
                       {emp.poste && <div style={{ fontSize: '12px' }}>{emp.poste}</div>}
                     </td>
                     <td style={tdStyle}>{emp.email}</td>

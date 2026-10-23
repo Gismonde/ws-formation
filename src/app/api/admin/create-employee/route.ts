@@ -4,6 +4,7 @@ import { getActeur, serviceClient, validerAttribution, ipEtAgent } from '@/lib/p
 import { aAccesAdmin, ROLE_LABEL } from '@/lib/cliniques'
 import { inviterEmploye } from '@/lib/invitations'
 import { origineDepuis } from '@/lib/courriels'
+import { valeursExterne } from '@/lib/membres-externes'
 import { droitsAEnregistrer, AUCUN_DROIT, changementsDroits } from '@/lib/droits'
 
 export async function POST(request: Request) {
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       clinique,
       departement_id,
       poste: poste || null,
+      ...(valeursExterne(body, role, clinique).externe ? valeursExterne(body, role, clinique) : {}),
       ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT),
       actif: true,
     })
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
   await logAudit({
     acteur_id: acteur.id,
     type_action: 'EMPLOYE_CREE',
-    description: `Nouvel employé créé : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
+    description: `${valeursExterne(body, role, clinique).externe ? 'Nouveau membre externe créé' : 'Nouvel employé créé'} : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
     cible_employe_id: newEmp?.id ?? null,
     metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye, droits: changementsDroits(AUCUN_DROIT, (acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT) },
     ...ipEtAgent(request),
