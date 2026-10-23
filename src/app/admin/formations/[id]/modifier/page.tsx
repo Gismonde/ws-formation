@@ -30,6 +30,11 @@ interface Formation {
   obligatoire?: boolean | null
   /** Absent tant que la migration formations_certificat.sql n'est pas exécutée */
   delivre_certificat?: boolean
+  /** Heures de formation continue (absent tant que formations_credits.sql n'est pas exécutée) */
+  credits_admissible?: boolean
+  credits_heures?: number | null
+  credits_organisme?: string | null
+  credits_numero?: string | null
 }
 
 export default function ModifierFormationPage() {
@@ -80,7 +85,6 @@ export default function ModifierFormationPage() {
         description: formation.description,
         niveau: formation.niveau,
         duree_estimee_minutes: formation.duree_estimee_minutes,
-        publiee: formation.publiee,
         clinique: formation.clinique,
         validite_mois: formation.validite_mois,
         prerequis_ids: formation.prerequis_ids ?? [],
@@ -88,6 +92,12 @@ export default function ModifierFormationPage() {
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
+        ...(formation.credits_admissible !== undefined ? {
+          credits_admissible: formation.credits_admissible,
+          credits_heures: formation.credits_admissible && formation.credits_heures ? Math.round(Number(formation.credits_heures) * 100) / 100 : null,
+          credits_organisme: formation.credits_admissible ? (formation.credits_organisme?.trim() || null) : null,
+          credits_numero: formation.credits_admissible ? (formation.credits_numero?.trim() || null) : null,
+        } : {}),
       }).eq('id', formation.id)
 
       if (fErr) { setError(fErr.message); setSaving(false); return }
@@ -234,12 +244,41 @@ export default function ModifierFormationPage() {
                 </label>
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="publiee" checked={formation.publiee} onChange={e => updateField('publiee', e.target.checked)} className="h-4 w-4 text-indigo-600 rounded" />
-              <label htmlFor="publiee" className="text-sm font-medium text-gray-700">Formation publiée (visible par les employés)</label>
-            </div>
+            <p className="text-xs text-gray-500">{formation.publiee ? t('Formation publiée.') : t('Brouillon.')} {t('La publication se fait depuis la fiche de la formation, après validation.')}</p>
           </div>
           
+          {formation.credits_admissible !== undefined && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6">
+              <h3 className="text-sm font-semibold text-indigo-900 mb-3">🎓 {t('Formation continue (ordres professionnels)')}</h3>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={formation.credits_admissible} onChange={e => updateField('credits_admissible', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
+                <span className="text-sm font-medium text-gray-700">{t('Formation admissible à des heures de formation continue')}
+                  <span className="block text-xs font-normal text-gray-500">{t('Les heures apparaissent sur le certificat, dans le dossier de l’employé et dans les exports (utile pour les déclarations aux ordres).')}</span>
+                </span>
+              </label>
+              {formation.credits_admissible && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('Heures créditables *')}</label>
+                    <input type="number" min="0.25" max="999" step="0.25" value={formation.credits_heures ?? ''} onChange={e => updateField('credits_heures', e.target.value ? Number(e.target.value) : null)} placeholder={t('Ex. : 1,5')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('Ordre ou organisme')}</label>
+                    <input list="ordres-pro" value={formation.credits_organisme ?? ''} onChange={e => updateField('credits_organisme', e.target.value)} placeholder="OIIQ, OIIAQ…" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                    <datalist id="ordres-pro">
+                      {['OIIQ', 'OIIAQ', 'CMQ', 'OPIQ', 'OPQ', 'OPPQ', 'OTSTCFQ', 'OPTMQ', 'Collège des médecins du Québec'].map(o => <option key={o} value={o} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('N° d’accréditation (facultatif)')}</label>
+                    <input value={formation.credits_numero ?? ''} onChange={e => updateField('credits_numero', e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                </div>
+              )}
+              {formation.credits_admissible && !formation.credits_heures && <p className="text-xs text-red-600 mt-2">{t('Indiquez le nombre d’heures créditables.')}</p>}
+            </div>
+          )}
+
           {/* Durée de validité */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
             <h3 className="text-sm font-semibold text-amber-900 mb-3">{t('⏱️ Validité du certificat')}</h3>

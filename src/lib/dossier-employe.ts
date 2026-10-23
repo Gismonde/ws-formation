@@ -51,6 +51,9 @@ export type LeconDossier = {
 export type CertificatDossier = {
   id: string
   formation: string
+  /** Heures de formation continue créditables (null si la formation n'en donne pas) */
+  heures: number | null
+  organisme: string | null
   numero: string
   emis_le: string | null
   expire_le: string | null
@@ -119,7 +122,7 @@ export async function chargerDossier(
     ...(preuves ?? []).map(p => p.formation_id as string).filter(Boolean),
   ]))
   const [{ data: formations }, etat, suivi, { data: pols }] = await Promise.all([
-    formationIds.length ? sb.from('formations').select('id, titre, obligatoire').in('id', formationIds) : Promise.resolve({ data: [] as { id: string; titre: string; obligatoire: boolean | null }[] }),
+    formationIds.length ? sb.from('formations').select('*').in('id', formationIds) : Promise.resolve({ data: [] as { id: string; titre: string; obligatoire: boolean | null }[] }),
     chargerEtatsFormations(sb, [employeId], formationIds),
     chargerSuiviFormations(sb, [employeId], formationIds),
     (confs ?? []).length
@@ -166,6 +169,10 @@ export async function chargerDossier(
   const certificats: CertificatDossier[] = (certs ?? []).map(c => ({
     id: c.id,
     formation: nomFormation(c.formation_id),
+    ...(() => {
+      const f = titre.get(c.formation_id) as { credits_admissible?: boolean; credits_heures?: number | null; credits_organisme?: string | null } | undefined
+      return f?.credits_admissible && f.credits_heures ? { heures: Number(f.credits_heures), organisme: f.credits_organisme ?? null } : { heures: null, organisme: null }
+    })(),
     numero: c.numero_certificat ?? '',
     emis_le: jourSeul(c.date_emission),
     expire_le: jourSeul(c.date_expiration),
@@ -273,6 +280,8 @@ export function feuillesDossiers(dossiers: Dossier[]): Feuille<unknown>[] {
       { titre: 'Expire le', valeur: c => dt(c.expire_le), largeur: 13 },
       { titre: 'Note (%)', valeur: c => c.note, largeur: 10 },
       { titre: 'État', valeur: c => c.etat, largeur: 10 },
+      { titre: 'Heures créditables', valeur: c => c.heures, largeur: 12 },
+      { titre: 'Ordre / organisme', valeur: c => c.organisme, largeur: 18 },
     ], d => d.certificats),
     feuille<PreuveDossier>('Preuves externes', [
       { titre: 'Formation', valeur: p => p.formation, largeur: 34 },

@@ -190,6 +190,7 @@ const LIBELLE_REGLAGE: Record<string, string> = {
   publiee: 'publication', clinique: 'clinique', validite_mois: 'validité du certificat', prerequis_ids: 'prérequis',
   image_couverture: 'image de couverture', sondage_actif: 'sondage', obligatoire: 'obligatoire (LSST)',
   delivre_certificat: 'certificat', responsable_formation: 'responsable de la formation',
+  credits_admissible: 'formation continue', credits_heures: 'heures créditables', credits_organisme: 'ordre professionnel', credits_numero: 'n° d’accréditation',
 }
 
 /** Note dans l'historique les réglages modifiés depuis la page « Modifier ». */

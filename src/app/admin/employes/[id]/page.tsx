@@ -155,11 +155,27 @@ export default async function FicheEmployePage({ params, searchParams }: {
     contenu = dossier.certificats.length === 0
       ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucun certificat.')}</div>
       : (
+        <>
+        {(() => {
+          // Heures de formation continue créditées, par année de délivrance du certificat
+          const parAnnee = new Map<string, number>()
+          for (const c of dossier.certificats) if (c.heures && c.etat !== 'Révoqué' && c.emis_le) parAnnee.set(c.emis_le.slice(0, 4), (parAnnee.get(c.emis_le.slice(0, 4)) ?? 0) + c.heures)
+          if (parAnnee.size === 0) return null
+          return (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4 flex flex-wrap gap-6 text-sm">
+              <span className="font-semibold text-indigo-900">🎓 {t('Heures de formation continue créditées')}</span>
+              {Array.from(parAnnee).sort((a, b) => b[0].localeCompare(a[0])).map(([an, h]) => (
+                <span key={an} className="text-indigo-800">{an} : <strong>{String(Math.round(h * 100) / 100).replace('.', ',')} h</strong></span>
+              ))}
+            </div>
+          )
+        })()}
         <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
                 <th className="px-4 py-2.5 font-semibold">{t('Formation')}</th>
+                <th className="px-3 py-2.5 font-semibold">{t('Heures créditables')}</th>
                 <th className="px-3 py-2.5 font-semibold">{t('Numéro')}</th>
                 <th className="px-3 py-2.5 font-semibold">{t('Émis le')}</th>
                 <th className="px-3 py-2.5 font-semibold">{t('Expire le')}</th>
@@ -172,6 +188,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
               {dossier.certificats.map(c => (
                 <tr key={c.numero + c.emis_le} className="border-t border-gray-100">
                   <td className="px-4 py-2.5 font-medium text-gray-900">{c.formation}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{c.heures ? `${String(c.heures).replace('.', ',')} h${c.organisme ? ' · ' + c.organisme : ''}` : '—'}</td>
                   <td className="px-3 py-2.5 font-mono text-xs">{c.numero}</td>
                   <td className="px-3 py-2.5 text-gray-600">{jour(c.emis_le)}</td>
                   <td className="px-3 py-2.5 text-gray-600">{c.expire_le ? jour(c.expire_le) : t('Permanent')}</td>
@@ -187,6 +204,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
             </tbody>
           </table>
         </div>
+        </>
       )
   } else if (onglet === "preuves") {
     contenu = <ListePreuvesAdmin preuves={dossier.preuves} peutDecider={acteur.id !== id} />
