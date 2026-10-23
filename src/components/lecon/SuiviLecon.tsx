@@ -6,6 +6,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
+import { ajouterAFile, horsLigne } from '@/lib/file-suivi'
 import { useT } from '@/lib/i18n/client'
 import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
 import BlocInteractif from '@/components/lecon/BlocInteractif'
@@ -25,7 +26,10 @@ export function FournisseurSuivi({ etat, suiviActif, children }: { etat: EtatSui
   const [videosVues, setVideosVues] = useState<string[]>(etat.videosVues)
   const marquerVue = useCallback((blocId: string) => {
     setVideosVues(v => v.includes(blocId) ? v : [...v, blocId])
-    if (suiviActif) enregistrerVideoVue(blocId)
+    if (!suiviActif) return
+    // Hors ligne : gardé sur l'appareil et envoyé au retour du réseau
+    if (horsLigne()) ajouterAFile({ type: 'video', id: blocId })
+    else enregistrerVideoVue(blocId).catch(() => ajouterAFile({ type: 'video', id: blocId }))
   }, [suiviActif])
   return <ContexteSuivi.Provider value={{ videosVues, marquerVue, suiviActif }}>{children}</ContexteSuivi.Provider>
 }
@@ -168,6 +172,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
   const { t, loc } = useT()
   const [attestationLe, setAttestationLe] = useState(etat.attestationLe)
   const [termineeLe, setTermineeLe] = useState(etat.termineeLe)
+  const [horsLigneEnvoi, setHorsLigneEnvoi] = useState(false)
   const [coche, setCoche] = useState(!!etat.attestationLe)
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -192,6 +197,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
         <span className="text-2xl">✅</span>
         <div>
           <p className="font-semibold text-green-800">{t('Leçon terminée')}</p>
+          {horsLigneEnvoi && <p className="text-xs text-amber-700">📶 {t('Hors ligne : enregistré sur cet appareil, envoyé automatiquement au retour du réseau.')}</p>}
           <p className="text-sm text-green-700">{t('Le {date}', { date: date(termineeLe) })}{attestationLe ? t(' · attestation signée le {date}', { date: date(attestationLe) }) : ''}</p>
         </div>
       </div>
@@ -207,6 +213,14 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
       else setErreur(t('Erreur'))
       return
     }
+    // Hors ligne (ou réseau coupé pendant l'envoi) : enregistré sur l'appareil, envoyé au retour du réseau
+    const enAttente = () => {
+      if (attestationRequise && !attestationLe) { ajouterAFile({ type: 'attestation', id: lessonId }); setAttestationLe(new Date().toISOString()) }
+      ajouterAFile({ type: 'terminer', id: lessonId })
+      setTermineeLe(new Date().toISOString()); setHorsLigneEnvoi(true); setEnCours(false)
+    }
+    if (horsLigne()) { enAttente(); return }
+    try {
     if (attestationRequise && !attestationLe) {
       const r = await attesterLecture(lessonId)
       if (!r.ok) { setErreur(r.erreur); setEnCours(false); return }
@@ -216,6 +230,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     setEnCours(false)
     if (r.ok) setTermineeLe(r.data ?? new Date().toISOString())
     else setErreur(r.manquants?.length ? t('Il reste : {liste}', { liste: r.manquants.join(' · ') }) : r.erreur)
+    } catch { enAttente() }
   }
 
   return (

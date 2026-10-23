@@ -6,6 +6,7 @@ import { chargerEtatQuestionnaire } from '@/lib/questionnaire-serveur'
 import { etatSondage } from '@/lib/sondages'
 import { i18n } from '@/lib/i18n/serveur'
 import { modeApercu } from '@/lib/apercu-employe'
+import DisponibleHorsLigne from '@/components/DisponibleHorsLigne'
 
 export default async function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -166,6 +167,9 @@ export default async function FormationDetailPage({ params }: { params: Promise<
             <Link href={`/formations/${id}/lecon/${prochaineLecon.id}`} className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold" style={{ background: 'var(--accent-clinique, #4f46e5)' }}>
               {leconsFaites.size === 0 ? t('Commencer la formation') : t('Continuer : {titre}', { titre: prochaineLecon.titre })} →
             </Link>
+          )}
+          {!apercu.actif && ordreLecons.length > 0 && (
+            <DisponibleHorsLigne formationId={id} titre={formation.titre} urls={[`/formations/${id}`, ...ordreLecons.map(l => `/formations/${id}/lecon/${l.id}`)]} />
           )}
         </div>
 
