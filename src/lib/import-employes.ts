@@ -1,10 +1,11 @@
 // Import d'employés depuis un fichier Excel ou CSV : lecture des lignes, reconnaissance des colonnes
 // et validation de chaque ligne avant création. Fonctions pures (testées) ; la lecture .xlsx est faite côté API.
 import type { CliniqueEmploye, Role } from '@/lib/cliniques'
+import { valeursExterne } from '@/lib/membres-externes'
 
 export const MAX_LIGNES_IMPORT = 300
 
-export type ColonneImport = 'prenom' | 'nom' | 'email' | 'poste' | 'clinique' | 'departement' | 'role'
+export type ColonneImport = 'prenom' | 'nom' | 'email' | 'poste' | 'clinique' | 'departement' | 'role' | 'externe' | 'organisation'
 
 /** Codes d'erreur d'une ligne ; le libellé est traduit dans l'interface. */
 export type ErreurImport =
@@ -22,6 +23,9 @@ export type LigneImport = {
   clinique: CliniqueEmploye | null
   departement_id: string | null
   departement_nom: string
+  /** Membre externe (CMC) */
+  externe: boolean
+  organisation: string | null
   erreurs: ErreurImport[]
 }
 
@@ -46,6 +50,8 @@ const ALIAS: Record<ColonneImport, string[]> = {
   clinique: ['clinique', 'clinic', 'site'],
   departement: ['departement', 'department', 'service', 'equipe', 'team'],
   role: ['role'],
+  externe: ['externe', 'membre externe', 'external'],
+  organisation: ['organisation', 'organization', 'entreprise', 'employeur'],
 }
 
 /** Associe chaque colonne connue à son index dans l'en-tête. */
@@ -164,7 +170,8 @@ export function analyserImport(brutes: string[][], ctx: ContexteImport): { ligne
       if (officiel) poste = officiel
       else erreurs.push('poste_inconnu')
     }
-    return { numero: i + 2, prenom, nom, email, poste, role, clinique, departement_id, departement_nom, erreurs }
+    const ext = valeursExterne({ externe: ['oui', 'yes', 'x', '1', 'vrai', 'true', 'externe'].includes(sansAccents(val(l, 'externe'))), organisation: val(l, 'organisation') }, role, clinique)
+    return { numero: i + 2, prenom, nom, email, poste, role, clinique, departement_id, departement_nom, ...ext, erreurs }
   })
   return { lignes, colonnesManquantes }
 }

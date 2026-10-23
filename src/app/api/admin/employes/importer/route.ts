@@ -96,6 +96,7 @@ export async function POST(req: Request) {
     const { data: emp, error } = await sb.from('employes').insert({
       auth_user_id: inv.authUserId, prenom: l.prenom, nom: l.nom, email: l.email, role, clinique, departement_id,
       poste: l.poste || null, peut_creer_formations: false, actif: true,
+      ...(l.externe ? { externe: true, organisation: l.organisation } : {}),
     }).select('id').single()
     if (error || !emp) {
       await sb.auth.admin.deleteUser(inv.authUserId)

@@ -2,6 +2,7 @@
 import { useT } from '@/lib/i18n/client'
 import { droitsDe, type Droits } from '@/lib/droits'
 import ChoixPoste from '@/components/ChoixPoste'
+import ChampExterne from '@/components/ChampExterne'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
@@ -18,6 +19,8 @@ interface Props {
     actif: boolean
     departement_id: string | null
     clinique: string | null
+    externe?: boolean | null
+    organisation?: string | null
     peut_creer_formations?: boolean | null
     peut_suivre_employes?: boolean | null
     peut_valider_formations?: boolean | null
@@ -46,6 +49,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
   const [clinique, setClinique] = useState(employe.clinique || '')
   const [actif, setActif] = useState(employe.actif)
   const [droits, setDroits] = useState<Droits>(droitsDe(employe))
+  const [externe, setExterne] = useState(!!employe.externe)
+  const [organisation, setOrganisation] = useState(employe.organisation ?? '')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -60,6 +65,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
           prenom,
           nom,
           poste: poste || null,
+          externe, organisation,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
           actif
@@ -131,6 +137,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
         afficherAutorisationCreation={afficherAutorisationCreation}
         droits={droits} setDroits={setDroits}
       />
+      <ChampExterne role={role} clinique={clinique} externe={externe} organisation={organisation}
+        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls} />
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-indigo-600 rounded border-gray-300" />

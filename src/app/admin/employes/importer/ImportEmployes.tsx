@@ -54,8 +54,8 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
   }
 
   const telechargerModele = () => {
-    const entete = estGestionnaire ? 'Prénom;Nom;Courriel;Poste' : 'Prénom;Nom;Courriel;Poste;Clinique;Département;Rôle'
-    const ex = estGestionnaire ? 'Marie;Tremblay;marie.tremblay@exemple.com;Infirmière' : 'Marie;Tremblay;marie.tremblay@exemple.com;Infirmière;WSSC;Bloc opératoire;Employé'
+    const entete = estGestionnaire ? 'Prénom;Nom;Courriel;Poste' : 'Prénom;Nom;Courriel;Poste;Clinique;Département;Rôle;Externe;Organisation'
+    const ex = estGestionnaire ? 'Marie;Tremblay;marie.tremblay@exemple.com;Infirmière' : 'Marie;Tremblay;marie.tremblay@exemple.com;Infirmière;WSSC;Bloc opératoire;Employé;;\nJulie;Roy;julie.roy@exemple.com;Infirmière;CMC;;Employé;Oui;GrS Montréal'
     const blob = new Blob(['﻿' + entete + '\n' + ex + '\n'], { type: 'text/csv;charset=utf-8' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob); a.download = 'modele-import-employes.csv'; a.click()
@@ -129,7 +129,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
                 {lignes.map(l => (
                   <tr key={l.numero} className={'border-b border-gray-100 ' + (l.erreurs.length ? 'bg-red-50' : '')}>
                     <td className="py-2 pr-2 text-gray-400">{l.numero}</td>
-                    <td className="pr-2">{l.prenom} {l.nom}{l.poste && <span className="block text-xs text-gray-500">{l.poste}</span>}</td>
+                    <td className="pr-2">{l.prenom} {l.nom}{l.externe && <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#f4ecf7', color: '#5b3f6b' }}>{t('Externe')}</span>}{(l.poste || l.organisation) && <span className="block text-xs text-gray-500">{[l.poste, l.organisation].filter(Boolean).join(' · ')}</span>}</td>
                     <td className="pr-2">{l.email}</td>
                     <td className="pr-2">{l.clinique === 'LES_DEUX' ? t('Les deux') : l.clinique ?? '—'}</td>
                     <td className="pr-2">{l.departement_nom || '—'}</td>

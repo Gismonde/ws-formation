@@ -1,3 +1,4 @@
+import { valeursExterne } from '@/lib/membres-externes'
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, peutGererEmploye, validerAttribution, ipEtAgent } from '@/lib/permissions'
@@ -38,6 +39,11 @@ export async function PUT(request: Request) {
     if (nom !== undefined) updateData.nom = nom
     if (poste !== undefined) updateData.poste = poste
     if (typeof actif === 'boolean') updateData.actif = actif
+    // Membre externe (CMC) : recalculé selon le rôle et la clinique finale
+    if (body.externe !== undefined || cible.externe) {
+      const ext = valeursExterne(body.externe !== undefined ? body : { externe: cible.externe, organisation: cible.organisation }, attribution.valeurs.role, attribution.valeurs.clinique)
+      if (ext.externe !== !!cible.externe || ext.organisation !== (cible.organisation ?? null)) Object.assign(updateData, ext)
+    }
     // Droits du gestionnaire : modifiables par les administrateurs seulement ; retirés si la personne n'est plus gestionnaire
     const avant = droitsDe(cible)
     const apres = (acteur.role === 'super_admin' || acteur.role === 'admin')

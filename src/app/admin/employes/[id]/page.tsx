@@ -273,6 +273,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{p.role_libelle}</span>
             <CliniqueBadge clinique={employe.clinique} role={employe.role} />
+            {employe.externe && <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: '#f4ecf7', color: '#5b3f6b' }}>{t('Membre externe')}{employe.organisation ? ` · ${employe.organisation}` : ''}</span>}
             {p.departement && <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">{p.departement}</span>}
             <span className={"text-xs font-semibold px-2.5 py-1 rounded-full " + (p.actif ? "bg-green-50 text-green-700" : "bg-gray-200 text-gray-600")}>{p.actif ? "Actif" : "Archivé"}</span>
             {!p.invitation_acceptee && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">{t('Invitation non acceptée')}</span>}

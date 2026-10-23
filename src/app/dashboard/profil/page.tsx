@@ -14,7 +14,7 @@ export default async function ProfilPage() {
   // Lecture de SON propre dossier uniquement (filtré sur l'utilisateur connecté)
   const { data: employe } = await serviceClient()
     .from('employes')
-    .select('id, prenom, nom, email, poste, departement, role, clinique, date_embauche, departements(nom)')
+    .select('*, departements(nom)')
     .eq('auth_user_id', user.id)
     .single()
 
@@ -50,7 +50,7 @@ export default async function ProfilPage() {
             {([
               [t('Courriel'), employe.email],
               [t('Clinique'), cliniques.length ? cliniques.map(c => CLINIQUE_INFO[c].nom).join(' + ') : '-'],
-              [t('Rôle'), ROLE_LABEL[employe.role as Role] ? t(ROLE_LABEL[employe.role as Role]) : employe.role],
+              [t('Rôle'), (ROLE_LABEL[employe.role as Role] ? t(ROLE_LABEL[employe.role as Role]) : employe.role) + (employe.externe ? ' · ' + t('Membre externe') + (employe.organisation ? ` (${employe.organisation})` : '') : '')],
               [t('Département'), nomDepartement],
               [t('Poste'), employe.poste ?? '-'],
               [t('Date d’embauche'), employe.date_embauche ? new Date(employe.date_embauche).toLocaleDateString(loc) : '-'],

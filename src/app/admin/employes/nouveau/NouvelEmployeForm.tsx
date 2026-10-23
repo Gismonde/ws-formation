@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import ChampsAcces, { DepartementOption } from '@/components/ChampsAcces'
 import ChoixPoste from '@/components/ChoixPoste'
+import ChampExterne from '@/components/ChampExterne'
 import { AUCUN_DROIT, type Droits } from '@/lib/droits'
 import { CliniqueEmploye, Role } from '@/lib/cliniques'
 
@@ -33,6 +34,8 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const [droits, setDroits] = useState<Droits>({ ...AUCUN_DROIT })
+  const [externe, setExterne] = useState(false)
+  const [organisation, setOrganisation] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +45,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       const res = await fetch('/api/admin/create-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}) })
+        body: JSON.stringify({ ...form, externe, organisation, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}) })
       })
       const data = await res.json()
       if (data.error) {
@@ -62,7 +65,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
   if (success) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-        <p className="text-green-800 font-semibold text-center">{t('Employé créé avec succès !')}</p>
+        <p className="text-green-800 font-semibold text-center">{externe ? t('Membre externe créé avec succès !') : t('Employé créé avec succès !')}</p>
         {success.courrielEnvoye ? (
           <p className="text-green-700 text-sm mt-2 text-center">
             {t('📧 Un courriel d’invitation a été envoyé à')} <b>{form.email}</b> {t('pour qu’il crée son mot de passe.')}
@@ -128,6 +131,8 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
         afficherAutorisationCreation={afficherAutorisationCreation}
         droits={droits} setDroits={setDroits}
       />
+      <ChampExterne role={form.role} clinique={form.clinique} externe={externe} organisation={organisation}
+        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls} />
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">

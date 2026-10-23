@@ -2115,4 +2115,13 @@ export const EN: Record<string, string> = {
   'Cette formation n’a pas encore de contenu. Commencez par créer un module.': 'This training has no content yet. Start by creating a module.',
   'Facultatif pour les administrateurs : vous pouvez publier directement, ou demander une relecture.': 'Optional for administrators: you can publish directly, or ask for a review.',
   'Facultatif pour les administrateurs : vous pouvez publier directement, ou demander une relecture.': 'Optional for administrators: you can publish directly, or ask for a review.',
+  'Ex : GrS Montréal, CIUSSS…': 'e.g. GrS Montréal, CIUSSS…',
+  'Externe': 'External',
+  'Membre externe': 'External member',
+  'Membre externe créé avec succès !': 'External member created successfully!',
+  'Membres externes': 'External members',
+  'Organisation': 'Organization',
+  'Personne qui n’est pas employée de la clinique (partenaire, stagiaire, sous-traitant…). Mêmes fonctions et autorisations qu’un employé.': 'Someone who is not employed by the clinic (partner, intern, contractor…). Same features and permissions as an employee.',
+  'Ex : GrS Montréal, CIUSSS…': 'e.g. GrS Montréal, CIUSSS…',
+  'Membre externe créé avec succès !': 'External member created successfully!',
 }
