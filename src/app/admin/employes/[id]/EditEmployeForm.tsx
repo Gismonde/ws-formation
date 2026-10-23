@@ -126,7 +126,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       </div>
       <div>
         <label className={labelCls}>{t('Poste')}</label>
-        <input className={inputCls} value={poste} onChange={e => setPoste(e.target.value)} placeholder={t('Ex : Infirmier(e)...')} />
+        <ChoixPoste className={inputCls} valeur={poste} onChange={setPoste} familles={postes} />
       </div>
       <ChampsAcces
         role={role} clinique={clinique} departementId={departementId}

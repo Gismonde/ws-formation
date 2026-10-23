@@ -14,6 +14,7 @@ import { cookies } from 'next/headers'
 import {
   Clinique, CliniqueEmploye, CliniqueContenu, Role,
   cliniquesDe, estCliniqueEmploye, estRole, VUE_ADMIN_COOKIE, vuesAdminPossibles,
+  cliniqueAffichee,
 } from '@/lib/cliniques'
 
 export type Acteur = {
@@ -207,12 +208,13 @@ function inclus(x: Clinique[], y: Clinique[]) { return x.length > 0 && x.every(c
 
 /** Restreint une requête sur la table employes à la portée de l'acteur. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Acteur): Q {
-  if (a.role === 'super_admin') return a.vue ? query.in('clinique', [a.vue, 'LES_DEUX']) : query
+export function filtrerEmployes<Q extends { eq: any; in: any; or: any }>(query: Q, a: Acteur): Q {
+  // L'administrateur global (sans clinique enregistrée) appartient aux deux cliniques : il figure dans chacune
+  if (a.role === 'super_admin') return a.vue ? query.or(`clinique.in.(${a.vue},LES_DEUX),role.eq.super_admin`) : query
   if (a.role === 'admin') {
     const cl = cliniquesAdministrees(a)
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
-    return query.in('clinique', [...cl, 'LES_DEUX'])
+    return query.or(`clinique.in.(${[...cl, 'LES_DEUX'].join(',')}),role.eq.super_admin`)
   }
   if (gestionnaireSuivi(a) && a.departement_id) {
     // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
@@ -225,8 +227,9 @@ export function filtrerEmployes<Q extends { eq: any; in: any }>(query: Q, a: Act
 
 /** L'acteur peut-il consulter le dossier de cet employé ? */
 export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
-  if (a.role === 'super_admin') return !a.vue || cliniquesDe(c.clinique).includes(a.vue)
-  if (a.role === 'admin') return intersecte(cliniquesDe(c.clinique), cliniquesAdministrees(a))
+  const cl = cliniquesDe(cliniqueAffichee(c.clinique, c.role))
+  if (a.role === 'super_admin') return !a.vue || cl.includes(a.vue)
+  if (a.role === 'admin') return intersecte(cl, cliniquesAdministrees(a))
   if (gestionnaireSuivi(a)) {
     return !!a.departement_id && c.departement_id === a.departement_id
       && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))

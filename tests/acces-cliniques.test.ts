@@ -185,13 +185,14 @@ describe('Données des employés', () => {
       filtres,
       eq(col: string, v: unknown) { filtres.push(['eq', col, v]); return q },
       in(col: string, v: unknown) { filtres.push(['in', col, v]); return q },
+      or(v: string) { filtres.push(['or', '', v]); return q },
     }
     return q
   }
 
-  it("la liste des employés d'un admin du CMC exclut le WSSC", () => {
+  it("la liste des employés d'un admin du CMC exclut le WSSC (l'admin global y figure)", () => {
     const q = filtrerEmployes(requete(), adminCMC)
-    expect(q.filtres).toEqual([['in', 'clinique', ['CMC', 'LES_DEUX']]])
+    expect(q.filtres).toEqual([['or', '', 'clinique.in.(CMC,LES_DEUX),role.eq.super_admin']])
   })
 
   it("la liste des employés est vide pour un employé ou un gestionnaire sans département", () => {
@@ -230,9 +231,11 @@ describe('Vue CMC / WSSC dans l’espace Admin', () => {
 
   it('la liste des employés suit la vue', () => {
     const filtres: unknown[] = []
-    const q = { eq(...x: unknown[]) { filtres.push(['eq', ...x]); return q }, in(...x: unknown[]) { filtres.push(['in', ...x]); return q } }
+    const q = { eq(...x: unknown[]) { filtres.push(['eq', ...x]); return q }, in(...x: unknown[]) { filtres.push(['in', ...x]); return q }, or(...x: unknown[]) { filtres.push(['or', ...x]); return q } }
     filtrerEmployes(q, superCMC)
-    expect(filtres).toEqual([['in', 'clinique', ['CMC', 'LES_DEUX']]])
+    expect(filtres).toEqual([['or', 'clinique.in.(CMC,LES_DEUX),role.eq.super_admin']])
+    // L'administrateur global (sans clinique) figure dans chaque clinique
+    expect(peutVoirEmploye(superCMC, { role: 'super_admin', clinique: null })).toBe(true)
   })
 
   it('un admin des deux cliniques en vue WSSC ne gère que le WSSC (et le commun)', () => {
