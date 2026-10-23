@@ -189,7 +189,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
         )}
 
         {/* Actions principales */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mb-8">
           {peutCreer && (
             <Link
               href={"/admin/formations/" + id + "/editeur"}
@@ -236,6 +236,14 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <span className="text-sm font-semibold">{t('Aperçu')}</span>
             <span className="text-xs text-gray-400">{t('Vue employé')}</span>
           </Link>
+          {!copieDe && <Link
+            href={"/admin/formations/" + id + "/statistiques"}
+            className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"
+          >
+            <span className="text-2xl leading-6">📊</span>
+            <span className="text-sm font-semibold">{t('Statistiques')}</span>
+            <span className="text-xs text-gray-400">{t('Avancement, questions difficiles')}</span>
+          </Link>}
           <a
             href={`/api/admin/formations/${id}/mode-employe?retour=fiche`}
             className="flex flex-col items-center gap-2 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl hover:bg-amber-100 transition-colors text-center"
