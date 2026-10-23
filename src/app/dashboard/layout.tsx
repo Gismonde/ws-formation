@@ -44,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="dashboard-shell coque-adaptative">
       <TiroirMenu classe="dashboard-sidebar" fond={theme.fondBarre} titre={cliniqueAffichee ? `WS Formation — ${CLINIQUE_INFO[cliniqueAffichee].court}` : 'WS Formation'}>
+        {theme.bande && <div aria-hidden style={{ height: '6px', background: theme.bande, flexShrink: 0 }} />}
         <div className="sidebar-brand">
           <div className="sidebar-title">WS Formation</div>
           <div className="sidebar-subtitle">
