@@ -17,6 +17,10 @@ interface Certificat {
     niveau: string | null
     description: string | null
     responsable_formation?: string | null
+    credits_admissible?: boolean | null
+    credits_heures?: number | null
+    credits_organisme?: string | null
+    credits_numero?: string | null
   } | null
 }
 
@@ -162,6 +166,12 @@ export default function CertificatPDF({ certificat, employe, clinique, retour, a
                     {t('Note obtenue : {note} %', { note: Math.round(Number(certificat.note_finale)) })}
                   </div>
                 )}
+                {f?.credits_admissible && f.credits_heures ? (
+                  <div style={{ marginTop: '0.8cqw', fontSize: '1.15cqw', color: theme.principale, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>
+                    {t('Formation continue : {h} heure(s) créditable(s)', { h: String(Number(f.credits_heures)).replace('.', ',') })}
+                    {f.credits_organisme ? ` — ${f.credits_organisme}` : ''}{f.credits_numero ? ` (${t('n°')} ${f.credits_numero})` : ''}
+                  </div>
+                ) : null}
               </div>
 
               {/* Pied : date, sceau, numéro */}
