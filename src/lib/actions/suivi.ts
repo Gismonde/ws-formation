@@ -4,6 +4,7 @@
 // Les écritures passent par le serveur (clé de service) après identification de l'employé connecté.
 
 import { estComplet, type DonneesInteractif } from '@/lib/blocs-interactifs'
+import { certifierSiSansQuestionnaire } from '@/lib/certificat-auto'
 import { headers } from 'next/headers'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
@@ -144,5 +145,7 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
     ip_address: ctx.ip,
     user_agent: ctx.ua,
   })
+  // Formation sans questionnaire : certificat dès la dernière leçon terminée
+  try { await certifierSiSansQuestionnaire(sb, ctx.acteur.id, lessonId, { ip_address: ctx.ip, user_agent: ctx.ua }) } catch { /* ne bloque pas la leçon */ }
   return { ok: true, data: maintenant }
 }
