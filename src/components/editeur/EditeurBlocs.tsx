@@ -9,6 +9,8 @@
 //  - quiz construit à la souris
 
 import { useT } from '@/lib/i18n/client'
+import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
+import ReglagesVideo from './ReglagesVideo'
 import { useConfirmer } from '@/components/Confirmation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -568,6 +570,7 @@ function EditeurVideo(p: PropsBloc) {
   const enLigne = source && !estMediaPrive(source) ? analyserVideoEnLigne(source) : null
   const [mode, setMode] = useState<'lien' | 'fichier'>(estMediaPrive(source) ? 'fichier' : 'lien')
   const src = estMediaPrive(source) ? urlsMedias[source] : null
+  const controle = useRef<ControleVideo | null>(null)
 
   return (
     <div className="space-y-3">
@@ -579,10 +582,9 @@ function EditeurVideo(p: PropsBloc) {
         <div className="space-y-2">
           <div className="aspect-video rounded-lg overflow-hidden bg-black">
             {enLigne ? (
-              <iframe src={enLigne.embed} className="w-full h-full" allowFullScreen title={bloc.titre ?? 'Vidéo'}
-                allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" />
+              <LecteurVideo plateforme={enLigne.plateforme} src={enLigne.embed} idEnLigne={enLigne.id} titre={bloc.titre} controle={controle} />
             ) : src ? (
-              <video src={src} controls className="w-full h-full" />
+              <LecteurVideo plateforme="fichier" src={src} titre={bloc.titre} controle={controle} />
             ) : estMediaPrive(source) ? (
               <div className="w-full h-full animate-pulse bg-gray-800" />
             ) : (
@@ -617,12 +619,15 @@ function EditeurVideo(p: PropsBloc) {
           <button type="button" onClick={() => p.ouvrirLibrairie(bloc.id)} className="text-sm font-semibold text-indigo-700 hover:underline">{t('📚 Choisir dans la librairie')}</button>
         </>
       )}
+      {source && (enLigne || estMediaPrive(source)) && (
+        <ReglagesVideo meta={meta(bloc)} onMeta={m => modifier(bloc.id, { metadata: m })} controle={controle} enLigne={!!enLigne} />
+      )}
       <label className="flex items-start gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
         <input type="checkbox" className="mt-0.5 w-4 h-4" checked={meta(bloc).obligatoire === true}
           onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), obligatoire: e.target.checked } }, true)} />
         <span>
           <strong>{t('Visionnement obligatoire')}</strong>
-          <span className="block text-xs text-gray-500">L’employé doit regarder au moins 90 % de la vidéo (sans avancer rapidement) pour pouvoir terminer la leçon.</span>
+          <span className="block text-xs text-gray-500">{t('L’employé doit regarder au moins 90 % de la vidéo (ou du passage), sans avancer rapidement, pour pouvoir terminer la leçon.')}</span>
         </span>
       </label>
     </div>

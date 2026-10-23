@@ -7,6 +7,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
 import { useT } from '@/lib/i18n/client'
+import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
+import { dureeARegarder, ecrireTemps, questionAPoser, type Passage, type QuestionVideo } from '@/lib/video-passage'
 
 const SEUIL_VISIONNEMENT = 0.9 // 90 % de la durée réellement regardée
 
@@ -66,115 +68,79 @@ function BandeauObligatoire({ vue, pourcentage }: { vue: boolean; pourcentage: n
 }
 
 // ---------------------------------------------------------------------------
-// Lecteurs vidéo
+// Lecteur de leçon : passage, visionnement obligatoire, questions en cours de vidéo
 
-declare global {
-  interface Window {
-    YT?: { Player: new (el: HTMLElement | string, opts: Record<string, unknown>) => { getCurrentTime: () => number; getDuration: () => number; getPlayerState: () => number; destroy: () => void } }
-    onYouTubeIframeAPIReady?: () => void
-    Vimeo?: { Player: new (el: HTMLElement) => { on: (ev: string, cb: (d: { seconds: number; duration: number }) => void) => void; destroy: () => void } }
-  }
-}
-
-function chargerScript(src: string): Promise<void> {
-  return new Promise((ok, ko) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      const attendre = () => (src.includes('youtube') ? window.YT?.Player : window.Vimeo?.Player) ? ok() : setTimeout(attendre, 100)
-      return attendre()
-    }
-    const s = document.createElement('script')
-    s.src = src
-    s.async = true
-    s.onerror = () => ko(new Error('script'))
-    if (src.includes('youtube')) {
-      const precedent = window.onYouTubeIframeAPIReady
-      window.onYouTubeIframeAPIReady = () => { precedent?.(); ok() }
-    } else s.onload = () => ok()
-    document.head.appendChild(s)
-  })
-}
-
-export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire }: {
+export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire, passage = null, questions = [] }: {
   blocId: string
   titre: string | null
   src: string
   plateforme: 'fichier' | 'youtube' | 'vimeo'
   idEnLigne?: string
   obligatoire: boolean
+  passage?: Passage | null
+  questions?: QuestionVideo[]
 }) {
   const { vue, pourcentage, avancer } = useCompteur(blocId, obligatoire)
   const { t } = useT()
-  const conteneur = useRef<HTMLDivElement>(null)
-  const hoteYouTube = useRef<HTMLDivElement>(null)
-  const dernier = useRef(0)
-  const refAvancer = useRef(avancer)
-  refAvancer.current = avancer
-  // Lecteur YouTube piloté par son API (créé hors de React) seulement si la vidéo est obligatoire
-  const youtubeSuivi = obligatoire && plateforme === 'youtube' && !!idEnLigne
+  const controle = useRef<ControleVideo | null>(null)
+  const dernier = useRef<number | null>(null)
+  const [repondues, setRepondues] = useState<string[]>([])
+  const [active, setActive] = useState<QuestionVideo | null>(null)
+  const [choix, setChoix] = useState<number | null>(null)
 
-  // YouTube / Vimeo : on lit la position toutes les secondes via leur API officielle
-  useEffect(() => {
-    if (!obligatoire || plateforme === 'fichier' || !conteneur.current) return
-    let detruit = false
-    let nettoyer = () => {}
-    const el = conteneur.current
-    if (youtubeSuivi && hoteYouTube.current) {
-      const hote = hoteYouTube.current
-      chargerScript('https://www.youtube.com/iframe_api').then(() => {
-        if (detruit || !window.YT) return
-        const cible = document.createElement('div')
-        hote.appendChild(cible)
-        const lecteur = new window.YT.Player(cible, {
-          videoId: idEnLigne, width: '100%', height: '100%',
-          host: 'https://www.youtube-nocookie.com',
-          playerVars: { rel: 0, modestbranding: 1 },
-        })
-        const minuterie = setInterval(() => {
-          try {
-            if (lecteur.getPlayerState() !== 1) return // 1 = en lecture
-            const t = lecteur.getCurrentTime()
-            refAvancer.current(t - dernier.current, lecteur.getDuration())
-            dernier.current = t
-          } catch { /* lecteur pas prêt */ }
-        }, 1000)
-        nettoyer = () => { clearInterval(minuterie); try { lecteur.destroy() } catch { /* */ } }
-      }).catch(() => {})
+  const onTemps = useCallback((temps: number, duree: number) => {
+    const precedent = dernier.current ?? temps
+    dernier.current = temps
+    avancer(temps - precedent, dureeARegarder(passage, duree))
+    if (!active) {
+      const q = questionAPoser(questions, repondues, temps)
+      if (q) { controle.current?.pause(); setActive(q); setChoix(null) }
     }
-    if (plateforme === 'vimeo') {
-      chargerScript('https://player.vimeo.com/api/player.js').then(() => {
-        const iframe = el.querySelector('iframe')
-        if (detruit || !window.Vimeo || !iframe) return
-        const lecteur = new window.Vimeo.Player(iframe)
-        lecteur.on('timeupdate', d => { refAvancer.current(d.seconds - dernier.current, d.duration); dernier.current = d.seconds })
-        nettoyer = () => { try { lecteur.destroy() } catch { /* */ } }
-      }).catch(() => {})
-    }
-    return () => { detruit = true; nettoyer() }
-  }, [obligatoire, plateforme, idEnLigne, youtubeSuivi])
+  }, [avancer, passage, questions, repondues, active])
+
+  const continuer = () => {
+    if (!active) return
+    setRepondues(r => [...r, active.id]); setActive(null); setChoix(null)
+    setTimeout(() => controle.current?.lecture(), 50)
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {titre && (
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900">🎬 {titre}</h3>
+          {passage && <p className="text-xs text-gray-500 mt-0.5">{t('Passage de {debut} à {fin}', { debut: ecrireTemps(passage.debut), fin: passage.fin ? ecrireTemps(passage.fin) : t('la fin') })}</p>}
         </div>
       )}
-      <div ref={conteneur} className="aspect-video bg-black [&>iframe]:w-full [&>iframe]:h-full [&_iframe]:w-full [&_iframe]:h-full">
-        {plateforme === 'fichier' ? (
-          <video
-            src={src} controls controlsList="nodownload" preload="metadata" className="w-full h-full"
-            onTimeUpdate={e => {
-              const v = e.currentTarget
-              avancer(v.currentTime - dernier.current, v.duration)
-              dernier.current = v.currentTime
-            }}
-            onSeeked={e => { dernier.current = e.currentTarget.currentTime }}
-          />
-        ) : youtubeSuivi ? (
-          <div ref={hoteYouTube} className="w-full h-full" />
-        ) : (
-          <iframe src={src} className="w-full h-full" allowFullScreen title={titre ?? t('Vidéo')}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+      <div className="relative aspect-video bg-black">
+        <LecteurVideo plateforme={plateforme} src={src} idEnLigne={idEnLigne} debut={passage?.debut ?? 0} fin={passage?.fin ?? null} titre={titre} onTemps={onTemps} controle={controle} />
+        {active && (
+          <div className="absolute inset-0 z-10 bg-black/75 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl w-full max-w-lg p-5 shadow-xl">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-1">❓ {t('Question')}</p>
+              <p className="font-semibold text-gray-900 mb-3">{active.question}</p>
+              <div className="space-y-2">
+                {active.choix.map((c, i) => {
+                  const repondu = choix !== null
+                  const bon = i === active.bonne
+                  const cls = !repondu ? 'border-gray-200 hover:border-indigo-400' : bon ? 'border-green-500 bg-green-50' : i === choix ? 'border-red-400 bg-red-50' : 'border-gray-200 opacity-60'
+                  return (
+                    <button key={i} type="button" disabled={repondu} onClick={() => setChoix(i)}
+                      className={'w-full text-left text-sm rounded-lg border px-3 py-2 ' + cls}>
+                      {String.fromCharCode(65 + i)}. {c}{repondu && bon ? ' ✓' : ''}
+                    </button>
+                  )
+                })}
+              </div>
+              {choix !== null && (
+                <div className="mt-3">
+                  <p className={'text-sm font-semibold ' + (choix === active.bonne ? 'text-green-700' : 'text-red-700')}>{choix === active.bonne ? t('Bonne réponse !') : t('Ce n’est pas la bonne réponse.')}</p>
+                  {active.explication && <p className="text-sm text-gray-600 mt-1">{active.explication}</p>}
+                  <button type="button" onClick={continuer} className="mt-3 px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: 'var(--accent-clinique, #4f46e5)' }}>▶ {t('Continuer la vidéo')}</button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
       {obligatoire && <BandeauObligatoire vue={vue} pourcentage={pourcentage} />}

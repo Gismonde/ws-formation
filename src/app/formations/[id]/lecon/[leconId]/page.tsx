@@ -15,6 +15,7 @@ import QuizInteractif from '@/components/lecon/QuizInteractif'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { lireQuiz } from '@/lib/quiz'
+import { passageDe, questionsDe } from '@/lib/video-passage'
 import { TexteRiche, STYLES_ENCADRE } from '@/lib/texte-riche'
 
 type ContentBlock = {
@@ -80,6 +81,8 @@ function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
       plateforme={enLigne ? enLigne.plateforme : 'fichier'}
       idEnLigne={enLigne?.id}
       obligatoire={bloc.metadata?.obligatoire === true}
+      passage={passageDe(bloc.metadata)}
+      questions={questionsDe(bloc.metadata)}
     />
   )
 }
