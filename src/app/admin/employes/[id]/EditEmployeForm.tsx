@@ -25,6 +25,7 @@ interface Props {
     peut_suivre_employes?: boolean | null
     peut_valider_formations?: boolean | null
     peut_creer_evenements?: boolean | null
+    peut_assigner_externes?: boolean | null
   }
   departements: DepartementOption[]
   modifiable: boolean
@@ -138,7 +139,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
         droits={droits} setDroits={setDroits}
       />
       <ChampExterne role={role} clinique={clinique} externe={externe} organisation={organisation}
-        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls} />
+        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
+        cmcPossible={!estGestionnaire && cliniquesPossibles.includes('CMC')} setClinique={estGestionnaire ? undefined : setClinique} />
       <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-indigo-600 rounded border-gray-300" />

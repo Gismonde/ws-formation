@@ -185,7 +185,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                     </span>
                     {emp.role === 'gestionnaire' && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                        {([['peut_suivre_employes', '👥', t('Suivi')], ['peut_creer_formations', '✏️', t('Formations')], ['peut_valider_formations', '✅', t('Validation')], ['peut_creer_evenements', '📅', t('Événements')]] as const)
+                        {([['peut_suivre_employes', '👥', t('Suivi')], ['peut_creer_formations', '✏️', t('Formations')], ['peut_valider_formations', '✅', t('Validation')], ['peut_creer_evenements', '📅', t('Événements')], ['peut_assigner_externes', '🤝', t('Externes')]] as const)
                           .filter(([cle]) => emp[cle]).map(([cle, icone, libelle]) => (
                             <span key={cle} style={{ padding: '1px 7px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>{icone} {libelle}</span>
                           ))}

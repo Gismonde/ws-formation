@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   } else if (employeId) {
     if (employeId !== acteur.id) {
       const { data: cible } = await serviceClient
-        .from('employes').select('id, clinique, departement_id').eq('id', employeId).single()
+        .from('employes').select('id, role, clinique, departement_id, externe').eq('id', employeId).single()
       if (!cible || !peutVoirEmploye(acteur, cible)) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
       }

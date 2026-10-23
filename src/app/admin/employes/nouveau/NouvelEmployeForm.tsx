@@ -132,7 +132,8 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
         droits={droits} setDroits={setDroits}
       />
       <ChampExterne role={form.role} clinique={form.clinique} externe={externe} organisation={organisation}
-        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls} />
+        setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
+        cmcPossible={cliniquesPossibles.includes('CMC')} setClinique={v => set('clinique', v)} />
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">

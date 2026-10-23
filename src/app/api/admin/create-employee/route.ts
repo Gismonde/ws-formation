@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       departement_id,
       poste: poste || null,
       ...(valeursExterne(body, role, clinique).externe ? valeursExterne(body, role, clinique) : {}),
-      ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT),
+      ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body, undefined, clinique) : AUCUN_DROIT),
       actif: true,
     })
     .select('id')
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     type_action: 'EMPLOYE_CREE',
     description: `${valeursExterne(body, role, clinique).externe ? 'Nouveau membre externe créé' : 'Nouvel employé créé'} : ${prenom} ${nom} (${email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
     cible_employe_id: newEmp?.id ?? null,
-    metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye, droits: changementsDroits(AUCUN_DROIT, (acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body) : AUCUN_DROIT) },
+    metadata: { role, clinique, departement_id, invitation_envoyee: invitation.courrielEnvoye, droits: changementsDroits(AUCUN_DROIT, (acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body, undefined, clinique) : AUCUN_DROIT) },
     ...ipEtAgent(request),
   })
 

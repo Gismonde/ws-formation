@@ -2,7 +2,7 @@
 
 import { useT } from '@/lib/i18n/client'
 import { CLINIQUE_EMPLOYE_LABEL, ROLE_LABEL, CliniqueEmploye, Role } from '@/lib/cliniques'
-import { DROITS_GESTIONNAIRE, type Droits } from '@/lib/droits'
+import { DROITS_GESTIONNAIRE, droitOffert, type Droits } from '@/lib/droits'
 
 export interface DepartementOption { id: string; nom: string; clinique: string | null }
 
@@ -90,7 +90,7 @@ export default function ChampsAcces(p: Props) {
       {p.afficherAutorisationCreation && p.role === 'gestionnaire' && p.droits && (
         <fieldset className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
           <legend className="text-sm font-semibold text-gray-800 px-1">{t('Droits du gestionnaire')}</legend>
-          {DROITS_GESTIONNAIRE.map(d => (
+          {DROITS_GESTIONNAIRE.filter(d => droitOffert(d, p.clinique)).map(d => (
             <label key={d.cle} className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" className="mt-0.5 w-4 h-4" disabled={p.disabled}
                 checked={p.droits![d.cle]} onChange={e => p.setDroits?.({ ...p.droits!, [d.cle]: e.target.checked })} />

@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
     // Droits du gestionnaire : modifiables par les administrateurs seulement ; retirés si la personne n'est plus gestionnaire
     const avant = droitsDe(cible)
     const apres = (acteur.role === 'super_admin' || acteur.role === 'admin')
-      ? droitsAEnregistrer(attribution.valeurs.role, body, avant)
+      ? droitsAEnregistrer(attribution.valeurs.role, body, avant, attribution.valeurs.clinique)
       : attribution.valeurs.role === 'gestionnaire' ? avant : { ...AUCUN_DROIT }
     Object.assign(updateData, apres)
     const changements = changementsDroits(avant, apres)

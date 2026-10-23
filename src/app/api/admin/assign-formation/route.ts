@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     if (type === 'employe') {
       const { data: emp } = await serviceRole
         .from('employes')
-        .select('id, role, clinique, departement_id')
+        .select('id, role, clinique, departement_id, externe')
         .eq('id', cibleId)
         .single()
       // Un acteur peut s'assigner une formation à lui-même

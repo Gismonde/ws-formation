@@ -35,6 +35,8 @@ export type Acteur = {
   peut_valider_formations?: boolean
   /** Gestionnaire autorisé à créer des événements en présentiel */
   peut_creer_evenements?: boolean
+  /** Gestionnaire (CMC) autorisé à assigner des formations aux membres externes */
+  peut_assigner_externes?: boolean
   /**
    * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
    * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
@@ -47,6 +49,7 @@ export type CibleEmploye = {
   role?: string | null
   clinique?: string | null
   departement_id?: string | null
+  externe?: boolean | null
 }
 
 export type DepartementRow = { id: string; nom: string; clinique: Clinique | null }
@@ -105,6 +108,7 @@ async function lireActeur(): Promise<Acteur | null> {
     peut_suivre_employes: data.peut_suivre_employes === true,
     peut_valider_formations: data.peut_valider_formations === true,
     peut_creer_evenements: data.peut_creer_evenements === true,
+    peut_assigner_externes: data.peut_assigner_externes === true,
     vue,
   }
 }
@@ -127,9 +131,15 @@ function gestionnaireSuivi(a: Acteur): boolean {
   return a.role === 'gestionnaire' && a.peut_suivre_employes === true
 }
 
-/** Suivre les employés (liste, progression, conformité, rappels). Admins : toujours. */
+/** Gestionnaire (CMC) qui peut assigner des formations aux membres externes de sa clinique. */
+function gestionnaireExternes(a: Acteur): boolean {
+  return a.role === 'gestionnaire' && a.peut_assigner_externes === true && cliniquesDe(a.clinique).includes('CMC')
+}
+
+/** Suivre des employés (liste, progression, conformité, rappels). Admins : toujours.
+ *  Gestionnaire : son département, et/ou les membres externes du CMC s'il en a le droit. */
 export function peutSuivreEmployes(a: Acteur | null): boolean {
-  return !!a && (estAdmin(a) || gestionnaireSuivi(a))
+  return !!a && (estAdmin(a) || gestionnaireSuivi(a) || gestionnaireExternes(a))
 }
 
 /** Valider les formations créées par d'autres. Admins : toujours. */
@@ -216,11 +226,20 @@ export function filtrerEmployes<Q extends { eq: any; in: any; or: any }>(query: 
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
     return query.or(`clinique.in.(${[...cl, 'LES_DEUX'].join(',')}),role.eq.super_admin`)
   }
-  if (gestionnaireSuivi(a) && a.departement_id) {
+  const suivi = gestionnaireSuivi(a) && !!a.departement_id
+  const externes = gestionnaireExternes(a) && dansLaVue(a, ['CMC']).length > 0
+  if (suivi && !externes) {
     // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
     const cl = dansLaVue(a, cliniquesDe(a.clinique))
     if (cl.length === 0) return query.eq('id', AUCUN_ID)
     return query.eq('departement_id', a.departement_id).in('clinique', [...cl, 'LES_DEUX'])
+  }
+  if (externes) {
+    // Membres externes du CMC (tous départements) + son département s'il a aussi le droit de suivi
+    const conditions = ['and(externe.eq.true,clinique.in.(CMC,LES_DEUX))']
+    const cl = dansLaVue(a, cliniquesDe(a.clinique))
+    if (suivi && cl.length) conditions.push(`and(departement_id.eq.${a.departement_id},clinique.in.(${[...cl, 'LES_DEUX'].join(',')}))`)
+    return query.or(conditions.join(','))
   }
   return query.eq('id', AUCUN_ID)
 }
@@ -230,10 +249,10 @@ export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
   const cl = cliniquesDe(cliniqueAffichee(c.clinique, c.role))
   if (a.role === 'super_admin') return !a.vue || cl.includes(a.vue)
   if (a.role === 'admin') return intersecte(cl, cliniquesAdministrees(a))
-  if (gestionnaireSuivi(a)) {
-    return !!a.departement_id && c.departement_id === a.departement_id
-      && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))
-  }
+  if (gestionnaireSuivi(a) && !!a.departement_id && c.departement_id === a.departement_id
+    && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))) return true
+  if (gestionnaireExternes(a) && c.externe === true && c.role === 'employe'
+    && cliniquesDe(c.clinique).includes('CMC') && dansLaVue(a, ['CMC']).length > 0) return true
   return false
 }
 
@@ -280,7 +299,7 @@ export function peutGererEmploye(a: Acteur, c: CibleEmploye): boolean {
     if (c.role === 'admin') return inclus(cliniquesDe(c.clinique), cliniquesAdministrees(a))
     return true
   }
-  if (gestionnaireSuivi(a)) return c.role === 'employe' && peutVoirEmploye(a, c)
+  if (gestionnaireSuivi(a)) return c.role === 'employe' && !!a.departement_id && c.departement_id === a.departement_id && peutVoirEmploye(a, c)
   return false
 }
 

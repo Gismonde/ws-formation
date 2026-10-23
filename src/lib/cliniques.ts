@@ -54,11 +54,12 @@ export type DroitsGestionnaire = {
   peut_suivre_employes?: boolean | null
   peut_valider_formations?: boolean | null
   peut_creer_evenements?: boolean | null
+  peut_assigner_externes?: boolean | null
 }
 
 /** Le gestionnaire a-t-il au moins un droit dans l'admin ? Sans droit, il n'a que le portail employé. */
 export function gestionnaireAvecDroits(d: DroitsGestionnaire): boolean {
-  return d.role === 'gestionnaire' && !!(d.peut_creer_formations || d.peut_suivre_employes || d.peut_valider_formations || d.peut_creer_evenements)
+  return d.role === 'gestionnaire' && !!(d.peut_creer_formations || d.peut_suivre_employes || d.peut_valider_formations || d.peut_creer_evenements || d.peut_assigner_externes)
 }
 
 /**

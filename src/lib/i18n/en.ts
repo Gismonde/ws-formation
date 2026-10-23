@@ -2124,4 +2124,7 @@ export const EN: Record<string, string> = {
   'Personne qui n’est pas employée de la clinique (partenaire, stagiaire, sous-traitant…). Mêmes fonctions et autorisations qu’un employé.': 'Someone who is not employed by the clinic (partner, intern, contractor…). Same features and permissions as an employee.',
   'Ex : GrS Montréal, CIUSSS…': 'e.g. GrS Montréal, CIUSSS…',
   'Membre externe créé avec succès !': 'External member created successfully!',
+  'Externes': 'External',
+  'Assigner des formations aux membres externes': 'Assign training to external members',
+  'Voir les membres externes du CMC (tous départements) et leur assigner des formations. Sans modifier leur fiche.': 'See CMC external members (all departments) and assign them training, without editing their profile.',
 }
