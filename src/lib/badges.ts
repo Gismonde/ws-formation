@@ -9,7 +9,7 @@ import { avancementJournees } from '@/lib/journees'
 import { politiquesDeLEmploye } from '@/lib/politiques'
 import { joursRestants } from '@/lib/expirations'
 
-export type Famille = 'parcours' | 'palier' | 'excellence' | 'conformite'
+export type Famille = 'parcours' | 'palier' | 'excellence' | 'conformite' | 'participation'
 export type Badge = {
   id: string
   famille: Famille
@@ -38,6 +38,30 @@ export function badgesPaliers(terminees: number): Badge[] {
     description: p.n === 1 ? 'Terminer une première formation' : `Terminer ${p.n} formations`,
     obtenu: terminees >= p.n, progression: { fait: Math.min(terminees, p.n), total: p.n },
   }))
+}
+
+/** Plus longue suite de mois consécutifs contenant au moins une date (fonction pure, testée) */
+export function moisConsecutifs(dates: string[]): number {
+  const mois = Array.from(new Set(dates.map(d => { const x = new Date(d); return x.getUTCFullYear() * 12 + x.getUTCMonth() }))).sort((a, b) => a - b)
+  let meilleur = 0, courant = 0
+  for (let i = 0; i < mois.length; i++) {
+    courant = i > 0 && mois[i] === mois[i - 1] + 1 ? courant + 1 : 1
+    meilleur = Math.max(meilleur, courant)
+  }
+  return meilleur
+}
+
+/** Thèmes reconnus d'après la catégorie ou le titre de la formation / politique */
+export const THEMES = {
+  infections: /infection|pci\b|hygi[eè]ne|st[ée]rilis|asepsie/i,
+  confidentialite: /confidentialit|renseignements personnels|loi\s*25|vie priv[ée]e|\bprp\b/i,
+}
+
+/** Badge d'un thème : au moins une formation terminée, aucune en attente (fonction pure, testée) */
+export function badgeTheme(formations: { complete: boolean }[], politiques: { confirmee: boolean }[] = []) {
+  const faites = formations.filter(f => f.complete).length + politiques.filter(p => p.confirmee).length
+  const total = formations.length + politiques.length
+  return { obtenu: formations.some(f => f.complete) && faites === total, progression: total ? { fait: faites, total } : undefined }
 }
 
 type EmployeBadges = { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }
@@ -95,9 +119,59 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges): Promi
   const expires = formationIds.filter(f => { const s = etat(e.id, f); return !!s.certificat && !s.certificat_valide }).length
   badges.push({
     id: 'conformite', famille: 'conformite', icone: '🛡️', titre: 'Conformité à jour',
-    description: 'Aucune formation en retard ni certificat expiré',
-    obtenu: (assignations ?? []).length > 0 && enRetard === 0 && expires === 0,
+    description: 'Au moins 2 formations terminées, aucune en retard ni certificat expiré',
+    // Pas dès le départ : au moins deux formations terminées
+    obtenu: terminees >= 2 && enRetard === 0 && expires === 0,
+    progression: terminees < 2 ? { fait: terminees, total: 2 } : undefined,
   })
+
+  // 5. Santé, sécurité et confidentialité
+  const { data: infos } = formationIds.length ? await sb.from('formations').select('id, titre, categorie, obligatoire').in('id', formationIds) : { data: [] }
+  const suivies = (infos ?? []).map(f => ({ ...f, complete: estComplete(etat(e.id, f.id as string).statut), texte: `${f.categorie ?? ''} ${f.titre ?? ''}` }))
+  const sst = badgeTheme(suivies.filter(f => f.obligatoire === true))
+  badges.push({ id: 'sst', famille: 'conformite', icone: '🦺', titre: 'SST formé', description: 'Toutes vos formations obligatoires LSST terminées', ...sst })
+  const pci = badgeTheme(suivies.filter(f => THEMES.infections.test(f.texte)))
+  badges.push({ id: 'infections', famille: 'conformite', icone: '🧼', titre: 'Prévention des infections', description: 'Vos formations en prévention et contrôle des infections terminées', ...pci })
+  const polsConf = (politiques as { titre?: string; confirme_le: string | null }[]).filter(p => THEMES.confidentialite.test(p.titre ?? ''))
+  const conf = badgeTheme(suivies.filter(f => THEMES.confidentialite.test(f.texte)), polsConf.map(p => ({ confirmee: !!p.confirme_le })))
+  badges.push({ id: 'confidentialite', famille: 'conformite', icone: '🔐', titre: 'Gardien de la confidentialité', description: 'Formations sur la confidentialité (Loi 25) terminées et politiques confirmées', ...conf })
+  // Renouvelé : certificat obtenu au moins deux fois pour la même formation, et valide aujourd'hui
+  const { data: emissions } = await sb.from('audit_logs').select('formation_id').in('type_action', ['CERTIFICAT_OBTENU', 'CERTIFICAT_EMIS_MANUELLEMENT'])
+    .or(`acteur_id.eq.${e.id},cible_employe_id.eq.${e.id}`).not('formation_id', 'is', null)
+  const parFormation = new Map<string, number>()
+  for (const x of emissions ?? []) parFormation.set(x.formation_id as string, (parFormation.get(x.formation_id as string) ?? 0) + 1)
+  const renouvele = Array.from(parFormation.entries()).some(([f, n]) => n >= 2 && etat(e.id, f).certificat_valide)
+  badges.push({ id: 'toujours_certifie', famille: 'conformite', icone: '♻️', titre: 'Toujours certifié', description: 'Un certificat renouvelé avant son expiration', obtenu: renouvele })
+
+  // 6. Participation
+  const [{ data: presences }, sondages, { data: preuves }, { data: lecons }] = await Promise.all([
+    sb.from('evenements_inscriptions').select('presence_le').eq('employe_id', e.id).eq('present', true),
+    sb.from('sondage_reponses').select('created_at').eq('employe_id', e.id),
+    sb.from('preuves_externes').select('valide_le').eq('employe_id', e.id).eq('statut', 'valide').order('valide_le'),
+    sb.from('lesson_progressions').select('date_fin, lessons(modules(formation_id))').eq('employe_id', e.id).eq('statut', 'termine'),
+  ])
+  const nbPresences = (presences ?? []).length
+  for (const [n, icone, titre] of [[1, '📅', 'Présent à un événement'], [3, '🗓️', 'Habitué des événements'], [10, '🎪', 'Pilier des événements']] as const) {
+    badges.push({
+      id: 'evenements:' + n, famille: 'participation', icone, titre,
+      description: n === 1 ? 'Présence confirmée à une formation en présentiel' : `Présence confirmée à ${n} formations en présentiel`,
+      obtenu: nbPresences >= n, progression: { fait: Math.min(nbPresences, n), total: n },
+    })
+  }
+  const nbSondages = (sondages.data ?? []).length
+  badges.push({ id: 'voix', famille: 'participation', icone: '💬', titre: 'Voix de l’équipe', description: '3 sondages de satisfaction remplis', obtenu: nbSondages >= 3, progression: { fait: Math.min(nbSondages, 3), total: 3 } })
+  badges.push({ id: 'externe', famille: 'participation', icone: '📎', titre: 'Formation externe', description: 'Une preuve de formation externe validée (congrès, cours…)', obtenu: (preuves ?? []).length > 0, le: (preuves?.[0]?.valide_le as string | null) ?? null })
+  // Régulier : date de fin de chaque formation terminée (certificat, sinon dernière leçon terminée)
+  const finParFormation = new Map<string, string>()
+  for (const l of (lecons ?? []) as { date_fin: string | null; lessons: unknown }[]) {
+    const le = l.lessons as { modules?: { formation_id?: string } | { formation_id?: string }[] } | null
+    const m = Array.isArray(le?.modules) ? le?.modules[0] : le?.modules
+    if (m?.formation_id && l.date_fin && (!finParFormation.has(m.formation_id) || finParFormation.get(m.formation_id)! < l.date_fin)) finParFormation.set(m.formation_id, l.date_fin)
+  }
+  const datesFin = formationIds.filter(f => estComplete(etat(e.id, f).statut))
+    .map(f => etat(e.id, f).certificat?.date_emission ?? finParFormation.get(f)).filter((d): d is string => !!d)
+  const suite = moisConsecutifs(datesFin)
+  badges.push({ id: 'regulier', famille: 'participation', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée 3 mois de suite', obtenu: suite >= 3, progression: { fait: Math.min(suite, 3), total: 3 } })
 
   return badges
 }

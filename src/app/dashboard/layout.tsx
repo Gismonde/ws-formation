@@ -94,10 +94,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <span>{t('Espace Admin')}</span>
             </Link>
           )}
-          <Link href="/logout" className="sidebar-logout-btn">
-            <span>🚪</span>
-            <span>{t('Déconnexion')}</span>
-          </Link>
+          <form action="/api/auth/signout" method="POST">
+            <button type="submit" className="sidebar-logout-btn">
+              <span>🚪</span>
+              <span>{t('Déconnexion')}</span>
+            </button>
+          </form>
         </div>
       </TiroirMenu>
 
@@ -143,7 +145,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         }
         .sidebar-admin-btn:hover { opacity: 0.88; }
         .sidebar-logout-btn {
-          display: flex; align-items: center; gap: 10px;
+          display: flex; align-items: center; gap: 10px; width: 100%; background: transparent; border: none; cursor: pointer; font-family: inherit; text-align: left;
           padding: 10px 13px; border-radius: 10px;
           color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px;
         }
