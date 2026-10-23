@@ -11,6 +11,8 @@ type Props = {
   publiee: boolean
   /** Peut gérer la formation (envoyer en validation, annuler) */
   peutGerer: boolean
+  /** Administrateur : la validation est facultative */
+  admin?: boolean
   /** La personne connectée est le validateur désigné */
   estValidateur: boolean
   validateur: string | null
@@ -78,6 +80,7 @@ export default function PanneauValidation(p: Props) {
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Validation')}</p>
           <p className="font-semibold text-gray-900 mt-0.5">{titre[p.statut]}</p>
           <p className="text-sm text-gray-600 mt-1">{explication[p.statut]}</p>
+          {p.admin && p.statut !== 'approuvee' && <p className="text-xs text-gray-500 mt-1">{t('Facultatif pour les administrateurs : vous pouvez publier directement, ou demander une relecture.')}</p>}
           {p.commentaire && p.statut !== 'brouillon' && (
             <p className="text-sm text-gray-800 mt-2 bg-white/70 border border-gray-200 rounded-lg px-3 py-2 whitespace-pre-line">💬 {p.commentaire}</p>
           )}

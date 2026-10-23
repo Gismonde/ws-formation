@@ -41,6 +41,11 @@ export function validationActive(f: object): boolean {
   return 'statut_validation' in f
 }
 
+/** Publication par cet acteur : les administrateurs publient sans validation ; les autres, une fois approuvée. */
+export function publicationPermise(a: { role: string } | null, f: FormationValidation): boolean {
+  return (!!a && (a.role === 'super_admin' || a.role === 'admin')) || peutEtrePubliee(f)
+}
+
 /** Peut-on publier (première publication ou nouvelle version) ? */
 export function peutEtrePubliee(f: FormationValidation): boolean {
   return !validationActive(f) || statutDe(f) === 'approuvee'

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCreateurFormations } from '@/lib/permissions'
 import type { Lesson, ContentBlock, ContentBlockType, LessonAvecBlocs } from '@/lib/types/formation'
 import type { ActionResult } from './formations'
+import { refusPourModule, refusPourLecon, refusPourBloc } from '@/lib/droits-formation'
 
 // Les blocs sont renvoyés sous la clé « blocs », triés par ordre
 function trierBlocs<T extends { blocs?: { ordre: number }[] | null }>(l: T): T {
@@ -35,6 +36,7 @@ export async function createLesson(payload: { module_id: string; titre: string; 
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourModule(acteur, payload.module_id); if (refus) return { success: false, error: refus } }
   const { data, error } = await supabase.from('lessons').insert(payload).select().single()
   if (error) return { success: false, error: error.message }
   { const f = await formationDuModule(payload.module_id); await noterModification(acteur, f?.formationId, `Leçon « ${payload.titre} » ajoutée au module « ${f?.module ?? ''} »`) }
@@ -47,6 +49,7 @@ export async function updateLesson(lessonId: string, payload: Partial<{ titre: s
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourLecon(acteur, lessonId); if (refus) return { success: false, error: refus } }
   const { data, error } = await supabase.from('lessons').update(payload).eq('id', lessonId).select().single()
   if (error) return { success: false, error: error.message }
   { const f = await formationDeLaLecon(lessonId); await noterModification(acteur, f?.formationId, `Leçon « ${f?.lecon ?? ''} » modifiée`, 'lecon:' + lessonId) }
@@ -59,6 +62,7 @@ export async function deleteLesson(lessonId: string): Promise<ActionResult> {
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourLecon(acteur, lessonId); if (refus) return { success: false, error: refus } }
   const f = await formationDeLaLecon(lessonId)
   const { error } = await supabase.from('lessons').delete().eq('id', lessonId)
   if (error) return { success: false, error: error.message }
@@ -72,6 +76,7 @@ export async function reorderLessons(moduleId: string, ordre: { id: string; ordr
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourModule(acteur, moduleId); if (refus) return { success: false, error: refus } }
   await Promise.all(ordre.map(({ id, ordre: o }) =>
     supabase.from('lessons').update({ ordre: o }).eq('id', id).eq('module_id', moduleId)
   ))
@@ -85,6 +90,7 @@ export async function createContentBlock(payload: { lesson_id: string; type: Con
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourLecon(acteur, payload.lesson_id); if (refus) return { success: false, error: refus } }
   const { data, error } = await supabase.from('content_blocks').insert(payload).select().single()
   if (error) return { success: false, error: error.message }
   { const f = await formationDeLaLecon(payload.lesson_id); await noterModification(acteur, f?.formationId, `Contenu de la leçon « ${f?.lecon ?? ''} » modifié`, 'contenu:' + payload.lesson_id) }
@@ -97,6 +103,7 @@ export async function updateContentBlock(blocId: string, payload: Partial<{ titr
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourBloc(acteur, blocId); if (refus) return { success: false, error: refus } }
   const { data, error } = await supabase.from('content_blocks').update(payload).eq('id', blocId).select().single()
   if (error) return { success: false, error: error.message }
   { const f = await formationDuBloc(blocId); await noterModification(acteur, f?.formationId, `Contenu de la leçon « ${f?.lecon ?? ''} » modifié`, 'contenu:' + f?.leconId) }
@@ -109,6 +116,7 @@ export async function deleteContentBlock(blocId: string): Promise<ActionResult> 
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourBloc(acteur, blocId); if (refus) return { success: false, error: refus } }
   const f = await formationDuBloc(blocId)
   const { error } = await supabase.from('content_blocks').delete().eq('id', blocId)
   if (error) return { success: false, error: error.message }
@@ -122,6 +130,7 @@ export async function reorderContentBlocks(lessonId: string, ordre: { id: string
   if (!user) return { success: false, error: 'Non authentifié' }
   const acteur = await getCreateurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusPourLecon(acteur, lessonId); if (refus) return { success: false, error: refus } }
   await Promise.all(ordre.map(({ id, ordre: o }) =>
     supabase.from('content_blocks').update({ ordre: o }).eq('id', id).eq('lesson_id', lessonId)
   ))

@@ -2113,4 +2113,6 @@ export const EN: Record<string, string> = {
   'Journée de formation : {titre}': 'Training day: {titre}',
   'Sélectionnez une leçon ou un module dans la colonne de gauche pour le modifier.': 'Select a lesson or a module in the left column to edit it.',
   'Cette formation n’a pas encore de contenu. Commencez par créer un module.': 'This training has no content yet. Start by creating a module.',
+  'Facultatif pour les administrateurs : vous pouvez publier directement, ou demander une relecture.': 'Optional for administrators: you can publish directly, or ask for a review.',
+  'Facultatif pour les administrateurs : vous pouvez publier directement, ou demander une relecture.': 'Optional for administrators: you can publish directly, or ask for a review.',
 }

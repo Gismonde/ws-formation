@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
-import { getActeur, peutCreerFormations, cliniquesContenuGerables, peutGererContenu } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, cliniquesContenuGerables } from '@/lib/permissions'
+import { peutModifierFormation } from '@/lib/droits-formation'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
@@ -55,8 +56,10 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const idsNoms = [fv.validateur_id, fv.validation_demandee_par, fv.validee_par].filter(Boolean) as string[]
   const { data: nomsBruts } = idsNoms.length ? await serviceClient().from('employes').select('id, prenom, nom').in('id', idsNoms) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }
   const nomDe = (i: string | null | undefined) => { const e = (nomsBruts ?? []).find(x => x.id === i); return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : null }
-  const peutGererCetteFormation = !!acteurCourant && peutCreer && peutGererContenu(acteurCourant, formation.clinique)
-  const approuvee = !avecValidation || statut === 'approuvee'
+  const peutGererCetteFormation = !!acteurCourant && peutModifierFormation(acteurCourant, formation as { clinique: string | null; creee_par?: string | null })
+  // Les administrateurs publient sans validation obligatoire
+  const estAdmin = acteurCourant?.role === 'super_admin' || acteurCourant?.role === 'admin'
+  const approuvee = !avecValidation || statut === 'approuvee' || estAdmin
   // Copie de travail : cette fiche est-elle une copie, ou la formation a-t-elle une copie en cours ?
   const copieDe = (formation as { copie_de?: string | null }).copie_de ?? null
   const { data: originalBrut } = copieDe ? await serviceClient().from('formations').select('id, titre, version, publiee_le').eq('id', copieDe).maybeSingle() : { data: null }
@@ -135,9 +138,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </div>
             {peutCreer && !copieDe && (
               <div className="flex items-start gap-2">
-                {formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
+                {peutGererCetteFormation && formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
-                <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} />
+                {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} />}
               </div>
             )}
           </div>
@@ -182,7 +185,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
         {avecValidation && (peutGererCetteFormation || fv.validateur_id === acteurCourant?.id) && (
           <PanneauValidation
             formationId={id} statut={statut} publiee={!!formation.publiee}
-            peutGerer={peutGererCetteFormation} estValidateur={!!acteurCourant && fv.validateur_id === acteurCourant.id}
+            peutGerer={peutGererCetteFormation} admin={estAdmin} estValidateur={!!acteurCourant && fv.validateur_id === acteurCourant.id}
             validateur={nomDe(fv.validateur_id)} demandeur={nomDe(fv.validation_demandee_par)} demandeeLe={fv.validation_demandee_le ?? null}
             decisionLe={fv.validation_le ?? null} valideePar={nomDe(fv.validee_par)} commentaire={fv.validation_commentaire ?? null}
           />
@@ -190,7 +193,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
 
         {/* Actions principales */}
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mb-8">
-          {peutCreer && (
+          {peutGererCetteFormation && (
             <Link
               href={"/admin/formations/" + id + "/editeur"}
               className="flex flex-col items-center gap-2 p-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-center"
@@ -202,7 +205,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <span className="text-xs text-indigo-200">{t('Modules et leçons')}</span>
             </Link>
           )}
-          {peutCreer && (
+          {peutGererCetteFormation && (
             <Link
               href={"/admin/formations/" + id + "/modifier"}
               className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"
@@ -270,7 +273,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">{t('Structure du cours')}</h2>
-            {peutCreer && (
+            {peutGererCetteFormation && (
               <Link
                 href={"/admin/formations/" + id + "/editeur"}
                 className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
@@ -287,7 +290,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             <div className="py-12 text-center">
               <div className="text-4xl mb-3">📚</div>
               <p className="text-gray-500 mb-4">Aucun module pour l&apos;instant</p>
-              {peutCreer && (
+              {peutGererCetteFormation && (
                 <Link
                   href={"/admin/formations/" + id + "/editeur"}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors font-medium"
