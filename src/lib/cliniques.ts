@@ -6,8 +6,8 @@ export type Role = 'super_admin' | 'admin' | 'gestionnaire' | 'employe'
 
 export const CLINIQUES: Clinique[] = ['CMC', 'WSSC']
 
-export const CLINIQUE_INFO: Record<Clinique, { nom: string; court: string; logo: string; couleur: string; fond: string }> = {
-  CMC: { nom: 'Centre Métropolitain de Chirurgie', court: 'CMC', logo: '/logos/cmc.png', couleur: '#8a7a6b', fond: '#f5f1ec' },
+export const CLINIQUE_INFO: Record<Clinique, { nom: string; court: string; logo: string; couleur: string; fond: string; partenaires?: { logo: string; nom: string }[] }> = {
+  CMC: { nom: 'Centre Métropolitain de Chirurgie', court: 'CMC', logo: '/logos/cmc.png', couleur: '#8a7a6b', fond: '#f5f1ec', partenaires: [{ logo: '/logos/grs-montreal.png', nom: 'GrS Montréal' }] },
   WSSC: { nom: 'Westmount Square Surgical Center', court: 'WSSC', logo: '/logos/wssc.png', couleur: '#1e3a6e', fond: '#eef2fa' },
 }
 
