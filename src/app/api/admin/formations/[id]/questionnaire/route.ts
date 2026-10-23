@@ -3,14 +3,16 @@ import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, peutCreerFormations, peutGererContenu, ipEtAgent } from '@/lib/permissions'
 import { lireQuestionnaire, validerQuestionnaire, enregistrerQuestionnaire } from '@/lib/questionnaire-edition'
 import { logAudit } from '@/lib/audit'
+import { peutModifierFormation, REFUS_MODIFICATION } from '@/lib/droits-formation'
 
 async function autoriser(id: string) {
   const acteur = await getActeur()
   if (!acteur || !peutCreerFormations(acteur)) return { erreur: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
   const sb = serviceClient()
-  const { data: f } = await sb.from('formations').select('id, titre, clinique').eq('id', id).maybeSingle()
+  const { data: f } = await sb.from('formations').select('id, titre, clinique, creee_par').eq('id', id).maybeSingle()
   if (!f) return { erreur: NextResponse.json({ error: 'Formation introuvable' }, { status: 404 }) }
   if (!peutGererContenu(acteur, f.clinique)) return { erreur: NextResponse.json({ error: 'Formation hors de votre périmètre' }, { status: 403 }) }
+  if (!peutModifierFormation(acteur, f)) return { erreur: NextResponse.json({ error: REFUS_MODIFICATION }, { status: 403 }) }
   return { acteur, sb, f }
 }
 

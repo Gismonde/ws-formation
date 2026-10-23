@@ -4,14 +4,16 @@ import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, peutCreerFormations, peutGererContenu } from '@/lib/permissions'
 import { blocsEnAttente, correspondances, blocDepuisElement } from '@/lib/brancher-librairie'
 import { logAudit } from '@/lib/audit'
+import { peutModifierFormation, REFUS_MODIFICATION } from '@/lib/droits-formation'
 
 async function preparer(id: string) {
   const acteur = await getActeur()
   if (!acteur || !peutCreerFormations(acteur)) return { erreur: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
   const sb = serviceClient()
-  const { data: f } = await sb.from('formations').select('id, titre, clinique').eq('id', id).maybeSingle()
+  const { data: f } = await sb.from('formations').select('id, titre, clinique, creee_par').eq('id', id).maybeSingle()
   if (!f) return { erreur: NextResponse.json({ error: 'Formation introuvable' }, { status: 404 }) }
   if (!peutGererContenu(acteur, f.clinique)) return { erreur: NextResponse.json({ error: 'Formation hors de votre périmètre' }, { status: 403 }) }
+  if (!peutModifierFormation(acteur, f)) return { erreur: NextResponse.json({ error: REFUS_MODIFICATION }, { status: 403 }) }
   const cliniques = f.clinique === 'LES_DEUX' ? ['CMC', 'WSSC', 'LES_DEUX'] : [f.clinique ?? 'LES_DEUX', 'LES_DEUX']
   const { data: elements } = await sb.from('librairie').select('id, titre, type, url, nom_fichier').eq('archive', false).in('clinique', cliniques)
   const liste = correspondances(await blocsEnAttente(sb, id), elements ?? [])

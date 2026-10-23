@@ -6,7 +6,8 @@
 import { serviceClient, peutCreerFormations, peutGererContenu, type Acteur } from '@/lib/permissions'
 import { dupliquerFormation } from '@/lib/dupliquer-formation'
 import { logAudit } from '@/lib/audit'
-import { peutEtrePubliee, type FormationValidation } from '@/lib/validation-formation'
+import { publicationPermise, type FormationValidation } from '@/lib/validation-formation'
+import { refusModification } from '@/lib/droits-formation'
 import type { CliniqueContenu } from '@/lib/cliniques'
 
 type Resultat<T> = { ok: true; data: T } | { ok: false; erreur: string; statut?: number }
@@ -37,6 +38,7 @@ export async function creerCopieTravail(acteur: Acteur, formationId: string): Pr
   if (!('copie_de' in f)) return { ok: false, erreur: 'Exécutez d’abord supabase/migrations/copie_travail.sql dans Supabase.' }
   if (f.copie_de) return { ok: false, erreur: 'Cette formation est déjà une copie de travail.' }
   if (!peutGererContenu(acteur, f.clinique)) return { ok: false, erreur: 'Formation hors de votre périmètre', statut: 403 }
+  { const refus = await refusModification(acteur, formationId); if (refus) return { ok: false, erreur: refus, statut: 403 } }
   const deja = await copieEnCours(formationId)
   if (deja) return { ok: true, data: { id: deja.id, existante: true } }
   try {
@@ -62,7 +64,8 @@ export async function appliquerCopieTravail(acteur: Acteur, copieId: string, not
   const { data: copie } = await sb.from('formations').select('*').eq('id', copieId).maybeSingle()
   if (!copie?.copie_de) return { ok: false, erreur: 'Copie de travail introuvable', statut: 404 }
   if (!peutGererContenu(acteur, copie.clinique)) return { ok: false, erreur: 'Formation hors de votre périmètre', statut: 403 }
-  if (!peutEtrePubliee(copie as FormationValidation)) return { ok: false, erreur: 'La copie doit d’abord être approuvée par un validateur.' }
+  if (!publicationPermise(acteur, copie as FormationValidation)) return { ok: false, erreur: 'La copie doit d’abord être approuvée par un validateur.' }
+  { const refus = await refusModification(acteur, copie.copie_de as string); if (refus) return { ok: false, erreur: refus, statut: 403 } }
   const texte = note.trim().slice(0, 1000)
   if (!texte) return { ok: false, erreur: 'Décrivez ce qui a changé dans cette version.' }
   const origId = copie.copie_de as string
