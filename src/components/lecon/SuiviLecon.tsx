@@ -8,6 +8,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
 import { useT } from '@/lib/i18n/client'
 import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
+import BlocInteractif from '@/components/lecon/BlocInteractif'
+import type { DonneesInteractif } from '@/lib/blocs-interactifs'
 import { dureeARegarder, ecrireTemps, questionAPoser, type Passage, type QuestionVideo } from '@/lib/video-passage'
 
 const SEUIL_VISIONNEMENT = 0.9 // 90 % de la durée réellement regardée
@@ -70,7 +72,8 @@ function BandeauObligatoire({ vue, pourcentage }: { vue: boolean; pourcentage: n
 // ---------------------------------------------------------------------------
 // Lecteur de leçon : passage, visionnement obligatoire, questions en cours de vidéo
 
-export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire, passage = null, questions = [] }: {
+export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire, passage = null, questions = [], boucle = false }: {
+  boucle?: boolean
   blocId: string
   titre: string | null
   src: string
@@ -113,7 +116,7 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
         </div>
       )}
       <div className="relative aspect-video bg-black">
-        <LecteurVideo plateforme={plateforme} src={src} idEnLigne={idEnLigne} debut={passage?.debut ?? 0} fin={passage?.fin ?? null} titre={titre} onTemps={onTemps} controle={controle} />
+        <LecteurVideo plateforme={plateforme} src={src} idEnLigne={idEnLigne} debut={passage?.debut ?? 0} fin={passage?.fin ?? null} titre={titre} onTemps={onTemps} controle={controle} boucle={boucle && plateforme === 'fichier'} />
         {active && (
           <div className="absolute inset-0 z-10 bg-black/75 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-xl w-full max-w-lg p-5 shadow-xl">
@@ -143,7 +146,7 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
           </div>
         )}
       </div>
-      {obligatoire && <BandeauObligatoire vue={vue} pourcentage={pourcentage} />}
+      {obligatoire && !boucle && <BandeauObligatoire vue={vue} pourcentage={pourcentage} />}
     </div>
   )
 }
@@ -157,7 +160,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
   lessonId: string
   attestationRequise: boolean
   texteAttestation: string
-  videosObligatoires: { id: string; titre: string | null }[]
+  videosObligatoires: { id: string; titre: string | null; nature?: 'video' | 'exercice' }[]
   etat: EtatSuivi
   suiviActif: boolean
 }) {
@@ -223,7 +226,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
         <ul className="space-y-1 text-sm">
           {videosObligatoires.map(v => (
             <li key={v.id} className={videosVues.includes(v.id) ? 'text-green-700' : 'text-gray-600'}>
-              {videosVues.includes(v.id) ? '✅' : '⏳'} {t('Vidéo « {titre} » regardée en entier', { titre: v.titre || t('sans titre') })}
+              {videosVues.includes(v.id) ? '✅' : '⏳'} {v.nature === 'exercice' ? t('Exercice « {titre} » réussi', { titre: v.titre || t('sans titre') }) : t('Vidéo « {titre} » regardée en entier', { titre: v.titre || t('sans titre') })}
             </li>
           ))}
         </ul>
@@ -244,8 +247,44 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
         {enCours ? t('Enregistrement…') : `✓ ${t('Terminer la leçon')}`}
       </button>
       {!pret && videosRestantes.length > 0 && (
-        <p className="text-xs text-gray-500">{videosRestantes.length > 1 ? t('Regardez d’abord les vidéos obligatoires en entier.') : t('Regardez d’abord la vidéo obligatoire en entier.')}</p>
+        <p className="text-xs text-gray-500">{videosRestantes.some(v => v.nature === 'exercice') ? t('Terminez d’abord les vidéos et exercices obligatoires.') : videosRestantes.length > 1 ? t('Regardez d’abord les vidéos obligatoires en entier.') : t('Regardez d’abord la vidéo obligatoire en entier.')}</p>
       )}
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Exercices interactifs et apparition progressive
+
+/** Bloc interactif ; un exercice réussi est noté (exigé pour terminer la leçon s'il est obligatoire). */
+export function ExerciceSuivi({ blocId, titre, d, urls }: { blocId: string; titre: string | null; d: DonneesInteractif; urls: Record<string, string> }) {
+  const { marquerVue, videosVues } = useSuivi()
+  const { t } = useT()
+  const fait = videosVues.includes(blocId)
+  return (
+    <div>
+      <BlocInteractif titre={titre} d={d} urls={urls} onReussi={() => marquerVue(blocId)} />
+      {d.obligatoire && <p className={'text-xs mt-1 ' + (fait ? 'text-green-700' : 'text-amber-700')}>{fait ? '✅ ' + t('Exercice réussi') : '🎯 ' + t('Exercice obligatoire pour terminer la leçon')}</p>}
+    </div>
+  )
+}
+
+/** Fait apparaître le bloc en douceur quand il arrive à l'écran. */
+export function Apparition({ actif, children }: { actif: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(!actif)
+  useEffect(() => {
+    if (!actif || !ref.current) return
+    const reduit = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduit) { setVisible(true); return }
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); o.disconnect() } }, { threshold: 0.12 })
+    o.observe(ref.current)
+    return () => o.disconnect()
+  }, [actif])
+  return (
+    <div ref={ref} style={actif ? { opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'opacity .6s ease, transform .6s ease' } : undefined}>
+      {children}
+    </div>
+  )
+}
+

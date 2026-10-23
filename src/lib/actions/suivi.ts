@@ -50,7 +50,8 @@ export async function enregistrerVideoVue(blocId: string): Promise<Resultat> {
   if (!ctx) return { ok: false, erreur: 'Non authentifié' }
   const sb = serviceClient()
   const { data: bloc } = await sb.from('content_blocks').select('id, lesson_id, type').eq('id', blocId).single()
-  if (!bloc || bloc.type !== 'video') return { ok: false, erreur: 'Vidéo introuvable' }
+  // Vidéo regardée en entier, ou exercice interactif réussi
+  if (!bloc || (bloc.type !== 'video' && bloc.type !== 'interactif')) return { ok: false, erreur: 'Bloc introuvable' }
   const { error } = await sb.from('preuves_lecture').insert({
     employe_id: ctx.acteur.id, lesson_id: bloc.lesson_id, bloc_id: blocId, type: 'video_complete',
     ip_address: ctx.ip, user_agent: ctx.ua,
@@ -117,6 +118,8 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
   for (const b of blocs ?? []) {
     const obligatoire = b.type === 'video' && (b.metadata as Record<string, unknown> | null)?.obligatoire === true
     if (obligatoire && !etat.videosVues.includes(b.id)) manquants.push(`Regarder la vidéo « ${b.titre || 'sans titre'} » en entier`)
+    const exercice = b.type === 'interactif' && (b.metadata as Record<string, unknown> | null)?.obligatoire === true
+    if (exercice && !etat.videosVues.includes(b.id)) manquants.push(`Réussir l’exercice « ${b.titre || 'sans titre'} »`)
   }
   if (lecon.attestation_requise && !etat.attestationLe) manquants.push("Cocher « J'ai lu et compris »")
   if (manquants.length) return { ok: false, erreur: 'Leçon incomplète', manquants }

@@ -2,7 +2,7 @@
 // Course -> Modules -> Lessons -> Content Blocks
 
 export type NiveauFormation = 'debutant' | 'intermediaire' | 'avance'
-export type ContentBlockType = 'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image'
+export type ContentBlockType = 'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image' | 'interactif'
 export type StatutProgression = 'non_commence' | 'en_cours' | 'termine'
 export type StatutValiditeCertificat = 'permanent' | 'valide' | 'bientot_expire' | 'expire'
 

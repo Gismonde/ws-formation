@@ -73,6 +73,12 @@ export default function ReglagesVideo({ meta, onMeta, controle, enLigne }: {
         )}
       </div>
 
+      {!enLigne && (
+        <label className="flex items-start gap-2 text-sm text-gray-700 bg-violet-50 border border-violet-200 rounded-lg p-3 cursor-pointer">
+          <input type="checkbox" className="mt-0.5 w-4 h-4" checked={meta.boucle === true} onChange={e => onMeta({ ...meta, boucle: e.target.checked })} />
+          <span><strong>{t('Extrait en boucle (comme un GIF)')}</strong><span className="block text-xs text-gray-500">{t('Lecture automatique, en boucle et sans son, sans commandes. Idéal pour une courte animation (quelques secondes).')}</span></span>
+        </label>
+      )}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-800">❓ {t('Questions en cours de vidéo')} <span className="text-xs font-normal text-gray-500">({questions.length})</span></span>

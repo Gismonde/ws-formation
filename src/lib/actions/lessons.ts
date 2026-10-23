@@ -41,7 +41,7 @@ export async function createLesson(payload: { module_id: string; titre: string; 
   return { success: true, data: data as Lesson }
 }
 
-export async function updateLesson(lessonId: string, payload: Partial<{ titre: string; description: string; ordre: number; duree_minutes: number; obligatoire: boolean; attestation_requise: boolean; texte_attestation: string | null }>): Promise<ActionResult<Lesson>> {
+export async function updateLesson(lessonId: string, payload: Partial<{ titre: string; description: string; ordre: number; duree_minutes: number; obligatoire: boolean; attestation_requise: boolean; texte_attestation: string | null; apparition_progressive: boolean }>): Promise<ActionResult<Lesson>> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
