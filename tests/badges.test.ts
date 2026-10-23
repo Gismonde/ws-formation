@@ -31,3 +31,18 @@ describe('badges supplémentaires', () => {
     expect(THEMES.confidentialite.test('Loi 25 et protection des renseignements personnels')).toBe(true)
   })
 })
+
+import { appliquerReglages, seuilsDe, CONFIG_VIDE } from '@/lib/badges'
+describe('réglages des badges', () => {
+  const base = [...badgesPaliers(3), { id: 'sst', famille: 'conformite' as const, icone: '🦺', titre: 'SST formé', description: 'd', obtenu: true }]
+  it('désactive et renomme', () => {
+    const r = appliquerReglages(base, { reglages: { palier: { actif: false }, sst: { actif: true, titre: 'Santé-sécurité', icone: '⛑️' } }, perso: [] })
+    expect(r.map(b => b.id)).toEqual(['sst'])
+    expect(r[0]).toMatchObject({ titre: 'Santé-sécurité', icone: '⛑️' })
+  })
+  it('seuils réglés, triés, valeurs par défaut sinon', () => {
+    expect(seuilsDe(CONFIG_VIDE, 'palier')).toEqual([1, 5, 10, 25])
+    expect(seuilsDe({ reglages: { palier: { actif: true, seuils: [20, 3, 3] } }, perso: [] }, 'palier')).toEqual([3, 20])
+    expect(badgesPaliers(4, [3, 20]).map(b => b.obtenu)).toEqual([true, false])
+  })
+})

@@ -9,6 +9,7 @@ const FAMILLES: { id: Famille; titre: string }[] = [
   { id: 'excellence', titre: 'Excellence' },
   { id: 'conformite', titre: 'Conformité, santé et sécurité' },
   { id: 'participation', titre: 'Participation' },
+  { id: 'perso', titre: 'Badges de la clinique' },
 ]
 
 export function CarteBadge({ b, t, loc }: { b: Badge; t: Traducteur; loc: string }) {
@@ -21,7 +22,7 @@ export function CarteBadge({ b, t, loc }: { b: Badge; t: Traducteur; loc: string
     }}>
       <span aria-hidden style={{ fontSize: '36px', lineHeight: 1, filter: b.obtenu ? 'none' : 'grayscale(1)', opacity: b.obtenu ? 1 : 0.45 }}>{b.icone}</span>
       <span style={{ fontWeight: 700, fontSize: '14px', color: b.obtenu ? '#111827' : '#6b7280' }}>{t(b.titre, b.vars)}</span>
-      <span style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.4 }}>{t(b.description)}</span>
+      <span style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.4 }}>{t(b.description, b.vars)}</span>
       {b.obtenu ? (
         <span style={{ marginTop: 'auto', fontSize: '11px', fontWeight: 700, color: '#16a34a' }}>
           ✓ {b.le ? t('Obtenu le {date}', { date: new Date(b.le).toLocaleDateString(loc, { dateStyle: 'medium' }) }) : t('Obtenu')}
