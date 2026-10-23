@@ -16,6 +16,8 @@ type Props = {
   /** Appelé environ deux fois par seconde pendant la lecture */
   onTemps?: (temps: number, duree: number) => void
   controle?: React.MutableRefObject<ControleVideo | null>
+  /** Petit extrait téléversé joué en boucle, sans son ni commandes (comme un GIF) */
+  boucle?: boolean
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -38,7 +40,7 @@ function chargerScript(src: string, pret: () => boolean): Promise<void> {
   })
 }
 
-export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fin = null, titre, onTemps, controle }: Props) {
+export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fin = null, titre, onTemps, controle, boucle = false }: Props) {
   const hote = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const rappel = useRef(onTemps)
@@ -120,6 +122,9 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
     return () => { controle.current = null }
   }, [plateforme, controle, src])
 
+  if (plateforme === 'fichier' && boucle) {
+    return <video src={src} autoPlay muted loop playsInline className="w-full h-full object-contain" aria-label={titre ?? undefined} />
+  }
   if (plateforme === 'fichier') {
     return (
       <video

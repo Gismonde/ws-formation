@@ -6,7 +6,8 @@ import { upsertLessonProgression } from '@/lib/actions/progressions'
 import { getEtatSuivi } from '@/lib/actions/suivi'
 import { modeApercu } from '@/lib/apercu-employe'
 import { serviceClient } from '@/lib/permissions'
-import { FournisseurSuivi, VideoSuivie, FinDeLecon } from '@/components/lecon/SuiviLecon'
+import { FournisseurSuivi, VideoSuivie, FinDeLecon, ExerciceSuivi, Apparition } from '@/components/lecon/SuiviLecon'
+import { estComplet, refsMedias, type DonneesInteractif } from '@/lib/blocs-interactifs'
 import { texteAttestationDefaut } from '@/lib/suivi-constantes'
 import { i18n } from '@/lib/i18n/serveur'
 import type { Traducteur } from '@/lib/i18n/base'
@@ -20,7 +21,7 @@ import { TexteRiche, STYLES_ENCADRE } from '@/lib/texte-riche'
 
 type ContentBlock = {
   id: string
-  type: 'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image'
+  type: 'text' | 'video' | 'quiz' | 'slide' | 'file' | 'image' | 'interactif'
   titre: string | null
   contenu: string | null
   url: string | null
@@ -48,6 +49,7 @@ function source(bloc: ContentBlock, urls: Urls): string {
 }
 
 function estVide(bloc: ContentBlock): boolean {
+  if (bloc.type === 'interactif') return !estComplet(bloc.metadata as unknown as DonneesInteractif)
   if (bloc.type === 'quiz') return lireQuiz(bloc.contenu).questions.length === 0
   if (bloc.type === 'text') return !bloc.contenu?.trim() && !bloc.titre?.trim()
   return !(bloc.url || bloc.contenu)
@@ -83,6 +85,7 @@ function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
       obligatoire={bloc.metadata?.obligatoire === true}
       passage={passageDe(bloc.metadata)}
       questions={questionsDe(bloc.metadata)}
+      boucle={bloc.metadata?.boucle === true}
     />
   )
 }
@@ -141,6 +144,7 @@ function RenduBloc({ bloc, urls, t }: { bloc: ContentBlock; urls: Urls; t: Tradu
     case 'file': return <BlocFichier bloc={bloc} urls={urls} t={t} />
     case 'slide': return <BlocSlide bloc={bloc} urls={urls} t={t} />
     case 'quiz': return <QuizInteractif quiz={lireQuiz(bloc.contenu)} titre={bloc.titre} />
+    case 'interactif': return <ExerciceSuivi blocId={bloc.id} titre={bloc.titre} d={bloc.metadata as unknown as DonneesInteractif} urls={urls} />
     default: return null
   }
 }
@@ -167,7 +171,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const resLecon = await getLessonWithBlocks(leconId)
   if (!resLecon.success || !resLecon.data) notFound()
   const lecon = resLecon.data as Lesson
-  const urlsMedias = await signerUrlsMedias((lecon.blocs ?? []).map(b => b.url || b.contenu))
+  const urlsMedias = await signerUrlsMedias([...(lecon.blocs ?? []).map(b => b.url || b.contenu), ...(lecon.blocs ?? []).filter(b => b.type === 'interactif').flatMap(b => refsMedias(b.metadata))])
 
   // Charger la formation pour le contexte
   const { data: formation } = await serviceClient().from('formations').select('id, titre').eq('id', formationId).single()
@@ -263,7 +267,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         ) : (
           <div className="space-y-6">
             {lecon.blocs.sort((a, b) => a.ordre - b.ordre).map(bloc => (
-              <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} t={t} />
+              <Apparition key={bloc.id} actif={(lecon as { apparition_progressive?: boolean }).apparition_progressive === true}><RenduBloc bloc={bloc} urls={urlsMedias} t={t} /></Apparition>
             ))}
           </div>
         )}
@@ -272,7 +276,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             lessonId={leconId}
             attestationRequise={lecon.attestation_requise === true}
             texteAttestation={lecon.texte_attestation?.trim() || texteAttestationDefaut(langue)}
-            videosObligatoires={lecon.blocs.filter(b => b.type === 'video' && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre }))}
+            videosObligatoires={lecon.blocs.filter(b => (b.type === 'video' || b.type === 'interactif') && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre, nature: b.type === 'interactif' ? 'exercice' as const : 'video' as const }))}
             etat={etatSuivi}
             suiviActif={suiviActif}
             simulation={apercu.actif ? { formationId } : undefined}

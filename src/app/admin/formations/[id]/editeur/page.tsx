@@ -41,6 +41,7 @@ export default function EditeurFormationPage() {
   const [titreLecon, setTitreLecon] = useState('')
   const [descLecon, setDescLecon] = useState('')
   const [attestationLecon, setAttestationLecon] = useState(false)
+  const [apparitionLecon, setApparitionLecon] = useState(false)
   const [texteAttestation, setTexteAttestation] = useState('')
   const [showImportPptx, setShowImportPptx] = useState(false)
   const [importPptxFile, setImportPptxFile] = useState<File | null>(null)
@@ -104,6 +105,7 @@ export default function EditeurFormationPage() {
     setTitreLecon(lecon.titre)
     setDescLecon(lecon.description || '')
     setAttestationLecon(lecon.attestation_requise === true)
+    setApparitionLecon((lecon as { apparition_progressive?: boolean }).apparition_progressive === true)
     setTexteAttestation(lecon.texte_attestation || '')
   }
 
@@ -197,6 +199,7 @@ export default function EditeurFormationPage() {
     const res = await updateLesson(panneau.leconId, {
       titre: titreLecon, description: descLecon,
       attestation_requise: attestationLecon, texte_attestation: texteAttestation.trim() || null,
+      apparition_progressive: apparitionLecon,
     })
     setSauvegarde(false)
     if (res.success) chargerFormation()
@@ -599,6 +602,13 @@ export default function EditeurFormationPage() {
                     placeholder={t('Description de la leçon...')}
                   />
                 </div>
+                <label className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 cursor-pointer">
+                  <input type="checkbox" className="mt-0.5 w-4 h-4" checked={apparitionLecon} onChange={e => setApparitionLecon(e.target.checked)} />
+                  <span className="text-sm text-gray-700">
+                    <strong>✨ {t('Apparition progressive des blocs')}</strong>
+                    <span className="block text-xs text-gray-500 mt-0.5">{t('Les blocs apparaissent en douceur à mesure que l’employé fait défiler la leçon.')}</span>
+                  </span>
+                </label>
                 <label className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 w-4 h-4" checked={attestationLecon}
                     onChange={e => setAttestationLecon(e.target.checked)} />

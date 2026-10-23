@@ -17,6 +17,7 @@
         "jspdf": "^4.2.1",
         "jspdf-autotable": "^5.0.9",
         "jszip": "^3.10.2",
+        "lottie-web": "^5.12.2",
         "next": "15.5.28",
         "pdfjs-dist": "^4.4.168",
         "react": "^19.0.0",

@@ -11,6 +11,8 @@
 import { useT } from '@/lib/i18n/client'
 import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
 import ReglagesVideo from './ReglagesVideo'
+import EditeurInteractif from './EditeurInteractif'
+import { GENRES, donneesInitiales, refsMedias as refsDansDonnees, type DonneesInteractif, type GenreInteractif } from '@/lib/blocs-interactifs'
 import { useConfirmer } from '@/components/Confirmation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -88,7 +90,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   }, [leconId])
 
   // Adresses temporaires pour afficher les médias privés
-  const refsMedias = useMemo(() => blocs.map(b => b.url).filter(estMediaPrive), [blocs])
+  const refsMedias = useMemo(() => [...blocs.map(b => b.url).filter(estMediaPrive), ...blocs.filter(b => b.type === 'interactif').flatMap(b => refsDansDonnees(b.metadata))], [blocs])
   useEffect(() => {
     const manquants = refsMedias.filter(r => !urlsMedias[r])
     if (manquants.length === 0) return
@@ -151,8 +153,9 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
       ordre: position + 1,
       contenu: (valeurs.contenu as string | undefined) ?? contenuInitial,
       url: (valeurs.url as string | undefined) ?? undefined,
-      titre: (valeurs.titre as string | undefined) ?? (style ? STYLES_ENCADRE[style]?.libelle : undefined),
-      metadata: style ? { style } : (valeurs.metadata as Record<string, unknown> | undefined) ?? null,
+      titre: (valeurs.titre as string | undefined) ?? (type === 'interactif' ? undefined : style ? STYLES_ENCADRE[style]?.libelle : undefined),
+      metadata: type === 'interactif' ? (donneesInitiales((style ?? 'cartes') as GenreInteractif) as unknown as Record<string, unknown>)
+        : style ? { style } : (valeurs.metadata as Record<string, unknown> | undefined) ?? null,
     })
     if (!res.success) { setEtat('erreur'); setErreur(res.error); return null }
     const nouveau = res.data
@@ -310,6 +313,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               <span className="text-xs font-semibold text-gray-500 uppercase">
                 {b.type === 'text' && meta(b).style && meta(b).style !== 'normal'
                   ? STYLES_ENCADRE[String(meta(b).style)]?.libelle ?? 'Texte'
+                  : b.type === 'interactif' ? (GENRES.find(g => g.genre === meta(b).genre)?.libelle ?? 'Interactif')
                   : LIBELLE_TYPE[b.type] ?? b.type}
               </span>
               <div className="ml-auto flex items-center gap-1">
@@ -326,6 +330,10 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               {b.type === 'quiz' && <EditeurQuiz bloc={b} {...props} />}
               {b.type === 'file' && <EditeurFichier bloc={b} {...props} />}
               {b.type === 'slide' && <EditeurLien bloc={b} {...props} />}
+              {b.type === 'interactif' && (
+                <EditeurInteractif titre={b.titre} donnees={meta(b) as unknown as DonneesInteractif} urls={urlsMedias}
+                  onTitre={v => modifier(b.id, { titre: v })} onDonnees={dd => modifier(b.id, { metadata: dd as unknown as Record<string, unknown> })} setErreur={setErreur} />
+              )}
             </div>
           </div>
           <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter} onLibrairie={p => { setMenuOuvert(null); setChoixLibrairie({ position: p }) }}
@@ -381,6 +389,15 @@ function ZoneInsertion({ index, ouvert, setOuvert, onChoisir, onLibrairie, actif
               <span className="text-xl">{t.icone}</span>
               <span className="text-sm font-semibold text-gray-800">{t.libelle}</span>
               <span className="text-xs text-gray-500">{t.aide}</span>
+            </button>
+          ))}
+          <div className="col-span-full mt-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{t('Animé et interactif')}</div>
+          {GENRES.map(g => (
+            <button key={g.genre} onClick={() => onChoisir(index, 'interactif', g.genre)}
+              className={'flex flex-col items-start gap-0.5 p-3 rounded-lg border text-left ' + (g.famille === 'exercice' ? 'border-amber-100 hover:border-amber-300 hover:bg-amber-50' : 'border-violet-100 hover:border-violet-300 hover:bg-violet-50')}>
+              <span className="text-xl">{g.icone}</span>
+              <span className="text-sm font-semibold text-gray-800">{t(g.libelle)}</span>
+              <span className="text-xs text-gray-500">{t(g.aide)}</span>
             </button>
           ))}
           <button onClick={() => onLibrairie(index)}
