@@ -67,4 +67,12 @@ export const STYLES_ENCADRE: Record<string, { libelle: string; icone: string; fo
   a_retenir: { libelle: 'À retenir', icone: '💡', fond: '#eff6ff', bord: '#bfdbfe', titre: '#1d4ed8' },
   attention: { libelle: 'Attention', icone: '⚠️', fond: '#fff7ed', bord: '#fed7aa', titre: '#c2410c' },
   procedure: { libelle: 'Procédure', icone: '✅', fond: '#f0fdf4', bord: '#bbf7d0', titre: '#15803d' },
+  // Couleurs de la clinique de la formation (CMC : taupe, WSSC : marine) ; violet pour une formation commune sans clinique connue
+  clinique: { libelle: 'Aux couleurs de la clinique', icone: '🏥', fond: '#f5f3ff', bord: '#8b5cf6', titre: '#5b21b6' },
+}
+
+/** Style d'encadré, avec les couleurs de la clinique pour l'encadré « clinique » */
+export function styleEncadre(style: string, theme?: { couleur: string; fond: string } | null) {
+  const s = STYLES_ENCADRE[style] ?? STYLES_ENCADRE.normal
+  return style === 'clinique' && theme ? { ...s, fond: theme.fond, bord: theme.couleur, titre: theme.couleur } : s
 }

@@ -642,6 +642,7 @@ export default function EditeurFormationPage() {
                 key={panneau.leconId}
                 leconId={panneau.leconId}
                 formationId={formationId}
+                clinique={formation?.clinique ?? null}
                 blocsInitiaux={leconActive.blocs || []}
                 onModeleAttestation={async () => {
                   setAttestationLecon(true)

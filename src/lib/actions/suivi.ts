@@ -3,6 +3,7 @@
 // Suivi d'une leçon par l'employé : vidéos obligatoires vues, « J'ai lu et compris », leçon terminée.
 // Les écritures passent par le serveur (clé de service) après identification de l'employé connecté.
 
+import { estComplet, type DonneesInteractif } from '@/lib/blocs-interactifs'
 import { headers } from 'next/headers'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
@@ -111,11 +112,14 @@ export async function terminerLecon(lessonId: string): Promise<Resultat<string> 
   }
 
   const [{ data: blocs }, etat] = await Promise.all([
-    sb.from('content_blocks').select('id, titre, type, metadata').eq('lesson_id', lessonId),
+    sb.from('content_blocks').select('id, titre, type, metadata, url, contenu').eq('lesson_id', lessonId),
     getEtatSuivi(lessonId),
   ])
   const manquants: string[] = []
   for (const b of blocs ?? []) {
+    // Un bloc pas encore rempli n'est pas montré à l'employé : il ne peut pas être exigé
+    const vide = b.type === 'video' ? !(b.url || b.contenu) : b.type === 'interactif' ? !estComplet(b.metadata as unknown as DonneesInteractif) : false
+    if (vide) continue
     const obligatoire = b.type === 'video' && (b.metadata as Record<string, unknown> | null)?.obligatoire === true
     if (obligatoire && !etat.videosVues.includes(b.id)) manquants.push(`Regarder la vidéo « ${b.titre || 'sans titre'} » en entier`)
     const exercice = b.type === 'interactif' && (b.metadata as Record<string, unknown> | null)?.obligatoire === true
