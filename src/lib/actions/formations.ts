@@ -62,6 +62,7 @@ export async function updateFormation(
   // Publication : seulement une formation approuvée par un validateur
   if (payload.publiee === true) {
     const { data: f } = await serviceClient().from('formations').select('*').eq('id', formationId).single()
+    if (f?.copie_de) return { success: false, error: 'Une copie de travail ne se publie pas : appliquez-la à la formation publiée.' }
     if (f && !f.publiee && !peutEtrePubliee(f as FormationValidation)) {
       return { success: false, error: 'Cette formation doit être approuvée par un validateur avant d’être publiée.' }
     }
@@ -99,6 +100,7 @@ export async function publierNouvelleVersion(formationId: string, note: string):
   if (!f) return { success: false, error: 'Formation introuvable' }
   if (!peutGererContenu(acteur, f.clinique)) return { success: false, error: 'Formation hors de votre périmètre' }
   if (!('version' in f)) return { success: false, error: 'Exécutez d’abord supabase/migrations/formations_versions.sql dans Supabase.' }
+  if (f.copie_de) return { success: false, error: 'Une copie de travail ne se publie pas : appliquez-la à la formation publiée.' }
   if (!f.publiee_le) return { success: false, error: 'Publiez d’abord la formation.' }
   const texte = note.trim().slice(0, 1000)
   if (!texte) return { success: false, error: 'Décrivez ce qui a changé dans cette version.' }

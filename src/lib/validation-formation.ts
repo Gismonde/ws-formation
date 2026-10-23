@@ -28,6 +28,8 @@ export type FormationValidation = {
   validation_le?: string | null
   validation_commentaire?: string | null
   validee_par?: string | null
+  /** Copie de travail d'une formation publiée */
+  copie_de?: string | null
 }
 
 export function statutDe(f: Pick<FormationValidation, 'statut_validation'>): StatutValidation {

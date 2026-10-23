@@ -45,7 +45,7 @@ export default async function AValiderPage() {
             {((aValider ?? []) as FormationValidation[]).map(f => (
               <li key={f.id} className="py-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 hover:text-indigo-700">{f.titre}</Link>
+                  <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 hover:text-indigo-700">{f.titre}</Link>{f.copie_de && <span className="ml-2 text-xs font-semibold text-violet-700 bg-violet-100 px-2 py-0.5 rounded-full">✏️ {t('Copie de travail')}</span>}
                   <p className="text-xs text-gray-500">{t('Demandée par {qui} le {date}', { qui: nom(f.validation_demandee_par), date: date(f.validation_demandee_le) })}</p>
                   {f.validation_commentaire && <p className="text-xs text-gray-600 mt-1">💬 {f.validation_commentaire}</p>}
                 </div>
@@ -69,7 +69,7 @@ export default async function AValiderPage() {
                 return (
                   <li key={f.id} className="py-3 flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 hover:text-indigo-700">{f.titre}</Link>
+                      <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 hover:text-indigo-700">{f.titre}</Link>{f.copie_de && <span className="ml-2 text-xs font-semibold text-violet-700 bg-violet-100 px-2 py-0.5 rounded-full">✏️ {t('Copie de travail')}</span>}
                       <p className="text-xs text-gray-500">{t('Validateur : {qui}', { qui: nom(f.validateur_id) })} · {date(f.validation_demandee_le)}</p>
                     </div>
                     <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + cls}>{libelle}</span>

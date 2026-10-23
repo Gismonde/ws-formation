@@ -56,11 +56,14 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
   const onglets: CliniqueContenu[] = (["CMC", "WSSC", "LES_DEUX"] as CliniqueContenu[]).filter(c => visibles.includes(c))
   const filtreActif = estCliniqueContenu(filtre) && visibles.includes(filtre) ? filtre : null
 
-  const { data: toutes } = await adminSupabase
+  const { data: toutesAvecCopies } = await adminSupabase
     .from("formations")
     .select("*")
     .in("clinique", filtreActif ? [filtreActif] : visibles)
     .order("created_at", { ascending: false })
+  // Copies de travail : pas listées à part, signalées sur leur formation publiée
+  const avecCopie = new Set((toutesAvecCopies ?? []).map(f => f.copie_de).filter(Boolean))
+  const toutes = (toutesAvecCopies ?? []).filter(f => !f.copie_de)
   const nbBrouillons = (toutes ?? []).filter(f => !f.publiee).length
   const nbPubliees = (toutes ?? []).length - nbBrouillons
   const formations = (toutes ?? []).filter(f => statut === null || (statut === "publiee") === !!f.publiee)
@@ -186,6 +189,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                     {f.obligatoire && <span style={{ fontSize: "10px", fontWeight: 800, color: "#dc2626", textTransform: "uppercase" }}>{t('Obligatoire LSST')}</span>}
                   </div>
                   <Link href={`/admin/formations/${f.id}`} style={{ fontWeight: 700, color: "#111827", fontSize: "15px", lineHeight: 1.35, textDecoration: "none" }}>{f.titre}</Link>
+                  {avecCopie.has(f.id) && <span style={{ alignSelf: "flex-start", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}
                   {f.description && (
                     <p style={{ margin: 0, fontSize: "13px", color: "#6b7280", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{f.description}</p>
                   )}
@@ -235,7 +239,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
               const style = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
               return (
                 <tr key={f.id} className="formations-row" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link></td>
+                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link>{avecCopie.has(f.id) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}</td>
                   <td style={{ padding: "14px 16px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></td>
                   <td style={{ padding: "14px 16px", color: "#6b7280" }}>{f.categorie}</td>
                   <td style={{ padding: "14px 16px" }}>

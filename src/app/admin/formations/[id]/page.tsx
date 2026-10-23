@@ -14,6 +14,8 @@ import DupliquerFormation from './DupliquerFormation'
 import PanneauValidation from './PanneauValidation'
 import { statutDe, validationActive, type FormationValidation } from '@/lib/validation-formation'
 import NouvelleVersion from './NouvelleVersion'
+import { CarteCopieTravail, BandeauCopie } from './CopieTravail'
+import { copieEnCours } from '@/lib/copie-travail'
 import { serviceClient } from '@/lib/permissions'
 import { historiqueFormation } from '@/lib/historique-formation'
 
@@ -55,6 +57,11 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
   const nomDe = (i: string | null | undefined) => { const e = (nomsBruts ?? []).find(x => x.id === i); return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : null }
   const peutGererCetteFormation = !!acteurCourant && peutCreer && peutGererContenu(acteurCourant, formation.clinique)
   const approuvee = !avecValidation || statut === 'approuvee'
+  // Copie de travail : cette fiche est-elle une copie, ou la formation a-t-elle une copie en cours ?
+  const copieDe = (formation as { copie_de?: string | null }).copie_de ?? null
+  const { data: originalBrut } = copieDe ? await serviceClient().from('formations').select('id, titre, version, publiee_le').eq('id', copieDe).maybeSingle() : { data: null }
+  const original = originalBrut ? { id: originalBrut.id as string, titre: originalBrut.titre as string, version: originalBrut.publiee_le ? (Number(originalBrut.version) || 1) : null } : null
+  const copie = !copieDe && formation.publiee && 'copie_de' in formation ? await copieEnCours(id) : null
 
   // Charger les leçons de chaque module
   const modulesAvecLecons: ModuleAvecLecons[] = []
@@ -100,7 +107,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 >
                   {t(niveauStyle.label)}
                 </span>
-                {formation.publiee ? (
+                {copieDe ? (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-100 text-violet-800">{t('Copie de travail')}</span>
+                ) : formation.publiee ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">{t('Publiée')}</span>
                 ) : (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700">{t('Brouillon')}</span>
@@ -124,7 +133,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 <p className="text-gray-600 leading-relaxed">{formation.description}</p>
               )}
             </div>
-            {peutCreer && (
+            {peutCreer && !copieDe && (
               <div className="flex items-start gap-2">
                 {formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
@@ -165,6 +174,11 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
           </div>
         </div>
 
+        {copieDe && original && peutGererCetteFormation && <BandeauCopie copieId={id} original={original} approuvee={approuvee} />}
+        {!copieDe && formation.publiee && peutGererCetteFormation && 'copie_de' in formation && (
+          <CarteCopieTravail formationId={id} copie={copie ? { id: copie.id, statut: copie.statut_validation ?? 'brouillon' } : null} />
+        )}
+
         {avecValidation && (peutGererCetteFormation || fv.validateur_id === acteurCourant?.id) && (
           <PanneauValidation
             formationId={id} statut={statut} publiee={!!formation.publiee}
@@ -201,7 +215,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
               <span className="text-xs text-gray-400">{t('Titre, niveau, durée')}</span>
             </Link>
           )}
-          <Link
+          {!copieDe && <Link
             href={"/admin/formations/" + id + "/assigner"}
             className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"
           >
@@ -210,7 +224,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             </svg>
             <span className="text-sm font-semibold">{t('Assigner')}</span>
             <span className="text-xs text-gray-400">{t('Employés / départements')}</span>
-          </Link>
+          </Link>}
           <Link
             href={"/admin/formations/" + id + "/apercu"}
             className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-center"

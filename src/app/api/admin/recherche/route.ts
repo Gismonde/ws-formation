@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
   const [emp, form, pols, jour, sops, lib] = await Promise.all([
     qe.order('nom').limit(40),
-    sb.from('formations').select('id, titre, clinique, publiee').in('clinique', visibles).ilike('titre', m).order('titre').limit(PAR_TYPE),
+    sb.from('formations').select('id, titre, clinique, publiee').is('copie_de', null).in('clinique', visibles).ilike('titre', m).order('titre').limit(PAR_TYPE),
     sb.from('politiques').select('*').eq('actif', true).ilike('titre', m).order('titre').limit(20),
     sb.from('journees_formation').select('id, nom, modele, clinique').in('clinique', visibles).ilike('nom', m).order('nom').limit(PAR_TYPE),
     sb.from('sop').select('id, titre, clinique').in('clinique', visibles).ilike('titre', m).order('titre').limit(PAR_TYPE),
