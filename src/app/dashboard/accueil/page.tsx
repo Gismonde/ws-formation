@@ -6,6 +6,7 @@ import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import GalerieVisite from './GalerieVisite'
+import { badgesEmploye } from '@/lib/badges'
 import { i18n } from '@/lib/i18n/serveur'
 
 const externe = (lien: string) => /^https?:\/\//.test(lien)
@@ -42,6 +43,11 @@ export default async function AccueilPage() {
   const { data: journees } = await sb.from('journees_formation').select('id, nom, raison, date_journee, date_echeance')
     .eq('modele', false).contains('employe_ids', [acteur.id]).order('cree_le', { ascending: false }).limit(3)
   const { banniere, cartes, visite, infos } = contenu
+  // Badges obtenus (aperçu) et avancement des parcours
+  const { data: moi } = await sb.from('employes').select('id, clinique, role, departement_id, poste').eq('id', acteur.id).single()
+  const badges = moi ? await badgesEmploye(sb, moi).catch(() => []) : []
+  const obtenus = badges.filter(b => b.obtenu)
+  const avancement = new Map(badges.filter(b => b.famille === 'parcours').map(b => [b.id.slice('journee:'.length), b.progression]))
 
   return (
     <div style={{ maxWidth: '1100px' }}>
@@ -76,10 +82,20 @@ export default async function AccueilPage() {
                 <span style={{ display: 'block', fontWeight: 700, fontSize: '15px' }}>{t('Journée de formation — {nom}', { nom: j.nom })}</span>
                 <span style={{ display: 'block', fontSize: '13px', opacity: 0.85 }}>{j.date_echeance ? t('À compléter avant le {date}', { date: new Date(j.date_echeance + 'T12:00:00').toLocaleDateString(langue === 'en' ? 'en-CA' : 'fr-CA', { dateStyle: 'long' }) }) : j.raison}</span>
               </span>
+              {avancement.get(j.id) && <span style={{ fontWeight: 700, fontSize: '14px', background: 'rgba(255,255,255,0.2)', padding: '2px 10px', borderRadius: '99px' }}>{avancement.get(j.id)!.fait}/{avancement.get(j.id)!.total}</span>}
               <span style={{ fontWeight: 600, fontSize: '14px' }}>{t('Voir')} →</span>
             </Link>
           ))}
         </section>
+      )}
+
+      {badges.length > 0 && (
+        <Link href="/dashboard/badges" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '14px 18px', borderRadius: '14px', background: '#fff', border: '1px solid #e5e7eb', textDecoration: 'none', color: '#111827', marginBottom: '24px' }}>
+          <span style={{ fontWeight: 700, fontSize: '15px' }}>🏅 {t('Mes badges')}</span>
+          <span style={{ fontSize: '13px', color: '#6b7280' }}>{t('{n}/{total} obtenu(s)', { n: obtenus.length, total: badges.length })}</span>
+          <span style={{ flex: 1, display: 'flex', gap: '6px', fontSize: '22px' }} aria-hidden>{obtenus.slice(0, 10).map(b => <span key={b.id} title={t(b.titre, b.vars)}>{b.icone}</span>)}</span>
+          <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--accent-clinique)' }}>{t('Voir')} →</span>
+        </Link>
       )}
 
       {/* Cartes (liens et informations) */}

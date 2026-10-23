@@ -1,3 +1,5 @@
+import { badgesEmploye } from "@/lib/badges"
+import GrilleBadges from "@/components/GrilleBadges"
 import { i18n } from '@/lib/i18n/serveur'
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
@@ -23,6 +25,7 @@ const ONGLETS = [
   { id: "certificats", libelle: "Certificats" },
   { id: "preuves", libelle: "Preuves" },
   { id: "politiques", libelle: "Politiques" },
+  { id: "badges", libelle: "Badges et parcours" },
   { id: "journal", libelle: "Journal", adminSeulement: true },
 ] as const
 type Onglet = (typeof ONGLETS)[number]["id"]
@@ -208,6 +211,9 @@ export default async function FicheEmployePage({ params, searchParams }: {
       )
   } else if (onglet === "preuves") {
     contenu = <ListePreuvesAdmin preuves={dossier.preuves} peutDecider={acteur.id !== id} />
+  } else if (onglet === "badges") {
+    const badges = await badgesEmploye(sb, employe)
+    contenu = <div className="bg-white rounded-2xl border border-gray-200 p-6"><GrilleBadges badges={badges} t={t} loc={loc} liens={false} /></div>
   } else if (onglet === "politiques") {
     contenu = dossier.politiques.length === 0
       ? <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">{t('Aucune politique confirmée.')}</div>

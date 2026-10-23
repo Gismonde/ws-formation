@@ -21,17 +21,24 @@ export type Journee = {
   date_journee: string | null
   date_echeance: string | null
   note: string | null
+  /** Parcours : chaque formation s'ouvre quand la précédente est terminée */
+  ordre_impose: boolean
+  /** Badge remis à la fin du parcours */
+  badge_icone: string
   cree_par: string | null
   cree_le: string
 }
 
-export const CHAMPS_JOURNEE = 'id, modele, nom, raison, clinique, formation_ids, politique_ids, librairie_ids, employe_ids, date_journee, date_echeance, note, cree_par, cree_le'
+export const CHAMPS_JOURNEE = 'id, modele, nom, raison, clinique, formation_ids, politique_ids, librairie_ids, employe_ids, date_journee, date_echeance, note, ordre_impose, badge_icone, cree_par, cree_le'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ids = (v: unknown, max = 200): string[] =>
   Array.isArray(v) ? Array.from(new Set(v.filter((x): x is string => typeof x === 'string' && UUID.test(x)))).slice(0, max) : []
 const texte = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '')
 const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null)
+
+/** Icônes proposées pour le badge de fin de parcours */
+export const BADGES_JOURNEE = ['🏅', '🎖️', '🏆', '⭐', '🩺', '💉', '🧼', '🛡️', '🤝', '🎓', '🚑', '❤️']
 
 export type DonneesJournee = Omit<Journee, 'id' | 'cree_par' | 'cree_le'>
 
@@ -52,6 +59,8 @@ export function lireJournee(b: Record<string, unknown>, cliniquesPermises: Clini
     date_journee: modele ? null : date(b.date_journee),
     date_echeance: modele ? null : date(b.date_echeance),
     note: texte(b.note, 1000) || null,
+    ordre_impose: b.ordre_impose === true,
+    badge_icone: BADGES_JOURNEE.includes(b.badge_icone as string) ? (b.badge_icone as string) : '🏅',
   }
   if (valeurs.formation_ids.length + valeurs.politique_ids.length + valeurs.librairie_ids.length === 0) {
     return { erreur: 'Choisissez au moins une formation, une politique ou un élément à visionner.' }
