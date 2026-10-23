@@ -51,8 +51,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {cliniqueAffichee ? `${t('Espace {clinique}', { clinique: CLINIQUE_INFO[cliniqueAffichee].court })} — ${CLINIQUE_INFO[cliniqueAffichee].nom}` : t('Espace employé')}
           </div>
           {cliniqueAffichee && (
-            <div style={{ marginTop: '14px', background: '#fff', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
-              <CliniqueLogos clinique={cliniqueAffichee} hauteur={34} />
+            <div style={{ marginTop: '14px', background: CLINIQUE_INFO[cliniqueAffichee].fondLogo ?? '#fff', borderRadius: '12px', padding: '14px 16px', display: 'flex', justifyContent: 'center', boxShadow: '0 1px 2px rgba(0,0,0,.12)' }}>
+              <CliniqueLogos clinique={cliniqueAffichee} hauteur={CLINIQUE_INFO[cliniqueAffichee].fondLogo ? 92 : 46} largeur={170} disposition="colonne" />
             </div>
           )}
           <ChoixEspace actif={espace.actif} possibles={espace.possibles} />

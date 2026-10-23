@@ -8,6 +8,7 @@ import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import GalerieVisite from './GalerieVisite'
 import { badgesEmploye } from '@/lib/badges'
 import { i18n } from '@/lib/i18n/serveur'
+import { CliniqueLogos } from '@/components/CliniqueBadge'
 
 const externe = (lien: string) => /^https?:\/\//.test(lien)
 
@@ -54,15 +55,7 @@ export default async function AccueilPage() {
       {/* Bannière */}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', background: '#fff', borderRadius: '18px', overflow: 'hidden', border: '1px solid #e5e7eb', marginBottom: '24px' }}>
         <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={info.logo} alt={info.nom} style={{ height: '44px', width: 'auto' }} />
-            {(info.partenaires ?? []).map(p => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={p.nom} src={p.logo} alt={p.nom} title={p.nom} style={{ height: '38px', width: 'auto' }} />
-            ))}
-          </div>
+          <CliniqueLogos clinique={espace.actif} hauteur={48} largeur={180} />
           <h1 style={{ fontSize: '28px', lineHeight: 1.2, fontWeight: 700, color: 'var(--accent-clinique-fonce)', margin: 0 }}>{banniere.titre}</h1>
           <p style={{ color: '#4b5563', fontSize: '15px', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{banniere.texte}</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
