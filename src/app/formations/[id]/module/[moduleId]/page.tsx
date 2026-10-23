@@ -38,6 +38,10 @@ export default function ModulePage() {
       const formationId = params.id as string
       const moduleId = params.moduleId as string
 
+      // Module construit en leçons : on ouvre directement sa première leçon
+      const { data: lecons } = await supabase.from('lessons').select('id').eq('module_id', moduleId).order('ordre').limit(1)
+      if (lecons && lecons.length) { router.replace(`/formations/${formationId}/lecon/${lecons[0].id}`); return }
+
       const [{ data: mod }, { data: form }, { data: mods }] = await Promise.all([
         supabase.from('modules').select('*').eq('id', moduleId).single(),
         supabase.from('formations').select('id, titre').eq('id', formationId).single(),

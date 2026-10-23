@@ -173,9 +173,15 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   // Charger toutes les lecons du module pour la navigation
   const resLecons = await getLessonsWithBlocks(lecon.module_id)
   const toutesLecons: Lesson[] = resLecons.success ? (resLecons.data as Lesson[] || []) : []
-  const indexCourant = toutesLecons.findIndex(l => l.id === leconId)
-  const leconPrécédente = indexCourant > 0 ? toutesLecons[indexCourant - 1] : null
-  const leconSuivante = indexCourant < toutesLecons.length - 1 ? toutesLecons[indexCourant + 1] : null
+  // Suivante / précédente : sur toute la formation (on passe au module suivant à la fin d'un module)
+  const sbNav = serviceClient()
+  const { data: modsNav } = await sbNav.from('modules').select('id, ordre').eq('formation_id', formationId).order('ordre')
+  const { data: lecNav } = (modsNav ?? []).length ? await sbNav.from('lessons').select('id, titre, module_id, ordre').in('module_id', (modsNav ?? []).map(m => m.id)).order('ordre') : { data: [] as { id: string; titre: string; module_id: string; ordre: number }[] }
+  const ordreGlobal = (modsNav ?? []).flatMap(m => (lecNav ?? []).filter(l => l.module_id === m.id))
+  const indexGlobal = ordreGlobal.findIndex(l => l.id === leconId)
+  const leconPrécédente = indexGlobal > 0 ? ordreGlobal[indexGlobal - 1] : null
+  const leconSuivante = indexGlobal >= 0 && indexGlobal < ordreGlobal.length - 1 ? ordreGlobal[indexGlobal + 1] : null
+  const changementModule = !!leconSuivante && leconSuivante.module_id !== lecon.module_id
 
   // Marquer la lecon comme vue automatiquement (si employe)
   const etatSuivi = apercu.actif
@@ -302,7 +308,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 className="group flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <span className="text-right">
-                  <span className="block text-xs text-gray-400">{t('Leçon suivante')}</span>
+                  <span className="block text-xs text-gray-400">{changementModule ? t('Module suivant') : t('Leçon suivante')}</span>
                   <span className="font-medium">{leconSuivante.titre}</span>
                 </span>
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +323,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                {t('Module terminé')}
+                {t('Fin de la formation — retour')}
               </Link>
             )}
           </div>

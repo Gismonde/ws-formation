@@ -1645,4 +1645,9 @@ export const EN: Record<string, string> = {
   'Mode employé : l’employé recevrait maintenant son certificat (aucun n’est émis en aperçu).': 'Employee mode: the employee would now receive their certificate (none is issued in preview).',
   'Mode employé : l’employé verrait ici sa réussite (formation sans certificat).': 'Employee mode: the employee would see their success here (training without certificate).',
   'Parcourez la formation comme un employé (bouton « Mode employé ») puis donnez votre décision.': 'Go through the training as an employee (“Employee mode” button) then give your decision.',
+  'Commencer la formation': 'Start the training',
+  'Continuer : {titre}': 'Continue: {titre}',
+  'Fin de la formation — retour': 'End of training — back',
+  '{f}/{n} leçon(s)': '{f}/{n} lesson(s)',
+  'Continuer : {titre}': 'Continue: {titre}',
 }
