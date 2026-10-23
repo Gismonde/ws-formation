@@ -11,21 +11,9 @@ import { ChoixEspace } from '@/components/ChoixEspace'
 import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import { i18n } from '@/lib/i18n/serveur'
+import { MenuEmploye, OngletsEmploye } from '@/components/NavEmploye'
 import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/lib/cliniques'
 
-const employeNav = [
-  { href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' },
-  { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
-  { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
-  { href: '/dashboard/badges', label: 'Mes badges', emoji: '🏅' },
-  { href: '/dashboard/evenements', label: 'Événements', emoji: '📅' },
-  { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
-  { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
-  { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
-  { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
-  { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
-  { href: '/dashboard/securite', label: 'Sécurité', emoji: '🔐' },
-]
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -42,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { t } = await i18n()
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe) : 0
+  const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
@@ -68,20 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div style={{ marginTop: '10px' }}><ChoixLangue sombre /></div>
         </div>
 
-        <nav className="sidebar-nav">
-          {employeNav.map((item) => (
-            <Link key={item.href} href={item.href} className="sidebar-nav-item">
-              <span className="sidebar-emoji">{item.emoji}</span>
-              <span>{t(item.label)}</span>
-              {item.href === '/dashboard/evenements' && evenementsAInscrire > 0 && (
-                <span style={{ marginLeft: 'auto', background: '#4f46e5', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{evenementsAInscrire}</span>
-              )}
-              {item.href === '/dashboard/politiques' && politiquesEnAttente > 0 && (
-                <span style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{politiquesEnAttente}</span>
-              )}
-            </Link>
-          ))}
-        </nav>
+        <MenuEmploye compteurs={compteurs} />
 
         <div className="sidebar-footer">
           <div className="sidebar-user-info">
@@ -104,6 +80,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </TiroirMenu>
 
       <main className="dashboard-main contenu-adaptatif">
+        <OngletsEmploye compteurs={compteurs} />
         {children}
       </main>
 

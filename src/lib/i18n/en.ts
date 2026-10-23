@@ -1980,4 +1980,7 @@ export const EN: Record<string, string> = {
   'Une preuve de formation externe validée (congrès, cours…)': 'A validated external training proof (conference, course…)',
   'Régulier': 'Consistent',
   'Au moins une formation terminée 3 mois de suite': 'At least one training completed 3 months in a row',
+  'Réussites': 'Achievements',
+  'Politiques & SOP': 'Policies & SOPs',
+  'Mon compte': 'My account',
 }
