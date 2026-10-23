@@ -7,7 +7,8 @@ const FAMILLES: { id: Famille; titre: string }[] = [
   { id: 'parcours', titre: 'Parcours' },
   { id: 'palier', titre: 'Formations terminées' },
   { id: 'excellence', titre: 'Excellence' },
-  { id: 'conformite', titre: 'Conformité' },
+  { id: 'conformite', titre: 'Conformité, santé et sécurité' },
+  { id: 'participation', titre: 'Participation' },
 ]
 
 export function CarteBadge({ b, t, loc }: { b: Badge; t: Traducteur; loc: string }) {
