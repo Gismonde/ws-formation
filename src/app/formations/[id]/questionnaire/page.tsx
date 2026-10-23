@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { chargerEtatQuestionnaire } from '@/lib/questionnaire-serveur'
 import QuestionnaireClient, { QuestionAffichee } from './QuestionnaireClient'
+import { modeApercu } from '@/lib/apercu-employe'
 import { i18n } from '@/lib/i18n/serveur'
 
 function Encadre({ titre, texte, id, icone, retour }: { titre: string; texte: string; id: string; icone: string; retour: string }) {
@@ -30,12 +31,24 @@ export default async function QuestionnairePage({ params }: { params: Promise<{ 
     sb.from('formations').select('id, titre, publiee').eq('id', id).single(),
     sb.from('assignations').select('id').eq('employe_id', acteur.id).eq('formation_id', id).limit(1).maybeSingle(),
   ])
-  if (!formation || !formation.publiee) notFound()
-  if (!assignation) {
+  // Mode employé : brouillon permis, pas d'assignation requise, progression simulée, aucune tentative enregistrée
+  const { data: fClinique } = await sb.from('formations').select('id, clinique').eq('id', id).maybeSingle()
+  const apercu = fClinique ? await modeApercu(fClinique) : { actif: false, lecons: new Set<string>() }
+  if (!formation || (!formation.publiee && !apercu.actif)) notFound()
+  if (!assignation && !apercu.actif) {
     return <Encadre id={id} retour={retour} icone="🔒" titre={t('Formation non assignée')} texte={t('Le questionnaire n’est accessible qu’aux employés à qui cette formation est assignée.')} />
   }
 
-  const etat = await chargerEtatQuestionnaire(sb, acteur.id, id)
+  const etatReel = await chargerEtatQuestionnaire(sb, acteur.id, id)
+  let etat = etatReel
+  if (apercu.actif) {
+    const { data: mods } = await sb.from('modules').select('id').eq('formation_id', id)
+    const { data: lecons } = mods?.length ? await sb.from('lessons').select('id').in('module_id', mods.map(m => m.id)) : { data: [] as { id: string }[] }
+    const total = (lecons ?? []).length
+    const faites = (lecons ?? []).filter(l => apercu.lecons.has(l.id)).length
+    const pct = total ? Math.round((faites / total) * 100) : 100
+    etat = { ...etatReel, certificat: null, certificatValide: false, tentatives: [], meilleure: null, reussi: false, tentativesRestantes: etatReel.questionnaire?.nb_tentatives_max ?? null, progressionPct: pct, formationTerminee: pct >= 100 }
+  }
   const q = etat.questionnaire
   if (!q) return <Encadre id={id} retour={retour} icone="📭" titre={t('Pas de questionnaire')} texte={t('Aucun questionnaire n’est disponible pour cette formation.')} />
 
@@ -80,6 +93,7 @@ export default async function QuestionnairePage({ params }: { params: Promise<{ 
       tentativesRestantes={etat.tentativesRestantes}
       tentativesFaites={etat.tentatives.length}
       questions={affichees}
+      apercu={apercu.actif}
     />
   )
 }

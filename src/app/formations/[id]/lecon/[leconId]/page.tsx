@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getLessonWithBlocks, getLessonsWithBlocks } from '@/lib/actions/lessons'
 import { upsertLessonProgression } from '@/lib/actions/progressions'
 import { getEtatSuivi } from '@/lib/actions/suivi'
+import { modeApercu } from '@/lib/apercu-employe'
+import { serviceClient } from '@/lib/permissions'
 import { FournisseurSuivi, VideoSuivie, FinDeLecon } from '@/components/lecon/SuiviLecon'
 import { texteAttestationDefaut } from '@/lib/suivi-constantes'
 import { i18n } from '@/lib/i18n/serveur'
@@ -145,8 +147,10 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   searchParams: Promise<{ apercu?: string }>
 }) {
   const { id: formationId, leconId } = await params
-  // ?apercu=1 : ouverture depuis l'éditeur, rien n'est enregistré
-  const suiviActif = (await searchParams).apercu !== '1'
+  // ?apercu=1 : ouverture depuis l'éditeur ; mode employé : parcours simulé. Dans les deux cas rien n'est enregistré.
+  const { data: fClinique } = await serviceClient().from('formations').select('id, clinique').eq('id', formationId).maybeSingle()
+  const apercu = fClinique ? await modeApercu(fClinique) : { actif: false, lecons: new Set<string>() }
+  const suiviActif = (await searchParams).apercu !== '1' && !apercu.actif
   const { t, langue } = await i18n()
   const supabase = await createClient()
 
@@ -163,7 +167,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const urlsMedias = await signerUrlsMedias((lecon.blocs ?? []).map(b => b.url || b.contenu))
 
   // Charger la formation pour le contexte
-  const { data: formation } = await supabase.from('formations').select('id, titre').eq('id', formationId).single()
+  const { data: formation } = await serviceClient().from('formations').select('id, titre').eq('id', formationId).single()
   if (!formation) notFound()
 
   // Charger toutes les lecons du module pour la navigation
@@ -174,7 +178,9 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const leconSuivante = indexCourant < toutesLecons.length - 1 ? toutesLecons[indexCourant + 1] : null
 
   // Marquer la lecon comme vue automatiquement (si employe)
-  const etatSuivi = await getEtatSuivi(leconId)
+  const etatSuivi = apercu.actif
+    ? { ...(await getEtatSuivi(leconId)), termineeLe: apercu.lecons.has(leconId) ? new Date().toISOString() : null, attestationLe: null, videosVues: [] }
+    : await getEtatSuivi(leconId)
   if (suiviActif && !etatSuivi.termineeLe) {
     await upsertLessonProgression({ lesson_id: leconId, statut: 'en_cours' })
   }
@@ -260,6 +266,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             videosObligatoires={lecon.blocs.filter(b => b.type === 'video' && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre }))}
             etat={etatSuivi}
             suiviActif={suiviActif}
+            simulation={apercu.actif ? { formationId } : undefined}
           />
         </FournisseurSuivi>
 

@@ -16,7 +16,9 @@ type Resultat = {
   correction: Record<string, { correcte: boolean; bonne_reponse?: string }>
 }
 
-export default function QuestionnaireClient({ formationId, titre, seuil, tentativesRestantes, tentativesFaites, questions }: {
+export default function QuestionnaireClient({ formationId, titre, seuil, tentativesRestantes, tentativesFaites, questions, apercu = false }: {
+  /** Mode employé : correction sans enregistrement */
+  apercu?: boolean
   formationId: string
   titre: string
   seuil: number
@@ -38,7 +40,7 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
   async function soumettre() {
     setEnvoi(true); setErreur('')
     try {
-      const res = await fetch(`/api/formations/${formationId}/questionnaire`, {
+      const res = await fetch(apercu ? `/api/apercu/questionnaire/${formationId}` : `/api/formations/${formationId}/questionnaire`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reponses, debut }),
       })
@@ -74,7 +76,12 @@ export default function QuestionnaireClient({ formationId, titre, seuil, tentati
               {t('Votre score :')} <span className={`font-bold text-2xl ${resultat.reussi ? 'text-green-600' : 'text-red-500'}`}>{resultat.score} %</span>
             </p>
             <p className="text-gray-500 text-sm mt-1 mb-5">{t('Seuil de réussite : {seuil} %', { seuil: resultat.seuil })}</p>
-            {resultat.reussi ? (
+            {apercu && resultat.reussi ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-5">
+                <p className="text-green-700 font-medium">{resultat.sansCertificat ? t('Mode employé : l’employé verrait ici sa réussite (formation sans certificat).') : t('Mode employé : l’employé recevrait maintenant son certificat (aucun n’est émis en aperçu).')}</p>
+                {!resultat.sansCertificat && <a href={`/certificat/apercu/${formationId}`} className="mt-2 inline-block text-green-700 underline text-sm">{t('Voir l’aperçu du certificat')}</a>}
+              </div>
+            ) : resultat.reussi ? (
               resultat.certificatId ? (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-5">
                   <p className="text-green-700 font-medium">{t('Votre certificat a été émis.')}</p>

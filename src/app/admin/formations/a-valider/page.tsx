@@ -50,7 +50,7 @@ export default async function AValiderPage() {
                   {f.validation_commentaire && <p className="text-xs text-gray-600 mt-1">💬 {f.validation_commentaire}</p>}
                 </div>
                 <div className="flex gap-2">
-                  <Link href={`/admin/formations/${f.id}/apercu`} className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700">{t('Aperçu')}</Link>
+                  <a href={`/api/admin/formations/${f.id}/mode-employe?retour=fiche`} className="text-sm px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900">👁 {t('Mode employé')}</a>
                   <Link href={`/admin/formations/${f.id}`} className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 text-white">{t('Valider')}</Link>
                 </div>
               </li>
