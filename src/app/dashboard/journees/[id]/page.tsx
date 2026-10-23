@@ -29,7 +29,16 @@ export default async function MaJourneePage({ params }: { params: Promise<{ id: 
   const faits = formations.filter(f => estComplete(etat(acteur.id, f.id).statut)).length + c.politiques.filter(confirmee).length
   const date = (d: string | null) => (d ? new Date(d + 'T12:00:00').toLocaleDateString(loc, { dateStyle: 'long' }) : null)
 
-  const Ligne = ({ href, externe, icone, titre, fait, statut }: { href: string; externe?: boolean; icone: string; titre: string; fait?: boolean; statut: string }) => (
+  // Parcours dans l'ordre : seule la première formation non terminée est ouverte
+  const premiereAFaire = j.ordre_impose ? formations.findIndex(f => !estComplete(etat(acteur.id, f.id).statut)) : -1
+  const fini = total > 0 && faits >= total
+  const Ligne = ({ href, externe, icone, titre, fait, statut, verrou }: { href: string; externe?: boolean; icone: string; titre: string; fait?: boolean; statut: string; verrou?: boolean }) => verrou ? (
+    <li style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#9ca3af' }}>
+      <span style={{ fontSize: '18px' }}>🔒</span>
+      <span style={{ flex: 1, fontSize: '14px', fontWeight: 500 }}>{titre}</span>
+      <span style={{ fontSize: '12px', fontWeight: 600 }}>{statut}</span>
+    </li>
+  ) : (
     <li>
       <a href={href} {...(externe ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', textDecoration: 'none', color: '#111827' }}>
@@ -50,6 +59,15 @@ export default async function MaJourneePage({ params }: { params: Promise<{ id: 
         {[j.raison, date(j.date_journee), j.date_echeance ? t('À compléter avant le {date}', { date: date(j.date_echeance)! }) : null].filter(Boolean).join(' · ')}
       </p>
       {j.note && <p style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', margin: '0 0 18px' }}>{j.note}</p>}
+      {fini && (
+        <div style={{ ...bloc, padding: '18px', display: 'flex', alignItems: 'center', gap: '16px', border: '2px solid var(--accent-clinique)' }}>
+          <span style={{ fontSize: '44px', lineHeight: 1 }} aria-hidden>{j.badge_icone || '🏅'}</span>
+          <span>
+            <strong style={{ display: 'block', fontSize: '16px', color: '#111827' }}>{t('Parcours terminé, bravo !')}</strong>
+            <span style={{ fontSize: '13px', color: '#6b7280' }}>{t('Vous avez obtenu le badge « {nom} ».', { nom: j.nom })} <Link href="/dashboard/badges" style={{ color: 'var(--accent-clinique)', fontWeight: 600 }}>{t('Mes badges')} →</Link></span>
+          </span>
+        </div>
+      )}
       {total > 0 && (
         <div style={{ ...bloc, padding: '14px 16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
@@ -62,11 +80,13 @@ export default async function MaJourneePage({ params }: { params: Promise<{ id: 
       )}
       {formations.length > 0 && (
         <section style={bloc}>
-          <h2 style={titreBloc}>🎓 {t('Formations à compléter')}</h2>
+          <h2 style={titreBloc}>🎓 {t('Formations à compléter')}{j.ordre_impose && <span style={{ textTransform: 'none', fontWeight: 500, color: '#6b7280', letterSpacing: 0 }}> · {t('dans l’ordre')}</span>}</h2>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {formations.map(f => {
+            {formations.map((f, i) => {
               const s = etat(acteur.id, f.id).statut
-              return <Ligne key={f.id} href={`/formations/${f.id}`} icone="🎓" titre={f.titre} fait={estComplete(s)} statut={estComplete(s) ? t('Complétée') : s === 'en_cours' ? t('En cours') : t('À faire')} />
+              const verrou = premiereAFaire >= 0 && i > premiereAFaire && !estComplete(s)
+              return <Ligne key={f.id} href={`/formations/${f.id}`} icone={j.ordre_impose ? `${i + 1}.` : '🎓'} titre={f.titre} fait={estComplete(s)} verrou={verrou}
+                statut={estComplete(s) ? t('Complétée') : verrou ? t('Après l’étape {n}', { n: i }) : s === 'en_cours' ? t('En cours') : t('À faire')} />
             })}
           </ul>
         </section>

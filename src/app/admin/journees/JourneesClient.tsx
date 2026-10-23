@@ -4,7 +4,7 @@ import { useT } from '@/lib/i18n/client'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CLINIQUE_CONTENU_LABEL, type CliniqueContenu } from '@/lib/cliniques'
-import type { Journee } from '@/lib/journees'
+import { BADGES_JOURNEE, type Journee } from '@/lib/journees'
 
 type Option = { id: string; titre: string; detail: string }
 export type Suivi = { employe_id: string; nom: string; faits: number; total: number }
@@ -57,7 +57,7 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
   const router = useRouter()
   const modeles = journees.filter(j => j.modele)
   const lancees = journees.filter(j => !j.modele)
-  const vierge = { raison: raisons[0], autre: '', nom: '', clinique: cliniques.includes('LES_DEUX') ? 'LES_DEUX' as CliniqueContenu : cliniques[0], formation_ids: [] as string[], politique_ids: [] as string[], librairie_ids: [] as string[], employe_ids: [] as string[], date_journee: '', date_echeance: '', note: '' }
+  const vierge = { raison: raisons[0], autre: '', nom: '', clinique: cliniques.includes('LES_DEUX') ? 'LES_DEUX' as CliniqueContenu : cliniques[0], formation_ids: [] as string[], politique_ids: [] as string[], librairie_ids: [] as string[], employe_ids: [] as string[], date_journee: '', date_echeance: '', note: '', ordre_impose: false, badge_icone: '🏅' }
   const [f, setF] = useState(vierge)
   const [modeleId, setModeleId] = useState('')
   const [enEdition, setEnEdition] = useState<string | null>(null)
@@ -76,7 +76,8 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
     setF(x => ({ ...x, raison: connue ? m.raison : 'Autre', autre: connue ? '' : m.raison, nom: m.nom, clinique: m.clinique,
       formation_ids: m.formation_ids.filter(i => formations.some(o => o.id === i)),
       politique_ids: m.politique_ids.filter(i => politiques.some(o => o.id === i)),
-      librairie_ids: m.librairie_ids.filter(i => librairie.some(o => o.id === i)), note: m.note ?? '' }))
+      librairie_ids: m.librairie_ids.filter(i => librairie.some(o => o.id === i)), note: m.note ?? '',
+      ordre_impose: m.ordre_impose === true, badge_icone: m.badge_icone || '🏅' }))
   }
 
   const envoyer = async (modele: boolean, miseAJour = false) => {
@@ -150,6 +151,36 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
           <Selection titre={t('🎓 Formations à compléter')} options={formations} choisis={f.formation_ids} onChange={ids => setF({ ...f, formation_ids: ids })} vide={t('Aucune formation')} />
           {politiquesPermises && <Selection titre={t('📜 Politiques à lire et confirmer')} options={politiques} choisis={f.politique_ids} onChange={ids => setF({ ...f, politique_ids: ids })} vide={t('Aucune politique')} />}
           <Selection titre={t('📚 Informations à visionner (librairie)')} options={librairie} choisis={f.librairie_ids} onChange={ids => setF({ ...f, librairie_ids: ids })} vide={t('Aucun élément')} />
+        </div>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-gray-200 p-3">
+            <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+              <input type="checkbox" className="mt-0.5 w-4 h-4" checked={f.ordre_impose} onChange={e => setF({ ...f, ordre_impose: e.target.checked })} />
+              <span><strong>{t('Parcours dans l’ordre')}</strong><span className="block text-xs text-gray-500">{t('Chaque formation ne s’ouvre que lorsque la précédente est terminée.')}</span></span>
+            </label>
+            {f.ordre_impose && f.formation_ids.length > 1 && (
+              <ol className="mt-2 space-y-1">
+                {f.formation_ids.map((id, i) => (
+                  <li key={id} className="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-2 py-1">
+                    <span className="w-5 text-xs font-bold text-indigo-700">{i + 1}.</span>
+                    <span className="flex-1 truncate">{formations.find(o => o.id === id)?.titre ?? id}</span>
+                    <button type="button" disabled={i === 0} aria-label={t('Monter')} onClick={() => { const l = [...f.formation_ids]; [l[i - 1], l[i]] = [l[i], l[i - 1]]; setF({ ...f, formation_ids: l }) }} className="text-gray-500 disabled:opacity-30">↑</button>
+                    <button type="button" disabled={i === f.formation_ids.length - 1} aria-label={t('Descendre')} onClick={() => { const l = [...f.formation_ids]; [l[i + 1], l[i]] = [l[i], l[i + 1]]; setF({ ...f, formation_ids: l }) }} className="text-gray-500 disabled:opacity-30">↓</button>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+          <div className="rounded-xl border border-gray-200 p-3">
+            <p className="text-sm font-semibold text-gray-800">{t('Badge de fin de parcours')}</p>
+            <p className="text-xs text-gray-500 mb-2">{t('Remis automatiquement à l’employé quand tout est terminé.')}</p>
+            <div className="flex flex-wrap gap-1">
+              {BADGES_JOURNEE.map(b => (
+                <button key={b} type="button" onClick={() => setF({ ...f, badge_icone: b })} aria-pressed={f.badge_icone === b}
+                  className={'text-2xl w-10 h-10 rounded-lg border ' + (f.badge_icone === b ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:bg-gray-50')}>{b}</button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="mt-3">
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('Message aux employés (optionnel)')}</label>

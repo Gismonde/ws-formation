@@ -17,6 +17,7 @@ const employeNav = [
   { href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' },
   { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
   { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
+  { href: '/dashboard/badges', label: 'Mes badges', emoji: '🏅' },
   { href: '/dashboard/evenements', label: 'Événements', emoji: '📅' },
   { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
   { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
