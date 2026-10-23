@@ -463,13 +463,19 @@ export default function EditeurFormationPage() {
               <div className="text-center max-w-md">
                 <div className="text-6xl mb-4">✏️</div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('Éditeur de cours')}</h2>
-                <p className="text-gray-500 mb-6">Sélectionnez un module ou une leçon dans la colonne de gauche pour l&apos;éditer, ou ajoutez un nouveau module pour commencer.</p>
-                <button
-                  onClick={ajouterModule}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                >
-                  {t('Créer le premier module')}
-                </button>
+                {(formation?.modules?.length ?? 0) > 0 ? (
+                  <p className="text-gray-500 mb-6">{t('Sélectionnez une leçon ou un module dans la colonne de gauche pour le modifier.')}</p>
+                ) : (
+                  <>
+                    <p className="text-gray-500 mb-6">{t('Cette formation n’a pas encore de contenu. Commencez par créer un module.')}</p>
+                    <button
+                      onClick={ajouterModule}
+                      className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                    >
+                      {t('Créer le premier module')}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}

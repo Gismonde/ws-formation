@@ -98,7 +98,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .sidebar-brand { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
         .sidebar-title { color: #ffffff; font-size: 17px; font-weight: 700; }
         .sidebar-subtitle { color: rgba(255,255,255,0.45); font-size: 12px; margin-top: 2px; }
-        .sidebar-nav { flex: 1; padding: 14px 10px; }
+        .sidebar-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 10px; }
+        .sidebar-brand, .sidebar-footer { flex-shrink: 0; }
+        /* Écran peu haut (ordinateur portable) : en-tête et pied plus compacts, la déconnexion reste visible */
+        @media (min-width: 901px) and (max-height: 820px) {
+          .dashboard-sidebar { overflow: hidden; }
+          .sidebar-brand { padding: 14px 16px 10px; }
+          .sidebar-brand > div[style*="margin-top: 14px"] { margin-top: 8px !important; padding: 4px !important; }
+          .sidebar-nav { padding: 8px 10px; }
+          .sidebar-nav-item { padding: 8px 12px; }
+          .sidebar-footer { padding: 8px 10px; }
+          .sidebar-user-info { padding: 6px 12px; margin-bottom: 4px; }
+        }
         .sidebar-nav-item {
           display: flex; align-items: center; gap: 12px;
           padding: 11px 13px; border-radius: 10px; margin-bottom: 3px;

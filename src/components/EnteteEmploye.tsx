@@ -20,7 +20,12 @@ export default function EnteteEmploye() {
   const charger = useCallback(async () => {
     try {
       const r = await fetch('/api/notifications', { cache: 'no-store' })
-      if (r.ok) setNotifs((await r.json()).notifications)
+      if (r.ok) {
+        const d = await r.json() as { notifications: Notification[]; vues_le?: string | null }
+        setNotifs(d.notifications)
+        // Repère commun à tous les appareils, s'il est plus récent que celui de cet appareil
+        if (d.vues_le) setVues(v => (!v || d.vues_le! > v ? d.vues_le! : v))
+      }
     } catch { /* hors ligne */ }
   }, [])
   useEffect(() => {
@@ -44,6 +49,7 @@ export default function EnteteEmploye() {
     if (suivant) {
       const maintenant = new Date().toISOString()
       try { localStorage.setItem(CLE_VUES, maintenant) } catch { /* */ }
+      fetch('/api/notifications', { method: 'POST' }).catch(() => {})
       // On garde l'ancien repère pendant l'ouverture pour surligner les nouvelles
       setTimeout(() => setVues(maintenant), 4000)
     }

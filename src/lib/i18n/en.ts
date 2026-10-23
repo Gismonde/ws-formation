@@ -2111,4 +2111,6 @@ export const EN: Record<string, string> = {
   'Politique à lire et confirmer : {titre}': 'Policy to read and confirm: {titre}',
   'Nouvel événement : {titre}': 'New event: {titre}',
   'Journée de formation : {titre}': 'Training day: {titre}',
+  'Sélectionnez une leçon ou un module dans la colonne de gauche pour le modifier.': 'Select a lesson or a module in the left column to edit it.',
+  'Cette formation n’a pas encore de contenu. Commencez par créer un module.': 'This training has no content yet. Start by creating a module.',
 }
