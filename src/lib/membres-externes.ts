@@ -1,14 +1,14 @@
-// Membres externes (côté CMC) : personnes qui ne sont pas employées de la clinique
+// Membres externes (CMC et WSSC) : personnes qui ne sont pas employées de la clinique
 // (partenaires, stagiaires, sous-traitants…) mais qui suivent les formations.
 // Elles ont exactement les fonctions et autorisations d'un employé : rôle « employe »,
 // avec un simple marqueur « externe » et le nom de leur organisation.
 
-/** Le statut externe est offert pour les membres du CMC (ou des deux cliniques). */
+/** Le statut externe est offert dans les deux cliniques (il faut une clinique). */
 export function externeOffert(clinique: string | null | undefined): boolean {
-  return clinique === 'CMC' || clinique === 'LES_DEUX'
+  return clinique === 'CMC' || clinique === 'WSSC' || clinique === 'LES_DEUX'
 }
 
-/** Valeurs à enregistrer (fonction pure, testée). Hors CMC ou pour un autre rôle qu'employé : pas externe. */
+/** Valeurs à enregistrer (fonction pure, testée). Sans clinique ou pour un autre rôle qu'employé : pas externe. */
 export function valeursExterne(
   demande: { externe?: unknown; organisation?: unknown },
   role: string, clinique: string | null | undefined,

@@ -131,13 +131,13 @@ function gestionnaireSuivi(a: Acteur): boolean {
   return a.role === 'gestionnaire' && a.peut_suivre_employes === true
 }
 
-/** Gestionnaire (CMC) qui peut assigner des formations aux membres externes de sa clinique. */
+/** Gestionnaire qui peut assigner des formations aux membres externes de sa clinique. */
 function gestionnaireExternes(a: Acteur): boolean {
-  return a.role === 'gestionnaire' && a.peut_assigner_externes === true && cliniquesDe(a.clinique).includes('CMC')
+  return a.role === 'gestionnaire' && a.peut_assigner_externes === true && cliniquesDe(a.clinique).length > 0
 }
 
 /** Suivre des employés (liste, progression, conformité, rappels). Admins : toujours.
- *  Gestionnaire : son département, et/ou les membres externes du CMC s'il en a le droit. */
+ *  Gestionnaire : son département, et/ou les membres externes de sa clinique s'il en a le droit. */
 export function peutSuivreEmployes(a: Acteur | null): boolean {
   return !!a && (estAdmin(a) || gestionnaireSuivi(a) || gestionnaireExternes(a))
 }
@@ -227,7 +227,8 @@ export function filtrerEmployes<Q extends { eq: any; in: any; or: any }>(query: 
     return query.or(`clinique.in.(${[...cl, 'LES_DEUX'].join(',')}),role.eq.super_admin`)
   }
   const suivi = gestionnaireSuivi(a) && !!a.departement_id
-  const externes = gestionnaireExternes(a) && dansLaVue(a, ['CMC']).length > 0
+  const clExt = dansLaVue(a, cliniquesDe(a.clinique))
+  const externes = gestionnaireExternes(a) && clExt.length > 0
   if (suivi && !externes) {
     // Son département, dans sa clinique (les départements sont communs aux deux cliniques)
     const cl = dansLaVue(a, cliniquesDe(a.clinique))
@@ -235,8 +236,8 @@ export function filtrerEmployes<Q extends { eq: any; in: any; or: any }>(query: 
     return query.eq('departement_id', a.departement_id).in('clinique', [...cl, 'LES_DEUX'])
   }
   if (externes) {
-    // Membres externes du CMC (tous départements) + son département s'il a aussi le droit de suivi
-    const conditions = ['and(externe.eq.true,clinique.in.(CMC,LES_DEUX))']
+    // Membres externes de sa clinique (tous départements) + son département s'il a aussi le droit de suivi
+    const conditions = [`and(externe.eq.true,clinique.in.(${[...clExt, 'LES_DEUX'].join(',')}))`]
     const cl = dansLaVue(a, cliniquesDe(a.clinique))
     if (suivi && cl.length) conditions.push(`and(departement_id.eq.${a.departement_id},clinique.in.(${[...cl, 'LES_DEUX'].join(',')}))`)
     return query.or(conditions.join(','))
@@ -252,7 +253,7 @@ export function peutVoirEmploye(a: Acteur, c: CibleEmploye): boolean {
   if (gestionnaireSuivi(a) && !!a.departement_id && c.departement_id === a.departement_id
     && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))) return true
   if (gestionnaireExternes(a) && c.externe === true && c.role === 'employe'
-    && cliniquesDe(c.clinique).includes('CMC') && dansLaVue(a, ['CMC']).length > 0) return true
+    && intersecte(cliniquesDe(c.clinique), dansLaVue(a, cliniquesDe(a.clinique)))) return true
   return false
 }
 

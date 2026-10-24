@@ -66,14 +66,12 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Installer Chromium
-        # L'installation se bloque parfois (miroirs apt) : délai limité et nouvel essai
-        timeout-minutes: 12
+        # Le navigateur vient du CDN de Playwright ; les paquets système (apt) se bloquent parfois :
+        # délais limités, nouvel essai, et on continue avec ceux déjà présents sur le runner.
+        timeout-minutes: 15
         run: |
-          for essai in 1 2 3; do
-            timeout 240 npx playwright install --with-deps chromium && exit 0
-            echo "Installation de Chromium interrompue (essai $essai), nouvel essai…"
-          done
-          exit 1
+          for essai in 1 2 3; do timeout 240 npx playwright install chromium && break; echo "Téléchargement interrompu (essai $essai)"; done
+          timeout 300 npx playwright install-deps chromium || echo "Dépendances système non mises à jour : celles du runner sont utilisées"
       - name: Build
         run: npm run build
       - name: Tests de bout en bout

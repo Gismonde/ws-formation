@@ -1,4 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
+import { ListeObjectifs } from '@/components/Objectifs'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { serviceClient } from '@/lib/permissions'
@@ -150,7 +151,8 @@ export default async function FormationDetailPage({ params }: { params: Promise<
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mb-2 inline-block">{formation.categorie}</span>
           <h1 className="text-2xl font-bold text-gray-900">{formation.titre}</h1>
-          <p className="text-gray-500 mt-2">{formation.description}</p>
+          <p className="text-gray-500 mt-2 whitespace-pre-line">{formation.description}</p>
+          <ListeObjectifs objectifs={(formation as { objectifs?: string[] | null }).objectifs} />
           <div className="mt-5">
             <div className="flex justify-between text-sm text-gray-600 mb-1">
               <span>{t('Progression globale')}</span>
