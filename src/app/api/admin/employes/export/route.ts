@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get('format') === 'zip' ? 'zip' : 'xlsx'
 
   const sb = serviceClient()
-  const { data: cibles } = await sb.from('employes').select('id, role, clinique, departement_id').in('id', ids)
+  const { data: cibles } = await sb.from('employes').select('id, role, clinique, departement_id, externe').in('id', ids)
   const autorises = (cibles ?? []).filter(c => peutVoirEmploye(acteur, c)).map(c => c.id as string)
   if (autorises.length === 0) return NextResponse.json({ error: 'Aucun employé de votre périmètre' }, { status: 404 })
 

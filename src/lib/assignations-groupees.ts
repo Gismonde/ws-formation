@@ -36,7 +36,7 @@ export function ciblePermise(a: Acteur, c: Cible): boolean {
 
 /** Employés actifs visés par la cible, dans le périmètre de l'acteur. */
 export async function employesDeLaCible(sb: SupabaseClient, a: Acteur, c: Cible): Promise<{ employes: EmployeCible[]; erreur?: string }> {
-  const champs = 'id, prenom, nom, email, role, clinique, departement_id, poste'
+  const champs = 'id, prenom, nom, email, role, clinique, departement_id, poste, externe'
   if (c.type === 'employes') {
     const { data } = await sb.from('employes').select(champs + ', actif').in('id', c.ids)
     const lignes = (data ?? []) as unknown as (EmployeCible & { actif: boolean | null })[]

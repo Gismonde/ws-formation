@@ -4,12 +4,17 @@ export const DROITS_GESTIONNAIRE = [
   { cle: 'peut_creer_formations', libelle: 'Créer et modifier des formations', aide: 'Les formations créées doivent être validées par une autre personne avant publication.' },
   { cle: 'peut_valider_formations', libelle: 'Valider des formations', aide: 'Peut être choisi comme validateur des formations créées par d’autres.' },
   { cle: 'peut_creer_evenements', libelle: 'Créer des événements en présentiel', aide: 'Séances de formation avec inscriptions des employés.' },
+  { cle: 'peut_assigner_externes', libelle: 'Assigner des formations aux membres externes', aide: 'Voir les membres externes du CMC (tous départements) et leur assigner des formations. Sans modifier leur fiche.', cmc: true },
 ] as const
+
+/** Droit propre au CMC (les membres externes n'existent qu'au CMC) */
+export const droitOffert = (d: (typeof DROITS_GESTIONNAIRE)[number], clinique: string | null | undefined) =>
+  !('cmc' in d && d.cmc) || clinique === 'CMC' || clinique === 'LES_DEUX'
 
 export type CleDroit = (typeof DROITS_GESTIONNAIRE)[number]['cle']
 export type Droits = Record<CleDroit, boolean>
 
-export const AUCUN_DROIT: Droits = { peut_suivre_employes: false, peut_creer_formations: false, peut_valider_formations: false, peut_creer_evenements: false }
+export const AUCUN_DROIT: Droits = { peut_suivre_employes: false, peut_creer_formations: false, peut_valider_formations: false, peut_creer_evenements: false, peut_assigner_externes: false }
 
 export function droitsDe(e: Partial<Record<CleDroit, boolean | null>> | null | undefined): Droits {
   return {
@@ -17,14 +22,17 @@ export function droitsDe(e: Partial<Record<CleDroit, boolean | null>> | null | u
     peut_creer_formations: e?.peut_creer_formations === true,
     peut_valider_formations: e?.peut_valider_formations === true,
     peut_creer_evenements: e?.peut_creer_evenements === true,
+    peut_assigner_externes: e?.peut_assigner_externes === true,
   }
 }
 
 /** Droits à enregistrer : seulement pour un gestionnaire (sinon tout à faux). */
-export function droitsAEnregistrer(role: string, corps: Record<string, unknown>, actuels?: Droits): Droits {
+export function droitsAEnregistrer(role: string, corps: Record<string, unknown>, actuels?: Droits, clinique?: string | null): Droits {
   if (role !== 'gestionnaire') return { ...AUCUN_DROIT }
   const res = { ...(actuels ?? AUCUN_DROIT) }
   for (const d of DROITS_GESTIONNAIRE) if (typeof corps[d.cle] === 'boolean') res[d.cle] = corps[d.cle] as boolean
+  // Droit CMC retiré si la personne n'est pas (ou plus) au CMC
+  if (clinique !== undefined) for (const d of DROITS_GESTIONNAIRE) if (!droitOffert(d, clinique)) res[d.cle] = false
   return res
 }
 
