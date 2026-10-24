@@ -2127,4 +2127,10 @@ export const EN: Record<string, string> = {
   'Externes': 'External',
   'Assigner des formations aux membres externes': 'Assign training to external members',
   'Voir les membres externes du CMC (tous départements) et leur assigner des formations. Sans modifier leur fiche.': 'See CMC external members (all departments) and assign them training, without editing their profile.',
+  'Affichés aux employés en haut de la formation. 12 au maximum.': 'Shown to employees at the top of the training. 12 at most.',
+  'Ajouter un objectif': 'Add an objective',
+  'Ex. : Connaître les étapes du parcours préopératoire': 'e.g. Know the steps of the preoperative pathway',
+  'Objectifs de la formation': 'Training objectives',
+  'Voir les membres externes de sa clinique (tous départements) et leur assigner des formations. Sans modifier leur fiche.': 'See external members of their clinic (all departments) and assign them training, without editing their profile.',
+  'Ex. : Connaître les étapes du parcours préopératoire': 'e.g. Know the steps of the preoperative pathway',
 }

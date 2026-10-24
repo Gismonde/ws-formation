@@ -1,4 +1,5 @@
 'use client'
+import { EditeurObjectifs, nettoyerObjectifs } from '@/components/Objectifs'
 import BandeauPublication from '@/components/editeur/BandeauPublication'
 
 import { useT } from '@/lib/i18n/client'
@@ -26,6 +27,7 @@ interface Formation {
   validite_mois: number | null
   prerequis_ids: string[] | null
   image_couverture: string | null
+  objectifs?: string[] | null
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
   obligatoire?: boolean | null
@@ -90,6 +92,7 @@ export default function ModifierFormationPage() {
         validite_mois: formation.validite_mois,
         prerequis_ids: formation.prerequis_ids ?? [],
         image_couverture: formation.image_couverture || null,
+        ...(formation.objectifs !== undefined ? { objectifs: nettoyerObjectifs(formation.objectifs) } : {}),
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
@@ -165,6 +168,12 @@ export default function ModifierFormationPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('Description')}</label>
               <textarea value={formation.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
             </div>
+            {formation.objectifs !== undefined && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('Objectifs de la formation')}</label>
+                <EditeurObjectifs objectifs={formation.objectifs ?? []} onChange={v => setFormation(prev => prev ? { ...prev, objectifs: v } : prev)} />
+              </div>
+            )}
             {formation.responsable_formation !== undefined && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('Responsable de la formation')}</label>

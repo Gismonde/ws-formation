@@ -35,7 +35,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   if (filtreType === 'externes') query = query.eq('externe', true)
   if (filtreType === 'employes') query = query.or('externe.is.null,externe.eq.false')
   const { data: employes } = await query
-  const avecExternes = mesCliniques.includes('CMC')
+  const avecExternes = true
   const lienFiltre = (c: string, ty: string) => { const q = [c && `clinique=${c}`, ty && `type=${ty}`].filter(Boolean).join('&'); return '/admin/employes' + (q ? '?' + q : '') }
   const ids = (employes ?? []).map((e: any) => e.id)
 

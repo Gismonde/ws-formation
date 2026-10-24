@@ -1,4 +1,5 @@
 import { i18n } from '@/lib/i18n/serveur'
+import { ListeObjectifs } from '@/components/Objectifs'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -133,8 +134,9 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
                 </p>
               )}
               {formation.description && (
-                <p className="text-gray-600 leading-relaxed">{formation.description}</p>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{formation.description}</p>
               )}
+              <ListeObjectifs objectifs={(formation as { objectifs?: string[] | null }).objectifs} compact />
             </div>
             {peutCreer && !copieDe && (
               <div className="flex items-start gap-2">

@@ -4,12 +4,11 @@ export const DROITS_GESTIONNAIRE = [
   { cle: 'peut_creer_formations', libelle: 'Créer et modifier des formations', aide: 'Les formations créées doivent être validées par une autre personne avant publication.' },
   { cle: 'peut_valider_formations', libelle: 'Valider des formations', aide: 'Peut être choisi comme validateur des formations créées par d’autres.' },
   { cle: 'peut_creer_evenements', libelle: 'Créer des événements en présentiel', aide: 'Séances de formation avec inscriptions des employés.' },
-  { cle: 'peut_assigner_externes', libelle: 'Assigner des formations aux membres externes', aide: 'Voir les membres externes du CMC (tous départements) et leur assigner des formations. Sans modifier leur fiche.', cmc: true },
+  { cle: 'peut_assigner_externes', libelle: 'Assigner des formations aux membres externes', aide: 'Voir les membres externes de sa clinique (tous départements) et leur assigner des formations. Sans modifier leur fiche.' },
 ] as const
 
-/** Droit propre au CMC (les membres externes n'existent qu'au CMC) */
-export const droitOffert = (d: (typeof DROITS_GESTIONNAIRE)[number], clinique: string | null | undefined) =>
-  !('cmc' in d && d.cmc) || clinique === 'CMC' || clinique === 'LES_DEUX'
+/** Droit offert selon la clinique (tous les droits le sont dans les deux cliniques) */
+export const droitOffert = (_d: (typeof DROITS_GESTIONNAIRE)[number], _clinique: string | null | undefined) => true
 
 export type CleDroit = (typeof DROITS_GESTIONNAIRE)[number]['cle']
 export type Droits = Record<CleDroit, boolean>
