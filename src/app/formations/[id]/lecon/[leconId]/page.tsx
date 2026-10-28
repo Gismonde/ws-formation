@@ -270,11 +270,12 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           )}
         </div>
 
-        {/* Lecteur audio */}
-        <AudioReader
-          text={lecon.blocs.filter(b => b.type === 'text' && b.contenu).map(b => b.contenu!).join(' ')}
-          title={lecon.titre}
-        />
+        {/* Lecteur audio : seulement s'il y a du texte à lire (pas pour une leçon faite d'un document ou d'une vidéo) */}
+        {(() => {
+          const texteAudio = [lecon.description ?? '', ...lecon.blocs.filter(b => b.type === 'text' && b.contenu).map(b => b.contenu!)]
+            .join(' ').replace(/<[^>]+>/g, ' ').replace(/[#*_>`~\[\]()|-]/g, ' ').replace(/\s+/g, ' ').trim()
+          return texteAudio.length >= 40 ? <AudioReader text={texteAudio} title={lecon.titre} /> : null
+        })()}
         {/* Blocs de contenu */}
         <FournisseurSuivi etat={etatSuivi} suiviActif={suiviActif}>
         {lecon.blocs.length === 0 ? (

@@ -1,4 +1,5 @@
 // Invitation d'un employé : lien sécurisé pour créer son mot de passe (aucun mot de passe saisi par l'admin).
+import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { envoyerCourriels, gabarit } from '@/lib/courriels'
 
@@ -27,7 +28,13 @@ export async function inviterEmploye(sb: SupabaseClient, params: {
   const type = nouveau ? 'invite' : 'recovery'
   const lien = `${origine}/bienvenue?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=${type}`
 
-  const { html, texte } = gabarit({
+  const cfg = nouveau ? await chargerNotifications(sb) : null
+  const perso = nouveau ? composerNotification(cfg, 'compte_cree_admin', { a: email, origine, clinique, prenom, nom, lien }) : null
+  if (nouveau && !perso) {
+    // Notification désactivée : aucun courriel, le lien est transmis par l'administrateur
+    return { authUserId: data.user?.id ?? null, courrielEnvoye: false, lien, erreur: 'notification_desactivee' }
+  }
+  const { html, texte } = perso ? { html: perso.html, texte: perso.texte } : gabarit({
     origine, clinique,
     titre: nouveau ? `Bienvenue ${prenom} !` : 'Accédez à votre portail de formation',
     paragraphes: nouveau
@@ -43,7 +50,7 @@ export async function inviterEmploye(sb: SupabaseClient, params: {
     bouton: { libelle: nouveau ? 'Créer mon mot de passe' : 'Choisir mon mot de passe', lien },
     piedDePage: 'Ce lien est personnel et expire rapidement. Si vous n’êtes pas à l’origine de cette demande, ignorez ce courriel.',
   })
-  const envoi = await envoyerCourriels([{ a: email, sujet: nouveau ? 'Activez votre accès au portail de formation' : 'Votre lien d’accès au portail de formation', html, texte }])
+  const envoi = await envoyerCourriels([{ a: email, sujet: perso ? perso.sujet : nouveau ? 'Activez votre accès au portail de formation' : 'Votre lien d’accès au portail de formation', html, texte }])
   const courrielEnvoye = envoi.envoyes === 1
 
   return {

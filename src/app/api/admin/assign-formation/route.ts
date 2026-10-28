@@ -1,3 +1,5 @@
+import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
+import type { Courriel } from '@/lib/courriels'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
@@ -129,26 +131,18 @@ export async function POST(req: NextRequest) {
     if (body.notifier !== false && courrielsActifs()) {
       const [{ data: formation }, { data: dest }] = await Promise.all([
         serviceRole.from('formations').select('titre, description').eq('id', formationId).single(),
-        serviceRole.from('employes').select('id, prenom, email, clinique, actif').in('id', toAssign),
+        serviceRole.from('employes').select('id, prenom, nom, email, clinique, actif').in('id', toAssign),
       ])
       const origine = origineDepuis(req)
       const echeance = dateEcheance
         ? new Date(dateEcheance + (String(dateEcheance).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('fr-CA', { dateStyle: 'long' })
         : null
-      const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email).map((e: any) => {
-        const { html, texte } = gabarit({
-          origine, clinique: e.clinique,
-          titre: 'Nouvelle formation disponible',
-          paragraphes: [
-            `Bonjour ${e.prenom},`,
-            `La formation « ${formation?.titre ?? 'Formation'} » vous a été assignée dans votre portail.`,
-            ...(formation?.description ? [String(formation.description).slice(0, 300)] : []),
-            echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.',
-          ],
-          bouton: { libelle: 'Commencer la formation', lien: `${origine}/formations/${formationId}` },
-        })
-        return { a: e.email, sujet: `Nouvelle formation : ${formation?.titre ?? ''}`.trim(), html, texte }
-      }))
+      const cfg = await chargerNotifications(serviceRole)
+      const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email).map((e: any) => composerNotification(cfg, 'inscription_cours_assignation', {
+        a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom,
+        vars: { activite: formation?.titre ?? 'Formation', date: echeance ?? '', echeance: echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.' },
+        lien: `${origine}/formations/${formationId}`,
+      })).filter((c): c is Courriel => !!c))
       courriels = envoi.envoyes
     }
 

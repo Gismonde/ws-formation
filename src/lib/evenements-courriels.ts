@@ -1,9 +1,10 @@
 // Courriels des événements : annonce, confirmation, liste d'attente, changements, rappels, relances, sondage.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { courrielsActifs, envoyerCourriels, gabarit, type Courriel } from '@/lib/courriels'
+import { chargerNotifications, composerNotification, modeleEnVigueur, type ConfigNotifications } from '@/lib/notifications-courriel'
 import { estInvite, placesRestantes, seanceOuverte, type Evenement, type Seance, type Inscription } from '@/lib/evenements'
 
-type Personne = { id: string; prenom: string | null; email: string | null; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null; actif?: boolean | null }
+type Personne = { id: string; prenom: string | null; nom?: string | null; email: string | null; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null; actif?: boolean | null }
 
 const quand = (s: Pick<Seance, 'debut' | 'fin'>) => {
   const d = new Date(s.debut), f = new Date(s.fin)
@@ -16,6 +17,17 @@ function courriel(origine: string, e: Personne, sujet: string, paragraphes: stri
   if (!e.email) return null
   const { html, texte } = gabarit({ origine, clinique: e.clinique, titre: sujet, paragraphes: [`Bonjour ${e.prenom ?? ''},`.replace(' ,', ','), ...paragraphes], bouton })
   return { a: e.email, sujet, html, texte }
+}
+
+/** Notification personnalisable (Admin → Paramètres → Notifications) ; null si désactivée. */
+function notif(cfg: ConfigNotifications, cle: string, origine: string, e: Personne, ev: Evenement, s: Seance | null, lien: string): Courriel | null {
+  return composerNotification(cfg, cle, {
+    a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom ?? null, lien,
+    vars: {
+      activite: ev.titre, date: s ? quand(s) : '', lieu: s && (s.lieu || ev.lieu) ? `Lieu : ${s.lieu || ev.lieu}` : '',
+      calendrier: s ? `Ajouter à votre calendrier : ${lienIcs(origine, ev, s)}` : '',
+    },
+  })
 }
 
 const lienEvenement = (origine: string, ev: Pick<Evenement, 'id'>) => `${origine}/dashboard/evenements/${ev.id}`
@@ -31,13 +43,13 @@ async function envoyer(liste: (Courriel | null)[]) {
 
 /** Employés actifs invités à l'événement. */
 export async function invitesDe(sb: SupabaseClient, ev: Evenement): Promise<Personne[]> {
-  const { data } = await sb.from('employes').select('id, prenom, email, clinique, role, departement_id, poste, actif').or('actif.is.null,actif.eq.true')
+  const { data } = await sb.from('employes').select('id, prenom, nom, email, clinique, role, departement_id, poste, actif').or('actif.is.null,actif.eq.true')
   return ((data ?? []) as Personne[]).filter(e => estInvite(ev, e))
 }
 
 async function personnes(sb: SupabaseClient, ids: string[]): Promise<Map<string, Personne>> {
   if (!ids.length) return new Map()
-  const { data } = await sb.from('employes').select('id, prenom, email, clinique, role, departement_id, poste, actif').in('id', ids)
+  const { data } = await sb.from('employes').select('id, prenom, nom, email, clinique, role, departement_id, poste, actif').in('id', ids)
   return new Map(((data ?? []) as Personne[]).filter(e => e.actif !== false).map(e => [e.id, e]))
 }
 
@@ -45,6 +57,9 @@ async function personnes(sb: SupabaseClient, ids: string[]): Promise<Map<string,
 export async function annoncerEvenement(sb: SupabaseClient, ev: Evenement, seances: Seance[], origine: string) {
   const invites = await invitesDe(sb, ev)
   const dates = seances.filter(s => seanceOuverte(s)).map(s => `• ${quand(s)}`)
+  const cfg = await chargerNotifications(sb)
+  if (!modeleEnVigueur(cfg, 'nouvelle_session_participants')?.actif) return 0
+  if (cfg.modeles.has('nouvelle_session_participants')) return envoyer(invites.map(e => notif(cfg, 'nouvelle_session_participants', origine, e, ev, null, lienEvenement(origine, ev))))
   return envoyer(invites.map(e => courriel(origine, e, `${ev.obligatoire ? 'Formation obligatoire' : 'Nouvelle formation en présentiel'} : ${ev.titre}`, [
     `Une formation en présentiel vous est proposée : « ${ev.titre} ».`,
     ...(ev.description ? [ev.description.slice(0, 500)] : []),
@@ -57,8 +72,9 @@ export async function annoncerEvenement(sb: SupabaseClient, ev: Evenement, seanc
 export async function confirmerInscription(sb: SupabaseClient, ev: Evenement, s: Seance, employeId: string, statut: 'inscrit' | 'attente', origine: string) {
   const e = (await personnes(sb, [employeId])).get(employeId)
   if (!e) return 0
+  const cfg = await chargerNotifications(sb)
   return envoyer([statut === 'inscrit'
-    ? courriel(origine, e, `Inscription confirmée : ${ev.titre}`, [`Votre inscription à « ${ev.titre} » est confirmée.`, `Date : ${quand(s)}`, ...lieu(ev, s), `Ajouter à votre calendrier : ${lienIcs(origine, ev, s)}`], { libelle: 'Voir mon inscription', lien: lienEvenement(origine, ev) })
+    ? notif(cfg, 'inscription_occurrence', origine, e, ev, s, lienEvenement(origine, ev))
     : courriel(origine, e, `Liste d’attente : ${ev.titre}`, [`La séance du ${quand(s)} est complète. Vous êtes sur la liste d’attente.`, 'Si une place se libère, vous serez inscrit(e) automatiquement et prévenu(e) par courriel.'], { libelle: 'Voir l’événement', lien: lienEvenement(origine, ev) })])
 }
 
@@ -66,14 +82,17 @@ export async function confirmerInscription(sb: SupabaseClient, ev: Evenement, s:
 export async function avertirPromotion(sb: SupabaseClient, ev: Evenement, s: Seance, employeId: string, origine: string) {
   const e = (await personnes(sb, [employeId])).get(employeId)
   if (!e) return 0
-  return envoyer([courriel(origine, e, `Une place s’est libérée : ${ev.titre}`, [`Bonne nouvelle : une place s’est libérée. Vous êtes maintenant inscrit(e) à « ${ev.titre} ».`, `Date : ${quand(s)}`, ...lieu(ev, s), `Ajouter à votre calendrier : ${lienIcs(origine, ev, s)}`], { libelle: 'Voir mon inscription', lien: lienEvenement(origine, ev) })])
+  const cfg = await chargerNotifications(sb)
+  return envoyer([notif(cfg, 'liste_attente_ouverture', origine, e, ev, s, lienEvenement(origine, ev))])
 }
 
 /** Séance modifiée ou annulée : les inscrits (et la liste d'attente) sont prévenus. */
 export async function avertirChangementSeance(sb: SupabaseClient, ev: Evenement, s: Seance, inscriptions: Inscription[], motif: 'modifiee' | 'annulee', origine: string) {
   const ids = inscriptions.filter(i => i.seance_id === s.id && i.statut !== 'annule').map(i => i.employe_id)
   const pers = await personnes(sb, ids)
-  return envoyer(Array.from(pers.values()).map(e => courriel(origine, e,
+  const cfg = await chargerNotifications(sb)
+  const cle = motif === 'annulee' ? 'session_annulee_participants' : 'modification_occurrence'
+  return envoyer(Array.from(pers.values()).map(e => cfg.modeles.has(cle) || motif === 'modifiee' ? notif(cfg, cle, origine, e, ev, s, lienEvenement(origine, ev)) : !modeleEnVigueur(cfg, cle)?.actif ? null : courriel(origine, e,
     motif === 'annulee' ? `Séance annulée : ${ev.titre}` : `Séance modifiée : ${ev.titre}`,
     motif === 'annulee'
       ? [`La séance de « ${ev.titre} » du ${quand(s)} est annulée.`, 'Vous pouvez vous inscrire à une autre date dans votre portail.']
@@ -84,7 +103,8 @@ export async function avertirChangementSeance(sb: SupabaseClient, ev: Evenement,
 /** Événement annulé : tous les inscrits sont prévenus. */
 export async function avertirAnnulationEvenement(sb: SupabaseClient, ev: Evenement, inscriptions: Inscription[], origine: string) {
   const pers = await personnes(sb, Array.from(new Set(inscriptions.filter(i => i.statut !== 'annule').map(i => i.employe_id))))
-  return envoyer(Array.from(pers.values()).map(e => courriel(origine, e, `Événement annulé : ${ev.titre}`, [`L’événement « ${ev.titre} » est annulé. Votre inscription est annulée automatiquement.`], { libelle: 'Mes événements', lien: `${origine}/dashboard/evenements` })))
+  const cfg = await chargerNotifications(sb)
+  return envoyer(Array.from(pers.values()).map(e => notif(cfg, 'annulation_occurrence', origine, e, ev, null, `${origine}/dashboard/evenements`)))
 }
 
 /**
@@ -96,6 +116,7 @@ export async function avertirAnnulationEvenement(sb: SupabaseClient, ev: Eveneme
 export async function tachesEvenements(sb: SupabaseClient, origine: string, maintenant = new Date()) {
   const bilan = { rappels: 0, relances: 0, sondages: 0 }
   if (!courrielsActifs()) return bilan
+  const cfg = await chargerNotifications(sb)
   const { data: evs } = await sb.from('evenements').select('*').eq('statut', 'publie')
   for (const ev of (evs ?? []) as Evenement[]) {
     const { data: ss } = await sb.from('evenements_seances').select('*').eq('evenement_id', ev.id)
@@ -107,13 +128,13 @@ export async function tachesEvenements(sb: SupabaseClient, origine: string, main
       const dans = new Date(s.debut).getTime() - maintenant.getTime()
       if (!s.rappel_envoye && dans > 0 && dans <= 36 * 3600_000) {
         const pers = await personnes(sb, inscriptions.filter(i => i.seance_id === s.id && i.statut === 'inscrit').map(i => i.employe_id))
-        bilan.rappels += await envoyer(Array.from(pers.values()).map(e => courriel(origine, e, `Rappel : ${ev.titre}`, [`Rappel : vous êtes inscrit(e) à « ${ev.titre} ».`, `Date : ${quand(s)}`, ...lieu(ev, s)], { libelle: 'Voir mon inscription', lien: lienEvenement(origine, ev) })))
+        bilan.rappels += await envoyer(Array.from(pers.values()).map(e => notif(cfg, 'rappel_evenement', origine, e, ev, s, lienEvenement(origine, ev))))
         await sb.from('evenements_seances').update({ rappel_envoye: true }).eq('id', s.id)
       }
       const depuisFin = maintenant.getTime() - new Date(s.fin).getTime()
       if (ev.formation_id && !s.sondage_envoye && depuisFin > 2 * 3600_000 && depuisFin < 7 * 24 * 3600_000) {
         const pers = await personnes(sb, inscriptions.filter(i => i.seance_id === s.id && i.present === true).map(i => i.employe_id))
-        bilan.sondages += await envoyer(Array.from(pers.values()).map(e => courriel(origine, e, `Votre avis sur « ${ev.titre} »`, ['Merci pour votre participation ! Donnez-nous votre avis en 1 minute : vos réponses sont anonymes.'], { libelle: 'Répondre au sondage', lien: `${origine}/formations/${ev.formation_id}/sondage` })))
+        bilan.sondages += await envoyer(Array.from(pers.values()).map(e => notif(cfg, 'invitation_sondage', origine, e, ev, s, `${origine}/formations/${ev.formation_id}/sondage`)))
         await sb.from('evenements_seances').update({ sondage_envoye: true }).eq('id', s.id)
       }
     }
