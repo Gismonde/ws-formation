@@ -32,3 +32,24 @@ describe('objectifs', () => {
     expect(nettoyerObjectifs(Array.from({ length: 20 }, (_, i) => 'o' + i))).toHaveLength(12)
   })
 })
+
+import { normaliserPronoms } from '@/lib/pronoms'
+import { appelRobuste } from '@/lib/appel-robuste'
+describe('pronoms', () => {
+  it('normalise le texte', () => {
+    expect(normaliserPronoms('  elle /  elle ')).toBe('elle / elle')
+    expect(normaliserPronoms('')).toBeNull()
+    expect(normaliserPronoms(null)).toBeNull()
+    expect(normaliserPronoms('<b>iel</b>')).toBe('biel/b')
+    expect(normaliserPronoms('x'.repeat(60))).toHaveLength(40)
+  })
+})
+describe('appel robuste', () => {
+  it('réessaie une fois après une exception, puis renvoie une erreur lisible', async () => {
+    let n = 0
+    const r = await appelRobuste(async () => { n++; if (n === 1) throw new Error('503'); return { success: true as const, data: 1 } })
+    expect(r).toEqual({ success: true, data: 1 })
+    const r2 = await appelRobuste(async () => { throw new Error('réseau') })
+    expect(r2.success).toBe(false)
+  })
+})

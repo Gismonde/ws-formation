@@ -6,10 +6,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFormationWithModules } from '@/lib/actions/formations'
-import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock } from '@/lib/actions/lessons'
+import { getLessonsWithBlocks, createLesson, updateLesson, deleteLesson, reorderLessons, createContentBlock, appliquerAttestationATouteLaFormation } from '@/lib/actions/lessons'
 import BandeauPublication from '@/components/editeur/BandeauPublication'
 import ChoixLibrairie, { blocPourChoix, type ElementChoisi } from '@/components/editeur/ChoixLibrairie'
 import { createModule, updateModule, deleteModule, reorderModules } from '@/lib/actions/formations'
+import { appelRobuste } from '@/lib/appel-robuste'
 import type { Formation, Module, Lesson, ContentBlock } from '@/lib/types/formation'
 import EditeurBlocs from '@/components/editeur/EditeurBlocs'
 import EditeurQuestionnaire from '@/components/editeur/EditeurQuestionnaire'
@@ -44,6 +45,9 @@ export default function EditeurFormationPage() {
   const [attestationLecon, setAttestationLecon] = useState(false)
   const [apparitionLecon, setApparitionLecon] = useState(false)
   const [texteAttestation, setTexteAttestation] = useState('')
+  // Leçon : valeurs enregistrées (pour savoir s'il reste des modifications) et retour après sauvegarde
+  const [leconEnregistree, setLeconEnregistree] = useState<string>('')
+  const [etatLecon, setEtatLecon] = useState<{ ok: boolean; texte: string } | null>(null)
   const [showImportPptx, setShowImportPptx] = useState(false)
   const [importPptxFile, setImportPptxFile] = useState<File | null>(null)
   const [importPptxMode, setImportPptxMode] = useState<'one' | 'many'>('one')
@@ -101,7 +105,17 @@ export default function EditeurFormationPage() {
     setTitreModule(mod.titre)
     setDescModule(mod.description || '')
   }
-  const selectionnerLecon = (lecon: Lesson & { blocs: ContentBlock[] }, moduleId: string) => {
+  const signatureLecon = (v: { titre: string; desc: string; att: boolean; texte: string; app: boolean }) => JSON.stringify(v)
+  const leconModifiee = panneau.type === 'lecon' && leconEnregistree !== '' &&
+    signatureLecon({ titre: titreLecon, desc: descLecon, att: attestationLecon, texte: texteAttestation, app: apparitionLecon }) !== leconEnregistree
+  const selectionnerLecon = async (lecon: Lesson & { blocs: ContentBlock[] }, moduleId: string) => {
+    if (leconModifiee && panneau.type === 'lecon' && panneau.leconId !== lecon.id &&
+      !(await confirmer({ message: t('Les modifications de la leçon en cours ne sont pas enregistrées. Les abandonner ?'), bouton: t('Abandonner') }))) return
+    setEtatLecon(null)
+    setLeconEnregistree(signatureLecon({
+      titre: lecon.titre, desc: lecon.description || '', att: lecon.attestation_requise === true,
+      texte: lecon.texte_attestation || '', app: (lecon as { apparition_progressive?: boolean }).apparition_progressive === true,
+    }))
     setPanneau({ type: 'lecon', leconId: lecon.id, moduleId })
     setTitreLecon(lecon.titre)
     setDescLecon(lecon.description || '')
@@ -197,14 +211,39 @@ export default function EditeurFormationPage() {
   const sauvegarderLecon = async () => {
     if (panneau.type !== 'lecon') return
     setSauvegarde(true)
-    const res = await updateLesson(panneau.leconId, {
+    setEtatLecon(null)
+    const res = await appelRobuste(() => updateLesson(panneau.leconId, {
       titre: titreLecon, description: descLecon,
       attestation_requise: attestationLecon, texte_attestation: texteAttestation.trim() || null,
       apparition_progressive: apparitionLecon,
-    })
+    }))
     setSauvegarde(false)
-    if (res.success) chargerFormation()
-    else setErreur(res.error)
+    if (res.success) {
+      // Contrôle : ce qui est réellement enregistré
+      const l = res.data as Lesson
+      const ok = (l.attestation_requise === true) === attestationLecon && (l.texte_attestation || '') === (texteAttestation.trim() || '')
+      setLeconEnregistree(signatureLecon({ titre: titreLecon, desc: descLecon, att: attestationLecon, texte: texteAttestation, app: apparitionLecon }))
+      setEtatLecon(ok
+        ? { ok: true, texte: t('✓ Leçon enregistrée à {heure}', { heure: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) }
+        : { ok: false, texte: t('L’enregistrement n’a pas été confirmé. Rechargez la page et réessayez.') })
+      chargerFormation()
+    } else {
+      setEtatLecon({ ok: false, texte: res.error })
+    }
+  }
+
+  const appliquerAttestationPartout = async () => {
+    if (!(await confirmer({ message: t('Exiger « J’ai lu et compris » à la fin de TOUTES les leçons de cette formation, avec ce texte ?'), bouton: t('Appliquer à toutes les leçons') }))) return
+    setSauvegarde(true)
+    setEtatLecon(null)
+    const res = await appelRobuste(() => appliquerAttestationATouteLaFormation(formationId, texteAttestation.trim() || null))
+    setSauvegarde(false)
+    if (res.success) {
+      setAttestationLecon(true)
+      setLeconEnregistree(signatureLecon({ titre: titreLecon, desc: descLecon, att: true, texte: texteAttestation, app: apparitionLecon }))
+      setEtatLecon({ ok: true, texte: t('✓ Attestation appliquée à {n} leçon(s)', { n: res.data }) })
+      chargerFormation()
+    } else setEtatLecon({ ok: false, texte: res.error })
   }
 
   const supprimerLecon = async (leconId: string) => {
@@ -629,18 +668,28 @@ export default function EditeurFormationPage() {
                   <textarea
                     value={texteAttestation}
                     onChange={e => setTexteAttestation(e.target.value)}
-                    rows={2}
+                    rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
                     placeholder="Texte de l'attestation (laisser vide pour : J'ai lu et compris le contenu de cette leçon et je m'engage à l'appliquer.)"
                   />
                 )}
+                <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={sauvegarderLecon}
                   disabled={sauvegarde}
                   className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
                 >
-                  {sauvegarde ? 'Sauvegarde...' : 'Sauvegarder'}
+                  {sauvegarde ? t('Sauvegarde...') : t('Sauvegarder')}
                 </button>
+                  {attestationLecon && (
+                    <button type="button" onClick={appliquerAttestationPartout} disabled={sauvegarde}
+                      className="px-4 py-2 text-sm rounded-lg border border-indigo-200 text-indigo-700 bg-white hover:bg-indigo-50 disabled:opacity-50">
+                      {t('Appliquer à toutes les leçons')}
+                    </button>
+                  )}
+                  {leconModifiee && !sauvegarde && <span className="text-sm text-amber-700">● {t('Modifications non enregistrées')}</span>}
+                  {etatLecon && <span className={'text-sm ' + (etatLecon.ok ? 'text-green-700' : 'text-red-600')} role="status">{etatLecon.texte}</span>}
+                </div>
               </div>
 
               {/* Blocs de contenu : éditeur visuel */}

@@ -4,6 +4,7 @@ import { serviceClient } from '@/lib/permissions'
 import { CliniqueLogos } from '@/components/CliniqueBadge'
 import { ROLE_LABEL, Role, cliniquesDe, CLINIQUE_INFO } from '@/lib/cliniques'
 import { i18n } from '@/lib/i18n/serveur'
+import ChoixPronoms from './ChoixPronoms'
 
 export default async function ProfilPage() {
   const supabase = await createClient()
@@ -41,7 +42,10 @@ export default async function ProfilPage() {
         <div style={{ padding: '48px 32px 32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap', marginBottom: '24px' }}>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1f36', margin: '0 0 4px 0' }}>{employe.prenom} {employe.nom}</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1f36', margin: '0 0 4px 0' }}>
+                {employe.prenom} {employe.nom}
+                {employe.pronoms && <span style={{ fontSize: '14px', fontWeight: 500, color: '#6b7280', marginLeft: '8px' }}>({employe.pronoms})</span>}
+              </h2>
               <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>{employe.poste ?? t('Employé')}</p>
             </div>
             <CliniqueLogos clinique={cliniqueAffichee} hauteur={56} />
@@ -61,6 +65,7 @@ export default async function ProfilPage() {
               </div>
             ))}
           </div>
+          <div style={{ marginTop: '16px' }}><ChoixPronoms initial={(employe as { pronoms?: string | null }).pronoms ?? null} /></div>
         </div>
       </div>
     </div>

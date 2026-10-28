@@ -251,7 +251,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
         <label className={'flex items-start gap-3 rounded-lg border p-4 cursor-pointer ' + (coche ? 'border-blue-400 bg-blue-50' : 'border-gray-200')}>
           <input type="checkbox" className="mt-1 w-4 h-4" checked={coche} disabled={!!attestationLe}
             onChange={e => setCoche(e.target.checked)} />
-          <span className="text-sm text-gray-800">{texteAttestation}</span>
+          <span className="text-sm text-gray-800 whitespace-pre-line">{texteAttestation}</span>
         </label>
       )}
 

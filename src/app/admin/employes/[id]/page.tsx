@@ -268,7 +268,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           {((p.prenom[0] ?? "") + (p.nom[0] ?? "")).toUpperCase()}
         </div>
         <div className="flex-1 min-w-[220px]">
-          <h1 className="text-xl font-bold text-gray-900">{p.prenom} {p.nom}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{p.prenom} {p.nom}{employe.pronoms && <span className="ml-2 text-sm font-normal text-gray-500">({employe.pronoms})</span>}</h1>
           <div className="text-sm text-gray-500 break-all">{p.email}{p.poste ? ` · ${p.poste}` : ""}</div>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{p.role_libelle}</span>
