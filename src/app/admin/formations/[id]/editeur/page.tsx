@@ -59,14 +59,12 @@ export default function EditeurFormationPage() {
     if (!res.success) { setErreur(res.error); setChargement(false); return }
     const f = res.data as Formation & { modules: Module[] }
     // Charger les lecons de chaque module
-    const modulesAvecLecons: ModuleAvecLecons[] = []
-    for (const mod of (f.modules || [])) {
-      const lr = await getLessonsWithBlocks(mod.id)
-      modulesAvecLecons.push({
-        ...mod,
-        lecons: lr.success ? (lr.data as any[]) : []
-      })
-    }
+    // Leçons de tous les modules en parallèle (beaucoup plus rapide pour les longues formations)
+    const resultats = await Promise.all((f.modules || []).map(mod => getLessonsWithBlocks(mod.id).catch(() => null)))
+    const modulesAvecLecons: ModuleAvecLecons[] = (f.modules || []).map((mod, i) => {
+      const lr = resultats[i]
+      return { ...mod, lecons: lr && lr.success ? (lr.data as any[]) : [] }
+    })
     setFormation({ ...f, modules: modulesAvecLecons } as FormationAvecModules)
     setChargement(false)
   }, [formationId])
@@ -222,6 +220,9 @@ export default function EditeurFormationPage() {
       // Contrôle : ce qui est réellement enregistré
       const l = res.data as Lesson
       const ok = (l.attestation_requise === true) === attestationLecon && (l.texte_attestation || '') === (texteAttestation.trim() || '')
+      // La structure affichée est mise à jour tout de suite (sans attendre le rechargement complet) :
+      // en revenant sur cette leçon, on retrouve bien ce qui vient d'être enregistré
+      setFormation(prev => prev ? { ...prev, modules: prev.modules.map(m => ({ ...m, lecons: m.lecons.map(x => x.id === l.id ? { ...x, ...l, blocs: x.blocs } : x) })) } : prev)
       setLeconEnregistree(signatureLecon({ titre: titreLecon, desc: descLecon, att: attestationLecon, texte: texteAttestation, app: apparitionLecon }))
       setEtatLecon(ok
         ? { ok: true, texte: t('✓ Leçon enregistrée à {heure}', { heure: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) }

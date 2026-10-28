@@ -40,3 +40,16 @@ describe('empêcher d’avancer dans la vidéo', () => {
     expect(positionPermise(10, 3)).toBeNull()
   })
 })
+
+import { leconAccessible, premiereNonTerminee } from '@/lib/verrou-lecons'
+describe('parcours dans l’ordre', () => {
+  const ordre = ['a', 'b', 'c']
+  it('seules les leçons terminées et la suivante sont accessibles', () => {
+    expect(leconAccessible(ordre, new Set(), 'a')).toBe(true)
+    expect(leconAccessible(ordre, new Set(), 'b')).toBe(false)
+    expect(leconAccessible(ordre, new Set(['a']), 'b')).toBe(true)
+    expect(leconAccessible(ordre, new Set(['a']), 'c')).toBe(false)
+    expect(leconAccessible(ordre, new Set(['a', 'b', 'c']), 'c')).toBe(true)
+    expect(premiereNonTerminee(ordre, new Set(['a']))).toBe(1)
+  })
+})
