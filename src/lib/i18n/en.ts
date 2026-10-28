@@ -2208,4 +2208,9 @@ export const EN: Record<string, string> = {
   'Cliquez une variable pour l’ajouter. « Bonjour Prénom Nom, », les logos, le bouton vers l’activité et le pied de page sont ajoutés automatiquement.': 'Click a variable to add it. “Hello First Last,”, the logos, the button to the activity and the footer are added automatically.',
   'Courriels envoyés automatiquement aux utilisateurs. Activez ou désactivez chaque notification et personnalisez son texte ; l’aperçu montre le courriel tel qu’il sera reçu.': 'Emails sent automatically to users. Turn each notification on or off and customize its text; the preview shows the email as it will be received.',
   'L’envoi de courriels n’est pas encore configuré : vos réglages sont enregistrés et s’appliqueront dès que l’envoi sera activé.': 'Email sending is not configured yet: your settings are saved and will apply as soon as sending is turned on.',
+  'Coordonnées de contact au bas des courriels (facultatif)': 'Contact details at the bottom of emails (optional)',
+  'Laissez vide : le bas du courriel affichera seulement « Merci de ne pas répondre à ce message généré automatiquement. »': 'Leave empty: the bottom of the email will only show “Please do not reply to this automatically generated message.”',
+  'Ex. : Responsable de la formation': 'e.g. Training lead',
+  'Laissez vide : le bas du courriel affichera seulement « Merci de ne pas répondre à ce message généré automatiquement. »': 'Leave empty: the bottom of the email will only show “Please do not reply to this automatically generated message.”',
+  'Ex. : Responsable de la formation': 'e.g. Training lead',
 }
