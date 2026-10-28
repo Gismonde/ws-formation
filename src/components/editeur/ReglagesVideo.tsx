@@ -79,6 +79,10 @@ export default function ReglagesVideo({ meta, onMeta, controle, enLigne }: {
           <span><strong>{t('Extrait en boucle (comme un GIF)')}</strong><span className="block text-xs text-gray-500">{t('Lecture automatique, en boucle et sans son, sans commandes. Idéal pour une courte animation (quelques secondes).')}</span></span>
         </label>
       )}
+      <label className="flex items-start gap-2 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
+        <input type="checkbox" className="mt-0.5 w-4 h-4" checked={meta.sans_avance === true} onChange={e => onMeta({ ...meta, sans_avance: e.target.checked })} />
+        <span><strong>⏩🚫 {t('Empêcher d’avancer dans la vidéo')}</strong><span className="block text-xs text-gray-500">{t('L’employé ne peut pas sauter plus loin que ce qu’il a déjà regardé (revenir en arrière reste possible). Une fois la vidéo vue en entier, il peut naviguer librement.')}{enLigne ? ' ' + t('YouTube / Vimeo : la lecture est ramenée au bon endroit, mais la vidéo reste consultable directement sur leur site.') : ''}</span></span>
+      </label>
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-800">❓ {t('Questions en cours de vidéo')} <span className="text-xs font-normal text-gray-500">({questions.length})</span></span>

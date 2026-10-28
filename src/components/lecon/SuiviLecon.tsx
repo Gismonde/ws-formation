@@ -76,8 +76,9 @@ function BandeauObligatoire({ vue, pourcentage }: { vue: boolean; pourcentage: n
 // ---------------------------------------------------------------------------
 // Lecteur de leçon : passage, visionnement obligatoire, questions en cours de vidéo
 
-export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire, passage = null, questions = [], boucle = false }: {
+export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligatoire, passage = null, questions = [], boucle = false, sansAvance = false }: {
   boucle?: boolean
+  sansAvance?: boolean
   blocId: string
   titre: string | null
   src: string
@@ -120,7 +121,7 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
         </div>
       )}
       <div className="relative aspect-video bg-black">
-        <LecteurVideo plateforme={plateforme} src={src} idEnLigne={idEnLigne} debut={passage?.debut ?? 0} fin={passage?.fin ?? null} titre={titre} onTemps={onTemps} controle={controle} boucle={boucle && plateforme === 'fichier'} />
+        <LecteurVideo plateforme={plateforme} src={src} idEnLigne={idEnLigne} debut={passage?.debut ?? 0} fin={passage?.fin ?? null} titre={titre} onTemps={onTemps} controle={controle} boucle={boucle && plateforme === 'fichier'} sansAvance={sansAvance && !vue && !boucle} />
         {active && (
           <div className="absolute inset-0 z-10 bg-black/75 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-xl w-full max-w-lg p-5 shadow-xl">

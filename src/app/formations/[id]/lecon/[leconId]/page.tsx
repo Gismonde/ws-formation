@@ -89,6 +89,7 @@ function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
       passage={passageDe(bloc.metadata)}
       questions={questionsDe(bloc.metadata)}
       boucle={bloc.metadata?.boucle === true}
+      sansAvance={bloc.metadata?.sans_avance === true}
     />
   )
 }

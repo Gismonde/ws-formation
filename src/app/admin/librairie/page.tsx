@@ -11,5 +11,5 @@ export default async function LibrairiePage() {
   if (!acteur) redirect('/login')
   if (!aAccesAdmin(acteur) || !peutVoirLibrairie(acteur)) redirect('/admin')
   const peutImporter = (acteur.role === 'super_admin' || acteur.role === 'admin') && cliniquesAdministrees(acteur).includes('CMC')
-  return <GestionLibrairie cliniques={cliniquesLibrairiePossibles(acteur)} peutImporter={peutImporter} />
+  return <GestionLibrairie cliniques={cliniquesLibrairiePossibles(acteur)} peutImporter={peutImporter} peutGererCategories={acteur.role === 'super_admin' || acteur.role === 'admin'} />
 }

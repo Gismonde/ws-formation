@@ -2,6 +2,7 @@
 // Lecteur vidéo unique (YouTube, Vimeo, fichier) piloté par programme :
 // passage (début / fin), lecture de la position, pause / reprise. Utilisé par l'éditeur et par la leçon.
 import { useEffect, useRef } from 'react'
+import { maxRegarde, positionPermise } from '@/lib/video-avance'
 
 export type ControleVideo = { temps: () => number; duree: () => number; pause: () => void; lecture: () => void; aller: (s: number) => void }
 
@@ -18,6 +19,8 @@ type Props = {
   controle?: React.MutableRefObject<ControleVideo | null>
   /** Petit extrait téléversé joué en boucle, sans son ni commandes (comme un GIF) */
   boucle?: boolean
+  /** Interdit d'avancer au-delà de ce qui a déjà été regardé (revenir en arrière reste permis) */
+  sansAvance?: boolean
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -40,11 +43,15 @@ function chargerScript(src: string, pret: () => boolean): Promise<void> {
   })
 }
 
-export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fin = null, titre, onTemps, controle, boucle = false }: Props) {
+export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fin = null, titre, onTemps, controle, boucle = false, sansAvance = false }: Props) {
   const hote = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const rappel = useRef(onTemps)
   rappel.current = onTemps
+  // Plus loin point regardé (pour « empêcher d'avancer »)
+  const max = useRef(debut)
+  const bloquer = useRef(sansAvance)
+  bloquer.current = sansAvance
 
   // YouTube et Vimeo : lecteur créé par leur API officielle
   useEffect(() => {
@@ -74,6 +81,11 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
           try {
             if (lecteur.getPlayerState() !== 1) return // 1 = en lecture
             const t = lecteur.getCurrentTime()
+            if (bloquer.current) {
+              const retour = positionPermise(max.current, t)
+              if (retour !== null) { lecteur.seekTo(retour, true); return }
+              max.current = maxRegarde(max.current, t)
+            }
             if (t < debut - 1) lecteur.seekTo(debut, true)
             if (fin && t >= fin) lecteur.pauseVideo()
             rappel.current?.(t, lecteur.getDuration())
@@ -98,6 +110,11 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
           aller: (s: number) => { lecteur.setCurrentTime(s).catch(() => {}) },
         }
         lecteur.on('timeupdate', (x: { seconds: number; duration: number }) => {
+          if (bloquer.current) {
+            const retour = positionPermise(max.current, x.seconds)
+            if (retour !== null) { lecteur.setCurrentTime(retour).catch(() => {}); return }
+            max.current = maxRegarde(max.current, x.seconds)
+          }
           t = x.seconds; d = x.duration
           if (t < debut - 1) lecteur.setCurrentTime(debut).catch(() => {})
           if (fin && t >= fin) lecteur.pause().catch(() => {})
@@ -132,11 +149,13 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
         onLoadedMetadata={e => { if (debut) e.currentTarget.currentTime = debut }}
         onTimeUpdate={e => {
           const v = e.currentTarget
+          if (bloquer.current && !v.seeking) max.current = maxRegarde(max.current, v.currentTime)
           if (fin && v.currentTime >= fin) { v.pause(); v.currentTime = fin }
           rappel.current?.(v.currentTime, v.duration)
         }}
         onSeeking={e => {
           const v = e.currentTarget
+          if (bloquer.current) { const retour = positionPermise(max.current, v.currentTime); if (retour !== null) { v.currentTime = retour; return } }
           if (v.currentTime < debut) v.currentTime = debut
           else if (fin && v.currentTime > fin) v.currentTime = fin
         }}
