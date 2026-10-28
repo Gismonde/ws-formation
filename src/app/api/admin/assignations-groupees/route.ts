@@ -1,5 +1,7 @@
 // Assignation groupée de formations ou de politiques.
 // POST { quoi: 'formations' | 'politiques', ids: string[], cible: Cible, dateEcheance?: 'AAAA-MM-JJ', notifier?: boolean }
+import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
+import type { Courriel } from '@/lib/courriels'
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
@@ -47,21 +49,19 @@ export async function POST(req: Request) {
       if (notifier && nouvelles.size) {
         const titres = new Map(resultats.map(r => [r.formation_id, r.titre]))
         const echeance = dateEcheance ? new Date(dateEcheance + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'long' }) : null
+        const cfg = await chargerNotifications(sb)
         const envoi = await envoyerCourriels(employes.filter(e => e.email && nouvelles.has(e.id)).map(e => {
-          const liste = nouvelles.get(e.id)!.map(fid => titres.get(fid) ?? 'Formation')
-          const { html, texte } = gabarit({
-            origine, clinique: e.clinique,
-            titre: liste.length > 1 ? 'Nouvelles formations disponibles' : 'Nouvelle formation disponible',
-            paragraphes: [
-              `Bonjour ${e.prenom ?? ''},`.replace(' ,', ','),
-              liste.length > 1 ? 'Les formations suivantes vous ont été assignées dans votre portail :' : `La formation « ${liste[0]} » vous a été assignée dans votre portail.`,
-              ...(liste.length > 1 ? liste.map(t => `• ${t}`) : []),
-              echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez les suivre dès maintenant, à votre rythme.',
-            ],
-            bouton: { libelle: 'Voir mes formations', lien: `${origine}/dashboard` },
+          const ids = nouvelles.get(e.id)!
+          const liste = ids.map(fid => titres.get(fid) ?? 'Formation')
+          return composerNotification(cfg, 'inscription_cours_assignation', {
+            a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom,
+            vars: {
+              activite: liste.join(', '), date: echeance ?? '',
+              echeance: echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez les suivre dès maintenant, à votre rythme.',
+            },
+            lien: liste.length === 1 ? `${origine}/formations/${ids[0]}` : `${origine}/dashboard`,
           })
-          return { a: e.email!, sujet: liste.length > 1 ? `${liste.length} nouvelles formations` : `Nouvelle formation : ${liste[0]}`, html, texte }
-        }))
+        }).filter((c): c is Courriel => !!c))
         courriels = envoi.envoyes
       }
       return NextResponse.json({ quoi, employes: employes.length, resultats, courriels })

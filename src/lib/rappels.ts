@@ -1,6 +1,7 @@
 // Rappels automatiques par courriel (exécutés chaque jour par /api/cron/rappels).
 // Chaque rappel n'est envoyé qu'une fois : il est inscrit dans la table rappels_envoyes
 // (supabase/migrations/conformite_suivi.sql). Sans cette table, aucun rappel n'est envoyé.
+import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { envoyerCourriels, gabarit, courrielsActifs, type Courriel } from '@/lib/courriels'
 import { joursRestants, palierRappelCertificat } from '@/lib/expirations'
@@ -91,6 +92,7 @@ export async function rappelsCertificats(sb: SupabaseClient, origine: string, au
     .in('id', Array.from(new Set(candidats.map(c => c.formation_id as string))))
   const titre = new Map((formations ?? []).map(f => [f.id as string, f.titre as string]))
 
+  const cfg = await chargerNotifications(sb)
   const envois: Envoi[] = []
   for (const c of candidats) {
     const e = employes.get(c.employe_id as string)
@@ -98,20 +100,14 @@ export async function rappelsCertificats(sb: SupabaseClient, origine: string, au
     const nomFormation = titre.get(c.formation_id as string) ?? 'votre formation'
     const quand = dateLongue(c.date_expiration as string)
     const expire = c.jours <= 0
-    const { html, texte } = gabarit({
-      origine, clinique: e.clinique,
-      titre: expire ? 'Votre certificat a expiré' : 'Votre certificat expire bientôt',
-      paragraphes: [
-        `Bonjour ${e.prenom ?? ''},`.replace(' ,', ','),
-        expire
-          ? `Votre certificat pour la formation « ${nomFormation} » a expiré le ${quand}.`
-          : `Votre certificat pour la formation « ${nomFormation} » expire le ${quand} (dans ${c.jours} jour${c.jours > 1 ? 's' : ''}).`,
-        'Pour rester en règle, refaites la formation et son questionnaire afin d’obtenir un nouveau certificat.',
-      ],
-      bouton: { libelle: 'Refaire la formation', lien: `${origine}/formations/${c.formation_id}` },
+    const courriel = composerNotification(cfg, 'rappel_expiration', {
+      a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom ?? null,
+      vars: { activite: nomFormation, date: quand, detail: expire ? `a expiré le ${quand}` : `arrivera à échéance le ${quand} (dans ${c.jours} jour${c.jours > 1 ? 's' : ''})` },
+      lien: `${origine}/formations/${c.formation_id}`,
     })
+    if (!courriel) continue
     envois.push({
-      courriel: { a: e.email!, sujet: expire ? `Certificat expiré : ${nomFormation}` : `Certificat à renouveler : ${nomFormation}`, html, texte },
+      courriel,
       // La date d'expiration fait partie de la référence : un renouvellement relance un nouveau cycle de rappels
       reference: `${c.id}:${c.date_expiration}`,
       palier: c.palier!,
@@ -158,6 +154,7 @@ export async function rappelsEcheances(sb: SupabaseClient, origine: string, aujo
   const formation = new Map((formations ?? []).map(f => [f.id as string, f]))
   const responsables = new Map<string, EmployeRappel[]>()
 
+  const cfg = await chargerNotifications(sb)
   const envois: Envoi[] = []
   for (const a of candidats) {
     const e = employes.get(a.employe_id as string)
@@ -170,24 +167,16 @@ export async function rappelsEcheances(sb: SupabaseClient, origine: string, aujo
     const retard = estEnRetard(a.palier!)
     const reference = `${a.id}:${a.date_echeance}`
     const lien = `${origine}/formations/${f.id}`
-    const { html, texte } = gabarit({
-      origine, clinique: e.clinique,
-      titre: retard ? 'Formation en retard' : 'Rappel : formation à terminer',
-      paragraphes: [
-        `Bonjour ${e.prenom ?? ''},`.replace(' ,', ','),
-        retard
-          ? `La formation « ${f.titre} » devait être terminée le ${quand}. Merci de la compléter dès que possible.`
-          : a.jours === 0
-            ? `La formation « ${f.titre} » est à terminer aujourd’hui (${quand}).`
-            : `La formation « ${f.titre} » est à terminer d’ici le ${quand} (dans ${a.jours} jour${a.jours > 1 ? 's' : ''}).`,
-        `Avancement actuel : ${st.progression} %.`,
-      ],
-      bouton: { libelle: st.progression > 0 ? 'Continuer la formation' : 'Commencer la formation', lien },
+    const courriel = composerNotification(cfg, 'rappel_completer', {
+      a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom ?? null,
+      vars: {
+        activite: String(f.titre), date: quand, progression: String(st.progression),
+        detail: retard ? `Elle devait être terminée le ${quand}. Merci de la compléter dès que possible.`
+          : a.jours === 0 ? `Elle est à terminer aujourd’hui (${quand}).` : `Elle est à terminer d’ici le ${quand} (dans ${a.jours} jour${a.jours > 1 ? 's' : ''}).`,
+      },
+      lien,
     })
-    envois.push({
-      courriel: { a: e.email!, sujet: retard ? `Formation en retard : ${f.titre}` : `Rappel : ${f.titre} à terminer avant le ${quand}`, html, texte },
-      reference, palier: a.palier!, employe_id: e.id,
-    })
+    if (courriel) envois.push({ courriel, reference, palier: a.palier!, employe_id: e.id })
 
     // Premier jour de retard : on prévient aussi le gestionnaire (ou les administrateurs de la clinique)
     if (a.palier === 'retard-1') {

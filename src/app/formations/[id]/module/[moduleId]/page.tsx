@@ -100,7 +100,7 @@ export default function ModulePage() {
           <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">{module.contenu}</div>
         </div>
         <div className="mb-6">
-          <AudioReader text={module.contenu || ''} title={module.titre} />
+          {(module.contenu ?? '').replace(/<[^>]+>/g, ' ').trim().length >= 40 && <AudioReader text={module.contenu || ''} title={module.titre} />}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
