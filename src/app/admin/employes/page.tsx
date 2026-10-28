@@ -173,6 +173,7 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
                   </td>
                   <td style={tdStyle}>
                     <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
+                    {emp.pronoms && <span style={{ marginLeft: '6px', fontSize: '12px', color: '#9ca3af' }}>({emp.pronoms})</span>}
                     {emp.externe && <span title={emp.organisation ?? undefined} style={{ marginLeft: '6px', display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: '#f4ecf7', color: '#5b3f6b', border: '1px solid #e2d2ea', verticalAlign: 'middle' }}>{t('Externe')}</span>}
                     {(emp.poste || (emp.externe && emp.organisation)) && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{[emp.poste, emp.externe ? emp.organisation : null].filter(Boolean).join(' · ')}</div>}
                   </td>

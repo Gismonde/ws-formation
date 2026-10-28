@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCreateurFormations } from '@/lib/permissions'
 import type { Lesson, ContentBlock, ContentBlockType, LessonAvecBlocs } from '@/lib/types/formation'
 import type { ActionResult } from './formations'
-import { refusPourModule, refusPourLecon, refusPourBloc } from '@/lib/droits-formation'
+import { refusModification, refusPourModule, refusPourLecon, refusPourBloc } from '@/lib/droits-formation'
 
 // Les blocs sont renvoyés sous la clé « blocs », triés par ordre
 function trierBlocs<T extends { blocs?: { ordre: number }[] | null }>(l: T): T {
@@ -54,6 +54,25 @@ export async function updateLesson(lessonId: string, payload: Partial<{ titre: s
   if (error) return { success: false, error: error.message }
   { const f = await formationDeLaLecon(lessonId); await noterModification(acteur, f?.formationId, `Leçon « ${f?.lecon ?? ''} » modifiée`, 'lecon:' + lessonId) }
   return { success: true, data: data as Lesson }
+}
+
+/** Attestation « J'ai lu et compris » exigée à la fin de toutes les leçons d'une formation (même texte). Renvoie le nombre de leçons. */
+export async function appliquerAttestationATouteLaFormation(formationId: string, texte: string | null): Promise<ActionResult<number>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Non authentifié' }
+  const acteur = await getCreateurFormations()
+  if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
+  { const refus = await refusModification(acteur, formationId); if (refus) return { success: false, error: refus } }
+  const { data: mods } = await supabase.from('modules').select('id').eq('formation_id', formationId)
+  const ids = (mods ?? []).map(m => m.id as string)
+  if (!ids.length) return { success: true, data: 0 }
+  const { data, error } = await supabase.from('lessons')
+    .update({ attestation_requise: true, texte_attestation: texte?.trim().slice(0, 2000) || null })
+    .in('module_id', ids).select('id')
+  if (error) return { success: false, error: error.message }
+  await noterModification(acteur, formationId, `Attestation « J'ai lu et compris » exigée à la fin de toutes les leçons (${data?.length ?? 0})`)
+  return { success: true, data: data?.length ?? 0 }
 }
 
 export async function deleteLesson(lessonId: string): Promise<ActionResult> {
