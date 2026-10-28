@@ -5,6 +5,7 @@
 //  - « J'ai lu et compris » et bouton « Terminer la leçon »
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
 import { ajouterAFile, horsLigne } from '@/lib/file-suivi'
 import { useT } from '@/lib/i18n/client'
@@ -171,6 +172,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
 }) {
   const { videosVues } = useSuivi()
   const { t, loc } = useT()
+  const routeur = useRouter()
   const [attestationLe, setAttestationLe] = useState(etat.attestationLe)
   const [termineeLe, setTermineeLe] = useState(etat.termineeLe)
   const [horsLigneEnvoi, setHorsLigneEnvoi] = useState(false)
@@ -210,7 +212,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     if (simulation) {
       const r = await fetch('/api/apercu/progression', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formationId: simulation.formationId, leconId: lessonId }) })
       setEnCours(false)
-      if (r.ok) { if (attestationRequise) setAttestationLe(new Date().toISOString()); setTermineeLe(new Date().toISOString()) }
+      if (r.ok) { if (attestationRequise) setAttestationLe(new Date().toISOString()); setTermineeLe(new Date().toISOString()); routeur.refresh() }
       else setErreur(t('Erreur'))
       return
     }
@@ -229,7 +231,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     }
     const r = await terminerLecon(lessonId)
     setEnCours(false)
-    if (r.ok) setTermineeLe(r.data ?? new Date().toISOString())
+    if (r.ok) { setTermineeLe(r.data ?? new Date().toISOString()); routeur.refresh() }
     else setErreur(r.manquants?.length ? t('Il reste : {liste}', { liste: r.manquants.join(' · ') }) : r.erreur)
     } catch { enAttente() }
   }

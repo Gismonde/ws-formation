@@ -1,3 +1,4 @@
+import { leconAccessible } from '@/lib/verrou-lecons'
 import { redirect, notFound } from 'next/navigation'
 import { ListeObjectifs } from '@/components/Objectifs'
 import Link from 'next/link'
@@ -183,13 +184,15 @@ export default async function FormationDetailPage({ params }: { params: Promise<
               const isTermine = modulesTermines.has(module.id)
               const lecons = leconsParModule.get(module.id) ?? []
               const lien = lecons.length ? `/formations/${id}/lecon/${(lecons.find(l => !leconsFaites.has(l.id)) ?? lecons[0]).id}` : `/formations/${id}/module/${module.id}`
+              const idsOrdre = ordreLecons.map(l => l.id)
+              const moduleVerrouille = lecons.length > 0 && !leconAccessible(idsOrdre, leconsFaites, lecons[0].id)
               return (
-                <div key={module.id} className="rounded-lg border border-gray-100" style={{ marginBottom: '8px' }}>
-                  <Link href={lien} style={{ textDecoration: 'none' }}>
+                <div key={module.id} className={'rounded-lg border border-gray-100' + (moduleVerrouille ? ' opacity-60' : '')} style={{ marginBottom: '8px' }}>
+                  <Link href={moduleVerrouille ? '#' : lien} aria-disabled={moduleVerrouille} title={moduleVerrouille ? t('Terminez d’abord les leçons précédentes') : undefined} style={{ textDecoration: 'none', pointerEvents: moduleVerrouille ? 'none' : undefined }}>
                     <div className="flex items-center justify-between p-4 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer">
                       <div className="flex items-center gap-3">
                         <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isTermine ? '#10b981' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {isTermine ? <span style={{ color: '#fff', fontSize: '14px' }}>✓</span> : <span style={{ color: '#6b7280', fontSize: '12px', fontWeight: 700 }}>{iModule + 1}</span>}
+                          {isTermine ? <span style={{ color: '#fff', fontSize: '14px' }}>✓</span> : moduleVerrouille ? <span style={{ fontSize: '12px' }}>🔒</span> : <span style={{ color: '#6b7280', fontSize: '12px', fontWeight: 700 }}>{iModule + 1}</span>}
                         </div>
                         <span className="font-medium text-gray-900 text-sm">{module.titre}</span>
                       </div>
@@ -200,10 +203,13 @@ export default async function FormationDetailPage({ params }: { params: Promise<
                     <ul className="pb-3 pl-14 pr-4 space-y-1">
                       {lecons.map(l => (
                         <li key={l.id}>
+                          {!leconAccessible(idsOrdre, leconsFaites, l.id) ? (
+                            <span className="flex items-center gap-2 text-sm text-gray-400" title={t('Terminez d’abord les leçons précédentes')}><span>🔒</span>{l.titre}</span>
+                          ) :
                           <Link href={`/formations/${id}/lecon/${l.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700">
                             <span className={leconsFaites.has(l.id) ? 'text-green-600' : 'text-gray-300'}>{leconsFaites.has(l.id) ? '✓' : '○'}</span>
                             {l.titre}
-                          </Link>
+                          </Link>}
                         </li>
                       ))}
                     </ul>

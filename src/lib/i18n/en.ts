@@ -2213,4 +2213,8 @@ export const EN: Record<string, string> = {
   'Ex. : Responsable de la formation': 'e.g. Training lead',
   'Laissez vide : le bas du courriel affichera seulement « Merci de ne pas répondre à ce message généré automatiquement. »': 'Leave empty: the bottom of the email will only show “Please do not reply to this automatically generated message.”',
   'Ex. : Responsable de la formation': 'e.g. Training lead',
+  'Les leçons se suivent dans l’ordre : terminez cette leçon (bouton « Terminer la leçon » en bas) pour accéder à la suite.': 'Lessons must be done in order: finish this lesson (“Finish the lesson” button at the bottom) to unlock the next one.',
+  'Terminez d’abord cette leçon': 'Finish this lesson first',
+  'Terminez d’abord les leçons précédentes': 'Finish the previous lessons first',
+  'Les leçons se suivent dans l’ordre : terminez cette leçon (bouton « Terminer la leçon » en bas) pour accéder à la suite.': 'Lessons must be done in order: finish this lesson (“Finish the lesson” button at the bottom) to unlock the next one.',
 }

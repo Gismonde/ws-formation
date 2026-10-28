@@ -1,3 +1,4 @@
+import { leconAccessible, premiereNonTerminee } from '@/lib/verrou-lecons'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -155,7 +156,7 @@ function RenduBloc({ bloc, urls, t, theme }: { bloc: ContentBlock; urls: Urls; t
 
 export default async function LecteurLeconPage({ params, searchParams }: {
   params: Promise<{ id: string; leconId: string }>
-  searchParams: Promise<{ apercu?: string }>
+  searchParams: Promise<{ apercu?: string; verrou?: string }>
 }) {
   const { id: formationId, leconId } = await params
   // ?apercu=1 : ouverture depuis l'éditeur ; mode employé : parcours simulé. Dans les deux cas rien n'est enregistré.
@@ -197,6 +198,25 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const leconPrécédente = indexGlobal > 0 ? ordreGlobal[indexGlobal - 1] : null
   const leconSuivante = indexGlobal >= 0 && indexGlobal < ordreGlobal.length - 1 ? ordreGlobal[indexGlobal + 1] : null
   const changementModule = !!leconSuivante && leconSuivante.module_id !== lecon.module_id
+
+  // Parcours dans l'ordre : pas d'accès aux leçons suivantes tant que les précédentes ne sont pas terminées
+  // (sauf aperçu depuis l'éditeur)
+  const verrou = (await searchParams).apercu !== '1'
+  let terminees = new Set<string>()
+  if (verrou) {
+    if (apercu.actif) terminees = apercu.lecons
+    else {
+      const { data: lp } = await sbNav.from('lesson_progressions').select('lesson_id').eq('employe_id', emp.id).eq('statut', 'termine').in('lesson_id', ordreGlobal.map(l => l.id))
+      terminees = new Set((lp ?? []).map(x => x.lesson_id as string))
+    }
+    const ids = ordreGlobal.map(l => l.id)
+    if (!leconAccessible(ids, terminees, leconId)) {
+      const i = premiereNonTerminee(ids, terminees)
+      redirect(`/formations/${formationId}/lecon/${ids[i]}?verrou=1`)
+    }
+  }
+  const leconCouranteTerminee = !verrou || terminees.has(leconId)
+  const suivanteOuverte = !!leconSuivante && leconCouranteTerminee
 
   // Marquer la lecon comme vue automatiquement (si employe)
   const etatSuivi = apercu.actif
@@ -245,7 +265,12 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                 <span className="hidden sm:inline">{t('Précédente')}</span>
               </Link>
             )}
-            {leconSuivante && (
+            {leconSuivante && !suivanteOuverte && (
+              <span title={t('Terminez d’abord cette leçon')} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                🔒 <span className="hidden sm:inline">{t('Suivante')}</span>
+              </span>
+            )}
+            {suivanteOuverte && leconSuivante && (
               <Link
                 href={baseUrl + '/lecon/' + leconSuivante.id}
                 style={theme ? { background: theme.couleur } : undefined}
@@ -262,6 +287,9 @@ export default async function LecteurLeconPage({ params, searchParams }: {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {(await searchParams).verrou === '1' && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 {t('Les leçons se suivent dans l’ordre : terminez cette leçon (bouton « Terminer la leçon » en bas) pour accéder à la suite.')}</div>
+        )}
         {/* Titre et description de la lecon */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2" style={theme ? { color: theme.couleur } : undefined}>{lecon.titre}</h2>
@@ -328,7 +356,14 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             )}
           </div>
           <div>
-            {leconSuivante ? (
+            {leconSuivante && !suivanteOuverte ? (
+              <span className="flex items-center gap-2 text-sm text-gray-400" title={t('Terminez d’abord cette leçon')}>
+                <span className="text-right">
+                  <span className="block text-xs">🔒 {changementModule ? t('Module suivant') : t('Leçon suivante')}</span>
+                  <span className="font-medium">{t('Terminez d’abord cette leçon')}</span>
+                </span>
+              </span>
+            ) : leconSuivante ? (
               <Link
                 href={baseUrl + '/lecon/' + leconSuivante.id}
                 className="group flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
@@ -360,7 +395,12 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('Leçons de ce module')}</h3>
             <div className="space-y-1">
-              {toutesLecons.map((l, i) => (
+              {toutesLecons.map((l, i) => !leconAccessible(ordreGlobal.map(x => x.id), verrou ? terminees : new Set(ordreGlobal.map(x => x.id)), l.id) ? (
+                <span key={l.id} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 cursor-not-allowed" title={t('Terminez d’abord les leçons précédentes')}>
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-100">🔒</span>
+                  {l.titre}
+                </span>
+              ) : (
                 <Link
                   key={l.id}
                   href={baseUrl + '/lecon/' + l.id}
