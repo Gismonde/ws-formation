@@ -118,7 +118,7 @@ export const VARIABLES: { cle: string; aide: string }[] = [
 ]
 
 export type ReglagesNotifications = { contact_courriel: string; contact_telephone: string; contact_libelle: string }
-export const REGLAGES_DEFAUT: ReglagesNotifications = { contact_courriel: '', contact_telephone: '', contact_libelle: 'Service à la clientèle' }
+export const REGLAGES_DEFAUT: ReglagesNotifications = { contact_courriel: '', contact_telephone: '', contact_libelle: 'Pour nous joindre' }
 
 export const typeDe = (cle: string) => CATALOGUE.find(t => t.cle === cle)
 
@@ -167,7 +167,7 @@ export function rendreCourriel(p: {
   <p style="margin:18px 0 0;font-size:11px;color:#6b7280;word-break:break-all">${echapper(p.bouton.lien)}</p>
 </td></tr>` : ''
   const contact = r.contact_courriel || r.contact_telephone
-    ? `<td width="50%" style="background:#d1d5db;padding:22px 20px;font-size:13px;color:#111827;vertical-align:top">${echapper(r.contact_libelle || 'Service à la clientèle')}<br>${r.contact_courriel ? `<a href="mailto:${echapper(r.contact_courriel)}" style="color:#111827;font-size:15px">${echapper(r.contact_courriel)}</a><br>` : ''}${echapper(r.contact_telephone)}</td>`
+    ? `<td width="50%" style="background:#d1d5db;padding:22px 20px;font-size:13px;color:#111827;vertical-align:top">${echapper(r.contact_libelle || 'Pour nous joindre')}<br>${r.contact_courriel ? `<a href="mailto:${echapper(r.contact_courriel)}" style="color:#111827;font-size:15px">${echapper(r.contact_courriel)}</a><br>` : ''}${echapper(r.contact_telephone)}</td>`
     : ''
   const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:'Trebuchet MS',Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:16px 8px">

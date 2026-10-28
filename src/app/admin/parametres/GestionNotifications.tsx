@@ -90,9 +90,10 @@ export default function GestionNotifications({ cliniques }: { cliniques: ('CMC' 
       {etat && <p role="status" className={'text-sm ' + (etat.ok ? 'text-green-700' : 'text-red-600')}>{etat.texte}</p>}
 
       <details className="border border-gray-200 rounded-lg p-3">
-        <summary className="text-sm font-medium text-gray-800 cursor-pointer">{t('Pied de page des courriels (coordonnées du service à la clientèle)')}</summary>
+        <summary className="text-sm font-medium text-gray-800 cursor-pointer">{t('Coordonnées de contact au bas des courriels (facultatif)')}</summary>
+        <p className="text-xs text-gray-500 mt-2">{t('Laissez vide : le bas du courriel affichera seulement « Merci de ne pas répondre à ce message généré automatiquement. »')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-          <input className={champ} value={reglages.contact_libelle} onChange={e => setReglages({ ...reglages, contact_libelle: e.target.value })} placeholder={t('Service à la clientèle')} maxLength={80} />
+          <input className={champ} value={reglages.contact_libelle} onChange={e => setReglages({ ...reglages, contact_libelle: e.target.value })} placeholder={t('Ex. : Responsable de la formation')} maxLength={80} />
           <input className={champ} value={reglages.contact_courriel} onChange={e => setReglages({ ...reglages, contact_courriel: e.target.value })} placeholder={t('Courriel de contact')} maxLength={200} />
           <input className={champ} value={reglages.contact_telephone} onChange={e => setReglages({ ...reglages, contact_telephone: e.target.value })} placeholder={t('Téléphone')} maxLength={40} />
         </div>
