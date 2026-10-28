@@ -8,6 +8,8 @@ import { LIBELLE_TYPE_LIBRAIRIE, TYPES_LIBRAIRIE, plateformeVideo, type ElementL
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 import { envoyerMedia } from '@/lib/medias-client'
 import type { CliniqueContenu } from '@/lib/cliniques'
+import { arbreCategories, nomsDuFiltre, type CategorieLibrairie } from '@/lib/librairie-categories'
+import GestionCategories from './GestionCategories'
 
 type Element = ElementLibrairie & { apercu: string | null; utilisations: Utilisation[] }
 const LIBELLE_CLINIQUE: Record<CliniqueContenu, string> = { CMC: 'CMC', WSSC: 'WSSC', LES_DEUX: 'CMC + WSSC' }
@@ -17,10 +19,13 @@ const champ = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:
 
 type Brouillon = { id?: string; type: TypeLibrairie; titre: string; description: string; url: string; nom_fichier: string; categorie: string; clinique: CliniqueContenu }
 
-export default function GestionLibrairie({ cliniques, peutImporter }: { cliniques: CliniqueContenu[]; peutImporter: boolean }) {
+export default function GestionLibrairie({ cliniques, peutImporter, peutGererCategories = false }: { cliniques: CliniqueContenu[]; peutImporter: boolean; peutGererCategories?: boolean }) {
   const { t } = useT()
   const confirmer = useConfirmer()
   const [type, setType] = useState<TypeLibrairie>('video')
+  const [vue, setVue] = useState<'elements' | 'categories'>('elements')
+  const [listeCategories, setListeCategories] = useState<CategorieLibrairie[]>([])
+  const [tousElements, setTousElements] = useState<Element[]>([])
   const [elements, setElements] = useState<Element[]>([])
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -41,9 +46,27 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
     setElements(d.elements)
   }, [type, archives])
   useEffect(() => { charger() }, [charger])
+  const chargerCategories = useCallback(async () => {
+    const r = await fetch('/api/admin/librairie/categories')
+    const d = await r.json().catch(() => ({}))
+    setListeCategories(Array.isArray(d.categories) ? d.categories : [])
+    if (vue === 'categories') {
+      const r2 = await fetch('/api/admin/librairie')
+      const d2 = await r2.json().catch(() => ({}))
+      setTousElements(Array.isArray(d2.elements) ? d2.elements : [])
+    }
+  }, [vue])
+  useEffect(() => { chargerCategories() }, [chargerCategories])
+  const arbre = useMemo(() => arbreCategories(listeCategories), [listeCategories])
+  const compteurs = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const e of tousElements) if (e.categorie) c[e.categorie] = (c[e.categorie] ?? 0) + 1
+    return c
+  }, [tousElements])
 
   const categories = useMemo(() => Array.from(new Set(elements.map(e => e.categorie).filter(Boolean) as string[])).sort(), [elements])
-  const visibles = elements.filter(e => (!categorie || e.categorie === categorie) && (!q || norm(`${e.titre} ${e.description ?? ''} ${e.categorie ?? ''}`).includes(norm(q))))
+  const filtreNoms = categorie === '__aucune' ? null : categorie ? nomsDuFiltre(listeCategories, categorie) : null
+  const visibles = elements.filter(e => (categorie === '__aucune' ? !e.categorie : !filtreNoms || filtreNoms.includes(e.categorie ?? '')) && (!q || norm(`${e.titre} ${e.description ?? ''} ${e.categorie ?? ''}`).includes(norm(q))))
 
   function nouveau() {
     setMessage(null)
@@ -116,12 +139,15 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
 
       <div className="flex flex-wrap items-center gap-2">
         {TYPES_LIBRAIRIE.map(t => (
-          <button key={t} type="button" className={ongletCls(type === t)} onClick={() => { setType(t); setCategorie('') }}>{ICONE[t]} {LIBELLE_TYPE_LIBRAIRIE[t]}</button>
+          <button key={t} type="button" className={ongletCls(vue === 'elements' && type === t)} onClick={() => { setVue('elements'); setType(t); setCategorie('') }}>{ICONE[t]} {LIBELLE_TYPE_LIBRAIRIE[t]}</button>
         ))}
+        <button type="button" className={ongletCls(vue === 'categories')} onClick={() => setVue('categories')}>🗂 {t('Catégories')}</button>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher…')} className="ml-auto border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-56" />
         <select value={categorie} onChange={e => setCategorie(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
           <option value="">{t('Toutes les catégories')}</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          {arbre.map(c => <option key={c.id} value={c.nom}>{c.niveau ? '\u00a0\u00a0\u00a0↳ ' : ''}{c.nom}</option>)}
+          {categories.filter(c => !arbre.some(a => a.nom === c)).map(c => <option key={c} value={c}>{c} ({t('hors liste')})</option>)}
+          <option value="__aucune">{t('— Sans catégorie —')}</option>
         </select>
         <label className="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" checked={archives} onChange={e => setArchives(e.target.checked)} /> {t('Archivés')}</label>
       </div>
@@ -153,8 +179,15 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
           </div>
           <textarea value={brouillon.description} onChange={e => setBrouillon({ ...brouillon, description: e.target.value })} placeholder={t('Description (facultatif)')} rows={2} className={champ} maxLength={2000} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={brouillon.categorie} onChange={e => setBrouillon({ ...brouillon, categorie: e.target.value })} placeholder={t('Catégorie (ex. Santé et sécurité)')} list="categories-librairie" className={champ} maxLength={80} />
-            <datalist id="categories-librairie">{categories.map(c => <option key={c} value={c} />)}</datalist>
+            {arbre.length > 0 ? (
+              <select value={brouillon.categorie} onChange={e => setBrouillon({ ...brouillon, categorie: e.target.value })} className={champ} aria-label={t('Catégorie')}>
+                <option value="">{t('— Sans catégorie —')}</option>
+                {brouillon.categorie && !arbre.some(a => a.nom === brouillon.categorie) && <option value={brouillon.categorie}>{brouillon.categorie} ({t('hors liste')})</option>}
+                {arbre.map(c => <option key={c.id} value={c.nom}>{c.niveau ? '\u00a0\u00a0\u00a0↳ ' : ''}{c.nom}</option>)}
+              </select>
+            ) : (
+              <input value={brouillon.categorie} onChange={e => setBrouillon({ ...brouillon, categorie: e.target.value })} placeholder={t('Catégorie (ex. Santé et sécurité)')} className={champ} maxLength={80} />
+            )}
             <select value={brouillon.clinique} onChange={e => setBrouillon({ ...brouillon, clinique: e.target.value as CliniqueContenu })} className={champ}>
               {cliniques.map(c => <option key={c} value={c}>{LIBELLE_CLINIQUE[c]}</option>)}
             </select>
@@ -166,6 +199,9 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
         </section>
       )}
 
+      {vue === 'categories' ? (
+        <GestionCategories categories={listeCategories} compteurs={compteurs} peutGerer={peutGererCategories} onChange={() => { chargerCategories(); charger() }} />
+      ) : <>
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         {chargement ? <p className="p-8 text-center text-sm text-gray-400">{t('Chargement…')}</p>
           : visibles.length === 0 ? <p className="p-8 text-center text-sm text-gray-400">{t('Aucun élément.')}</p>
@@ -213,6 +249,7 @@ export default function GestionLibrairie({ cliniques, peutImporter }: { clinique
           )}
       </div>
       <p className="text-xs text-gray-400">{visibles.length} élément(s). Les liens SharePoint ne s’ouvrent que pour les personnes ayant un compte Microsoft de la clinique.</p>
+      </>}
     </div>
   )
 }
