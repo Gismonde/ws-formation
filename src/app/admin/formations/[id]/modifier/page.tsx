@@ -1,4 +1,5 @@
 'use client'
+import ChampDuree from '@/components/ChampDuree'
 import { EditeurObjectifs, nettoyerObjectifs } from '@/components/Objectifs'
 import BandeauPublication from '@/components/editeur/BandeauPublication'
 
@@ -195,8 +196,8 @@ export default function ModifierFormationPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Durée (heures)</label>
-                <input type="number" value={Math.round(((formation.duree_estimee_minutes ?? 60) / 60) * 10) / 10} onChange={e => updateField('duree_estimee_minutes', Math.round(Number(e.target.value) * 60))} min={0.5} step={0.5} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('Durée')}</label>
+                <ChampDuree minutes={formation.duree_estimee_minutes ?? 60} onChange={m => updateField('duree_estimee_minutes', m)} />
               </div>
             </div>
             <ChampCliniqueFormation

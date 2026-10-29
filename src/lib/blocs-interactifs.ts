@@ -61,9 +61,9 @@ export function donneesInitiales(genre: GenreInteractif): DonneesInteractif {
     case 'avant_apres': return { genre, avant: null, apres: null, legende_avant: 'Avant', legende_apres: 'Après' }
     case 'animation': return { genre, animation: null, boucle: true }
     case 'zones': return { genre, image: null, zones: [], consigne: 'Cliquez sur les zones de l’image pour en savoir plus.' }
-    case 'erreurs': return { genre, image: null, zones: [], consigne: 'Trouvez toutes les erreurs dans cette image.', obligatoire: false }
-    case 'scenario': return { genre, scenario: [{ id: crypto.randomUUID(), situation: '', choix: [{ texte: '', consequence: '', bon: true, suite: null }, { texte: '', consequence: '', bon: false, suite: null }] }] }
-    case 'glisser': return { genre, variante: 'associer', paires: [{ element: '', categorie: '' }, { element: '', categorie: '' }], ordre: ['', '', ''], consigne: '' }
+    case 'erreurs': return { genre, image: null, zones: [], consigne: 'Trouvez toutes les erreurs dans cette image.', obligatoire: true }
+    case 'scenario': return { genre, scenario: [{ id: crypto.randomUUID(), situation: '', choix: [{ texte: '', consequence: '', bon: true, suite: null }, { texte: '', consequence: '', bon: false, suite: null }] }], obligatoire: true }
+    case 'glisser': return { genre, variante: 'associer', paires: [{ element: '', categorie: '' }, { element: '', categorie: '' }], ordre: ['', '', ''], consigne: '', obligatoire: true }
   }
 }
 
