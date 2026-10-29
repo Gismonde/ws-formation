@@ -184,10 +184,11 @@ function Zones({ d, urls }: { d: DonneesInteractif; urls: Urls }) {
   const [vues, setVues] = useState<string[]>([])
   const img = adresse(d.image, urls)
   if (!img) return null
-  const zones = d.zones ?? []
+  // Une zone qui sort de l'image ne peut pas être cliquée : on ne l'affiche pas
+  const zones = (d.zones ?? []).filter(z => z.y < 97 && z.x < 97)
   return (
     <div>
-      <div className="relative w-full">
+      <div className="relative w-full overflow-hidden rounded-lg">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={img} alt="" className="block w-full rounded-lg" />
         {zones.map((z, i) => (

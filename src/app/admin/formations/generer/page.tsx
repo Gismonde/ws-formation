@@ -1,5 +1,6 @@
 'use client'
 
+import ChampDuree, { formatDuree } from '@/components/ChampDuree'
 import { useT } from '@/lib/i18n/client'
 import { useState, useCallback, useEffect } from 'react'
 import { ChampCategorie } from '@/components/ChampCategorie'
@@ -344,7 +345,7 @@ export default function GenererFormationPage() {
   useEffect(() => {
     if (!dureeManuelle && modules.length > 0) {
       const totalMinutes = modules.reduce((sum, m) => sum + (m.duree_minutes || 0), 0)
-      const heures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+      const heures = Math.max(5, totalMinutes) / 60
       setDureeHeures(heures)
     }
   }, [modules, dureeManuelle])
@@ -703,7 +704,7 @@ export default function GenererFormationPage() {
   // STEP: Review
   if (step === 'review') {
     const totalMinutes = modules.reduce((s, m) => s + (m.duree_minutes || 0), 0)
-    const autoHeures = Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)
+    const autoHeures = Math.max(5, totalMinutes) / 60
 
     return (
       <div style={containerStyle}>
@@ -765,23 +766,15 @@ export default function GenererFormationPage() {
               </div>
               <div>
                 <label style={labelStyle}>
-                  Durée (heures)
+                  {t('Durée')}
                   {!dureeManuelle && (
                     <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginLeft: '6px' }}>
-                      (auto: {autoHeures}h)
+                      (auto : {formatDuree(Math.round(autoHeures * 60))})
                     </span>
                   )}
                 </label>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <input
-                    style={{ ...inputStyle, flex: 1 }}
-                    type="number"
-                    min={0.5}
-                    max={40}
-                    step={0.5}
-                    value={dureeHeures}
-                    onChange={e => { setDureeManuelle(true); setDureeHeures(Number(e.target.value)) }}
-                  />
+                  <ChampDuree className="flex-1" minutes={Math.round(dureeHeures * 60)} onChange={m => { setDureeManuelle(true); setDureeHeures(m / 60) }} />
                   {dureeManuelle && (
                     <button
                       onClick={() => { setDureeManuelle(false); setDureeHeures(autoHeures) }}
@@ -1264,7 +1257,7 @@ export default function GenererFormationPage() {
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Niveau')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0', textTransform: 'capitalize' }}>{niveau}</p></div>
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Modules')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{modules.length} module{modules.length > 1 ? 's' : ''}</p></div>
               <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Leçons')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{totalLecons} leçon{totalLecons > 1 ? 's' : ''}</p></div>
-              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Durée')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{dureeHeures}h</p></div>
+              <div><span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>{t('Durée')}</span><p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0' }}>{formatDuree(Math.round(dureeHeures * 60))}</p></div>
             </div>
           </div>
           {(tags.length > 0 || objectifs.length > 0) && (
