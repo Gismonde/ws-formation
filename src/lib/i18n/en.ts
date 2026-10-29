@@ -2228,4 +2228,11 @@ export const EN: Record<string, string> = {
   'Médias': 'Media',
   'Déposez une image ou une animation GIF : elle est mise en ligne et son lien peut être utilisé dans une leçon.': 'Drop an image or an animated GIF: it is uploaded and its link can be used in a lesson.',
   'Déposez une image ou une animation GIF : elle est mise en ligne et son lien peut être utilisé dans une leçon.': 'Drop an image or an animated GIF: it is uploaded and its link can be used in a lesson.',
+  'Démonstration': 'Demo',
+  'Chargement de la vidéo…': 'Loading video…',
+  'Revoir la démonstration': 'Watch the demo again',
+  'Regarder la démonstration': 'Watch the demo',
+  'Lecture': 'Play',
+  'Position dans la vidéo': 'Video position',
+  'Plein écran': 'Full screen',
 }
