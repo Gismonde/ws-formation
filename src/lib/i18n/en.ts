@@ -2219,4 +2219,13 @@ export const EN: Record<string, string> = {
   'Les leçons se suivent dans l’ordre : terminez cette leçon (bouton « Terminer la leçon » en bas) pour accéder à la suite.': 'Lessons must be done in order: finish this lesson (“Finish the lesson” button at the bottom) to unlock the next one.',
   'Heures': 'Hours',
   'Minutes': 'Minutes',
+  'Échec du téléversement ({code})': 'Upload failed ({code})',
+  'Échec du téléversement': 'Upload failed',
+  'Téléversement…': 'Uploading…',
+  'Glissez une image ou un GIF ici, ou cliquez pour choisir': 'Drop an image or a GIF here, or click to choose',
+  'JPG, PNG, GIF ou WebP': 'JPG, PNG, GIF or WebP',
+  'Copier le lien': 'Copy link',
+  'Médias': 'Media',
+  'Déposez une image ou une animation GIF : elle est mise en ligne et son lien peut être utilisé dans une leçon.': 'Drop an image or an animated GIF: it is uploaded and its link can be used in a lesson.',
+  'Déposez une image ou une animation GIF : elle est mise en ligne et son lien peut être utilisé dans une leçon.': 'Drop an image or an animated GIF: it is uploaded and its link can be used in a lesson.',
 }
