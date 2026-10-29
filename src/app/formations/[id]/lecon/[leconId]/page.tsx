@@ -14,6 +14,7 @@ import { i18n } from '@/lib/i18n/serveur'
 import type { Traducteur } from '@/lib/i18n/base'
 import AudioReader from '@/components/AudioReader'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
+import LecteurDemo from '@/components/lecon/LecteurDemo'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { lireQuiz } from '@/lib/quiz'
@@ -97,6 +98,9 @@ function BlocVideo({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
 
 function BlocImage({ bloc, urls }: { bloc: ContentBlock; urls: Urls }) {
   const alt = String(bloc.metadata?.alt ?? '') || bloc.titre || 'Image'
+  const src = source(bloc, urls)
+  // GIF animé (démonstration) → lecteur vidéo avec barre de progression
+  if (/\.gif(\?|$)/i.test(src) || /\.gif$/i.test(bloc.url || bloc.contenu || '')) return <LecteurDemo src={src} titre={bloc.titre} alt={alt} />
   return (
     <figure className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="p-4 bg-gray-50">
