@@ -111,7 +111,7 @@ export function gabarit({ origine, clinique, titre, paragraphes, bouton, piedDeP
 export function origineDepuis(request: Request): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
   const h = request.headers
-  const hote = h.get('x-forwarded-host') ?? h.get('host') ?? 'ws-formation.vercel.app'
+  const hote = h.get('x-forwarded-host') ?? h.get('host') ?? 'education.wssurgical.com'
   const proto = h.get('x-forwarded-proto') ?? 'https'
   return `${proto}://${hote}`
 }
