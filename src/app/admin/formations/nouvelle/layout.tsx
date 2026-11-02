@@ -1,5 +1,4 @@
-import { EnteteCreation } from '@/components/EnteteCreation'
-
+// L'en-tête de création est affiché par la page (il dépend du point de départ choisi).
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <><div className="mx-auto max-w-6xl"><EnteteCreation depart="zero" /></div>{children}</>
+  return <>{children}</>
 }
