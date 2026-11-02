@@ -17,10 +17,10 @@ export default async function CreerFormationPage() {
     { href: '/admin/formations/nouvelle', icone: '✏️', titre: t('Partir de zéro'),
       texte: t('Vous construisez la formation vous-même : modules, leçons, vidéos, documents de la librairie et questionnaire.'),
       besoin: t('Idéal pour une formation sur mesure.') },
-    { href: '/admin/formations/generer', icone: '📄', titre: t('À partir d’un document'),
+    { href: '/admin/formations/nouvelle?depart=document', icone: '📄', titre: t('À partir d’un document'),
       texte: t('Importez une politique ou une procédure (PDF, texte). Les modules et un questionnaire sont proposés automatiquement, vous les vérifiez avant de créer.'),
       besoin: t('Fichier .pdf, .txt ou .md') },
-    { href: '/admin/formations/depuis-pp', icone: '📊', titre: t('À partir d’une présentation PowerPoint'),
+    { href: '/admin/formations/nouvelle?depart=presentation', icone: '📊', titre: t('À partir d’une présentation PowerPoint'),
       texte: t('Importez une présentation : chaque diapositive devient du contenu de formation, que vous pouvez ajuster.'),
       besoin: t('Fichier .ppt ou .pptx') },
   ]

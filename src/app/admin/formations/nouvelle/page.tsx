@@ -14,7 +14,9 @@ import { formatDuree } from '@/components/ChampDuree'
 import EditeurBlocs from '@/components/editeur/EditeurBlocs'
 import EditeurQuestionnaire from '@/components/editeur/EditeurQuestionnaire'
 import type { CliniqueContenu } from '@/lib/cliniques'
-import { etapeValide, dureeTotale, aplatirLecons, type Brouillon, type ModuleBrouillon, type LeconAssistant } from '@/lib/assistant-formation'
+import { etapeValide, dureeTotale, aplatirLecons, planDepuisDocument, type Brouillon, type ModuleBrouillon, type LeconAssistant, type PointDepart } from '@/lib/assistant-formation'
+import { inferMetadata, parseDocumentIntoModules, texteDuPdf } from '@/lib/import-document'
+import { EnteteCreation } from '@/components/EnteteCreation'
 
 const CLE = 'assistant-formation-brouillon'
 const COUVERTURE_DEFAUT = '/couvertures/ampoule.jpg'
@@ -43,6 +45,10 @@ export default function AssistantFormation() {
   const [formationId, setFormationId] = useState<string | null>(null)
   const [lecons, setLecons] = useState<LeconAssistant[]>([])
   const [active, setActive] = useState<{ id: string; blocs: BlocDb[] } | null>(null)
+  const [depart, setDepart] = useState<PointDepart>('zero')
+  const [fichier, setFichier] = useState<File | null>(null)
+  const [lecture, setLecture] = useState<'' | 'en_cours' | 'ok'>('')
+  const [survol, setSurvol] = useState(false)
   const charge = useRef(false)
 
   const chargerLecons = useCallback(async (fid: string) => {
@@ -59,7 +65,10 @@ export default function AssistantFormation() {
 
   // Reprise : brouillon d'un PDF/PowerPoint (?formation=), sinon brouillon local
   useEffect(() => {
-    const fid = new URLSearchParams(window.location.search).get('formation')
+    const params = new URLSearchParams(window.location.search)
+    const fid = params.get('formation')
+    const dep = (['document', 'presentation'].includes(params.get('depart') ?? '') ? params.get('depart') : 'zero') as PointDepart
+    setDepart(dep)
     ;(async () => {
       if (fid) {
         const { data: f } = await createClient().from('formations').select('id, titre, description, image_couverture, clinique, categorie, niveau, objectifs, duree_estimee_minutes').eq('id', fid).maybeSingle()
@@ -77,6 +86,7 @@ export default function AssistantFormation() {
         const s = localStorage.getItem(CLE)
         if (s) {
           const d = JSON.parse(s)
+          if ((d.depart ?? 'zero') !== dep) throw new Error('autre départ')
           setB({ ...VIDE, ...d.b })
           if (d.formationId) {
             const { data: f } = await createClient().from('formations').select('id').eq('id', d.formationId).maybeSingle()
@@ -90,17 +100,19 @@ export default function AssistantFormation() {
 
   useEffect(() => {
     if (!charge.current) return
-    try { if (b.titre || formationId) localStorage.setItem(CLE, JSON.stringify({ b, formationId, etape })) } catch {}
-  }, [b, formationId, etape])
+    try { if (b.titre || formationId) localStorage.setItem(CLE, JSON.stringify({ b, formationId, etape, depart })) } catch {}
+  }, [b, formationId, etape, depart])
 
   const maj = (p: Partial<Brouillon>) => setB(x => ({ ...x, ...p }))
   const majModule = (i: number, p: Partial<ModuleBrouillon>) => setB(x => ({ ...x, modules: x.modules.map((m, k) => k === i ? { ...m, ...p } : m) }))
 
   const ETAPES = [
-    { icone: '💡', nom: t('L’idée') }, { icone: '🎯', nom: t('Pour qui') }, { icone: '🧩', nom: t('Le plan') },
+    depart === 'zero' ? { icone: '💡', nom: t('L’idée') } : { icone: depart === 'document' ? '📄' : '📊', nom: t('Le fichier') }, { icone: '🎯', nom: t('Pour qui') }, { icone: '🧩', nom: t('Le plan') },
     { icone: '🎨', nom: t('Le contenu') }, { icone: '✅', nom: t('Le quiz') }, { icone: '🎉', nom: t('C’est prêt') },
   ]
-  const valide = etapeValide(b, etape)
+  const valide = depart === 'presentation' && !formationId
+    ? (etape === 0 ? !!fichier && !!b.titre.trim() : etape === 2 ? !!fichier : etapeValide(b, etape))
+    : etapeValide(b, etape)
   const minutes = formationId ? 0 : dureeTotale(b)
   const nbLecons = formationId ? lecons.length : b.modules.reduce((s, m) => s + m.lecons.filter(l => l.trim()).length, 0)
   const nbModules = formationId ? new Set(lecons.map(l => l.moduleOrdre)).size : b.modules.length
@@ -123,14 +135,32 @@ export default function AssistantFormation() {
       duree_estimee_minutes: Math.max(5, dureeTotale(b)), publiee: false, objectifs: b.objectifs, tags: [], prerequis_ids: [], image_couverture: b.image || null,
     }).select('id').single()
     if (error || !f) throw new Error(error?.message || t('Erreur création formation'))
+    if (depart === 'presentation') {
+      if (!fichier) throw new Error(t('Choisissez votre présentation.'))
+      const fd = new FormData(); fd.append('file', fichier); fd.append('formationId', f.id)
+      const r = await fetch('/api/import-pptx', { method: 'POST', body: fd })
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}))
+        await sb.from('formations').delete().eq('id', f.id)
+        throw new Error(d.error || t('Import PowerPoint impossible'))
+      }
+      const { count } = await sb.from('modules').select('id', { count: 'exact', head: true }).eq('formation_id', f.id)
+      if (count) await sb.from('formations').update({ duree_estimee_minutes: Math.max(15, count * 15) }).eq('id', f.id)
+      setFormationId(f.id)
+      const l = await chargerLecons(f.id)
+      if (l[0]) await ouvrirLecon(l[0].id)
+      return
+    }
     for (let i = 0; i < b.modules.length; i++) {
       const m = b.modules[i]
-      const { data: mod, error: em } = await sb.from('modules').insert({ formation_id: f.id, titre: m.titre.trim(), contenu: '', duree_minutes: m.duree, ordre: i + 1 }).select('id').single()
+      const { data: mod, error: em } = await sb.from('modules').insert({ formation_id: f.id, titre: m.titre.trim(), contenu: m.contenu ?? '', duree_minutes: m.duree, ordre: i + 1 }).select('id').single()
       if (em || !mod) throw new Error(em?.message || t('Erreur création module'))
-      const titres = m.lecons.map(l => l.trim()).filter(Boolean)
-      const liste = titres.length ? titres : [m.titre.trim()]
-      const { error: el } = await sb.from('lessons').insert(liste.map((titre, k) => ({ module_id: mod.id, titre, description: '', ordre: k + 1, est_obligatoire: true, duree_minutes: Math.max(1, Math.round(m.duree / liste.length)) })))
+      const gardees = m.lecons.map((l, k) => ({ titre: l.trim(), texte: (m.contenus?.[k] ?? '').trim() })).filter(l => l.titre)
+      const liste = gardees.length ? gardees : [{ titre: m.titre.trim(), texte: '' }]
+      const { data: ls, error: el } = await sb.from('lessons').insert(liste.map((l, k) => ({ module_id: mod.id, titre: l.titre, description: '', ordre: k + 1, est_obligatoire: true, duree_minutes: Math.max(1, Math.round(m.duree / liste.length)) }))).select('id, ordre')
       if (el) throw new Error(el.message)
+      const textes = (ls ?? []).map(x => ({ x, texte: liste[x.ordre - 1]?.texte })).filter(v => v.texte)
+      if (textes.length) await sb.from('content_blocks').insert(textes.map(v => ({ lesson_id: v.x.id, type: 'text', contenu: v.texte, ordre: 1 })))
     }
     setFormationId(f.id)
     const l = await chargerLecons(f.id)
@@ -168,6 +198,31 @@ export default function AssistantFormation() {
     } catch { setErreur(t('Échec du téléversement')) } finally { setEnvoiImage(false) }
   }
 
+  async function lireFichier(f: File) {
+    setErreur('')
+    const nom = f.name.toLowerCase()
+    if (depart === 'presentation') {
+      if (!/\.pptx?$/.test(nom)) { setErreur(t('Choisissez un fichier PowerPoint (.ppt ou .pptx).')); return }
+      setFichier(f); setLecture('ok')
+      if (!b.titre.trim()) maj({ titre: f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() })
+      return
+    }
+    if (!/\.(pdf|txt|md|text)$/.test(nom)) { setErreur(t('Choisissez un fichier PDF, .txt ou .md.')); return }
+    setLecture('en_cours')
+    try {
+      const texte = nom.endsWith('.pdf') ? await texteDuPdf(f) : await f.text()
+      const doc = parseDocumentIntoModules(texte)
+      const meta = inferMetadata(texte, doc.titre, doc.modules)
+      setFichier(f)
+      setB(x => ({ ...x, titre: doc.titre || x.titre, description: doc.description || x.description, categorie: meta.categorie || x.categorie,
+        niveau: (['debutant', 'intermediaire', 'avance'].includes(meta.niveau) ? meta.niveau : x.niveau) as Brouillon['niveau'],
+        objectifs: meta.objectifs.length ? meta.objectifs : x.objectifs, modules: planDepuisDocument(doc.modules) }))
+      setLecture('ok')
+    } catch {
+      setLecture(''); setErreur(t('Erreur lors de la lecture du PDF. Vérifiez que le fichier n\'est pas protégé.'))
+    }
+  }
+
   const terminer = () => { try { localStorage.removeItem(CLE) } catch {} }
 
   const champ = 'w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-base outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'
@@ -176,6 +231,7 @@ export default function AssistantFormation() {
 
   return (
     <div className="mx-auto max-w-6xl pb-24">
+      <EnteteCreation depart={depart} />
       <div className="-mt-3 flex justify-end">
         {formationId
           ? <Link href={`/admin/formations/${formationId}/editeur`} className="text-xs text-gray-400 hover:text-indigo-600">{t('Ouvrir l’éditeur classique')}</Link>
@@ -207,13 +263,39 @@ export default function AssistantFormation() {
 
           {etape === 0 && (
             <div className="space-y-6">
+              {depart !== 'zero' && !formationId && (
+                <label
+                  onDragOver={e => { e.preventDefault(); setSurvol(true) }} onDragLeave={() => setSurvol(false)}
+                  onDrop={e => { e.preventDefault(); setSurvol(false); const f = e.dataTransfer.files[0]; if (f) lireFichier(f) }}
+                  className={'flex cursor-pointer flex-col items-center gap-2 rounded-3xl border-2 border-dashed p-8 text-center transition ' + (survol ? 'border-indigo-500 bg-indigo-50' : lecture === 'ok' ? 'border-emerald-400 bg-emerald-50/60' : 'border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-fuchsia-50/60 hover:border-indigo-400')}>
+                  <span className="text-5xl" aria-hidden>{lecture === 'ok' ? '✨' : depart === 'document' ? '📄' : '📊'}</span>
+                  {lecture === 'ok' && fichier ? (
+                    <>
+                      <span className="text-lg font-bold text-emerald-800">{fichier.name}</span>
+                      <span className="text-sm text-emerald-700">{depart === 'document'
+                        ? t('{m} module(s) et {l} leçon(s) détectés : vérifiez-les à l’étape « Le plan ».', { m: b.modules.length, l: b.modules.reduce((n, m) => n + m.lecons.length, 0) })
+                        : t('Chaque diapositive deviendra une leçon, avec son texte et ses images.')}</span>
+                      <span className="text-xs text-gray-500">{t('Cliquez pour choisir un autre fichier')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-lg font-bold text-gray-900">{lecture === 'en_cours' ? t('Lecture du document…') : depart === 'document' ? t('Déposez votre document ici') : t('Déposez votre présentation ici')}</span>
+                      <span className="text-sm text-gray-500">{depart === 'document' ? t('PDF, .txt ou .md — les modules et les leçons sont proposés automatiquement.') : t('.ppt ou .pptx — jusqu’à 50 Mo.')}</span>
+                      <span className="mt-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">{t('Choisir un fichier')}</span>
+                    </>
+                  )}
+                  <input type="file" className="hidden" accept={depart === 'document' ? '.pdf,.txt,.md,.text,application/pdf' : '.ppt,.pptx'}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) lireFichier(f); e.target.value = '' }} />
+                </label>
+              )}
+              {depart === 'presentation' && !formationId && aide(!!fichier, t('Choisissez votre présentation.'))}
               <Entete icone="💡" titre={t('De quoi parle votre formation ?')} sous={t('Un titre clair et court, comme vous le diriez à un collègue.')} />
               <div>
                 <input autoFocus value={b.titre} onChange={e => maj({ titre: e.target.value })} maxLength={120}
                   onKeyDown={e => { if (e.key === 'Enter') suivant() }}
                   placeholder={t('Ex. : Hygiène des mains au bloc opératoire')} className={champ + ' text-lg font-semibold'} />
                 {aide(!!b.titre.trim(), t('Donnez un titre à la formation.'))}
-                {!b.titre && (
+                {!b.titre && depart === 'zero' && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {[t('Accueil des nouveaux employés'), t('Hygiène des mains'), t('Sécurité incendie'), t('Confidentialité des dossiers')].map(s => (
                       <button key={s} type="button" onClick={() => maj({ titre: s })} className="rounded-full border border-dashed border-indigo-300 px-3 py-1 text-sm text-indigo-700 hover:bg-indigo-50">+ {s}</button>
@@ -295,7 +377,18 @@ export default function AssistantFormation() {
             </div>
           )}
 
-          {etape === 2 && (
+          {etape === 2 && depart === 'presentation' && (
+            <div className="space-y-5 text-center">
+              <Entete icone="📊" titre={t('Votre présentation devient une formation')} sous={t('Chaque diapositive devient une leçon, avec son texte et ses images. Vous pourrez tout enrichir à l’étape suivante.')} />
+              <div className="mx-auto max-w-md rounded-2xl bg-indigo-50 p-5">
+                <p className="text-4xl" aria-hidden>📊 → 📖📖📖</p>
+                <p className="mt-2 font-semibold text-indigo-900">{fichier?.name ?? t('Aucun fichier choisi')}</p>
+                {!fichier && <button type="button" onClick={() => setEtape(0)} className="mt-2 text-sm font-semibold text-indigo-700 underline">{t('Choisir la présentation')}</button>}
+              </div>
+            </div>
+          )}
+
+          {etape === 2 && depart !== 'presentation' && (
             <div className="space-y-5">
               <Entete icone="🧩" titre={t('Construisez le plan')} sous={t('Des modules (les chapitres) et leurs leçons. Juste les titres : vous ajoutez le contenu à l’étape suivante.')} />
               {b.modules.map((m, i) => (
@@ -311,9 +404,10 @@ export default function AssistantFormation() {
                             <span className="text-gray-400" aria-hidden>📖</span>
                             <input value={l} placeholder={t('Titre de la leçon')}
                               onChange={e => majModule(i, { lecons: m.lecons.map((x, z) => z === k ? e.target.value : x) })}
-                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); majModule(i, { lecons: [...m.lecons.slice(0, k + 1), '', ...m.lecons.slice(k + 1)] }) } }}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); majModule(i, { lecons: [...m.lecons.slice(0, k + 1), '', ...m.lecons.slice(k + 1)], ...(m.contenus ? { contenus: [...m.contenus.slice(0, k + 1), '', ...m.contenus.slice(k + 1)] } : {}) }) } }}
                               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400" />
-                            {m.lecons.length > 1 && <button type="button" aria-label={t('Retirer')} onClick={() => majModule(i, { lecons: m.lecons.filter((_, z) => z !== k) })} className="px-1 text-gray-400 hover:text-rose-600">×</button>}
+                            {m.contenus?.[k] && <span title={t('Texte importé du document')} className="text-xs" aria-hidden>📄</span>}
+                            {m.lecons.length > 1 && <button type="button" aria-label={t('Retirer')} onClick={() => majModule(i, { lecons: m.lecons.filter((_, z) => z !== k), ...(m.contenus ? { contenus: m.contenus.filter((_, z) => z !== k) } : {}) })} className="px-1 text-gray-400 hover:text-rose-600">×</button>}
                           </div>
                         ))}
                         <button type="button" onClick={() => majModule(i, { lecons: [...m.lecons, ''] })} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">{t('+ Leçon')}</button>
@@ -412,7 +506,7 @@ export default function AssistantFormation() {
               {etape > 0 ? <button type="button" onClick={() => { if (formationId && etape === 3) setEtape(1); else precedent() }} className="rounded-xl px-4 py-2.5 font-semibold text-gray-600 hover:bg-gray-100">{t('← Retour')}</button> : <span />}
               <button type="button" onClick={suivant} disabled={enCours}
                 className={'rounded-xl px-6 py-3 font-bold text-white shadow-md transition disabled:opacity-60 ' + (valide ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-300')}>
-                {enCours ? t('Un instant…') : etape === 2 && !formationId ? t('Créer le brouillon et ajouter le contenu →') : etape === 4 ? t('Terminer →') : t('Continuer →')}
+                {enCours ? t('Un instant…') : etape === 2 && !formationId ? (depart === 'presentation' ? t('Importer et ajouter le contenu →') : t('Créer le brouillon et ajouter le contenu →')) : etape === 4 ? t('Terminer →') : t('Continuer →')}
               </button>
             </div>
           )}

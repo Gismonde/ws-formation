@@ -29,3 +29,20 @@ describe('assistant de création', () => {
     expect(r[1].nbBlocs).toBe(2)
   })
 })
+
+import { planDepuisDocument } from '@/lib/assistant-formation'
+describe('plan depuis un document', () => {
+  it('garde les leçons et leur texte, ou fait du module une leçon', () => {
+    const p = planDepuisDocument([
+      { titre: 'Intro', contenu: 'Texte du module', duree_minutes: 22, lecons: [] },
+      { titre: 'Mains', duree_minutes: 30, lecons: [{ titre: 'Quand', description: 'Avant le patient' }, { titre: ' ', description: '' }] },
+      { titre: '  ', lecons: [] },
+    ])
+    expect(p).toHaveLength(2)
+    expect(p[0]).toMatchObject({ lecons: ['Intro'], contenus: ['Texte du module'], duree: 20 })
+    expect(p[1]).toMatchObject({ lecons: ['Quand'], contenus: ['Avant le patient'], duree: 30 })
+  })
+  it('donne un module vide si rien n’est détecté', () => {
+    expect(planDepuisDocument([])).toEqual([{ titre: '', duree: 15, lecons: [''] }])
+  })
+})
