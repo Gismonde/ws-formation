@@ -45,5 +45,5 @@ WS Formation permet à une organisation de :
 
 ## Liens
 
-- **Application :** https://ws-formation.vercel.app
+- **Application :** https://education.wssurgical.com
 - **Code source :** https://github.com/Gismonde/ws-formation

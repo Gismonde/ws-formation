@@ -23,7 +23,7 @@ Tu reçois un courriel d'invitation à la plateforme WS Formation lors de ton ar
 
 ### Étape 1 — Activer ton compte (Jour 1)
 
-1. Ouvre le courriel d'invitation reçu de **noreply@ws-formation.vercel.app**
+1. Ouvre le courriel d'invitation reçu de **no-reply@education.wssurgical.com**
 2. Clique sur le lien d'activation (valable 24 heures)
 3. Crée ton mot de passe :
    - Minimum 8 caractères
