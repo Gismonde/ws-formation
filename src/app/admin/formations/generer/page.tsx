@@ -527,7 +527,7 @@ export default function GenererFormationPage() {
       const emptyR = questions.filter(q => q.reponses.some(r => !r.texte.trim()))
       if (emptyR.length > 0) errors.push(t('Chaque réponse doit avoir un texte.'))
     }
-    if (errors.length > 0) { setError(errors.join(' | ')); return }
+    if (errors.length > 0) { setError(errors.join(' | ')); setShowPreview(false); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
 
     setStep('creating')
     setError('')
@@ -1250,6 +1250,7 @@ export default function GenererFormationPage() {
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '32px', background: '#fff', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>{t('Aperçu avant création')}</h2>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{t('Vérifiez le récapitulatif avant de soumettre.')}</p>
+        {error && <p role="alert" style={{ color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '6px', margin: '0 0 16px', fontSize: '14px' }}>{error}</p>}
         <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
             <div className='grille-2-colonnes' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
