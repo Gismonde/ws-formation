@@ -249,7 +249,7 @@ export default function DepuisPPPage() {
       }
 
       localStorage.removeItem(DRAFT_KEY)
-      router.push("/admin/formations/" + formation.id)
+      router.push("/admin/formations/nouvelle?formation=" + formation.id)
     } catch (err: any) {
       setError([err.message])
       setIsLoading(false)

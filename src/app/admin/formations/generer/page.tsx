@@ -1311,7 +1311,10 @@ export default function GenererFormationPage() {
           Elle est en brouillon — vous pouvez maintenant l&apos;éditer et la publier.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => router.push('/admin/formations/' + formationId)} style={btnPrimaryStyle}>
+          <button onClick={() => router.push('/admin/formations/nouvelle?formation=' + formationId)} style={btnPrimaryStyle}>
+            {t('🎨 Ajouter le contenu des leçons')}
+          </button>
+          <button onClick={() => router.push('/admin/formations/' + formationId)} style={btnSecondaryStyle}>
             {t('Voir la formation')}
           </button>
           <button onClick={() => router.push('/admin/formations')} style={btnSecondaryStyle}>
