@@ -2377,4 +2377,12 @@ export const EN: Record<string, string> = {
   'Narration terminée': 'Narration finished',
   'Couper le son': 'Mute',
   'La narration commence dès l’ouverture de la leçon (et à chaque écran en présentation écran par écran). La narration s’écrit bloc par bloc dans l’éditeur de contenu (« 🎧 Narration audio ») ; elle est entendue sans être affichée.': 'Narration starts as soon as the lesson opens (and on each screen in screen-by-screen mode). Narration is written block by block in the content editor (“🎧 Audio narration”); it is heard but not shown.',
+  '+ Audio (fichier ou narration entendue, non affichée)': '+ Audio (file or narration, heard but not shown)',
+  'Audio de ce bloc (entendu, non affiché)': 'Audio for this block (heard, not shown)',
+  'Fichier audio': 'Audio file',
+  'Glissez un fichier audio ici ou cliquez pour choisir': 'Drop an audio file here or click to choose',
+  'Narration écrite (voix de synthèse)': 'Written narration (synthetic voice)',
+  'Le fichier audio est joué ; ce texte sert de transcription (non lu).': 'The audio file is played; this text serves as a transcript (not read).',
+  'Écouter': 'Listen',
+  'Le fichier audio est joué ; ce texte sert de transcription (non lu).': 'The audio file is played; this text serves as a transcript (not read).',
 }

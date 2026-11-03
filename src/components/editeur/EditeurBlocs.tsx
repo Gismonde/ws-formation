@@ -98,7 +98,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
   }, [leconId])
 
   // Adresses temporaires pour afficher les médias privés
-  const refsMedias = useMemo(() => [...blocs.map(b => b.url).filter(estMediaPrive), ...blocs.filter(b => b.type === 'interactif').flatMap(b => refsDansDonnees(b.metadata))], [blocs])
+  const refsMedias = useMemo(() => [...blocs.map(b => b.url).filter(estMediaPrive), ...blocs.map(b => meta(b).audio as string | undefined).filter(estMediaPrive), ...blocs.filter(b => b.type === 'interactif').flatMap(b => refsDansDonnees(b.metadata))], [blocs])
   useEffect(() => {
     const manquants = refsMedias.filter(r => !urlsMedias[r])
     if (manquants.length === 0) return
@@ -420,7 +420,7 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
                 <EditeurInteractif titre={b.titre} donnees={meta(b) as unknown as DonneesInteractif} urls={urlsMedias}
                   onTitre={v => modifier(b.id, { titre: v })} onDonnees={dd => modifier(b.id, { metadata: { ...(dd as unknown as Record<string, unknown>), ...(meta(b).narration ? { narration: meta(b).narration } : {}) } })} setErreur={setErreur} />
               )}
-              {b.type !== 'quiz' && <ChampNarration bloc={b} modifier={modifier} />}
+              {b.type !== 'quiz' && <ChampNarration bloc={b} {...props} />}
             </div>
           </div>
           <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter} onLibrairie={p => { setMenuOuvert(null); setChoixLibrairie({ position: p }) }}
@@ -652,33 +652,65 @@ function EditeurImage(p: PropsBloc) {
   )
 }
 
-/** Narration audio : texte lu à voix haute pendant la formation, jamais affiché à l'écran. */
-function ChampNarration({ bloc, modifier }: { bloc: Bloc; modifier: (id: string, changes: Partial<Bloc>, immediat?: boolean) => void }) {
+/**
+ * Audio d'un bloc, jamais affiché à l'écran :
+ *  - un fichier audio (MP3…, ex. votre propre voix), prioritaire ;
+ *  - ou une narration écrite, lue par la voix de synthèse.
+ */
+function ChampNarration({ bloc, modifier, urlsMedias, setErreur, setEtat }: PropsBloc) {
   const { t } = useT()
   const valeur = typeof meta(bloc).narration === 'string' ? String(meta(bloc).narration) : ''
-  const [ouvert, setOuvert] = useState(!!valeur)
+  const audio = typeof meta(bloc).audio === 'string' ? String(meta(bloc).audio) : ''
+  const [ouvert, setOuvert] = useState(!!valeur || !!audio)
+  const [enCours, setEnCours] = useState(false)
+  const changerMeta = (cle: 'narration' | 'audio', v: string, immediat = false) => {
+    const m = { ...meta(bloc) }
+    if (v.trim()) m[cle] = v; else delete m[cle]
+    modifier(bloc.id, { metadata: m }, immediat)
+  }
+  const envoyer = async (f: File) => {
+    setEnCours(true); setEtat('en_cours')
+    try { changerMeta('audio', await envoyerMedia(f, 'audio'), true) }
+    catch (e) { setErreur((e as Error).message); setEtat('erreur') }
+    finally { setEnCours(false) }
+  }
   if (!ouvert) {
     return (
       <button type="button" onClick={() => setOuvert(true)} className="mt-3 text-xs font-medium text-indigo-600 hover:underline">
-        🎧 {t('+ Narration audio (texte entendu, non affiché)')}
+        🎧 {t('+ Audio (fichier ou narration entendue, non affichée)')}
       </button>
     )
   }
+  const src = audio ? (estMediaPrive(audio) ? urlsMedias[audio] : audio) : null
   return (
-    <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <label className="text-xs font-semibold text-indigo-900">🎧 {t('Narration audio')}</label>
-        {!valeur && <button type="button" onClick={() => setOuvert(false)} className="text-xs text-gray-500 hover:underline">{t('Fermer')}</button>}
+    <div className="mt-3 space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-indigo-900">🎧 {t('Audio de ce bloc (entendu, non affiché)')}</span>
+        {!valeur && !audio && <button type="button" onClick={() => setOuvert(false)} className="text-xs text-gray-500 hover:underline">{t('Fermer')}</button>}
       </div>
-      <ZoneTexteAuto value={valeur} rows={2}
-        onChange={e => {
-          const m = { ...meta(bloc) }
-          if (e.target.value.trim()) m.narration = e.target.value; else delete m.narration
-          modifier(bloc.id, { metadata: m })
-        }}
-        placeholder={t('Ce que la voix dit pendant ce bloc. Ce texte n’apparaît pas à l’écran.')}
-        className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-      <p className="mt-1 text-[11px] text-indigo-700/80">{t('Si ce champ est rempli, la voix lit ce texte au lieu du texte affiché du bloc.')}</p>
+
+      <div>
+        <p className="mb-1 text-xs font-medium text-indigo-900">🎙️ {t('Fichier audio')}</p>
+        {audio ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {src ? <audio controls preload="none" src={src} className="h-9 max-w-full flex-1" /> : <span className="text-xs text-gray-500">{t('Chargement…')}</span>}
+            <button type="button" onClick={() => changerMeta('audio', '', true)} className="text-xs text-red-600 hover:underline">{t('Retirer')}</button>
+          </div>
+        ) : (
+          <ZoneDepot genre="audio" enCours={enCours} onFichier={envoyer} texte={t('Glissez un fichier audio ici ou cliquez pour choisir')} />
+        )}
+      </div>
+
+      <div>
+        <p className="mb-1 text-xs font-medium text-indigo-900">🗣️ {t('Narration écrite (voix de synthèse)')}</p>
+        <ZoneTexteAuto value={valeur} rows={2}
+          onChange={e => changerMeta('narration', e.target.value)}
+          placeholder={t('Ce que la voix dit pendant ce bloc. Ce texte n’apparaît pas à l’écran.')}
+          className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <p className="mt-1 text-[11px] text-indigo-700/80">
+          {audio ? t('Le fichier audio est joué ; ce texte sert de transcription (non lu).') : t('Si ce champ est rempli, la voix lit ce texte au lieu du texte affiché du bloc.')}
+        </p>
+      </div>
     </div>
   )
 }

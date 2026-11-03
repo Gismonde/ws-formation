@@ -14,8 +14,8 @@ export default function Diaporama({ titre, description, couverture, accent, ecra
   ecrans: ReactNode[]
   /** Fin de leçon (attestation, « Terminer la leçon ») : sous le dernier écran */
   fin: ReactNode
-  /** Texte lu à voix haute pour chaque écran (index 0 = écran titre) */
-  narrations?: string[]
+  /** Audio de chaque écran (index 0 = écran titre) : fichiers (prioritaires) ou texte lu par la voix de synthèse */
+  narrations?: { texte: string; audios: string[] }[]
   /** La narration démarre d'elle-même à chaque écran */
   audioAuto?: boolean
 }) {
@@ -25,18 +25,20 @@ export default function Diaporama({ titre, description, couverture, accent, ecra
   const couleur = accent || '#4f46e5'
   const parole = useParole()
   const [audioActif, setAudioActif] = useState(audioAuto)
-  const aNarration = parole.disponible && narrations.some(n => n && n.trim())
-  const narrationIci = narrations[i] ?? ''
-  const lireRef = useRef(parole.lire)
-  lireRef.current = parole.lire
+  const aNarration = narrations.some(n => n.audios.length > 0 || (parole.disponible && n.texte.trim()))
+  const ici = narrations[i] ?? { texte: '', audios: [] }
+  const narrationIci = ici.audios.length > 0 || !!ici.texte.trim()
+  const cleIci = ici.audios.join('|') + '§' + ici.texte
+  const lireEcran = useRef(() => {})
+  lireEcran.current = () => { if (ici.audios.length) parole.jouer(ici.audios); else parole.lire(ici.texte) }
   const { arreter, setBloque } = parole
 
-  // À chaque écran : on lit sa narration (si l'audio est activé), sinon on coupe
+  // À chaque écran : on joue son audio (si l'audio est activé), sinon on coupe
   useEffect(() => {
     if (!audioActif || !narrationIci) { arreter(); return }
     if (!sonAutorise()) { arreter(); setBloque(true); return }
-    lireRef.current(narrationIci)
-  }, [i, audioActif, narrationIci, arreter, setBloque])
+    lireEcran.current()
+  }, [i, audioActif, narrationIci, cleIci, arreter, setBloque])
   const aller = useCallback((n: number) => {
     setI(Math.max(0, Math.min(total, n)))
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -75,17 +77,17 @@ export default function Diaporama({ titre, description, couverture, accent, ecra
               ▶ {t('Écouter la narration')}
             </button>
           ) : parole.bloque ? (
-            <button type="button" onClick={() => narrationIci && parole.lire(narrationIci)} className="animate-pulse rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-900">
+            <button type="button" onClick={() => narrationIci && lireEcran.current()} className="animate-pulse rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-900">
               ▶ {t('Cliquez pour démarrer l’audio')}
             </button>
           ) : (
             <>
               <button type="button" disabled={!narrationIci}
-                onClick={() => parole.etat === 'lecture' ? parole.pause() : parole.etat === 'pause' ? parole.reprendre() : parole.lire(narrationIci)}
+                onClick={() => parole.etat === 'lecture' ? parole.pause() : parole.etat === 'pause' ? parole.reprendre() : lireEcran.current()}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-indigo-900 disabled:opacity-40" title={parole.etat === 'lecture' ? t('Pause') : t('Lire')}>
                 {parole.etat === 'lecture' ? '⏸' : '▶'}
               </button>
-              <button type="button" disabled={!narrationIci} onClick={() => parole.lire(narrationIci)} className="rounded-full px-2 py-1 text-sm text-indigo-100 hover:bg-white/10 disabled:opacity-40" title={t('Réécouter')}>↻</button>
+              <button type="button" disabled={!narrationIci} onClick={() => lireEcran.current()} className="rounded-full px-2 py-1 text-sm text-indigo-100 hover:bg-white/10 disabled:opacity-40" title={t('Réécouter')}>↻</button>
               <span className="text-sm text-indigo-100">
                 {!narrationIci ? t('Pas de narration sur cet écran') : parole.etat === 'lecture' ? t('Lecture en cours…') : parole.etat === 'pause' ? t('En pause') : t('Narration terminée')}
               </span>

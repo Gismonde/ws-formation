@@ -5,7 +5,7 @@
 export const BUCKET_MEDIAS = 'formation-medias'
 export const PREFIXE_MEDIA = 'media:'
 
-export type GenreMedia = 'image' | 'video' | 'fichier'
+export type GenreMedia = 'image' | 'video' | 'fichier' | 'audio'
 
 export const REGLES_MEDIAS: Record<GenreMedia, { types: string[]; tailleMaxMo: number; libelle: string }> = {
   image: {
@@ -17,6 +17,11 @@ export const REGLES_MEDIAS: Record<GenreMedia, { types: string[]; tailleMaxMo: n
     types: ['video/mp4', 'video/webm', 'video/quicktime'],
     tailleMaxMo: 50,
     libelle: 'MP4, WebM ou MOV — 50 Mo max',
+  },
+  audio: {
+    types: ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm'],
+    tailleMaxMo: 20,
+    libelle: 'MP3, M4A, WAV, OGG ou WebM — 20 Mo max',
   },
   fichier: {
     types: [

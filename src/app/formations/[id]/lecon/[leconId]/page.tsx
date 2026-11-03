@@ -13,7 +13,8 @@ import { texteAttestationDefaut } from '@/lib/suivi-constantes'
 import { i18n } from '@/lib/i18n/serveur'
 import type { Traducteur } from '@/lib/i18n/base'
 import AudioReader from '@/components/AudioReader'
-import { texteAudio } from '@/lib/narration'
+import { texteAudio, audioDe, audiosDe } from '@/lib/narration'
+import AudioBloc from '@/components/lecon/AudioBloc'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
 import LecteurDemo from '@/components/lecon/LecteurDemo'
 import Diaporama from '@/components/lecon/Diaporama'
@@ -183,7 +184,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const resLecon = await getLessonWithBlocks(leconId)
   if (!resLecon.success || !resLecon.data) notFound()
   const lecon = resLecon.data as Lesson
-  const urlsMedias = await signerUrlsMedias([...(lecon.blocs ?? []).map(b => b.url || b.contenu), ...(lecon.blocs ?? []).filter(b => b.type === 'interactif').flatMap(b => refsMedias(b.metadata))])
+  const urlsMedias = await signerUrlsMedias([...(lecon.blocs ?? []).map(b => b.url || b.contenu), ...(lecon.blocs ?? []).map(b => audioDe(b)), ...(lecon.blocs ?? []).filter(b => b.type === 'interactif').flatMap(b => refsMedias(b.metadata))])
 
   // Charger la formation pour le contexte
   // select('*') : la colonne mode_presentation peut ne pas encore exister
@@ -252,6 +253,9 @@ export default async function LecteurLeconPage({ params, searchParams }: {
 
   const enEcrans = (formation as { mode_presentation?: string }).mode_presentation === 'ecrans'
   const audioAuto = (formation as { audio_auto?: boolean }).audio_auto === true
+  // Adresse lisible d'un fichier audio (référence privée → adresse signée ; adresse externe telle quelle)
+  const adresseAudio = (r: string) => urlsMedias[r] ?? (/^https?:\/\//.test(r) ? r : null)
+  const premierAudio = [...lecon.blocs].sort((a, b) => a.ordre - b.ordre).find(b => audioDe(b))?.id
   const finDeLecon = (
           <FinDeLecon
       lessonId={leconId}
@@ -348,7 +352,9 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           <Diaporama titre={lecon.titre} description={lecon.description} accent={theme?.couleur ?? null}
             couverture={(formation as { image_couverture?: string | null }).image_couverture ?? null}
             audioAuto={audioAuto}
-            narrations={[texteAudio([], lecon.description), ...grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map(g => texteAudio(g))]}
+            narrations={[{ texte: texteAudio([], lecon.description), audios: [] }, ...grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map(g => ({
+              texte: texteAudio(g), audios: audiosDe(g).map(adresseAudio).filter((u): u is string => !!u),
+            }))]}
             ecrans={grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map((g, k) => (
               <div key={k} className="space-y-6">{g.map(bloc => <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} t={t} theme={theme} />)}</div>
             ))}
@@ -361,7 +367,9 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         ) : (
           <div className="space-y-6">
             {lecon.blocs.sort((a, b) => a.ordre - b.ordre).map(bloc => (
-              <Apparition key={bloc.id} actif={(lecon as { apparition_progressive?: boolean }).apparition_progressive === true}><RenduBloc bloc={bloc} urls={urlsMedias} t={t} theme={theme} /></Apparition>
+              <Apparition key={bloc.id} actif={(lecon as { apparition_progressive?: boolean }).apparition_progressive === true}><RenduBloc bloc={bloc} urls={urlsMedias} t={t} theme={theme} />
+                {(() => { const a = audioDe(bloc); const u = a && adresseAudio(a); return u ? <div className="mt-3"><AudioBloc src={u} auto={audioAuto && bloc.id === premierAudio} /></div> : null })()}
+              </Apparition>
             ))}
           </div>
         )}

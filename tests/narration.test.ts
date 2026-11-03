@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { narrationDe, texteAudio, morceaux, texteParlable } from '@/lib/narration'
+import { narrationDe, texteAudio, morceaux, texteParlable, audiosDe } from '@/lib/narration'
 
 describe('narration audio', () => {
   it('lit la narration d’une image seule (texte non affiché)', () => {
@@ -30,5 +30,16 @@ describe('narration audio', () => {
     expect(m.length).toBeGreaterThan(5)
     expect(m.every(x => x.length <= 50)).toBe(true)
     expect(m.join(' ').replace(/\s+/g, ' ')).toBe(t.trim())
+  })
+})
+
+describe('fichiers audio', () => {
+  it('un bloc avec fichier audio n’est pas lu par la voix de synthèse', () => {
+    const blocs = [
+      { type: 'text', contenu: 'Texte affiché', metadata: { audio: 'media:2026/11/a.mp3', narration: 'Script' } },
+      { type: 'text', contenu: 'Autre texte' },
+    ]
+    expect(texteAudio(blocs)).toBe('Autre texte')
+    expect(audiosDe(blocs)).toEqual(['media:2026/11/a.mp3'])
   })
 })
