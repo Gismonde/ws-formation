@@ -159,7 +159,7 @@ export async function tachesEvenements(sb: SupabaseClient, origine: string, main
   if (!courrielsActifs()) return bilan
   const cfg = await chargerNotifications(sb)
   const { data: evs } = await sb.from('evenements').select('*').eq('statut', 'publie')
-  for (const ev of (evs ?? []) as Evenement[]) {
+  for (const ev of ((evs ?? []) as Evenement[]).filter(e => !e.archive_le)) {
     const { data: ss } = await sb.from('evenements_seances').select('*').eq('evenement_id', ev.id)
     const { data: ins } = await sb.from('evenements_inscriptions').select('*').eq('evenement_id', ev.id).neq('statut', 'annule')
     const seances = (ss ?? []) as Seance[]

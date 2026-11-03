@@ -8,3 +8,4 @@ ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS fond text;
 ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS emoji text;
 ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS places_prevues integer;
 ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS compte_a_rebours boolean NOT NULL DEFAULT false;
+ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS archive_le timestamptz;

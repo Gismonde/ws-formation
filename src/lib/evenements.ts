@@ -36,6 +36,8 @@ export type Evenement = CiblePolitique & {
   places_prevues?: number | null
   /** Afficher un compte à rebours (carte, page, bannière) */
   compte_a_rebours?: boolean
+  /** Archivé par un admin (annulé ou passé) : masqué pour les employés */
+  archive_le?: string | null
 }
 
 export type Seance = {
@@ -154,7 +156,8 @@ export async function chargerEvenement(sb: SupabaseClient, id: string) {
 export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }) {
   if (!(await evenementsDisponibles(sb))) return []
   const { data: evs } = await sb.from('evenements').select(CHAMPS_EVENEMENT).eq('statut', 'publie').order('created_at', { ascending: false })
-  const invites = ((evs ?? []) as Evenement[]).filter(ev => estInvite(ev, e))
+  // Les événements archivés disparaissent du portail des employés
+  const invites = ((evs ?? []) as Evenement[]).filter(ev => !ev.archive_le && estInvite(ev, e))
   if (!invites.length) return []
   const ids = invites.map(v => v.id)
   const [{ data: seances }, { data: inscriptions }] = await Promise.all([
@@ -166,9 +169,7 @@ export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; 
     const ins = ((inscriptions ?? []) as Inscription[]).filter(i => i.evenement_id === ev.id)
     const mienne = ins.find(i => i.employe_id === e.id) ?? null
     const prochaine = ss.filter(s => !s.annulee).map(s => s.debut).sort()[0] ?? null
-    // Passé : toutes les dates actives sont terminées. Un événement « Date à venir » sans date active reste « À venir ».
-    const actives = ss.filter(s => !s.annulee)
-    const termine = actives.length > 0 ? actives.every(s => new Date(s.fin).getTime() < Date.now()) : ss.length > 0 && !ev.date_a_venir
+    const termine = evenementTermine(ev, ss)
     return { ev, seances: ss.map(s => ({ ...s, restantes: placesRestantes(s, ins) })), mienne, prochaine, termine }
   })
 }
@@ -181,3 +182,13 @@ export async function nombreEvenementsAInscrire(sb: SupabaseClient, e: Parameter
     return 0
   }
 }
+
+/** Passé : toutes les dates actives sont terminées. Un événement « Date à venir » sans date active reste « À venir ». */
+export function evenementTermine(ev: Pick<Evenement, 'date_a_venir'>, ss: Pick<Seance, 'annulee' | 'fin'>[]): boolean {
+  const actives = ss.filter(s => !s.annulee)
+  return actives.length > 0 ? actives.every(s => new Date(s.fin).getTime() < Date.now()) : ss.length > 0 && !ev.date_a_venir
+}
+
+/** Un admin peut archiver un événement annulé ou passé. */
+export const peutArchiver = (ev: Pick<Evenement, 'statut' | 'date_a_venir'>, ss: Pick<Seance, 'annulee' | 'fin'>[]) =>
+  ev.statut === 'annule' || (ev.statut === 'publie' && evenementTermine(ev, ss))

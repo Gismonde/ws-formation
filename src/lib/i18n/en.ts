@@ -2693,4 +2693,10 @@ export const EN: Record<string, string> = {
   'Ex. : 30': 'E.g.: 30',
   'Les personnes ciblées verront l’événement « Date à venir » dans leur portail et pourront demander à être prévenues dès que la date sera annoncée.': 'Targeted people will see the “Date to come” event in their portal and can ask to be notified as soon as the date is announced.',
   'Les personnes ciblées verront l’événement « Date à venir » dans leur portail et pourront demander à être prévenues dès que la date sera annoncée.': 'Targeted people will see the “Date to come” event in their portal and can ask to be notified as soon as the date is announced.',
+  'Archiver l’événement': 'Archive event',
+  'Aucun événement archivé.': 'No archived events.',
+  'L’événement passera dans la liste des archives et disparaîtra du portail des employés. Vous pourrez le désarchiver.': 'The event will move to the archive list and disappear from the employee portal. You can unarchive it.',
+  'À archiver': 'To archive',
+  'Événement archivé.': 'Event archived.',
+  'Événement désarchivé.': 'Event unarchived.',
 }
