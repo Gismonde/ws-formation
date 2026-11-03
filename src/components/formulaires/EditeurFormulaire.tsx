@@ -8,6 +8,7 @@ import { useT } from '@/lib/i18n/client'
 import { cliniquesDe } from '@/lib/cliniques'
 import { TYPES_CHAMP, PREREMPLIS, type Champ, type TypeChamp, type Formulaire, type Reponses } from '@/lib/formulaires'
 import ChampsFormulaire from './ChampsFormulaire'
+import { TexteRiche } from '@/lib/texte-riche'
 
 type Personne = { id: string; prenom: string | null; nom: string | null; role: string; clinique: string | null }
 type Brouillon = Pick<Formulaire, 'titre' | 'code' | 'description' | 'instructions' | 'clinique' | 'champs' | 'actif' | 'destinataire_id'>
@@ -79,7 +80,7 @@ export default function EditeurFormulaire({ id, initial, cliniques, personnes, c
   )
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 pb-24">
+    <div className="mx-auto max-w-5xl space-y-5 pb-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link href="/admin/formulaires" className="text-sm text-gray-500 hover:text-gray-800">← {t('Formulaires')}</Link>
@@ -99,7 +100,7 @@ export default function EditeurFormulaire({ id, initial, cliniques, personnes, c
         <div className="space-y-4">
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-600">{t('Aperçu : ce que voit l’employé. Rien n’est envoyé.')}</div>
           <h2 className="text-xl font-bold text-gray-900">{f.titre || t('(Sans titre)')}</h2>
-          {f.instructions && <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-950"><p className="mb-1 font-semibold">💡 {t('Comment remplir ce formulaire')}</p><p className="whitespace-pre-wrap">{f.instructions}</p></div>}
+          {f.instructions && <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-950"><p className="mb-1 font-semibold">💡 {t('Comment remplir ce formulaire')}</p><div className="[&_li]:my-0.5 [&_p]:my-1.5"><TexteRiche texte={f.instructions} /></div></div>}
           <ChampsFormulaire champs={f.champs} valeurs={apercuValeurs} onChange={setApercuValeurs} partie="employe" />
           {f.champs.some(c => c.type === 'section' && c.reserve) && (
             <>
@@ -229,8 +230,8 @@ export default function EditeurFormulaire({ id, initial, cliniques, personnes, c
       )}
 
       {/* Barre d'enregistrement */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+      <div className="sticky bottom-0 z-20 rounded-xl border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm">
             {etat ? <span className={etat.type === 'ok' ? 'text-green-700' : 'text-red-700'}>{etat.type === 'ok' ? '✓ ' : '⚠ '}{etat.msg}</span>
               : <span className="text-gray-500">{f.actif ? `🟢 ${t('Publié : visible par les employés')}` : `⚪ ${t('Non publié : invisible pour les employés')}`}</span>}

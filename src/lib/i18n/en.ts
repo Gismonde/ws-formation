@@ -2532,4 +2532,6 @@ export const EN: Record<string, string> = {
   'Votre formulaire « {titre} » a bien été transmis. Numéro de suivi : {numero}.': 'Your form “{titre}” was submitted. Tracking number: {numero}.',
   'cachée à l’employé ; complétée par la personne qui reçoit le formulaire (ex. « Réservé au responsable PRP »).': 'hidden from the employee; completed by the person who receives the form (e.g. “Reserved for the privacy officer”).',
   'Le module Formulaires n’est pas encore activé : exécutez la migration supabase/migrations/formulaires.sql.': 'The Forms module is not enabled yet: run the supabase/migrations/formulaires.sql migration.',
+  'Déjà regardé': 'Already watched',
+  'Regardez la vidéo sans sauter de passage': 'Watch the video without skipping ahead',
 }
