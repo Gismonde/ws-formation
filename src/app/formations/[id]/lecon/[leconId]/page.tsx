@@ -220,6 +220,20 @@ export default async function LecteurLeconPage({ params, searchParams }: {
     }
   }
   const leconCouranteTerminee = !verrou || terminees.has(leconId)
+
+  // Dernière leçon : on enchaîne directement sur le questionnaire final (s'il existe et n'est pas déjà réussi)
+  let urlQuestionnaire: string | undefined
+  if (!leconSuivante && indexGlobal >= 0) {
+    const { data: q } = await sbNav.from('questionnaires').select('id').eq('formation_id', formationId).eq('actif', true).limit(1).maybeSingle()
+    if (q) {
+      let reussi = false
+      if (!apercu.actif && suiviActif) {
+        const { data: c } = await sbNav.from('certificats').select('valide, date_expiration').eq('employe_id', emp.id).eq('formation_id', formationId).limit(1).maybeSingle()
+        reussi = !!c && c.valide !== false && (!c.date_expiration || new Date(c.date_expiration) > new Date())
+      }
+      if (!reussi) urlQuestionnaire = `/formations/${formationId}/questionnaire`
+    }
+  }
   const suivanteOuverte = !!leconSuivante && leconCouranteTerminee
 
   // Marquer la lecon comme vue automatiquement (si employe)
@@ -331,6 +345,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             etat={etatSuivi}
             suiviActif={suiviActif}
             simulation={apercu.actif ? { formationId } : undefined}
+            ensuite={urlQuestionnaire}
           />
         </FournisseurSuivi>
 
@@ -380,6 +395,14 @@ export default async function LecteurLeconPage({ params, searchParams }: {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
+            ) : urlQuestionnaire ? (
+              leconCouranteTerminee ? (
+                <Link href={urlQuestionnaire} className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+                  📝 {t('Passer au questionnaire final →')}
+                </Link>
+              ) : (
+                <span className="text-sm text-gray-400">🔒 {t('Terminez cette leçon pour passer au questionnaire')}</span>
+              )
             ) : (
               <Link
                 href={baseUrl}
