@@ -2625,4 +2625,8 @@ export const EN: Record<string, string> = {
   'Pour quelle clinique ?': 'For which clinic?',
   'clinique actuelle': 'current clinic',
   'Pour quelle clinique ?': 'For which clinic?',
+  'Excel': 'Excel',
+  'Exporter les réponses (registre)': 'Export responses (register)',
+  'Laissez vide pour tout exporter.': 'Leave empty to export everything.',
+  'Télécharger le fichier Excel': 'Download the Excel file',
 }
