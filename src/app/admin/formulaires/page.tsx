@@ -117,6 +117,16 @@ export default async function AdminFormulairesPage({ searchParams }: { searchPar
                   <Link href={filtre({ formulaire: f.id, statut: undefined })} className="rounded-lg bg-gray-100 px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-200">
                     {t('{n} réponse(s)', { n: compte(f.id) })}{compte(f.id, 'recu') ? ` · ${t('{n} nouvelle(s)', { n: compte(f.id, 'recu') })}` : ''}
                   </Link>
+                  <details className="relative">
+                    <summary className="cursor-pointer list-none rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 font-semibold text-green-800 hover:bg-green-100">📥 {t('Excel')}</summary>
+                    <form method="GET" action={`/api/admin/formulaires/${f.id}/export`} className="absolute left-0 z-10 mt-1 w-64 space-y-2 rounded-xl border border-gray-200 bg-white p-3 text-xs shadow-lg">
+                      <p className="font-semibold text-gray-700">{t('Exporter les réponses (registre)')}</p>
+                      <label className="block">{t('Du')} <input type="date" name="du" className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1" /></label>
+                      <label className="block">{t('Au')} <input type="date" name="au" className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1" /></label>
+                      <p className="text-gray-500">{t('Laissez vide pour tout exporter.')}</p>
+                      <button type="submit" className="w-full rounded-lg bg-green-600 px-3 py-1.5 font-semibold text-white hover:bg-green-700">{t('Télécharger le fichier Excel')}</button>
+                    </form>
+                  </details>
                   {peutModifierFormulaire(a, f) && <Link href={`/admin/formulaires/${f.id}`} className="rounded-lg border border-gray-300 px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50">✏️ {t('Modifier')}</Link>}
                   {peutModifierFormulaire(a, f) && <ActionsFormulaire id={f.id} actif={f.actif} archive={f.archive} />}
                 </div>
