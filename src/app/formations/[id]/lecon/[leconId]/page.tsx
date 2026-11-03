@@ -15,6 +15,8 @@ import type { Traducteur } from '@/lib/i18n/base'
 import AudioReader from '@/components/AudioReader'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
 import LecteurDemo from '@/components/lecon/LecteurDemo'
+import Diaporama from '@/components/lecon/Diaporama'
+import { grouperEcrans } from '@/lib/ecrans'
 import { analyserVideoEnLigne, estMediaPrive } from '@/lib/medias'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { lireQuiz } from '@/lib/quiz'
@@ -183,7 +185,8 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const urlsMedias = await signerUrlsMedias([...(lecon.blocs ?? []).map(b => b.url || b.contenu), ...(lecon.blocs ?? []).filter(b => b.type === 'interactif').flatMap(b => refsMedias(b.metadata))])
 
   // Charger la formation pour le contexte
-  const { data: formation } = await serviceClient().from('formations').select('id, titre').eq('id', formationId).single()
+  // select('*') : la colonne mode_presentation peut ne pas encore exister
+  const { data: formation } = await serviceClient().from('formations').select('*').eq('id', formationId).single()
   if (!formation) notFound()
   // Couleurs de la clinique : celle de la formation, sinon (formation commune) celle de l'employé
   const cliniqueTheme = fClinique?.clinique === 'CMC' || fClinique?.clinique === 'WSSC' ? fClinique.clinique
@@ -245,6 +248,20 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   }
 
   const baseUrl = '/formations/' + formationId
+
+  const enEcrans = (formation as { mode_presentation?: string }).mode_presentation === 'ecrans'
+  const finDeLecon = (
+          <FinDeLecon
+      lessonId={leconId}
+      attestationRequise={lecon.attestation_requise === true}
+      texteAttestation={lecon.texte_attestation?.trim() || texteAttestationDefaut(langue)}
+      videosObligatoires={lecon.blocs.filter(b => (b.type === 'video' || b.type === 'interactif') && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre, nature: b.type === 'interactif' ? 'exercice' as const : 'video' as const }))}
+      etat={etatSuivi}
+      suiviActif={suiviActif}
+      simulation={apercu.actif ? { formationId } : undefined}
+      ensuite={urlQuestionnaire}
+    />
+  )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -308,6 +325,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {(await searchParams).verrou === '1' && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">🔒 {t('Les leçons se suivent dans l’ordre : terminez cette leçon (bouton « Terminer la leçon » en bas) pour accéder à la suite.')}</div>
         )}
+        {!enEcrans && <>
         {/* Titre et description de la lecon */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2" style={theme ? { color: theme.couleur } : undefined}>{lecon.titre}</h2>
@@ -322,9 +340,17 @@ export default async function LecteurLeconPage({ params, searchParams }: {
             .join(' ').replace(/<[^>]+>/g, ' ').replace(/[#*_>`~\[\]()|-]/g, ' ').replace(/\s+/g, ' ').trim()
           return texteAudio.length >= 40 ? <AudioReader text={texteAudio} title={lecon.titre} /> : null
         })()}
+        </>}
         {/* Blocs de contenu */}
         <FournisseurSuivi etat={etatSuivi} suiviActif={suiviActif}>
-        {lecon.blocs.length === 0 ? (
+        {enEcrans ? (
+          <Diaporama titre={lecon.titre} description={lecon.description} accent={theme?.couleur ?? null}
+            couverture={(formation as { image_couverture?: string | null }).image_couverture ?? null}
+            ecrans={grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map((g, k) => (
+              <div key={k} className="space-y-6">{g.map(bloc => <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} t={t} theme={theme} />)}</div>
+            ))}
+            fin={finDeLecon} />
+        ) : lecon.blocs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-3">📄</div>
             <p className="text-gray-500">{t('Cette leçon n’a pas encore de contenu.')}</p>
@@ -337,16 +363,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           </div>
         )}
 
-          <FinDeLecon
-            lessonId={leconId}
-            attestationRequise={lecon.attestation_requise === true}
-            texteAttestation={lecon.texte_attestation?.trim() || texteAttestationDefaut(langue)}
-            videosObligatoires={lecon.blocs.filter(b => (b.type === 'video' || b.type === 'interactif') && b.metadata?.obligatoire === true && !estVide(b)).map(b => ({ id: b.id, titre: b.titre, nature: b.type === 'interactif' ? 'exercice' as const : 'video' as const }))}
-            etat={etatSuivi}
-            suiviActif={suiviActif}
-            simulation={apercu.actif ? { formationId } : undefined}
-            ensuite={urlQuestionnaire}
-          />
+          {!enEcrans && finDeLecon}
         </FournisseurSuivi>
 
         {/* Navigation bas de page */}
