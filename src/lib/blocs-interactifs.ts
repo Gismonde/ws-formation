@@ -3,7 +3,7 @@ export type GenreInteractif =
   | 'cartes' | 'accordeon' | 'etapes' | 'chronologie' | 'avant_apres' | 'animation'
   | 'zones' | 'erreurs' | 'scenario' | 'glisser'
 
-export type Carte = { recto: string; verso: string }
+export type Carte = { recto: string; verso: string; image?: string | null }
 export type Section = { titre: string; texte: string }
 export type Etape = { titre: string; texte: string; image?: string | null }
 export type Jalon = { date: string; titre: string; texte: string }
