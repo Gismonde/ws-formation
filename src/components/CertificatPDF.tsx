@@ -144,26 +144,26 @@ export default function CertificatPDF({ certificat, employe, clinique, retour, a
               )}
 
               {/* Contenu */}
-              <div style={{ position: 'absolute', inset: '5.9cqw 9.8cqw 17.4cqw', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 1 }}>
+              <div style={{ position: 'absolute', inset: '5.6cqw 9.8cqw 18.6cqw', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5cqw' }}>
                   {liste.map(c => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={c} src={CLINIQUE_INFO[c].logo} alt={CLINIQUE_INFO[c].nom} style={{ height: '5.6cqw', width: 'auto', borderRadius: c === 'WSSC' ? '0.45cqw' : 0 }} />
+                    <img key={c} src={CLINIQUE_INFO[c].logo} alt={CLINIQUE_INFO[c].nom} style={{ height: '4.9cqw', width: 'auto', borderRadius: c === 'WSSC' ? '0.45cqw' : 0 }} />
                   ))}
                 </div>
                 <div className="cert-sans" style={{ marginTop: '0.9cqw', fontWeight: 600, fontSize: '0.98cqw', letterSpacing: '0.45cqw', color: theme.principale, textTransform: 'uppercase' }}>{noms.join('  ·  ')}</div>
-                <div className="cert-serif cert-relief" style={{ marginTop: '1.36cqw', fontWeight: 700, fontSize: '4.55cqw', letterSpacing: '0.76cqw', textTransform: 'uppercase', color: theme.principale }}>{t('Certificat')}</div>
+                <div className="cert-serif cert-relief" style={{ marginTop: '0.9cqw', fontWeight: 700, fontSize: '4.2cqw', letterSpacing: '0.76cqw', textTransform: 'uppercase', color: theme.principale }}>{t('Certificat')}</div>
                 <div className="cert-sans" style={{ fontWeight: 500, fontSize: '1.14cqw', letterSpacing: '0.6cqw', color: theme.accent, textTransform: 'uppercase', filter: 'brightness(0.75)' }}>{t('de formation')}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.06cqw', margin: '1.36cqw 0 1.06cqw', color: theme.accent }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.06cqw', margin: '0.9cqw 0 0.7cqw', color: theme.accent }}>
                   <span style={{ width: '12cqw', height: '1px', background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />◆<span style={{ width: '12cqw', height: '1px', background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />
                 </div>
                 <div className="cert-serif" style={{ fontStyle: 'italic', fontWeight: 500, fontSize: '1.82cqw', color: '#5b6472' }}>{t('Ce certificat est fièrement décerné à')}</div>
-                <div className="cert-script" style={{ fontSize: '6.36cqw', lineHeight: 1.1, color: theme.principale, margin: '0.3cqw 0 0.15cqw' }}>{employe.prenom} {employe.nom}</div>
+                <div className="cert-script" style={{ fontSize: '5.6cqw', lineHeight: 1.1, color: theme.principale, margin: '0.3cqw 0 0.15cqw' }}>{employe.prenom} {employe.nom}</div>
                 <div style={{ width: '42cqw', height: '0.15cqw', background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />
-                <div className="cert-serif" style={{ marginTop: '1.36cqw', fontStyle: 'italic', fontWeight: 500, fontSize: '1.67cqw', color: '#5b6472' }}>{t('pour avoir complété avec succès la formation')}</div>
-                <div className="cert-serif" style={{ marginTop: '0.45cqw', fontWeight: 700, fontSize: '2.88cqw', color: theme.principale, maxWidth: '68cqw', lineHeight: 1.15 }}>{f?.titre}</div>
+                <div className="cert-serif" style={{ marginTop: '1cqw', fontStyle: 'italic', fontWeight: 500, fontSize: '1.55cqw', color: '#5b6472' }}>{t('pour avoir complété avec succès la formation')}</div>
+                <div className="cert-serif" style={{ marginTop: '0.45cqw', fontWeight: 700, fontSize: '2.5cqw', color: theme.principale, maxWidth: '68cqw', lineHeight: 1.15 }}>{f?.titre}</div>
                 {sousTitre && <div className="cert-sans" style={{ fontSize: '1cqw', color: '#6b7280', marginTop: '0.4cqw' }}>{sousTitre}</div>}
-                <div style={{ display: 'flex', gap: '0.8cqw', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.9cqw' }}>
+                <div style={{ display: 'flex', gap: '0.8cqw', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.7cqw' }}>
                   {certificat.note_finale != null && (
                     <span className="cert-sans" style={{ fontSize: '1.06cqw', fontWeight: 600, letterSpacing: '0.08cqw', color: theme.principale, padding: '0.45cqw 1.36cqw', border: `0.08cqw solid ${theme.accent}`, borderRadius: '99cqw', background: 'rgba(255,255,255,.6)' }}>
                       {t('Note obtenue : {note} %', { note: Math.round(Number(certificat.note_finale)) })}
@@ -199,8 +199,8 @@ export default function CertificatPDF({ certificat, employe, clinique, retour, a
                   <circle cx="110" cy="110" r="72" fill="url(#sceauOr)" />
                   <circle cx="110" cy="110" r="48" fill="none" stroke="#8a6d24" strokeWidth="1.5" />
                   <circle cx="110" cy="110" r="45" fill="none" stroke="#fff3c9" strokeWidth="1" opacity=".7" />
-                  <text fontFamily="Montserrat, Arial, sans-serif" fontWeight="600" fontSize="10" letterSpacing="2.6" fill="#6b5216">
-                    <textPath href="#sceauCercle">{`• ${t('FORMATION CERTIFIÉE')} • ${liste.map(c => CLINIQUE_INFO[c].court).join(' · ')} • ${t('FORMATION CERTIFIÉE')} `}</textPath>
+                  <text fontFamily="Montserrat, Arial, sans-serif" fontWeight="600" fontSize="9.5" letterSpacing="1.6" fill="#6b5216">
+                    <textPath href="#sceauCercle" textLength="370" lengthAdjust="spacingAndGlyphs">{`• ${t('FORMATION CERTIFIÉE')} • ${liste.map(c => CLINIQUE_INFO[c].court).join(' · ')} • ${t('FORMATION CERTIFIÉE')}`}</textPath>
                   </text>
                   {[{ c: '#fff3c9', o: 0.9, d: -1.2 }, { c: '#6b5216', o: 0.7, d: 1.2 }, { c: '#b38f3a', o: 1, d: 0 }].map((x, i) => (
                     <text key={i} x="110" y="121" dy={x.d} textAnchor="middle" fontFamily="'Cormorant Garamond', Georgia, serif" fontWeight="700" fontSize="23" fill={x.c} opacity={x.o}>{t('CERTIFIÉ')}</text>
