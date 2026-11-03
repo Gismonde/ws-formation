@@ -32,6 +32,8 @@ interface Formation {
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
   obligatoire?: boolean | null
+  /** 'defilement' | 'ecrans' — absent tant que formations_presentation.sql n'est pas exécutée */
+  mode_presentation?: string
   /** Absent tant que la migration formations_certificat.sql n'est pas exécutée */
   delivre_certificat?: boolean
   /** Heures de formation continue (absent tant que formations_credits.sql n'est pas exécutée) */
@@ -96,6 +98,7 @@ export default function ModifierFormationPage() {
         ...(formation.objectifs !== undefined ? { objectifs: nettoyerObjectifs(formation.objectifs) } : {}),
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
+        ...(formation.mode_presentation !== undefined ? { mode_presentation: formation.mode_presentation === 'ecrans' ? 'ecrans' : 'defilement' } : {}),
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
         ...(formation.credits_admissible !== undefined ? {
           credits_admissible: formation.credits_admissible,
@@ -238,6 +241,21 @@ export default function ModifierFormationPage() {
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="sondage" checked={formation.sondage_actif} onChange={e => updateField('sondage_actif', e.target.checked)} className="h-4 w-4 text-indigo-600 rounded" />
                 <label htmlFor="sondage" className="text-sm font-medium text-gray-700">{t('Proposer le sondage de satisfaction à la fin de la formation')}</label>
+              </div>
+            )}
+            {formation.mode_presentation !== undefined && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">{t('Affichage des leçons')}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([['defilement', '📜', t('Une page qui défile'), t('Tout le contenu de la leçon sur une seule page.')], ['ecrans', '🖥️', t('Présentation écran par écran'), t('Un écran à la fois avec « Suivant », comme un diaporama (style Coassemble).')]] as const).map(([v, ic, nom, aide]) => (
+                    <button key={v} type="button" onClick={() => updateField('mode_presentation', v)}
+                      className={'rounded-xl border-2 p-3 text-left transition ' + ((formation.mode_presentation || 'defilement') === v ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300')}>
+                      <span className="text-xl" aria-hidden>{ic}</span>
+                      <span className="block text-sm font-semibold text-gray-900">{nom}</span>
+                      <span className="block text-xs text-gray-500">{aide}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex items-start gap-3">
