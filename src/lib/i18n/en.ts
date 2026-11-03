@@ -2347,4 +2347,7 @@ export const EN: Record<string, string> = {
   'Vous reprenez le brouillon « {titre} ».': 'You are resuming the draft “{titre}”.',
   'Commencer une nouvelle formation': 'Start a new training',
   'Vous reprenez le brouillon « {titre} ».': 'You are resuming the draft “{titre}”.',
+  'Enregistrez d’abord le questionnaire (bouton « Enregistrer le questionnaire » en bas).': 'Save the quiz first (“Save quiz” button at the bottom).',
+  'Aucune leçon dans cette formation. Ajoutez-en dans l’éditeur classique (lien en haut à droite).': 'This training has no lessons. Add some in the classic editor (link at the top right).',
+  'Enregistrez d’abord le questionnaire (bouton « Enregistrer le questionnaire » en bas).': 'Save the quiz first (“Save quiz” button at the bottom).',
 }
