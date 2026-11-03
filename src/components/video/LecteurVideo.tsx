@@ -1,8 +1,9 @@
 'use client'
 // Lecteur vidéo unique (YouTube, Vimeo, fichier) piloté par programme :
 // passage (début / fin), lecture de la position, pause / reprise. Utilisé par l'éditeur et par la leçon.
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { maxRegarde, positionPermise } from '@/lib/video-avance'
+import { useT } from '@/lib/i18n/client'
 
 export type ControleVideo = { temps: () => number; duree: () => number; pause: () => void; lecture: () => void; aller: (s: number) => void }
 
@@ -52,6 +53,11 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
   const max = useRef(debut)
   const bloquer = useRef(sansAvance)
   bloquer.current = sansAvance
+  // YouTube + « empêcher d'avancer » : commandes YouTube masquées (barre de progression, clavier),
+  // remplacées par les nôtres, qui ne permettent pas d'aller plus loin que ce qui a été regardé.
+  const commandesPerso = useRef(sansAvance && plateforme === 'youtube')
+  const yt = useRef<any>(null)
+  const [etatYt, setEtatYt] = useState<{ t: number; d: number; lecture: boolean; max: number }>({ t: 0, d: 0, lecture: false, max: 0 })
 
   // YouTube et Vimeo : lecteur créé par leur API officielle
   useEffect(() => {
@@ -68,8 +74,24 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
         el.appendChild(cible)
         const lecteur = new w.YT.Player(cible, {
           videoId: idEnLigne, width: '100%', height: '100%', host: 'https://www.youtube-nocookie.com',
-          playerVars: { rel: 0, modestbranding: 1, start: Math.floor(debut), ...(fin ? { end: Math.ceil(fin) } : {}) },
+          playerVars: {
+            rel: 0, modestbranding: 1, start: Math.floor(debut), ...(fin ? { end: Math.ceil(fin) } : {}),
+            ...(commandesPerso.current ? { controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3 } : {}),
+          },
+          events: {
+            // Contrôle immédiat à chaque reprise de lecture (ex. après un saut)
+            onStateChange: (e: { data: number }) => {
+              if (bloquer.current && (e.data === 1 || e.data === 3)) {
+                try {
+                  const retour = positionPermise(max.current, lecteur.getCurrentTime())
+                  if (retour !== null) lecteur.seekTo(retour, true)
+                } catch { /* */ }
+              }
+              setEtatYt(x => ({ ...x, lecture: e.data === 1 }))
+            },
+          },
         })
+        yt.current = lecteur
         if (controle) controle.current = {
           temps: () => { try { return lecteur.getCurrentTime() } catch { return 0 } },
           duree: () => { try { return lecteur.getDuration() } catch { return 0 } },
@@ -89,8 +111,9 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
             if (t < debut - 1) lecteur.seekTo(debut, true)
             if (fin && t >= fin) lecteur.pauseVideo()
             rappel.current?.(t, lecteur.getDuration())
+            if (commandesPerso.current) setEtatYt({ t, d: lecteur.getDuration() || 0, lecture: true, max: max.current })
           } catch { /* lecteur pas prêt */ }
-        }, 500)
+        }, 250)
         nettoyer = () => { clearInterval(minuterie); try { lecteur.destroy() } catch { /* */ } }
       }).catch(() => {})
     }
@@ -109,6 +132,11 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
           lecture: () => { lecteur.play().catch(() => {}) },
           aller: (s: number) => { lecteur.setCurrentTime(s).catch(() => {}) },
         }
+        lecteur.on('seeked', (x: { seconds: number }) => {
+          if (!bloquer.current) return
+          const retour = positionPermise(max.current, x.seconds)
+          if (retour !== null) lecteur.setCurrentTime(retour).catch(() => {})
+        })
         lecteur.on('timeupdate', (x: { seconds: number; duration: number }) => {
           if (bloquer.current) {
             const retour = positionPermise(max.current, x.seconds)
@@ -170,5 +198,50 @@ export default function LecteurVideo({ plateforme, src, idEnLigne, debut = 0, fi
       </div>
     )
   }
+  if (commandesPerso.current) return <YoutubeCommandes hote={hote} yt={yt} etat={etatYt} max={max} bloquer={bloquer} />
   return <div ref={hote} className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full" />
+}
+
+const mmss = (s: number) => { const x = Math.max(0, Math.floor(s)); return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}` }
+
+/** Commandes maison pour YouTube : lecture/pause, progression (sans saut en avant), plein écran. */
+function YoutubeCommandes({ hote, yt, etat, max, bloquer }: {
+  hote: React.RefObject<HTMLDivElement | null>
+  yt: React.MutableRefObject<any>
+  etat: { t: number; d: number; lecture: boolean; max: number }
+  max: React.MutableRefObject<number>
+  bloquer: React.MutableRefObject<boolean>
+}) {
+  const { t } = useT()
+  const cadre = useRef<HTMLDivElement>(null)
+  const [refus, setRefus] = useState(false)
+  const d = etat.d || 0
+  const pct = (x: number) => d ? Math.min(100, (x / d) * 100) + '%' : '0%'
+  const basculer = () => { try { if (etat.lecture) yt.current?.pauseVideo(); else yt.current?.playVideo() } catch { /* */ } }
+  const aller = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!d) return
+    const r = e.currentTarget.getBoundingClientRect()
+    let cible = ((e.clientX - r.left) / r.width) * d
+    if (bloquer.current && cible > max.current + 1) { cible = max.current; setRefus(true); setTimeout(() => setRefus(false), 2500) }
+    try { yt.current?.seekTo(cible, true) } catch { /* */ }
+  }
+  const pleinEcran = () => { const el = cadre.current; if (!el) return; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else el.requestFullscreen?.().catch(() => {}) }
+  return (
+    <div ref={cadre} className="relative flex h-full w-full flex-col bg-black">
+      <div ref={hote} className="min-h-0 flex-1 [&_iframe]:h-full [&_iframe]:w-full" />
+      <div className="flex items-center gap-3 bg-gray-900 px-3 py-2 text-white">
+        <button type="button" onClick={basculer} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 hover:bg-white/25" aria-label={etat.lecture ? t('Pause') : t('Lecture')}>
+          {etat.lecture ? '⏸' : '▶'}
+        </button>
+        <span className="flex-shrink-0 text-xs tabular-nums text-white/80">{mmss(etat.t)} / {mmss(d)}</span>
+        <div role="slider" aria-label={t('Progression')} aria-valuemin={0} aria-valuemax={Math.round(d)} aria-valuenow={Math.round(etat.t)} tabIndex={-1}
+          onClick={aller} className="relative h-2 flex-1 cursor-pointer rounded-full bg-white/20">
+          {bloquer.current && <div className="absolute inset-y-0 left-0 rounded-full bg-white/35" style={{ width: pct(etat.max) }} title={t('Déjà regardé')} />}
+          <div className="absolute inset-y-0 left-0 rounded-full bg-red-500" style={{ width: pct(etat.t) }} />
+          {refus && <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/85 px-2 py-1 text-[11px]">⏩🚫 {t('Regardez la vidéo sans sauter de passage')}</span>}
+        </div>
+        <button type="button" onClick={pleinEcran} className="flex-shrink-0 rounded px-1.5 text-sm hover:bg-white/15" aria-label={t('Plein écran')}>⛶</button>
+      </div>
+    </div>
+  )
 }
