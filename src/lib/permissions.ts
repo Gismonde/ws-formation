@@ -198,6 +198,14 @@ export function cliniquesContenuGerables(a: Acteur): CliniqueContenu[] {
   return dansLaVue<CliniqueContenu>(a, cliniquesDe(a.clinique))
 }
 
+/**
+ * Cliniques où la personne peut créer du contenu, SANS la restriction de la « clinique affichée ».
+ * Sert à dupliquer une formation d'une clinique vers l'autre (personne rattachée aux deux cliniques).
+ */
+export function cliniquesContenuGerablesToutes(a: Acteur): CliniqueContenu[] {
+  return cliniquesContenuGerables({ ...a, vue: null })
+}
+
 export function peutVoirContenu(a: Acteur, clinique: string | null | undefined): boolean {
   return cliniquesContenuVisibles(a).includes((clinique ?? 'LES_DEUX') as CliniqueContenu)
 }

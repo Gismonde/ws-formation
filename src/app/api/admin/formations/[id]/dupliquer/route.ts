@@ -1,6 +1,6 @@
 // Duplique une formation. POST { clinique, titre? } — créateurs de formations, cliniques gérées seulement.
 import { NextResponse } from 'next/server'
-import { getActeur, serviceClient, peutCreerFormations, peutGererContenu, peutVoirContenu, ipEtAgent } from '@/lib/permissions'
+import { getActeur, serviceClient, peutCreerFormations, cliniquesContenuGerablesToutes, ipEtAgent } from '@/lib/permissions'
 import { dupliquerFormation } from '@/lib/dupliquer-formation'
 import { logAudit } from '@/lib/audit'
 import type { CliniqueContenu } from '@/lib/cliniques'
@@ -11,10 +11,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!acteur || !peutCreerFormations(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const sb = serviceClient()
   const { data: f } = await sb.from('formations').select('id, titre, clinique').eq('id', id).maybeSingle()
-  if (!f || !peutVoirContenu(acteur, f.clinique)) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
+  // Toutes les cliniques de la personne, quelle que soit la « clinique affichée » (copie d'une clinique vers l'autre)
+  const permises = cliniquesContenuGerablesToutes({ ...acteur })
+  const visibles = permises.includes('LES_DEUX') || permises.length > 1 ? ['CMC', 'WSSC', 'LES_DEUX'] : [...permises, 'LES_DEUX']
+  if (!f || !visibles.includes(f.clinique ?? 'LES_DEUX')) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
   const corps = await req.json().catch(() => ({})) as { clinique?: string; titre?: string }
   const clinique = (['CMC', 'WSSC', 'LES_DEUX'].includes(corps.clinique ?? '') ? corps.clinique : f.clinique) as CliniqueContenu
-  if (!peutGererContenu(acteur, clinique)) return NextResponse.json({ error: 'Vous ne pouvez pas créer de formation pour cette clinique.' }, { status: 403 })
+  if (!permises.includes(clinique)) return NextResponse.json({ error: 'Vous ne pouvez pas créer de formation pour cette clinique.' }, { status: 403 })
   const titre = (typeof corps.titre === 'string' && corps.titre.trim() ? corps.titre.trim() : `${f.titre} (copie)`).slice(0, 300)
   try {
     const r = await dupliquerFormation(sb, f.id, { clinique, titre, creePar: acteur.id })
