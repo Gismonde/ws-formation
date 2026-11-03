@@ -2,9 +2,15 @@
 // - Créés par l'administrateur global ou par un administrateur à qui il en a donné le droit.
 // - Reçus par l'administrateur désigné comme destinataire, ou à défaut par le créateur.
 // - Des sections peuvent être « réservées » : invisibles pour l'employé, complétées par la personne qui reçoit.
+// (Utilisé aussi côté navigateur : aucun import de module serveur ici.)
 import type { Acteur } from '@/lib/permissions'
-import { cliniquesAdministrees } from '@/lib/permissions'
 import { cliniquesDe, type Clinique } from '@/lib/cliniques'
+
+/** Cliniques administrées (même règle que permissions.cliniquesAdministrees, sans dépendance serveur). */
+function cliniquesAdministrees(a: Acteur): Clinique[] {
+  const base: Clinique[] = a.role === 'super_admin' ? ['CMC', 'WSSC'] : a.role === 'admin' ? cliniquesDe(a.clinique) : []
+  return a.vue ? base.filter(c => c === a.vue) : base
+}
 
 export const TYPES_CHAMP = [
   { type: 'section', libelle: 'Section (titre)', icone: '🔖' },
