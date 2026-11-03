@@ -2678,4 +2678,8 @@ export const EN: Record<string, string> = {
   'Menthe': 'Mint',
   'Mise en page des événements': 'Event layout',
   'Accordé par l’administrateur global. La personne peut choisir l’événement mis en vedette dans la bannière et le fond des événements.': 'Granted by the global administrator. The person can choose the event featured in the banner and the events’ background.',
+  'Accordé par l’administrateur global. La personne peut choisir l’événement mis en vedette dans la grande bannière de la page Événements.': 'Granted by the global administrator. The person can choose the event featured in the large banner of the Events page.',
+  'Autre emoji': 'Other emoji',
+  'Emoji de l’événement': 'Event emoji',
+  'Mise en vedette des événements': 'Featuring events',
 }

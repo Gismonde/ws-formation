@@ -4,7 +4,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { evenementsDeLEmploye, seanceOuverte, placesIllimitees, typeEvenement, fondEvenement, TYPES_EVENEMENT } from '@/lib/evenements'
+import { evenementsDeLEmploye, seanceOuverte, placesIllimitees, typeEvenement, fondEvenement, emojiEvenement, TYPES_EVENEMENT } from '@/lib/evenements'
 import { i18n } from '@/lib/i18n/serveur'
 import CompteARebours from './CompteARebours'
 
@@ -81,7 +81,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
       <Link href={`/dashboard/evenements/${x.ev.id}`}
         className={'group flex flex-col overflow-hidden rounded-[20px] bg-white transition hover:-translate-y-0.5 hover:shadow-lg ' + (aVenirSansDate ? 'border-2 border-dashed border-indigo-200' : 'border border-gray-100 shadow-[0_6px_22px_rgba(17,24,39,.06)]')}>
         <div className="relative flex h-40 items-center justify-center text-6xl" style={{ background: aVenirSansDate && !x.ev.fond ? 'repeating-linear-gradient(45deg,#eef2ff,#eef2ff 12px,#e0e7ff 12px,#e0e7ff 24px)' : fondEvenement(x.ev).hero }}>
-          <span aria-hidden className="drop-shadow-lg">{ty.emoji}</span>
+          <span aria-hidden className="drop-shadow-lg">{emojiEvenement(x.ev)}</span>
           <div className="absolute left-3.5 top-3.5 rounded-2xl bg-white px-3 py-1.5 text-center shadow-md">
             {d ? (<>
               <small className="block text-[11px] font-extrabold uppercase tracking-wider text-red-600">{d.toLocaleDateString(loc, { month: 'short' }).replace('.', '')}</small>
@@ -149,7 +149,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
       {vedette && tyV ? (
         <Link href={`/dashboard/evenements/${vedette.ev.id}`} className="relative mt-5 flex min-h-[300px] flex-col justify-center overflow-hidden rounded-3xl p-8 text-white shadow-lg md:flex-row md:items-center md:justify-between md:p-10" style={{ background: fondEvenement(vedette.ev).hero }}>
           <div className="relative max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur">{vedette.ev.en_vedette ? '⭐ ' : ''}{tyV.emoji} {t(tyV.libelle)}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur">{vedette.ev.en_vedette ? '⭐ ' : ''}{emojiEvenement(vedette.ev)} {t(tyV.libelle)}</span>
             <h2 className="mt-3.5 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">{vedette.ev.titre}</h2>
             <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1 text-[15px] font-semibold opacity-95">
               {sV ? <span>📅 {jourCourt(sV.debut)} · {heure(sV.debut)} – {heure(sV.fin)}</span> : <span>📅 {t('Date à venir')}</span>}
