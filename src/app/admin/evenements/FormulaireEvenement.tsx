@@ -30,6 +30,8 @@ export type ValeursEvenement = {
   en_vedette?: boolean
   fond?: string | null
   emoji?: string | null
+  places_prevues?: number | null
+  compte_a_rebours?: boolean
 }
 
 type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string; illimite?: boolean }
@@ -81,6 +83,8 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       ...(v.en_vedette || initial?.en_vedette ? { en_vedette: !!v.en_vedette } : {}),
       ...(v.fond || initial?.fond ? { fond: v.fond || null } : {}),
       ...(v.emoji || initial?.emoji ? { emoji: v.emoji || null } : {}),
+      ...(v.date_a_venir && v.places_prevues ? { places_prevues: v.places_prevues } : initial?.places_prevues ? { places_prevues: null } : {}),
+      ...(v.compte_a_rebours || initial?.compte_a_rebours ? { compte_a_rebours: !!v.compte_a_rebours } : {}),
     }
     const r = evenementId
       ? await fetch(`/api/admin/evenements/${evenementId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'modifier', ...corps }) })
@@ -173,6 +177,22 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       <label className="flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 cursor-pointer">
         <input type="checkbox" className="mt-0.5" checked={!!v.date_a_venir} onChange={e => set({ date_a_venir: e.target.checked })} />
         <span className="text-sm"><strong>📅 {t('Date à venir (coming soon)')}</strong><span className="block text-xs text-gray-500">{t('Annoncez l’événement avant d’en connaître la date. Les employés peuvent demander à être prévenus ; dès que vous ajoutez une date, ils reçoivent un courriel.')}</span></span>
+      </label>
+      {v.date_a_venir && (
+        <div className="-mt-2 rounded-lg border border-indigo-100 bg-white p-3">
+          <label className={label}>{t('Nombre de places prévu')}</label>
+          <div className="flex flex-wrap items-center gap-3">
+            {(v.places_prevues ?? 0) >= PLACES_ILLIMITEES
+              ? <span className="py-2 text-sm text-gray-700">♾️ {t('Illimitées')}</span>
+              : <input type="number" min={1} max={999} className={input + ' max-w-[140px]'} value={v.places_prevues ?? ''} onChange={e => set({ places_prevues: e.target.value ? Number(e.target.value) : null })} placeholder={t('Ex. : 30')} />}
+            <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={(v.places_prevues ?? 0) >= PLACES_ILLIMITEES} onChange={e => set({ places_prevues: e.target.checked ? PLACES_ILLIMITEES : null })} /> {t('Illimitées')}</label>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">{t('Affiché aux employés et repris automatiquement quand vous ajouterez la date.')}</p>
+        </div>
+      )}
+      <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer">
+        <input type="checkbox" className="mt-0.5" checked={!!v.compte_a_rebours} onChange={e => set({ compte_a_rebours: e.target.checked })} />
+        <span className="text-sm"><strong>⏳ {t('Afficher un compte à rebours')}</strong><span className="block text-xs text-gray-500">{t('Sur la carte, dans la page de l’événement et dans la bannière, jusqu’à la prochaine date.')}</span></span>
       </label>
 
       {!evenementId && !v.date_a_venir && (

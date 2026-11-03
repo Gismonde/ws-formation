@@ -32,6 +32,10 @@ export type Evenement = CiblePolitique & {
   en_vedette?: boolean
   fond?: string | null
   emoji?: string | null
+  /** « Date à venir » : nombre de places prévu (repris pour la première date) */
+  places_prevues?: number | null
+  /** Afficher un compte à rebours (carte, page, bannière) */
+  compte_a_rebours?: boolean
 }
 
 export type Seance = {
