@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useT } from '@/lib/i18n/client'
 import { voixPour } from '@/lib/voix'
+import { sonAutorise } from '@/lib/parole-client'
 
 interface AudioReaderProps {
   text: string
   title?: string
+  /** Démarrer la lecture dès l'ouverture de la page */
+  auto?: boolean
 }
 
-export default function AudioReader({ text, title }: AudioReaderProps) {
+export default function AudioReader({ text, title, auto = false }: AudioReaderProps) {
   const { t } = useT()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
@@ -19,6 +22,8 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
   const [selectedVoice, setSelectedVoice] = useState<string>('')
   const [supported, setSupported] = useState(true)
   const [currentWord, setCurrentWord] = useState('')
+  const [besoinClic, setBesoinClic] = useState(false)
+  const autoFait = useRef(false)
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const wordsRef = useRef<string[]>([])
   const wordIndexRef = useRef(0)
@@ -120,12 +125,14 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
       setTimeout(() => setProgress(0), 2000)
     }
 
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
       setIsPlaying(false)
       setIsPaused(false)
+      if (e.error === 'not-allowed') setBesoinClic(true)
     }
 
     utteranceRef.current = utterance
+    setBesoinClic(false)
     window.speechSynthesis.speak(utterance)
   }, [text, rate, voices, selectedVoice, isPaused, cleanText])
 
@@ -136,6 +143,17 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
       setIsPaused(true)
     }
   }, [])
+
+  // Démarrage automatique (une fois les voix chargées) ; sans clic préalable, le navigateur l'interdit : on invite à cliquer
+  useEffect(() => {
+    if (!auto || autoFait.current || !supported) return
+    const id = setTimeout(() => {
+      if (autoFait.current) return
+      autoFait.current = true
+      if (sonAutorise()) play(); else setBesoinClic(true)
+    }, voices.length ? 150 : 900)
+    return () => clearTimeout(id)
+  }, [auto, supported, voices.length, play])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -186,6 +204,12 @@ export default function AudioReader({ text, title }: AudioReaderProps) {
           {title && <p style={{ margin: 0, fontSize: '12px', color: '#818cf8' }}>{title}</p>}
         </div>
       </div>
+
+      {besoinClic && !isPlaying && (
+        <button onClick={play} className="animate-pulse" style={{ width: '100%', marginBottom: '12px', padding: '8px 12px', borderRadius: '999px', border: 'none', background: '#fff', color: '#312e81', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+          ▶ {t('Cliquez pour démarrer l’audio')}
+        </button>
+      )}
 
       {/* Progress bar */}
       <div style={{

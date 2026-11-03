@@ -34,6 +34,8 @@ interface Formation {
   obligatoire?: boolean | null
   /** 'defilement' | 'ecrans' — absent tant que formations_presentation.sql n'est pas exécutée */
   mode_presentation?: string
+  /** Narration démarrée d'elle-même — absent tant que formations_audio_auto.sql n'est pas exécutée */
+  audio_auto?: boolean
   /** Absent tant que la migration formations_certificat.sql n'est pas exécutée */
   delivre_certificat?: boolean
   /** Heures de formation continue (absent tant que formations_credits.sql n'est pas exécutée) */
@@ -98,6 +100,7 @@ export default function ModifierFormationPage() {
         ...(formation.objectifs !== undefined ? { objectifs: nettoyerObjectifs(formation.objectifs) } : {}),
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
+        ...(formation.audio_auto !== undefined ? { audio_auto: formation.audio_auto === true } : {}),
         ...(formation.mode_presentation !== undefined ? { mode_presentation: formation.mode_presentation === 'ecrans' ? 'ecrans' : 'defilement' } : {}),
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
         ...(formation.credits_admissible !== undefined ? {
@@ -256,6 +259,15 @@ export default function ModifierFormationPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+            {formation.audio_auto !== undefined && (
+              <div className="flex items-start gap-3">
+                <input type="checkbox" id="audio_auto" checked={formation.audio_auto === true} onChange={e => updateField('audio_auto', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
+                <label htmlFor="audio_auto" className="text-sm font-medium text-gray-700">
+                  🎧 {t('Démarrer l’audio automatiquement')}
+                  <span className="block text-xs font-normal text-gray-500">{t('La narration commence dès l’ouverture de la leçon (et à chaque écran en présentation écran par écran). La narration s’écrit bloc par bloc dans l’éditeur de contenu (« 🎧 Narration audio ») ; elle est entendue sans être affichée.')}</span>
+                </label>
               </div>
             )}
             <div className="flex items-start gap-3">

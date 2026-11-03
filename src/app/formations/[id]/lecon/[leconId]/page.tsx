@@ -13,6 +13,7 @@ import { texteAttestationDefaut } from '@/lib/suivi-constantes'
 import { i18n } from '@/lib/i18n/serveur'
 import type { Traducteur } from '@/lib/i18n/base'
 import AudioReader from '@/components/AudioReader'
+import { texteAudio } from '@/lib/narration'
 import QuizInteractif from '@/components/lecon/QuizInteractif'
 import LecteurDemo from '@/components/lecon/LecteurDemo'
 import Diaporama from '@/components/lecon/Diaporama'
@@ -250,6 +251,7 @@ export default async function LecteurLeconPage({ params, searchParams }: {
   const baseUrl = '/formations/' + formationId
 
   const enEcrans = (formation as { mode_presentation?: string }).mode_presentation === 'ecrans'
+  const audioAuto = (formation as { audio_auto?: boolean }).audio_auto === true
   const finDeLecon = (
           <FinDeLecon
       lessonId={leconId}
@@ -334,11 +336,10 @@ export default async function LecteurLeconPage({ params, searchParams }: {
           )}
         </div>
 
-        {/* Lecteur audio : seulement s'il y a du texte à lire (pas pour une leçon faite d'un document ou d'une vidéo) */}
+        {/* Lecteur audio : narration des blocs (texte non affiché) ou, à défaut, texte des blocs ; rien pour une leçon sans texte */}
         {(() => {
-          const texteAudio = [lecon.description ?? '', ...lecon.blocs.filter(b => b.type === 'text' && b.contenu).map(b => b.contenu!)]
-            .join(' ').replace(/<[^>]+>/g, ' ').replace(/[#*_>`~\[\]()|-]/g, ' ').replace(/\s+/g, ' ').trim()
-          return texteAudio.length >= 40 ? <AudioReader text={texteAudio} title={lecon.titre} /> : null
+          const texte = texteAudio([...lecon.blocs].sort((a, b) => a.ordre - b.ordre), lecon.description)
+          return texte.length >= 40 ? <AudioReader text={texte} title={lecon.titre} auto={audioAuto} /> : null
         })()}
         </>}
         {/* Blocs de contenu */}
@@ -346,6 +347,8 @@ export default async function LecteurLeconPage({ params, searchParams }: {
         {enEcrans ? (
           <Diaporama titre={lecon.titre} description={lecon.description} accent={theme?.couleur ?? null}
             couverture={(formation as { image_couverture?: string | null }).image_couverture ?? null}
+            audioAuto={audioAuto}
+            narrations={[texteAudio([], lecon.description), ...grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map(g => texteAudio(g))]}
             ecrans={grouperEcrans([...lecon.blocs].sort((a, b) => a.ordre - b.ordre)).map((g, k) => (
               <div key={k} className="space-y-6">{g.map(bloc => <RenduBloc key={bloc.id} bloc={bloc} urls={urlsMedias} t={t} theme={theme} />)}</div>
             ))}

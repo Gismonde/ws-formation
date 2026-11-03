@@ -35,7 +35,9 @@ export async function POST(req: Request) {
     image_couverture: txt(c.image_couverture, 1000) || null, creee_par: a.id,
   }
   if (c.mode_presentation === 'ecrans') base.mode_presentation = 'ecrans'
+  if (c.audio_auto === true) base.audio_auto = true
   let { data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()
+  if (error && /audio_auto/.test(error.message)) { delete base.audio_auto; ({ data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()) }
   if (error && /mode_presentation/.test(error.message)) { delete base.mode_presentation; ({ data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()) }
   if (error && /delivre_certificat/.test(error.message)) ({ data: f, error } = await sb.from('formations').insert(base).select('id').single())
   if (error || !f) return NextResponse.json({ error: error?.message ?? 'Création impossible' }, { status: 500 })
