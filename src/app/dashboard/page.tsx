@@ -161,8 +161,11 @@ export default async function DashboardPage() {
             {enCours.map((f: any) => (
               <Link key={f.id} href={'/formations/' + f.id} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.15s' }}>
-                  <div style={{ background: 'var(--degrade-clinique)', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <span style={{ fontSize: '32px' }}>📚</span>
+                  <div style={{ background: 'var(--degrade-clinique)', height: f.image_couverture ? '140px' : '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                    {f.image_couverture
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={f.image_couverture} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: '32px' }}>📚</span>}
                     {f.verrouillee ? (
                       <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', color: '#92400e', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>🔒 {t('Verrouillée')}</span>
                     ) : f.progressionPct === 0 && (
@@ -209,8 +212,12 @@ export default async function DashboardPage() {
             {terminees.map((f: any) => (
               <Link key={f.id} href={'/formations/' + f.id} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#fff', border: '1px solid #d1fae5', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}>
-                  <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <span style={{ fontSize: '32px' }}>✅</span>
+                  <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', height: f.image_couverture ? '140px' : '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                    {f.image_couverture
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={f.image_couverture} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: '32px' }}>✅</span>}
+                    {f.image_couverture && <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#10b981', color: '#fff', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>✅ {t('Terminée')}</span>}
                     {f.certifie && (
                       <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#fbbf24', color: '#78350f', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>🏆 {t('Certifié')}</span>
                     )}
