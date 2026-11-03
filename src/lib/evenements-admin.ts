@@ -5,6 +5,7 @@ import { cliniquesDe, type CliniqueEmploye } from '@/lib/cliniques'
 import { ROLES_CIBLABLES } from '@/lib/politiques'
 import { emettreCertificat } from '@/lib/questionnaire-serveur'
 import { premierEnAttente, statutPourNouvelleInscription, type Evenement, type Inscription, type Seance } from '@/lib/evenements'
+import { FONDS_EVENEMENT } from '@/lib/evenements-types'
 
 /** Cliniques possibles pour un événement créé par cette personne. */
 export function cliniquesEvenement(a: Acteur): CliniqueEmploye[] {
@@ -55,6 +56,9 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       formation_id: typeof c.formation_id === 'string' && UUID.test(c.formation_id) ? c.formation_id : null,
       duree_minutes: duree !== null && Number.isFinite(duree) && duree > 0 ? Math.round(duree) : null,
       ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
+      ...(c.type === 'formation' || c.type === 'social' || c.type === 'clinique' ? { type: c.type } : {}),
+      ...(typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
+      ...(c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond)) ? { fond: c.fond } : {}),
     },
   }
 }
@@ -65,7 +69,7 @@ export function validerSeance(c: Record<string, unknown>): { erreur: string } | 
   if (isNaN(debut.getTime()) || isNaN(fin.getTime())) return { erreur: 'Date ou heure de séance invalide.' }
   if (fin <= debut) return { erreur: 'L’heure de fin doit être après l’heure de début.' }
   const places = Math.round(Number(c.places))
-  if (!Number.isFinite(places) || places < 1 || places > 1000) return { erreur: 'Nombre de places invalide (1 à 1000).' }
+  if (!Number.isFinite(places) || places < 1 || places > 1000) return { erreur: 'Nombre de places invalide (1 à 1000, ou « illimité »).' }
   return { valeurs: { debut: debut.toISOString(), fin: fin.toISOString(), places, lieu: texte(c.lieu, 300) } }
 }
 
