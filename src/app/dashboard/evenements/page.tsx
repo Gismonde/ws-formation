@@ -92,12 +92,17 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
             </>)}
           </div>
           <span className="absolute right-3.5 top-3.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-extrabold" style={{ color: ty.couleur }}>{ty.emoji} {t(ty.court)}</span>
+          {x.ev.compte_a_rebours && s && (() => {
+            const ms = Date.parse(s.debut) - Date.now(), j = Math.floor(ms / 86_400_000), h = Math.floor((ms % 86_400_000) / 3_600_000)
+            return ms > 0 ? <span className="absolute bottom-3 right-3.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur">⏳ {j > 0 ? t('Dans {j} j {h} h', { j, h }) : t('Dans {h} h', { h: Math.max(0, h) })}</span> : null
+          })()}
         </div>
         <div className="flex flex-1 flex-col p-4">
           <h3 className="text-[17px] font-extrabold leading-snug text-gray-900">{x.ev.titre}</h3>
           <div className="mt-2 grid gap-0.5 text-[13px] text-gray-500">
             {s ? <span>🕘 {jourCourt(s.debut)} · {heure(s.debut)} – {heure(s.fin)}</span> : <span>{t('La date sera annoncée bientôt')}</span>}
             {(s?.lieu || x.ev.lieu) && <span>📍 {s?.lieu || x.ev.lieu}</span>}
+            {aVenirSansDate && x.ev.places_prevues ? <span>🎟️ {x.ev.places_prevues >= 1000 ? t('Places illimitées') : t('{n} place(s) prévue(s)', { n: x.ev.places_prevues })}</span> : null}
             {(x.ev.obligatoire || x.ev.duree_minutes) && <span>{x.ev.obligatoire ? `⚠️ ${t('Obligatoire')}` : ''}{x.ev.obligatoire && x.ev.duree_minutes ? ' · ' : ''}{x.ev.duree_minutes ? `⏱ ${t('{n} min de formation', { n: x.ev.duree_minutes })}` : ''}</span>}
           </div>
           <div className="mt-auto flex items-end justify-between gap-3 pt-4">
@@ -162,7 +167,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
               {tyV.id !== 'formation' && <Avatars x={vedette} clair />}
             </div>
           </div>
-          {sV && (
+          {sV && vedette.ev.compte_a_rebours && (
             <div className="relative mt-6 w-full max-w-xs rounded-2xl border border-white/35 bg-white/15 p-5 text-center backdrop-blur md:mt-0">
               <div className="text-xs font-bold uppercase tracking-[2px] opacity-85">{t('C’est dans')}</div>
               <div className="mt-3"><CompteARebours date={sV.debut} couleur={tyV.couleur} /></div>

@@ -2682,4 +2682,13 @@ export const EN: Record<string, string> = {
   'Autre emoji': 'Other emoji',
   'Emoji de l’événement': 'Event emoji',
   'Mise en vedette des événements': 'Featuring events',
+  'Afficher un compte à rebours': 'Show a countdown',
+  'Affiché aux employés et repris automatiquement quand vous ajouterez la date.': 'Shown to employees and reused automatically when you add the date.',
+  'Dans {h} h': 'In {h} h',
+  'Dans {j} j {h} h': 'In {j} d {h} h',
+  'Ex. : 30': 'E.g.: 30',
+  'Nombre de places prévu': 'Planned number of spots',
+  'Sur la carte, dans la page de l’événement et dans la bannière, jusqu’à la prochaine date.': 'On the card, on the event page and in the banner, until the next date.',
+  '{n} place(s) prévue(s)': '{n} spot(s) planned',
+  'Ex. : 30': 'E.g.: 30',
 }

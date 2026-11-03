@@ -5,6 +5,7 @@ import { evenementsDeLEmploye, limiteDesinscription, peutSeDesinscrire, seanceOu
 import { i18n } from '@/lib/i18n/serveur'
 import InscriptionEvenement from './InscriptionEvenement'
 import BoutonInteret from './BoutonInteret'
+import CompteARebours from '../CompteARebours'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,16 @@ export default async function EvenementEmployePage({ params }: { params: Promise
             {ev.responsable && <div>👤 {ev.responsable}</div>}
             {ev.duree_minutes && <div>⏱ {t('{n} minutes de formation', { n: ev.duree_minutes })}</div>}
           </div>
+          {ev.date_a_venir && ev.places_prevues && !seances.some(s => !s.annulee) ? <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>🎟️ {ev.places_prevues >= 1000 ? t('Places illimitées') : t('{n} place(s) prévue(s)', { n: ev.places_prevues })}</div> : null}
+          {ev.compte_a_rebours && (() => {
+            const proch = seances.filter(s => !s.annulee && Date.parse(s.debut) > Date.now()).sort((a, b) => a.debut.localeCompare(b.debut))[0]
+            return proch ? (
+              <div style={{ marginTop: '16px', borderRadius: '16px', padding: '16px', background: fondEvenement(ev).hero, color: '#fff', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.9, marginBottom: '10px' }}>⏳ {t('C’est dans')}</div>
+                <CompteARebours date={proch.debut} couleur={typeEvenement(ev).couleur} />
+              </div>
+            ) : null
+          })()}
           {ev.description && <p style={{ fontSize: '14px', color: '#4b5563', whiteSpace: 'pre-line', marginTop: '12px', lineHeight: 1.6 }}>{ev.description}</p>}
         </div>
       </div>

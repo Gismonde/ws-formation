@@ -56,6 +56,8 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       formation_id: typeof c.formation_id === 'string' && UUID.test(c.formation_id) ? c.formation_id : null,
       duree_minutes: duree !== null && Number.isFinite(duree) && duree > 0 ? Math.round(duree) : null,
       ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
+      ...(c.places_prevues === null ? { places_prevues: null } : Number.isFinite(Number(c.places_prevues)) && c.places_prevues !== undefined && c.places_prevues !== '' ? { places_prevues: Math.min(1000, Math.max(1, Math.round(Number(c.places_prevues)))) } : {}),
+      ...(typeof c.compte_a_rebours === 'boolean' ? { compte_a_rebours: c.compte_a_rebours } : {}),
       ...(c.type === 'formation' || c.type === 'social' || c.type === 'clinique' ? { type: c.type } : {}),
       ...(peutMettreEnPageEvenements(a) && typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
       ...(c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond)) ? { fond: c.fond } : {}),

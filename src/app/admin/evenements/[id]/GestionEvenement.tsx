@@ -16,7 +16,7 @@ const champsDate = (iso: string) => {
 }
 
 export default function GestionEvenement({ evenement, seances, inscriptions }: {
-  evenement: { id: string; titre: string; statut: string; aFormation: boolean }
+  evenement: { id: string; titre: string; statut: string; aFormation: boolean; placesPrevues?: number | null }
   seances: SeanceVue[]
   inscriptions: InscriptionVue[]
 }) {
@@ -84,7 +84,7 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">{t('Séances')}</h2>
-        {evenement.statut !== 'annule' && !edition && <button type="button" onClick={() => setEdition({ id: null, date: '', debut: '09:00', fin: '12:00', places: '12', lieu: '' })} className="text-sm font-medium text-indigo-600 hover:underline">{t('+ Ajouter une date')}</button>}
+        {evenement.statut !== 'annule' && !edition && <button type="button" onClick={() => setEdition({ id: null, date: '', debut: '09:00', fin: '12:00', places: String(evenement.placesPrevues ?? 12), lieu: '' })} className="text-sm font-medium text-indigo-600 hover:underline">{t('+ Ajouter une date')}</button>}
       </div>
 
       {edition && (
