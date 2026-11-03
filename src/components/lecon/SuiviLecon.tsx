@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 // Suivi d'une leçon côté employé :
 //  - vidéos obligatoires : on mesure le temps réellement regardé (impossible de « sauter » à la fin)
@@ -160,7 +161,9 @@ export function VideoSuivie({ blocId, titre, src, plateforme, idEnLigne, obligat
 // ---------------------------------------------------------------------------
 // Fin de leçon
 
-export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, videosObligatoires, etat, suiviActif, simulation }: {
+export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, videosObligatoires, etat, suiviActif, simulation, ensuite }: {
+  /** Dernière leçon : adresse du questionnaire final, ouverte dès que la leçon est terminée */
+  ensuite?: string
   /** Mode employé : le parcours est simulé (progression gardée dans un cookie, rien en base) */
   simulation?: { formationId: string }
   lessonId: string
@@ -203,6 +206,11 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
           {horsLigneEnvoi && <p className="text-xs text-amber-700">📶 {t('Hors ligne : enregistré sur cet appareil, envoyé automatiquement au retour du réseau.')}</p>}
           <p className="text-sm text-green-700">{t('Le {date}', { date: date(termineeLe) })}{attestationLe ? t(' · attestation signée le {date}', { date: date(attestationLe) }) : ''}</p>
         </div>
+        {ensuite && (
+          <Link href={ensuite} className="ml-auto shrink-0 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white shadow hover:bg-indigo-700">
+            📝 {t('Passer au questionnaire final →')}
+          </Link>
+        )}
       </div>
     )
   }
@@ -212,7 +220,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     if (simulation) {
       const r = await fetch('/api/apercu/progression', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formationId: simulation.formationId, leconId: lessonId }) })
       setEnCours(false)
-      if (r.ok) { if (attestationRequise) setAttestationLe(new Date().toISOString()); setTermineeLe(new Date().toISOString()); routeur.refresh() }
+      if (r.ok) { if (attestationRequise) setAttestationLe(new Date().toISOString()); setTermineeLe(new Date().toISOString()); if (ensuite) routeur.push(ensuite); else routeur.refresh() }
       else setErreur(t('Erreur'))
       return
     }
@@ -231,7 +239,7 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
     }
     const r = await terminerLecon(lessonId)
     setEnCours(false)
-    if (r.ok) { setTermineeLe(r.data ?? new Date().toISOString()); routeur.refresh() }
+    if (r.ok) { setTermineeLe(r.data ?? new Date().toISOString()); if (ensuite) routeur.push(ensuite); else routeur.refresh() }
     else setErreur(r.manquants?.length ? t('Il reste : {liste}', { liste: r.manquants.join(' · ') }) : r.erreur)
     } catch { enAttente() }
   }
