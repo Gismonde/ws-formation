@@ -55,6 +55,13 @@ export async function PUT(request: Request) {
       : attribution.valeurs.role === 'gestionnaire' ? avant : { ...AUCUN_DROIT }
     Object.assign(updateData, apres)
     const changements = changementsDroits(avant, apres)
+    // Création de formulaires : accordée par l'administrateur global, seulement à un administrateur
+    if (attribution.valeurs.role !== 'admin') {
+      if (cible.peut_creer_formulaires) { updateData.peut_creer_formulaires = false; changements.push('− Créer des formulaires') }
+    } else if (acteur.role === 'super_admin' && typeof body.peut_creer_formulaires === 'boolean' && body.peut_creer_formulaires !== (cible.peut_creer_formulaires === true)) {
+      updateData.peut_creer_formulaires = body.peut_creer_formulaires
+      changements.push(`${body.peut_creer_formulaires ? '+' : '−'} Créer des formulaires`)
+    }
 
     const { error } = await sb.from('employes').update(updateData).eq('id', id)
     if (error) {

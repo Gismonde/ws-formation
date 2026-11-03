@@ -37,6 +37,8 @@ export type Acteur = {
   peut_creer_evenements?: boolean
   /** Gestionnaire (CMC) autorisé à assigner des formations aux membres externes */
   peut_assigner_externes?: boolean
+  /** Administrateur autorisé par l'administrateur global à créer des formulaires */
+  peut_creer_formulaires?: boolean
   /**
    * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
    * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
@@ -109,6 +111,7 @@ async function lireActeur(): Promise<Acteur | null> {
     peut_valider_formations: data.peut_valider_formations === true,
     peut_creer_evenements: data.peut_creer_evenements === true,
     peut_assigner_externes: data.peut_assigner_externes === true,
+    peut_creer_formulaires: data.peut_creer_formulaires === true,
     vue,
   }
 }

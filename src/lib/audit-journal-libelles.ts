@@ -31,6 +31,10 @@ export const LIBELLES_AUDIT: Record<string, { label: string; color: string; bg: 
   POLITIQUE_PUBLIEE: { label: 'Politique publiée', color: '#2563eb', bg: '#dbeafe' },
   POLITIQUE_MODIFIEE: { label: 'Politique modifiée', color: '#d97706', bg: '#fef3c7' },
   POLITIQUE_CONFIRMEE: { label: 'Politique confirmée', color: '#16a34a', bg: '#dcfce7' },
+  FORMULAIRE_CREE: { label: 'Formulaire créé', color: '#2563eb', bg: '#dbeafe' },
+  FORMULAIRE_MODIFIE: { label: 'Formulaire modifié', color: '#d97706', bg: '#fef3c7' },
+  FORMULAIRE_SOUMIS: { label: 'Formulaire envoyé', color: '#7c3aed', bg: '#ede9fe' },
+  FORMULAIRE_TRAITE: { label: 'Formulaire traité', color: '#16a34a', bg: '#dcfce7' },
 }
 
 export const GROUPES_AUDIT: { nom: string; types: string[] }[] = [
@@ -40,6 +44,7 @@ export const GROUPES_AUDIT: { nom: string; types: string[] }[] = [
   { nom: 'Gestion des formations', types: ['FORMATION_CREEE', 'FORMATION_MODIFIEE', 'FORMATION_SUPPRIMEE', 'FORMATION_ASSIGNEE', 'SEUIL_MODIFIE'] },
   { nom: 'Employés', types: ['EMPLOYE_CREE', 'EMPLOYE_MODIFIE', 'EMPLOYE_SUPPRIME', 'INVITATION_ENVOYEE', 'CONSULTATION_DOSSIER'] },
   { nom: 'Politiques', types: ['POLITIQUE_PUBLIEE', 'POLITIQUE_MODIFIEE', 'POLITIQUE_CONFIRMEE'] },
+  { nom: 'Formulaires', types: ['FORMULAIRE_CREE', 'FORMULAIRE_MODIFIE', 'FORMULAIRE_SOUMIS', 'FORMULAIRE_TRAITE'] },
   { nom: 'Système et exports', types: ['EXPORT_DONNEES', 'PARAMETRE_MODIFIE'] },
 ]
 
