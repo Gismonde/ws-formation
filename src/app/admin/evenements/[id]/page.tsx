@@ -25,6 +25,9 @@ export default async function EvenementAdminPage({ params }: { params: Promise<{
     ev.formation_id ? sb.from('formations').select('id, titre').eq('id', ev.formation_id).maybeSingle() : Promise.resolve({ data: null }),
   ])
   const noms = new Map((deps ?? []).map(x => [x.id as string, x.nom as string]))
+  // Événement « date à venir » : personnes qui ont demandé à être prévenues
+  const { data: interets } = await sb.from('evenements_interets').select('employe_id, avise_le').eq('evenement_id', id)
+  const nbInteresses = (interets ?? []).filter(i => !i.avise_le).length
   const personnes = Object.fromEntries((emps ?? []).map(e => [e.id, { nom: `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() || (e.email ?? ''), poste: e.poste ?? '' }]))
 
   return (
@@ -38,6 +41,7 @@ export default async function EvenementAdminPage({ params }: { params: Promise<{
               {ev.statut === 'publie' ? t('Publié') : ev.statut === 'annule' ? t('Annulé') : t('Brouillon')}
             </span>
             {ev.obligatoire && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">{t('Obligatoire')}</span>}
+            {ev.date_a_venir && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">📅 {t('Date à venir')} · {t('{n} personne(s) à prévenir', { n: nbInteresses })}</span>}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{ev.titre}</h1>
           <p className="text-sm text-gray-500 mt-1">{publicDe(ev, noms, t)}</p>

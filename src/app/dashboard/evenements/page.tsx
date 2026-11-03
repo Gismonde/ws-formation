@@ -35,6 +35,7 @@ export default async function MesEvenementsPage() {
           <div style={{ fontSize: '13px', color: '#6b7280' }}>
             {ma ? t('Ma séance : {date}', { date: date(ma.debut) })
               : x.termine ? t('Terminé')
+                : !ouvertes.length && x.ev.date_a_venir ? `📅 ${t('Date à venir')}`
                 : ouvertes.length ? (placesLibres ? t('{n} date(s) proposée(s)', { n: ouvertes.length }) : t('Complet — liste d’attente possible'))
                   : t('Inscriptions fermées')}
           </div>

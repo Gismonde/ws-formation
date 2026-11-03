@@ -20,6 +20,8 @@ export type Evenement = CiblePolitique & {
   publie_le: string | null
   cree_par: string | null
   created_at: string
+  /** Annoncé sans date (« date à venir ») : les employés peuvent demander à être prévenus */
+  date_a_venir?: boolean
 }
 
 export type Seance = {
@@ -47,7 +49,8 @@ export type Inscription = {
   annule_le: string | null
 }
 
-export const CHAMPS_EVENEMENT = 'id, titre, description, image, lieu, responsable, clinique, departements, employes, roles, postes, obligatoire, desinscription_heures, formation_id, duree_minutes, statut, publie_le, cree_par, created_at'
+// « * » : la colonne date_a_venir peut ne pas encore exister (migration evenements_date_a_venir.sql)
+export const CHAMPS_EVENEMENT = '*'
 
 // ---------------------------------------------------------------------------
 // Règles

@@ -5,9 +5,9 @@ import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
 import { origineDepuis } from '@/lib/courriels'
-import { chargerEvenement, seanceOuverte } from '@/lib/evenements'
+import { chargerEvenement, seanceOuverte, type Seance } from '@/lib/evenements'
 import { peutGererEvenement, validerEvenement, validerSeance, promouvoirListeAttente, enregistrerPresence, desinscrire } from '@/lib/evenements-admin'
-import { annoncerEvenement, avertirChangementSeance, avertirAnnulationEvenement, avertirPromotion } from '@/lib/evenements-courriels'
+import { annoncerEvenement, avertirChangementSeance, avertirAnnulationEvenement, avertirPromotion, avertirInteresses } from '@/lib/evenements-courriels'
 
 async function contexte(id: string) {
   const acteur = await getActeur()
@@ -39,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     case 'publier': {
       if (ev.statut !== 'brouillon') return NextResponse.json({ error: 'Déjà publié.' }, { status: 400 })
-      if (!seances.some(s => seanceOuverte(s))) return NextResponse.json({ error: 'Ajoutez au moins une séance à venir avant de publier.' }, { status: 400 })
+      if (!ev.date_a_venir && !seances.some(s => seanceOuverte(s))) return NextResponse.json({ error: 'Ajoutez au moins une séance à venir avant de publier (ou cochez « Date à venir »).' }, { status: 400 })
       await sb.from('evenements').update({ statut: 'publie', publie_le: new Date().toISOString() }).eq('id', id)
       const courriels = corps.notifier === false ? 0 : await annoncerEvenement(sb, { ...ev, statut: 'publie' }, seances, origine)
       await journal(`Événement publié : ${ev.titre} (${courriels} courriel(s))`)
@@ -55,9 +55,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     case 'ajouter_seance': {
       const v = validerSeance(corps)
       if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
-      const { error } = await sb.from('evenements_seances').insert({ ...v.valeurs, evenement_id: id })
+      const { data: ajoutee, error } = await sb.from('evenements_seances').insert({ ...v.valeurs, evenement_id: id }).select('*').single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      await journal(`Séance ajoutée à « ${ev.titre} »`)
+      // Événement « date à venir » publié : la date est annoncée, on prévient les personnes intéressées
+      let avises = 0
+      if (ev.date_a_venir && ev.statut === 'publie') {
+        await sb.from('evenements').update({ date_a_venir: false }).eq('id', id)
+        avises = await avertirInteresses(sb, ev, [...seances, ajoutee as Seance], origine)
+      }
+      await journal(`Séance ajoutée à « ${ev.titre} »${avises ? ` — ${avises} personne(s) intéressée(s) prévenue(s)` : ''}`)
       return NextResponse.json({ ok: true })
     }
     case 'modifier_seance': {
