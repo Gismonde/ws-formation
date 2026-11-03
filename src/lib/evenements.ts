@@ -6,8 +6,8 @@ import { estVise, type CiblePolitique } from '@/lib/politiques'
 export type StatutEvenement = 'brouillon' | 'publie' | 'annule'
 
 /** Types d'événements : chacun a sa couleur, son visuel et son bouton d'inscription. */
-export { TYPES_EVENEMENT, typeEvenement, PLACES_ILLIMITEES, placesIllimitees, FONDS_EVENEMENT, fondEvenement, emojiEvenement, type TypeEvenement } from './evenements-types'
-import type { TypeEvenement } from './evenements-types'
+export { TYPES_EVENEMENT, typeEvenement, PLACES_ILLIMITEES, placesIllimitees, FONDS_EVENEMENT, fondEvenement, emojiEvenement, tousLesTypes, type TypeEvenement, type TypePerso, type InfoType } from './evenements-types'
+import type { TypeEvenement, TypePerso } from './evenements-types'
 
 export type Evenement = CiblePolitique & {
   id: string
@@ -38,6 +38,8 @@ export type Evenement = CiblePolitique & {
   compte_a_rebours?: boolean
   /** Archivé par un admin (annulé ou passé) : masqué pour les employés */
   archive_le?: string | null
+  /** Type créé par un admin, joint au chargement */
+  type_perso?: TypePerso | null
 }
 
 export type Seance = {
@@ -137,6 +139,20 @@ export function fichierIcs(ev: Pick<Evenement, 'id' | 'titre' | 'description' | 
 // ---------------------------------------------------------------------------
 // Données
 
+/** Types créés par les admins (table absente avant la migration : liste vide). */
+export async function typesPerso(sb: SupabaseClient): Promise<TypePerso[]> {
+  const { data, error } = await sb.from('evenements_types_perso').select('id, nom, emoji, couleur, fond, mode').order('nom')
+  return error ? [] : (data ?? []) as TypePerso[]
+}
+
+/** Joint à chaque événement son type créé par un admin (ev.type_perso). */
+export async function joindreTypesPerso<T extends { type?: string | null; type_perso?: TypePerso | null }>(sb: SupabaseClient, evs: T[]): Promise<T[]> {
+  if (!evs.some(e => e.type && !['formation', 'social', 'clinique'].includes(e.type))) return evs
+  const persos = await typesPerso(sb)
+  for (const e of evs) e.type_perso = persos.find(p => p.id === e.type) ?? null
+  return evs
+}
+
 export async function evenementsDisponibles(sb: SupabaseClient): Promise<boolean> {
   const { error } = await sb.from('evenements').select('id', { head: true, count: 'exact' }).limit(1)
   return !error
@@ -149,6 +165,7 @@ export async function chargerEvenement(sb: SupabaseClient, id: string) {
     sb.from('evenements_inscriptions').select('*').eq('evenement_id', id),
   ])
   if (!ev) return null
+  await joindreTypesPerso(sb, [ev as Evenement])
   return { ev: ev as Evenement, seances: (seances ?? []) as Seance[], inscriptions: (inscriptions ?? []) as Inscription[] }
 }
 
@@ -159,6 +176,7 @@ export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; 
   // Les événements archivés disparaissent du portail des employés
   const invites = ((evs ?? []) as Evenement[]).filter(ev => !ev.archive_le && estInvite(ev, e))
   if (!invites.length) return []
+  await joindreTypesPerso(sb, invites)
   const ids = invites.map(v => v.id)
   const [{ data: seances }, { data: inscriptions }] = await Promise.all([
     sb.from('evenements_seances').select('*').in('evenement_id', ids).order('debut'),
