@@ -2691,4 +2691,6 @@ export const EN: Record<string, string> = {
   'Sur la carte, dans la page de l’événement et dans la bannière, jusqu’à la prochaine date.': 'On the card, on the event page and in the banner, until the next date.',
   '{n} place(s) prévue(s)': '{n} spot(s) planned',
   'Ex. : 30': 'E.g.: 30',
+  'Les personnes ciblées verront l’événement « Date à venir » dans leur portail et pourront demander à être prévenues dès que la date sera annoncée.': 'Targeted people will see the “Date to come” event in their portal and can ask to be notified as soon as the date is announced.',
+  'Les personnes ciblées verront l’événement « Date à venir » dans leur portail et pourront demander à être prévenues dès que la date sera annoncée.': 'Targeted people will see the “Date to come” event in their portal and can ask to be notified as soon as the date is announced.',
 }

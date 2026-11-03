@@ -56,7 +56,7 @@ export default async function EvenementAdminPage({ params }: { params: Promise<{
       </div>
 
       <GestionEvenement
-        evenement={{ id: ev.id, titre: ev.titre, statut: ev.statut, aFormation: !!ev.formation_id, placesPrevues: ev.places_prevues ?? null }}
+        evenement={{ id: ev.id, titre: ev.titre, statut: ev.statut, aFormation: !!ev.formation_id, placesPrevues: ev.places_prevues ?? null, dateAVenir: ev.date_a_venir === true }}
         seances={seances.map(s => ({ ...s, restantes: placesRestantes(s, inscriptions) }))}
         inscriptions={inscriptions.filter(i => i.statut !== 'annule').map(i => ({ id: i.id, seance_id: i.seance_id, employe_id: i.employe_id, statut: i.statut, present: i.present, inscrit_le: i.inscrit_le, ...(personnes[i.employe_id] ?? { nom: '—', poste: '' }) }))}
       />
