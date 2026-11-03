@@ -166,7 +166,9 @@ export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; 
     const ins = ((inscriptions ?? []) as Inscription[]).filter(i => i.evenement_id === ev.id)
     const mienne = ins.find(i => i.employe_id === e.id) ?? null
     const prochaine = ss.filter(s => !s.annulee).map(s => s.debut).sort()[0] ?? null
-    const termine = ss.length > 0 && ss.every(s => s.annulee || new Date(s.fin).getTime() < Date.now())
+    // Passé : toutes les dates actives sont terminées. Un événement « Date à venir » sans date active reste « À venir ».
+    const actives = ss.filter(s => !s.annulee)
+    const termine = actives.length > 0 ? actives.every(s => new Date(s.fin).getTime() < Date.now()) : ss.length > 0 && !ev.date_a_venir
     return { ev, seances: ss.map(s => ({ ...s, restantes: placesRestantes(s, ins) })), mienne, prochaine, termine }
   })
 }
