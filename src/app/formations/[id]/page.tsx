@@ -149,7 +149,12 @@ export default async function FormationDetailPage({ params }: { params: Promise<
         )}
 
         {/* Info formation */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+          {formation.image_couverture && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={formation.image_couverture} alt="" className="w-full h-48 sm:h-56 object-cover" />
+          )}
+          <div className="p-6">
           <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mb-2 inline-block">{formation.categorie}</span>
           <h1 className="text-2xl font-bold text-gray-900">{formation.titre}</h1>
           <p className="text-gray-500 mt-2 whitespace-pre-line">{formation.description}</p>
@@ -174,6 +179,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
           {!apercu.actif && ordreLecons.length > 0 && (
             <DisponibleHorsLigne formationId={id} titre={formation.titre} urls={[`/formations/${id}`, ...ordreLecons.map(l => `/formations/${id}/lecon/${l.id}`)]} />
           )}
+          </div>
         </div>
 
         {/* Modules */}
