@@ -1,6 +1,6 @@
 // Gestion des événements (côté serveur) : droits, validation des champs, inscription, présence.
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { peutCreerEvenements, cliniquesAdministrees, type Acteur } from '@/lib/permissions'
+import { peutCreerEvenements, peutMettreEnPageEvenements, cliniquesAdministrees, type Acteur } from '@/lib/permissions'
 import { cliniquesDe, type CliniqueEmploye } from '@/lib/cliniques'
 import { ROLES_CIBLABLES } from '@/lib/politiques'
 import { emettreCertificat } from '@/lib/questionnaire-serveur'
@@ -57,8 +57,8 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       duree_minutes: duree !== null && Number.isFinite(duree) && duree > 0 ? Math.round(duree) : null,
       ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
       ...(c.type === 'formation' || c.type === 'social' || c.type === 'clinique' ? { type: c.type } : {}),
-      ...(typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
-      ...(c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond)) ? { fond: c.fond } : {}),
+      ...(peutMettreEnPageEvenements(a) && typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
+      ...(peutMettreEnPageEvenements(a) && (c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond))) ? { fond: c.fond } : {}),
     },
   }
 }
@@ -149,7 +149,7 @@ export async function optionsEvenement(sb: SupabaseClient, a: Acteur) {
     optionsCiblage(sb, a),
     sb.from('formations').select('id, titre').eq('publiee', true).in('clinique', cliniquesContenuVisibles(a)).order('titre'),
   ])
-  return { cliniques: cliniquesEvenement(a), departements: o.departements, postes: o.postes, familles: o.familles, employes: o.employes, formations: (formations ?? []) as { id: string; titre: string }[] }
+  return { miseEnPage: peutMettreEnPageEvenements(a), cliniques: cliniquesEvenement(a), departements: o.departements, postes: o.postes, familles: o.familles, employes: o.employes, formations: (formations ?? []) as { id: string; titre: string }[] }
 }
 
 /** Événements que cette personne peut gérer (liste admin). */

@@ -2676,4 +2676,6 @@ export const EN: Record<string, string> = {
   'Lavande': 'Lavender',
   'Nuit étoilée': 'Starry night',
   'Menthe': 'Mint',
+  'Mise en page des événements': 'Event layout',
+  'Accordé par l’administrateur global. La personne peut choisir l’événement mis en vedette dans la bannière et le fond des événements.': 'Granted by the global administrator. The person can choose the event featured in the banner and the events’ background.',
 }

@@ -39,6 +39,7 @@ export type Acteur = {
   peut_assigner_externes?: boolean
   /** Administrateur autorisé par l'administrateur global à créer des formulaires */
   peut_creer_formulaires?: boolean
+  peut_mise_en_page_evenements?: boolean
   /**
    * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
    * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
@@ -112,6 +113,7 @@ async function lireActeur(): Promise<Acteur | null> {
     peut_creer_evenements: data.peut_creer_evenements === true,
     peut_assigner_externes: data.peut_assigner_externes === true,
     peut_creer_formulaires: data.peut_creer_formulaires === true,
+    peut_mise_en_page_evenements: data.peut_mise_en_page_evenements === true,
     vue,
   }
 }
@@ -153,6 +155,11 @@ export function peutValiderFormations(a: Pick<Acteur, 'role' | 'peut_valider_for
 /** Créer des événements en présentiel. Admins : toujours. */
 export function peutCreerEvenements(a: Acteur | null): boolean {
   return !!a && (estAdmin(a) || (a.role === 'gestionnaire' && a.peut_creer_evenements === true))
+}
+
+/** Mise en page des événements (bannière en vedette, fond) : administrateur global, ou personne à qui il l'a accordée. */
+export function peutMettreEnPageEvenements(a: Acteur | null): boolean {
+  return !!a && (a.role === 'super_admin' || (peutCreerEvenements(a) && a.peut_mise_en_page_evenements === true))
 }
 
 /** Acteur connecté s'il peut créer/modifier des formations, sinon null. */
