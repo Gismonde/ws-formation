@@ -12,7 +12,7 @@ const accent = 'var(--accent-clinique, #4f46e5)'
 export default function BlocInteractif({ titre, d, urls, onReussi }: { titre: string | null; d: DonneesInteractif; urls: Urls; onReussi?: () => void }) {
   const corps = (() => {
     switch (d.genre) {
-      case 'cartes': return <Cartes d={d} />
+      case 'cartes': return <Cartes d={d} urls={urls} />
       case 'accordeon': return <Accordeon d={d} />
       case 'etapes': return <Etapes d={d} urls={urls} />
       case 'chronologie': return <Chronologie d={d} />
@@ -35,7 +35,7 @@ export default function BlocInteractif({ titre, d, urls, onReussi }: { titre: st
 }
 
 // --- Cartes à retourner ---------------------------------------------------
-function Cartes({ d }: { d: DonneesInteractif }) {
+function Cartes({ d, urls }: { d: DonneesInteractif; urls: Urls }) {
   const { t } = useT()
   const [retournees, setRetournees] = useState<number[]>([])
   const cartes = (d.cartes ?? []).filter(c => c.recto.trim())
@@ -46,9 +46,13 @@ function Cartes({ d }: { d: DonneesInteractif }) {
           const r = retournees.includes(i)
           return (
             <button key={i} type="button" onClick={() => setRetournees(x => (r ? x.filter(y => y !== i) : [...x, i]))}
-              className="h-40 [perspective:1000px] text-left" aria-pressed={r}>
+              className={(cartes.some(x => x.image) ? 'h-64' : 'h-40') + ' [perspective:1000px] text-left'} aria-pressed={r}>
               <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: r ? 'rotateY(180deg)' : 'none' }}>
-                <div className="absolute inset-0 rounded-xl border-2 p-4 flex items-center justify-center text-center font-semibold text-gray-900 bg-white [backface-visibility:hidden]" style={{ borderColor: accent }}>{c.recto}</div>
+                <div className="absolute inset-0 rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-2 text-center font-semibold text-gray-900 bg-white overflow-hidden [backface-visibility:hidden]" style={{ borderColor: accent }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {c.image && adresse(c.image, urls) && <img src={adresse(c.image, urls)!} alt="" className="max-h-36 w-full object-contain rounded-lg" />}
+                  <span>{c.recto}</span>
+                </div>
                 <div className="absolute inset-0 rounded-xl p-4 flex items-center justify-center text-center text-sm text-white [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-auto" style={{ background: accent }}>{c.verso}</div>
               </div>
             </button>

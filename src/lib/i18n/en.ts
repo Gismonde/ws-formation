@@ -2361,4 +2361,5 @@ export const EN: Record<string, string> = {
   'Un écran à la fois avec « Suivant », comme un diaporama (style Coassemble).': 'One screen at a time with “Next”, like a slideshow (Coassemble style).',
   'Astuce : les flèches ← → du clavier changent d’écran.': 'Tip: the ← → keys change screens.',
   'Un écran à la fois avec « Suivant », comme un diaporama (style Coassemble).': 'One screen at a time with “Next”, like a slideshow (Coassemble style).',
+  '+ Image au recto (facultatif)': '+ Front image (optional)',
 }

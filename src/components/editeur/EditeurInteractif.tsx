@@ -98,8 +98,8 @@ export default function EditeurInteractif({ titre, donnees: d, urls, onTitre, on
   const formulaire = (() => {
     switch (d.genre) {
       case 'cartes': return (
-        <Liste items={d.cartes ?? []} onChange={l => set({ cartes: l })} vide={() => ({ recto: '', verso: '' })} ajouterLibelle={t('+ Ajouter une carte')}
-          rendu={(c, maj) => <div className="grid sm:grid-cols-2 gap-2"><input className={champ} value={c.recto} onChange={e => maj({ recto: e.target.value })} placeholder={t('Recto : question ou terme')} /><textarea className={champ} rows={2} value={c.verso} onChange={e => maj({ verso: e.target.value })} placeholder={t('Verso : réponse ou définition')} /></div>} />
+        <Liste items={d.cartes ?? []} onChange={l => set({ cartes: l })} vide={(): { recto: string; verso: string; image?: string | null } => ({ recto: '', verso: '' })} ajouterLibelle={t('+ Ajouter une carte')}
+          rendu={(c, maj) => <div className="space-y-2"><div className="grid sm:grid-cols-2 gap-2"><input className={champ} value={c.recto} onChange={e => maj({ recto: e.target.value })} placeholder={t('Recto : question ou terme')} /><textarea className={champ} rows={2} value={c.verso} onChange={e => maj({ verso: e.target.value })} placeholder={t('Verso : réponse ou définition')} /></div><ChoixImage valeur={c.image} urls={urls} onChange={v => maj({ image: v })} setErreur={setErreur} libelle={t('+ Image au recto (facultatif)')} /></div>} />
       )
       case 'accordeon': return (
         <div className="space-y-3">
