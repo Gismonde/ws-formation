@@ -5,24 +5,26 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useT } from '@/lib/i18n/client'
-import { cliniquesDe } from '@/lib/cliniques'
-import { TYPES_CHAMP, PREREMPLIS, type Champ, type TypeChamp, type Formulaire, type Reponses } from '@/lib/formulaires'
+import { TYPES_CHAMP, PREREMPLIS, MESSAGE_ANONYMAT_DEFAUT, type Champ, type TypeChamp, type Formulaire, type Reponses, type Destinataire } from '@/lib/formulaires'
 import ChampsFormulaire from './ChampsFormulaire'
 import { TexteRiche } from '@/lib/texte-riche'
 
-type Personne = { id: string; prenom: string | null; nom: string | null; role: string; clinique: string | null }
-type Brouillon = Pick<Formulaire, 'titre' | 'code' | 'description' | 'instructions' | 'clinique' | 'champs' | 'actif' | 'destinataire_id'>
+type Personne = { id: string; prenom: string | null; nom: string | null; role: string; clinique: string | null; departement_id?: string | null }
+type Departement = { id: string; nom: string; gestionnaires: number }
+type Brouillon = Pick<Formulaire, 'titre' | 'code' | 'description' | 'instructions' | 'clinique' | 'champs' | 'actif'> & {
+  destinataires: Destinataire[]; anonyme_permis: boolean; message_anonymat: string | null
+}
 
 const nouvelId = () => 'c' + Math.random().toString(36).slice(2, 10)
 const champCls = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500'
 const AVEC_OPTIONS: TypeChamp[] = ['choix_unique', 'choix_multiple', 'liste']
 const AVEC_PREREMPLI: TypeChamp[] = ['texte', 'courriel', 'date', 'heure']
 
-export default function EditeurFormulaire({ id, initial, cliniques, personnes, createurNom }: {
+export default function EditeurFormulaire({ id, initial, personnes, departements, createurNom }: {
   id: string | null
   initial: Brouillon
-  cliniques: Formulaire['clinique'][]
   personnes: Personne[]
+  departements: Departement[]
   createurNom: string
 }) {
   const { t } = useT()
@@ -45,9 +47,23 @@ export default function EditeurFormulaire({ id, initial, cliniques, personnes, c
   }
   const deplacer = (i: number, d: -1 | 1) => { const l = [...f.champs]; const [c] = l.splice(i, 1); l.splice(i + d, 0, c); maj({ champs: l }) }
 
-  // Destinataires possibles pour la clinique choisie (admins de cette clinique ou admin global)
-  const destinataires = useMemo(() => personnes.filter(p => p.role === 'super_admin' || cliniquesDe(f.clinique).every(c => cliniquesDe(p.clinique).includes(c))), [personnes, f.clinique])
-  const nom = (p: Personne) => [p.prenom, p.nom].filter(Boolean).join(' ') + (p.role === 'super_admin' ? ` (${t('admin global')})` : '')
+  const role = (r: string) => r === 'super_admin' ? t('admin global') : r === 'admin' ? t('admin') : t('gestionnaire')
+  const nom = (p: Personne) => [p.prenom, p.nom].filter(Boolean).join(' ') + ` (${role(p.role)})`
+  const [choixDest, setChoixDest] = useState('')
+  const ajouterDest = (v: string) => {
+    if (!v) return
+    const [type, idd] = v.split(':') as [Destinataire['type'], string]
+    if (!f.destinataires.some(d => d.type === type && d.id === idd)) maj({ destinataires: [...f.destinataires, { type, id: idd }] })
+    setChoixDest('')
+  }
+  const libelleDest = (d: Destinataire) => {
+    if (d.type === 'departement') { const x = departements.find(y => y.id === d.id); return x ? `🏢 ${t('Gestionnaire(s) du département {nom}', { nom: x.nom })}${x.gestionnaires ? '' : ' ⚠️'}` : '—' }
+    const p = personnes.find(y => y.id === d.id); return p ? `👤 ${nom(p)}` : '—'
+  }
+  const restants = useMemo(() => ({
+    depts: departements.filter(d => !f.destinataires.some(x => x.type === 'departement' && x.id === d.id)),
+    pers: personnes.filter(p => !f.destinataires.some(x => x.type === 'employe' && x.id === p.id)),
+  }), [departements, personnes, f.destinataires])
 
   async function enregistrer(actif = f.actif) {
     setEnvoi(true); setEtat(null)
@@ -134,21 +150,49 @@ export default function EditeurFormulaire({ id, initial, cliniques, personnes, c
                 placeholder={t('Ex. : Remplissez ce formulaire dès qu’un incident est constaté. Décrivez les faits sans jugement… (**gras**, « - » pour une liste)')} />
               <p className="mt-1 text-xs text-gray-500">{t('Affiché en haut du formulaire. Chaque question peut aussi avoir sa propre aide.')}</p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">{t('Clinique')}</label>
-                <select className={champCls} value={f.clinique} onChange={e => maj({ clinique: e.target.value as Formulaire['clinique'], destinataire_id: null })}>
-                  {cliniques.map(c => <option key={c} value={c}>{c === 'LES_DEUX' ? t('Les deux cliniques') : c}</option>)}
-                </select>
+            <p className="text-xs text-gray-500">🏥 {t('Formulaire du WSSC : proposé aux employés du WSSC.')}</p>
+
+            {/* Destinataires */}
+            <div className="rounded-lg border border-gray-200 p-4">
+              <label className="mb-1 block text-sm font-semibold text-gray-800">📥 {t('Qui reçoit une copie des réponses ?')}</label>
+              <p className="mb-2 text-xs text-gray-500">{t('Ajoutez un ou plusieurs destinataires : les gestionnaires d’un département, ou une personne précise. Ils reçoivent un courriel à chaque envoi et peuvent compléter la section réservée. Les administrateurs voient toujours tous les formulaires et leurs statuts.')}</p>
+              <div className="flex flex-wrap gap-2">
+                {f.destinataires.length === 0 && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">{t('Aucun : vous (le créateur) recevez les réponses')}</span>}
+                {f.destinataires.map(d => (
+                  <span key={d.type + d.id} className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-900">
+                    {libelleDest(d)}
+                    <button type="button" onClick={() => maj({ destinataires: f.destinataires.filter(x => !(x.type === d.type && x.id === d.id)) })} className="text-indigo-400 hover:text-red-600" aria-label={t('Retirer')}>✕</button>
+                  </span>
+                ))}
               </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">📥 {t('Qui reçoit les réponses ?')}</label>
-                <select className={champCls} value={f.destinataire_id ?? ''} onChange={e => maj({ destinataire_id: e.target.value || null })}>
-                  <option value="">{t('Moi (créateur du formulaire)')}</option>
-                  {destinataires.map(p => <option key={p.id} value={p.id}>{nom(p)}</option>)}
-                </select>
-                <p className="mt-1 text-xs text-gray-500">{t('Cette personne reçoit un courriel à chaque envoi et traite les réponses. Le créateur garde aussi l’accès.')}</p>
-              </div>
+              <select className={champCls + ' mt-3'} value={choixDest} onChange={e => ajouterDest(e.target.value)}>
+                <option value="">{t('+ Ajouter un destinataire…')}</option>
+                {restants.depts.length > 0 && (
+                  <optgroup label={t('Gestionnaire(s) d’un département')}>
+                    {restants.depts.map(d => <option key={d.id} value={'departement:' + d.id}>{d.nom}{d.gestionnaires ? ` (${d.gestionnaires})` : ` — ${t('aucun gestionnaire avec accès Admin')}`}</option>)}
+                  </optgroup>
+                )}
+                {restants.pers.length > 0 && (
+                  <optgroup label={t('Une personne précise')}>
+                    {restants.pers.map(p => <option key={p.id} value={'employe:' + p.id}>{nom(p)}</option>)}
+                  </optgroup>
+                )}
+              </select>
+            </div>
+
+            {/* Envoi anonyme */}
+            <div className="rounded-lg border border-gray-200 p-4">
+              <label className="flex items-start gap-2 text-sm text-gray-800">
+                <input type="checkbox" className="mt-0.5 h-4 w-4" checked={f.anonyme_permis} onChange={e => maj({ anonyme_permis: e.target.checked, message_anonymat: f.message_anonymat || MESSAGE_ANONYMAT_DEFAUT })} />
+                <span><strong>🕶️ {t('Permettre l’envoi anonyme')}</strong><span className="block text-xs text-gray-500">{t('L’employé choisit d’envoyer avec son nom ou de façon anonyme. Anonyme : ses champs d’identité (nom, courriel, poste, signature) sont masqués et non transmis, et il ne reçoit pas de suivi.')}</span></span>
+              </label>
+              {f.anonyme_permis && (
+                <div className="mt-3">
+                  <label className="mb-1 block text-xs font-medium text-gray-600">{t('Message affiché à l’employé qui choisit l’anonymat (il doit le cocher)')}</label>
+                  <textarea className={champCls + ' min-h-[70px]'} value={f.message_anonymat ?? ''} onChange={e => maj({ message_anonymat: e.target.value })} maxLength={2000} />
+                  <button type="button" onClick={() => maj({ message_anonymat: MESSAGE_ANONYMAT_DEFAUT })} className="mt-1 text-xs text-indigo-600 hover:underline">{t('Rétablir le message par défaut')}</button>
+                </div>
+              )}
             </div>
           </section>
 

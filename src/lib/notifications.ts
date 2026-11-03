@@ -92,5 +92,15 @@ export async function notificationsEmploye(sb: SupabaseClient, e: EmployeNotif, 
     if (recent(s.repondu_le as string, 30)) n.push({ id: `suggestion:${s.id}:${s.repondu_le}`, icone: '💡', titre: 'Réponse à votre suggestion', lien: '/dashboard/suggestions', le: s.repondu_le as string })
   }
 
+  // Suivi de ses formulaires (statut mis à jour, réponse reçue)
+  try {
+    const { data: envois } = await sb.from('formulaire_reponses').select('id, numero, statut, statut_le, reponse_le, definition').eq('employe_id', e.id).not('statut_le', 'is', null)
+    for (const r of envois ?? []) {
+      const titre = (r.definition as { titre?: string })?.titre ?? ''
+      if (r.reponse_le && recent(r.reponse_le as string, 30)) n.push({ id: `formulaire-reponse:${r.id}:${r.reponse_le}`, icone: '💬', titre: 'Réponse à votre formulaire : {titre}', vars: { titre }, lien: `/dashboard/formulaires/envois/${r.id}`, le: r.reponse_le as string })
+      else if (recent(r.statut_le as string, 30)) n.push({ id: `formulaire-statut:${r.id}:${r.statut}`, icone: '📝', titre: r.statut === 'traite' ? 'Formulaire traité : {titre}' : 'Formulaire en cours de traitement : {titre}', vars: { titre }, lien: `/dashboard/formulaires/envois/${r.id}`, le: r.statut_le as string })
+    }
+  } catch { /* table absente */ }
+
   return n.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent) || b.le.localeCompare(a.le)).slice(0, 40)
 }

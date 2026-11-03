@@ -33,14 +33,15 @@ export function MenuEmploye({ compteurs }: { compteurs: Compteurs }) {
   )
 }
 
-export function OngletsEmploye({ compteurs }: { compteurs: Compteurs }) {
+export function OngletsEmploye({ compteurs, masques = [] }: { compteurs: Compteurs; masques?: string[] }) {
   const { t } = useT()
   const chemin = usePathname() ?? ''
   const actif = groupeActif(chemin)
-  if (!actif || actif.groupe.onglets.length < 2) return null
+  const onglets = actif ? actif.groupe.onglets.filter(o => !masques.includes(o.href)) : []
+  if (!actif || onglets.length < 2) return null
   return (
     <div role="tablist" aria-label={t(actif.groupe.label)} style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e7eb', marginBottom: '24px', overflowX: 'auto' }}>
-      {actif.groupe.onglets.map(o => {
+      {onglets.map(o => {
         const sel = correspond(o.href, chemin)
         return (
           <Link key={o.href} href={o.href} role="tab" aria-selected={sel}

@@ -1,4 +1,6 @@
 'use client'
+import CaseGestionFormulaires from '@/components/formulaires/CaseGestionFormulaires'
+import { droitFormulairesPossible } from '@/lib/formulaires'
 import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -17,10 +19,12 @@ interface Props {
   cliniqueParDefaut: string
   departementParDefaut: string
   afficherAutorisationCreation: boolean
+  /** Administrateur global : peut accorder « Gestion des formulaires » */
+  droitFormulaires?: boolean
   postes: { famille: string; postes: string[] }[]
 }
 
-export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation, postes }: Props) {
+export default function NouvelEmployeForm({ departements, rolesPossibles, cliniquesPossibles, estGestionnaire, cliniqueParDefaut, departementParDefaut, afficherAutorisationCreation, postes, droitFormulaires = false }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -34,6 +38,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const [droits, setDroits] = useState<Droits>({ ...AUCUN_DROIT })
+  const [formulaires, setFormulaires] = useState(false)
   const [externe, setExterne] = useState(false)
   const [organisation, setOrganisation] = useState('')
 
@@ -45,7 +50,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       const res = await fetch('/api/admin/create-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, externe, organisation, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}) })
+        body: JSON.stringify({ ...form, externe, organisation, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}), ...(droitFormulaires && droitFormulairesPossible(form.role, form.clinique) ? { peut_creer_formulaires: formulaires } : {}) })
       })
       const data = await res.json()
       if (data.error) {
@@ -131,6 +136,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
         afficherAutorisationCreation={afficherAutorisationCreation}
         droits={droits} setDroits={setDroits}
       />
+      {droitFormulaires && droitFormulairesPossible(form.role, form.clinique) && <CaseGestionFormulaires coche={formulaires} onChange={setFormulaires} />}
       <ChampExterne role={form.role} clinique={form.clinique} externe={externe} organisation={organisation}
         setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
         cmcPossible={cliniquesPossibles.includes('CMC')} setClinique={v => set('clinique', v)} />

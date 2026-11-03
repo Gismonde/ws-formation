@@ -6,6 +6,7 @@ import { inviterEmploye } from '@/lib/invitations'
 import { origineDepuis } from '@/lib/courriels'
 import { valeursExterne } from '@/lib/membres-externes'
 import { droitsAEnregistrer, AUCUN_DROIT, changementsDroits } from '@/lib/droits'
+import { droitFormulairesPossible } from '@/lib/formulaires'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
@@ -46,6 +47,8 @@ export async function POST(request: Request) {
       poste: poste || null,
       ...(valeursExterne(body, role, clinique).externe ? valeursExterne(body, role, clinique) : {}),
       ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body, undefined, clinique) : AUCUN_DROIT),
+      // Gestion des formulaires (WSSC) : accordée seulement par l'administrateur global
+      ...(acteur.role === 'super_admin' && body.peut_creer_formulaires === true && droitFormulairesPossible(role, clinique) ? { peut_creer_formulaires: true } : {}),
       actif: true,
     })
     .select('id')

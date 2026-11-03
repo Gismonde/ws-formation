@@ -16,17 +16,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!f || !formulairePourEmploye(f, null, a.role === 'super_admin' ? 'LES_DEUX' : a.clinique)) {
     return NextResponse.json({ error: 'Formulaire introuvable ou fermé' }, { status: 404 })
   }
-  const corps = await req.json().catch(() => ({})) as { reponses?: unknown }
-  const v = validerReponses(f.champs, corps.reponses, 'employe')
+  const corps = await req.json().catch(() => ({})) as { reponses?: unknown; anonyme?: boolean; accepte_anonymat?: boolean }
+  const anonyme = corps.anonyme === true
+  if (anonyme && !f.anonyme_permis) return NextResponse.json({ error: 'Ce formulaire ne peut pas être envoyé de façon anonyme' }, { status: 400 })
+  if (anonyme && corps.accepte_anonymat !== true) return NextResponse.json({ error: 'Confirmez avoir lu le message sur l’envoi anonyme' }, { status: 400 })
+  const v = validerReponses(f.champs, corps.reponses, 'employe', { anonyme })
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
 
   const definition = { titre: f.titre, code: f.code, champs: f.champs, clinique: f.clinique }
   const { data: r, error } = await sb.from('formulaire_reponses')
-    .insert({ formulaire_id: f.id, employe_id: a.id, definition, reponses: v.valeurs })
+    .insert({ formulaire_id: f.id, employe_id: anonyme ? null : a.id, definition, reponses: v.valeurs, ...(anonyme ? { anonyme: true } : {}) })
     .select('id, numero').single()
   if (error || !r) return NextResponse.json({ error: error?.message ?? 'Envoi impossible' }, { status: 500 })
 
-  await logAudit({
+  // Envoi anonyme : aucune trace reliant l'envoi à la personne (pas d'entrée au journal)
+  if (!anonyme) await logAudit({
     acteur_id: a.id, cible_employe_id: a.id, type_action: 'FORMULAIRE_SOUMIS',
     description: `Formulaire « ${f.titre} » envoyé (${numeroReponse(r.numero)})`, metadata: { formulaire_id: f.id, reponse_id: r.id }, ...ipEtAgent(req),
   })

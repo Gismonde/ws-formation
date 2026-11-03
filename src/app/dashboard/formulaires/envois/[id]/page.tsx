@@ -11,7 +11,7 @@ export default async function MonEnvoiPage({ params }: { params: Promise<{ id: s
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   const { t, loc } = await i18n()
-  const { data: r } = await serviceClient().from('formulaire_reponses').select('id, numero, statut, soumis_le, definition, reponses, employe_id').eq('id', (await params).id).maybeSingle()
+  const { data: r } = await serviceClient().from('formulaire_reponses').select('*').eq('id', (await params).id).maybeSingle()
   if (!r || r.employe_id !== acteur.id) notFound()
   const def = r.definition as { titre: string; code?: string | null; champs: Champ[] }
   const s = STATUTS[r.statut as StatutReponse] ?? STATUTS.recu
@@ -28,6 +28,26 @@ export default async function MonEnvoiPage({ params }: { params: Promise<{ id: s
           <BoutonImprimer />
         </div>
       </div>
+      {/* Suivi : étapes du traitement */}
+      <ol className="flex flex-wrap items-center gap-2 text-xs print:hidden" aria-label={t('Suivi du traitement')}>
+        {(['recu', 'en_traitement', 'traite'] as StatutReponse[]).map((k, i, l) => {
+          const atteint = l.indexOf(r.statut as StatutReponse) >= i
+          return (
+            <li key={k} className="flex items-center gap-2">
+              <span className="rounded-full px-3 py-1 font-semibold" style={atteint ? { background: STATUTS[k].fond, color: STATUTS[k].couleur } : { background: '#f3f4f6', color: '#9ca3af' }}>{atteint ? '● ' : '○ '}{t(STATUTS[k].libelle)}</span>
+              {i < l.length - 1 && <span className="text-gray-300">→</span>}
+            </li>
+          )
+        })}
+        {r.statut_le && <li className="text-gray-500">{t('Mis à jour le {date}', { date: new Date(r.statut_le).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' }) })}</li>}
+      </ol>
+      {r.reponse_employe && (
+        <section className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <h2 className="text-sm font-bold text-indigo-900">💬 {t('Réponse de la personne responsable')}</h2>
+          {r.reponse_le && <p className="text-xs text-indigo-700">{new Date(r.reponse_le).toLocaleString(loc, { dateStyle: 'long', timeStyle: 'short' })}</p>}
+          <p className="mt-2 whitespace-pre-wrap text-sm text-indigo-950">{r.reponse_employe}</p>
+        </section>
+      )}
       <VueReponses champs={def.champs} reponses={r.reponses ?? {}} avecReserve={false} t={t} />
     </div>
   )

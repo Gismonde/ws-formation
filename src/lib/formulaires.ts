@@ -64,6 +64,11 @@ export type Champ = {
   demi?: boolean
 }
 
+/** À qui sont envoyées les réponses : les gestionnaires d'un département, ou une personne précise */
+export type Destinataire = { type: 'departement' | 'employe'; id: string }
+
+export const MESSAGE_ANONYMAT_DEFAUT = 'Je comprends qu’en choisissant d’envoyer ce formulaire de façon anonyme, mon nom ne sera pas transmis : je ne pourrai pas être contacté(e) pour obtenir des précisions, et je ne recevrai pas de suivi ni de réponse.'
+
 export type Formulaire = {
   id: string
   titre: string
@@ -75,7 +80,13 @@ export type Formulaire = {
   actif: boolean
   archive: boolean
   cree_par: string | null
+  /** Ancien champ (un seul destinataire) ; remplacé par `destinataires` */
   destinataire_id: string | null
+  destinataires?: Destinataire[] | null
+  /** L'employé peut choisir d'envoyer le formulaire de façon anonyme */
+  anonyme_permis?: boolean
+  /** Message à accepter pour un envoi anonyme (modifiable par le créateur) */
+  message_anonymat?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -92,17 +103,26 @@ export type Reponses = Record<string, unknown>
 // ---------------------------------------------------------------------------
 // Droits
 
-/** Créer des formulaires : l'administrateur global, ou un administrateur qui en a reçu le droit. */
+/** Le module Formulaires est réservé au WSSC. */
+export const CLINIQUE_FORMULAIRES: Clinique = 'WSSC'
+
+/** Créer des formulaires : l'administrateur global, ou un administrateur / gestionnaire du WSSC à qui il a donné le droit. */
 export function peutCreerFormulaires(a: Acteur | null | undefined): boolean {
   if (!a) return false
   if (a.role === 'super_admin') return true
-  return a.role === 'admin' && a.peut_creer_formulaires === true && cliniquesAdministrees(a).length > 0
+  if (a.peut_creer_formulaires !== true) return false
+  if (a.role === 'admin') return cliniquesAdministrees(a).includes(CLINIQUE_FORMULAIRES)
+  return a.role === 'gestionnaire' && cliniquesDe(a.clinique).includes(CLINIQUE_FORMULAIRES)
 }
 
-/** Cliniques possibles pour un formulaire créé par cette personne. */
-export function cliniquesFormulairePossibles(a: Acteur): ('CMC' | 'WSSC' | 'LES_DEUX')[] {
-  const cl = cliniquesAdministrees(a)
-  return cl.length === 2 ? ['WSSC', 'CMC', 'LES_DEUX'] : cl
+/** Le droit « Gestion des formulaires » peut-il être donné à cette personne ? (admin ou gestionnaire du WSSC) */
+export function droitFormulairesPossible(role: string | null | undefined, clinique: string | null | undefined): boolean {
+  return (role === 'admin' || role === 'gestionnaire') && cliniquesDe(clinique).includes(CLINIQUE_FORMULAIRES)
+}
+
+/** Cliniques possibles pour un formulaire (WSSC seulement). */
+export function cliniquesFormulairePossibles(_a: Acteur): ('CMC' | 'WSSC' | 'LES_DEUX')[] {
+  return [CLINIQUE_FORMULAIRES]
 }
 
 /** Modifier le formulaire : son créateur (s'il a toujours le droit) ou l'administrateur global. */
@@ -111,16 +131,32 @@ export function peutModifierFormulaire(a: Acteur, f: Pick<Formulaire, 'cree_par'
   return peutCreerFormulaires(a) && f.cree_par === a.id
 }
 
-/** Qui reçoit les réponses : le destinataire désigné, sinon le créateur. */
-export function destinataireDe(f: Pick<Formulaire, 'cree_par' | 'destinataire_id'>): string | null {
-  return f.destinataire_id || f.cree_par
+type FDest = Pick<Formulaire, 'cree_par' | 'destinataire_id' | 'destinataires'>
+
+/** La personne fait-elle partie des destinataires (personne désignée, ou gestionnaire du département désigné) ? */
+export function estDestinataire(a: Pick<Acteur, 'id' | 'role' | 'departement_id'>, f: FDest): boolean {
+  const l = f.destinataires ?? []
+  if (l.some(d => d.type === 'employe' ? d.id === a.id : a.role === 'gestionnaire' && !!a.departement_id && d.id === a.departement_id)) return true
+  if (f.destinataire_id) return f.destinataire_id === a.id
+  return !l.length && f.cree_par === a.id
 }
 
-/** Consulter les réponses : la personne qui les reçoit, le créateur, ou l'administrateur global. */
-export function peutVoirReponses(a: Acteur, f: Pick<Formulaire, 'cree_par' | 'destinataire_id'>): boolean {
+/** Administrateurs : voient tous les formulaires de leur clinique, avec les statuts. */
+export function voitTout(a: Acteur, f: Pick<Formulaire, 'clinique'>): boolean {
   if (a.role === 'super_admin') return true
   if (a.role !== 'admin') return false
-  return destinataireDe(f) === a.id || f.cree_par === a.id
+  const cl = cliniquesDe(f.clinique)
+  return cl.length > 0 && cl.every(c => cliniquesAdministrees(a).includes(c))
+}
+
+/** Consulter les réponses : administrateurs (tout), créateur, destinataires (seulement ceux qui leur sont assignés). */
+export function peutVoirReponses(a: Acteur, f: FDest & Pick<Formulaire, 'clinique'>): boolean {
+  return voitTout(a, f) || f.cree_par === a.id || estDestinataire(a, f)
+}
+
+/** Compatibilité : premier destinataire « personne » (ou le créateur). */
+export function destinataireDe(f: FDest): string | null {
+  return (f.destinataires ?? []).find(d => d.type === 'employe')?.id ?? f.destinataire_id ?? ((f.destinataires ?? []).length ? null : f.cree_par)
 }
 
 /** Le formulaire est-il proposé à cet employé (dans son espace) ? */
@@ -202,11 +238,12 @@ export const CLE_AUTRE = (id: string) => id + '__autre'
  * Valide les réponses pour un ensemble de champs (ceux de l'employé, ou ceux réservés).
  * Renvoie les valeurs nettoyées (seulement les champs attendus) ou la première erreur.
  */
-export function validerReponses(champs: Champ[], brut: unknown, partie: 'employe' | 'reserve'): { valeurs: Reponses } | { erreur: string } {
+export function validerReponses(champs: Champ[], brut: unknown, partie: 'employe' | 'reserve', options: { anonyme?: boolean } = {}): { valeurs: Reponses } | { erreur: string } {
   const r = (brut && typeof brut === 'object' ? brut : {}) as Record<string, unknown>
   const valeurs: Reponses = {}
   for (const c of champsAvecReserve(champs)) {
     if (!estSaisissable(c) || c.estReserve !== (partie === 'reserve')) continue
+    if (options.anonyme && estChampIdentite(c)) continue // jamais transmis pour un envoi anonyme
     const v = r[c.id]
     const nom = c.libelle || 'Champ'
     let propre: unknown = null
@@ -259,6 +296,11 @@ export function validerReponses(champs: Champ[], brut: unknown, partie: 'employe
     }
   }
   return { valeurs }
+}
+
+/** Champs qui identifient l'employé : masqués et ignorés lors d'un envoi anonyme. */
+export function estChampIdentite(c: Champ): boolean {
+  return c.type === 'signature' || ['nom', 'courriel', 'poste', 'departement'].includes(c.prerempli ?? '')
 }
 
 /** Valeur lisible d'une réponse (affichage, export). */

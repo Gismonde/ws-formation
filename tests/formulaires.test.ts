@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  peutCreerFormulaires, peutVoirReponses, peutModifierFormulaire, destinataireDe, formulairePourEmploye,
+  peutCreerFormulaires, peutVoirReponses, peutModifierFormulaire, formulairePourEmploye, voitTout, estDestinataire, droitFormulairesPossible,
   nettoyerChamps, validerReponses, champsAvecReserve, valeursPreremplies, valeurLisible, CLE_AUTRE, type Champ,
 } from '@/lib/formulaires'
 import type { Acteur } from '@/lib/permissions'
@@ -12,21 +12,33 @@ const adminAutorise: Acteur = { ...adminWSSC, id: 'ad2', peut_creer_formulaires:
 const gest: Acteur = { ...base, id: 'g', role: 'gestionnaire', clinique: 'WSSC', peut_creer_formulaires: true }
 
 describe('droits des formulaires', () => {
-  it('seuls l’admin global et les admins autorisés créent des formulaires', () => {
+  it('seuls l’admin global et les admins / gestionnaires autorisés du WSSC créent des formulaires', () => {
     expect(peutCreerFormulaires(sa)).toBe(true)
     expect(peutCreerFormulaires(adminWSSC)).toBe(false)
     expect(peutCreerFormulaires(adminAutorise)).toBe(true)
-    expect(peutCreerFormulaires(gest)).toBe(false)
+    expect(peutCreerFormulaires(gest)).toBe(true)
+    expect(peutCreerFormulaires({ ...adminAutorise, clinique: 'CMC' })).toBe(false)
+    expect(peutCreerFormulaires({ ...gest, clinique: 'CMC' })).toBe(false)
   })
 
-  it('les réponses vont au destinataire désigné, sinon au créateur', () => {
-    expect(destinataireDe({ cree_par: 'ad2', destinataire_id: null })).toBe('ad2')
-    expect(destinataireDe({ cree_par: 'ad2', destinataire_id: 'ad' })).toBe('ad')
-    const f = { cree_par: 'ad2', destinataire_id: 'ad' }
-    expect(peutVoirReponses(adminWSSC, f)).toBe(true) // destinataire
-    expect(peutVoirReponses(adminAutorise, f)).toBe(true) // créateur
-    expect(peutVoirReponses({ ...adminWSSC, id: 'autre' }, f)).toBe(false)
-    expect(peutVoirReponses(sa, f)).toBe(true)
+  it('administrateurs : tout ; gestionnaires : seulement les formulaires qui leur sont assignés', () => {
+    const gestDept: Acteur = { ...base, id: 'gd', role: 'gestionnaire', clinique: 'WSSC', departement_id: 'bloc' }
+    const f = { cree_par: 'ad2', destinataire_id: null, clinique: 'WSSC' as const, destinataires: [{ type: 'departement' as const, id: 'bloc' }, { type: 'employe' as const, id: 'p1' }] }
+    expect(peutVoirReponses(adminWSSC, f)).toBe(true) // admin du WSSC : tout
+    expect(voitTout(adminWSSC, f)).toBe(true)
+    expect(peutVoirReponses(gestDept, f)).toBe(true) // gestionnaire du département désigné
+    expect(voitTout(gestDept, f)).toBe(false) // … sans les statuts
+    expect(peutVoirReponses({ ...gestDept, departement_id: 'autre' }, f)).toBe(false)
+    expect(peutVoirReponses({ ...gest, id: 'p1' }, f)).toBe(true) // personne désignée
+    expect(peutVoirReponses({ ...adminWSSC, clinique: 'CMC' }, f)).toBe(false)
+    expect(estDestinataire(adminAutorise, { cree_par: 'ad2', destinataire_id: null, destinataires: [] })).toBe(true) // aucun destinataire : le créateur
+  })
+
+  it('le droit « Gestion des formulaires » : admin ou gestionnaire du WSSC seulement', () => {
+    expect(droitFormulairesPossible('gestionnaire', 'WSSC')).toBe(true)
+    expect(droitFormulairesPossible('admin', 'LES_DEUX')).toBe(true)
+    expect(droitFormulairesPossible('admin', 'CMC')).toBe(false)
+    expect(droitFormulairesPossible('employe', 'WSSC')).toBe(false)
   })
 
   it('seul le créateur (ou l’admin global) modifie le formulaire', () => {
@@ -81,6 +93,13 @@ describe('réponses', () => {
     const r = validerReponses(champs, { nom: 'X', type: ['Chute'], sig: { nom: 'X' }, avises: [['2026-11-03', '10:00'], ['', '']] }, 'employe')
     expect('valeurs' in r && r.valeurs.avises).toEqual([['2026-11-03', '10:00'], ['', '']])
     expect(valeurLisible(champs[4], { avises: [['2026-11-03', '10:00'], ['', '']] })).toBe('Chef : 2026-11-03 | 10:00\nRPRP :  | ')
+  })
+
+  it('envoi anonyme : champs d’identité ignorés (même obligatoires)', () => {
+    const r = validerReponses(champs, { nom: 'X', type: ['Chute'], sig: { nom: 'X' } }, 'employe', { anonyme: true })
+    expect('valeurs' in r && r.valeurs.nom).toBeUndefined()
+    expect('valeurs' in r && r.valeurs.sig).toBeUndefined()
+    expect('valeurs' in r && r.valeurs.type).toEqual(['Chute'])
   })
 
   it('préremplit le nom et la date', () => {
