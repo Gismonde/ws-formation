@@ -50,6 +50,8 @@ export default function AssistantFormation() {
   const [lecture, setLecture] = useState<'' | 'en_cours' | 'ok'>('')
   const [survol, setSurvol] = useState(false)
   const charge = useRef(false)
+  const [repris, setRepris] = useState(false)
+  const viaLien = useRef(false)
 
   const chargerLecons = useCallback(async (fid: string) => {
     const { data } = await createClient().from('modules').select('titre, ordre, lessons(id, titre, ordre, blocs:content_blocks(id))').eq('formation_id', fid)
@@ -71,6 +73,7 @@ export default function AssistantFormation() {
     setDepart(dep)
     ;(async () => {
       if (fid) {
+        viaLien.current = true // brouillon ouvert par lien : on ne l'enregistre pas comme « en cours »
         const { data: f } = await createClient().from('formations').select('id, titre, description, image_couverture, clinique, categorie, niveau, objectifs, duree_estimee_minutes').eq('id', fid).maybeSingle()
         if (f) {
           setB({ ...VIDE, titre: f.titre ?? '', description: f.description ?? '', image: f.image_couverture || COUVERTURE_DEFAUT, clinique: f.clinique, categorie: f.categorie ?? '', niveau: f.niveau ?? 'debutant', objectifs: f.objectifs ?? [], modules: [] })
@@ -90,7 +93,7 @@ export default function AssistantFormation() {
           setB({ ...VIDE, ...d.b })
           if (d.formationId) {
             const { data: f } = await createClient().from('formations').select('id').eq('id', d.formationId).maybeSingle()
-            if (f) { setFormationId(f.id); const l = await chargerLecons(f.id); if (l[0]) ouvrirLecon(l[0].id); setEtape(d.etape ?? 3) }
+            if (f) { setFormationId(f.id); setRepris(true); const l = await chargerLecons(f.id); if (l[0]) ouvrirLecon(l[0].id); setEtape(d.etape ?? 3) }
           }
         }
       } catch {}
@@ -99,7 +102,7 @@ export default function AssistantFormation() {
   }, [chargerLecons, ouvrirLecon, t])
 
   useEffect(() => {
-    if (!charge.current) return
+    if (!charge.current || viaLien.current) return
     try { if (b.titre || formationId) localStorage.setItem(CLE, JSON.stringify({ b, formationId, etape, depart })) } catch {}
   }, [b, formationId, etape, depart])
 
@@ -175,7 +178,8 @@ export default function AssistantFormation() {
       if (etape <= 1 && formationId) await enregistrerInfos()
       if (etape === 2 && !formationId) await creerBrouillon()
       if (etape === 3 && formationId) await chargerLecons(formationId)
-      setEssai(false); setEtape(e => Math.min(5, e + 1)); window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Après création, le plan ne se modifie plus ici : on saute de « Pour qui » au contenu
+      setEssai(false); setEtape(e => formationId && e === 1 ? 3 : Math.min(5, e + 1)); window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       setErreur(e instanceof Error ? e.message : String(e))
     } finally { setEnCours(false) }
@@ -232,6 +236,13 @@ export default function AssistantFormation() {
   return (
     <div className="mx-auto max-w-6xl pb-24">
       <EnteteCreation depart={depart} />
+      {repris && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>↩️ {t('Vous reprenez le brouillon « {titre} ».', { titre: b.titre })}</span>
+          <button type="button" onClick={() => { try { localStorage.removeItem(CLE) } catch {} ; window.location.href = window.location.pathname + window.location.search }}
+            className="rounded-lg bg-white px-3 py-1.5 font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100">{t('Commencer une nouvelle formation')}</button>
+        </div>
+      )}
       <div className="-mt-3 flex justify-end">
         {formationId
           ? <Link href={`/admin/formations/${formationId}/editeur`} className="text-xs text-gray-400 hover:text-indigo-600">{t('Ouvrir l’éditeur classique')}</Link>

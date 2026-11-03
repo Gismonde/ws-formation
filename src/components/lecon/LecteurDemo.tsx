@@ -28,8 +28,9 @@ async function decoder(src: string): Promise<Images | null> {
   const tampon = await fetch(src).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.arrayBuffer() })
   const gif = parseGIF(tampon)
   const images = decompressFrames(gif, true)
-  if (images.length < 2 || images.length > 400) return null
   const l = gif.lsd.width, h = gif.lsd.height
+  // Trop d'images en mémoire (téléphones) : on garde l'affichage image habituel
+  if (images.length < 2 || images.length > 400 || images.length * l * h * 4 > 200 * 1024 * 1024) return null
   const compo = document.createElement('canvas'); compo.width = l; compo.height = h
   const cc = compo.getContext('2d')!
   const morceau = document.createElement('canvas')
@@ -66,8 +67,9 @@ export default function LecteurDemo({ src, titre, alt }: { src: string; titre: s
 
   useEffect(() => {
     let annule = false
-    decoder(src).then(r => { if (annule) return; if (r) setImages(r); else setEchec(true) }).catch(() => { if (!annule) setEchec(true) })
-    return () => { annule = true }
+    let charge: Images | null = null
+    decoder(src).then(r => { if (annule) { r?.cadres.forEach(c => c.close()); return } charge = r; if (r) setImages(r); else setEchec(true) }).catch(() => { if (!annule) setEchec(true) })
+    return () => { annule = true; charge?.cadres.forEach(c => c.close()) }
   }, [src])
 
   const dessiner = useCallback((ms: number) => {

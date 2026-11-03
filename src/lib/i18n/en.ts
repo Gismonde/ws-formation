@@ -2344,4 +2344,7 @@ export const EN: Record<string, string> = {
   '{m} module(s) et {l} leçon(s) détectés : vérifiez-les à l’étape « Le plan ».': '{m} module(s) and {l} lesson(s) found: check them in the “Outline” step.',
   'Passer au questionnaire final →': 'Take the final quiz →',
   'Terminez cette leçon pour passer au questionnaire': 'Finish this lesson to take the quiz',
+  'Vous reprenez le brouillon « {titre} ».': 'You are resuming the draft “{titre}”.',
+  'Commencer une nouvelle formation': 'Start a new training',
+  'Vous reprenez le brouillon « {titre} ».': 'You are resuming the draft “{titre}”.',
 }
