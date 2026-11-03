@@ -304,6 +304,16 @@ export function peutGererEmploye(a: Acteur, c: CibleEmploye): boolean {
   return false
 }
 
+/**
+ * L'acteur peut-il modifier la fiche (nom, poste, clinique, département) de cette personne ?
+ * Comme peutGererEmploye, sauf que l'administrateur global peut aussi modifier sa propre fiche.
+ * Son rôle et son statut actif restent verrouillés (impossible de se retirer l'accès par erreur).
+ */
+export function peutModifierFiche(a: Acteur, c: CibleEmploye): boolean {
+  if (c.id && c.id === a.id) return a.role === 'super_admin'
+  return peutGererEmploye(a, c)
+}
+
 export function rolesAttribuables(a: Acteur): Role[] {
   if (a.role === 'super_admin') return ['super_admin', 'admin', 'gestionnaire', 'employe']
   if (a.role === 'admin') return ['admin', 'gestionnaire', 'employe']

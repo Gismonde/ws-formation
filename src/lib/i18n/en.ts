@@ -2362,4 +2362,6 @@ export const EN: Record<string, string> = {
   'Astuce : les flèches ← → du clavier changent d’écran.': 'Tip: the ← → keys change screens.',
   'Un écran à la fois avec « Suivant », comme un diaporama (style Coassemble).': 'One screen at a time with “Next”, like a slideshow (Coassemble style).',
   '+ Image au recto (facultatif)': '+ Front image (optional)',
+  'Votre propre fiche : vous pouvez modifier vos informations. Votre rôle et votre statut actif restent verrouillés pour éviter de vous retirer l’accès par erreur.': 'Your own profile: you can edit your details. Your role and active status stay locked so you cannot remove your own access by mistake.',
+  'Votre propre fiche : vous pouvez modifier vos informations. Votre rôle et votre statut actif restent verrouillés pour éviter de vous retirer l’accès par erreur.': 'Your own profile: you can edit your details. Your role and active status stay locked so you cannot remove your own access by mistake.',
 }

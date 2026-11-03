@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import {
   type Acteur,
   cliniquesContenuVisibles, cliniquesContenuGerables, peutVoirContenu, peutGererContenu,
-  employeConcerneParClinique, peutVoirEmploye, peutGererEmploye, filtrerEmployes,
+  employeConcerneParClinique, peutVoirEmploye, peutGererEmploye, peutModifierFiche, filtrerEmployes,
   cliniquesAttribuables, rolesAttribuables, peutCreerFormations,
 } from '@/lib/permissions'
 import { espaceActif, espacesPossibles, cliniquesContenuDeLEspace, aAccesAdmin } from '@/lib/cliniques'
@@ -171,6 +171,13 @@ describe('Données des employés', () => {
     expect(peutGererEmploye(adminCMC, { id: 'z', role: 'super_admin', clinique: null })).toBe(false)
     expect(peutGererEmploye(adminCMC, { id: 'z', role: 'admin', clinique: 'LES_DEUX' })).toBe(false)
     expect(peutGererEmploye(adminCMC, { id: adminCMC.id, role: 'admin', clinique: 'CMC' })).toBe(false)
+  })
+
+  it("seul l'administrateur global peut modifier sa propre fiche", () => {
+    const sa = { ...adminCMC, id: 'sa', role: 'super_admin' as const, clinique: null }
+    expect(peutModifierFiche(sa, { id: 'sa', role: 'super_admin', clinique: null })).toBe(true)
+    expect(peutGererEmploye(sa, { id: 'sa', role: 'super_admin', clinique: null })).toBe(false)
+    expect(peutModifierFiche(adminCMC, { id: adminCMC.id, role: 'admin', clinique: 'CMC' })).toBe(false)
   })
 
   it("un admin du CMC ne peut pas créer d'employé au WSSC ni nommer d'admin global", () => {

@@ -13,7 +13,7 @@ import ListePreuvesAdmin from "./ListePreuvesAdmin"
 import ToggleActifButton from "../ToggleActifButton"
 import { CliniqueBadge } from "@/components/CliniqueBadge"
 import {
-  getActeur, serviceClient, peutVoirEmploye, peutGererEmploye,
+  getActeur, serviceClient, peutVoirEmploye, peutGererEmploye, peutModifierFiche,
   departementsVisibles, rolesAttribuables, cliniquesAttribuables,
 } from "@/lib/permissions"
 import { aAccesAdmin, estAdministrateur } from "@/lib/cliniques"
@@ -68,6 +68,8 @@ export default async function FicheEmployePage({ params, searchParams }: {
   const onglet: Onglet = onglets.some(o => o.id === demande) ? (demande as Onglet) : "profil"
 
   const modifiable = peutGererEmploye(acteur, employe)
+  const soiMeme = acteur.id === employe.id
+  const ficheModifiable = peutModifierFiche(acteur, employe)
   const dossier = await chargerDossier(sb, id, { journal: onglet === "journal" && estAdmin })
   if (!dossier) notFound()
   const preuvesEnAttente = dossier.preuves.filter(p => p.statut === "en_attente").length
@@ -95,8 +97,9 @@ export default async function FicheEmployePage({ params, searchParams }: {
         <EditEmployeForm
           employe={employe}
           departements={departements}
-          modifiable={modifiable}
-          rolesPossibles={rolesAttribuables(acteur)}
+          modifiable={ficheModifiable}
+          soiMeme={soiMeme}
+          rolesPossibles={soiMeme ? [employe.role] : rolesAttribuables(acteur)}
           cliniquesPossibles={cliniquesAttribuables(acteur)}
           estGestionnaire={acteur.role === "gestionnaire"}
           afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}

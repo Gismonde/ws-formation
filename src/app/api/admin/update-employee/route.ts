@@ -1,7 +1,7 @@
 import { valeursExterne } from '@/lib/membres-externes'
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
-import { getActeur, serviceClient, peutGererEmploye, validerAttribution, ipEtAgent } from '@/lib/permissions'
+import { getActeur, serviceClient, peutModifierFiche, validerAttribution, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { droitsDe, droitsAEnregistrer, changementsDroits, AUCUN_DROIT } from '@/lib/droits'
 
@@ -12,7 +12,8 @@ export async function PUT(request: Request) {
     if (!aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
     const body = await request.json()
-    const { id, prenom, nom, poste, actif } = body
+    const { id, prenom, nom, poste } = body
+    let { actif } = body
     if (!id) return NextResponse.json({ error: 'ID employé manquant' }, { status: 400 })
 
     const sb = serviceClient()
@@ -22,9 +23,12 @@ export async function PUT(request: Request) {
       .eq('id', id)
       .single()
 
-    if (!cible || !peutGererEmploye(acteur, cible)) {
+    if (!cible || !peutModifierFiche(acteur, cible)) {
       return NextResponse.json({ error: 'Accès refusé : employé hors de votre périmètre' }, { status: 403 })
     }
+
+    // Sa propre fiche (administrateur global) : rôle et statut actif verrouillés
+    if (cible.id === acteur.id) { body.role = cible.role; actif = undefined }
 
     // Rôle, clinique et département : on valide la combinaison finale
     const attribution = await validerAttribution(acteur, {

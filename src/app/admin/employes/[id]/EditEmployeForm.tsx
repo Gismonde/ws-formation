@@ -29,6 +29,8 @@ interface Props {
   }
   departements: DepartementOption[]
   modifiable: boolean
+  /** Sa propre fiche : rôle et statut actif verrouillés */
+  soiMeme?: boolean
   rolesPossibles: Role[]
   cliniquesPossibles: CliniqueEmploye[]
   estGestionnaire: boolean
@@ -36,7 +38,7 @@ interface Props {
   postes?: { famille: string; postes: string[] }[]
 }
 
-export default function EditEmployeForm({ employe, departements, modifiable, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, soiMeme = false, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -69,7 +71,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
           externe, organisation,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
-          actif
+          ...(soiMeme ? {} : { actif })
         })
       })
       const data = await res.json()
@@ -77,7 +79,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
         setError(data.error)
       } else {
         setSuccess(true)
-        setTimeout(() => router.push('/admin/employes'), 1500)
+        setTimeout(() => { if (soiMeme) { setSuccess(false); router.refresh() } else router.push('/admin/employes') }, 1500)
       }
     } catch (err) {
       console.error('handleSubmit error:', err)
@@ -104,6 +106,11 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       {!modifiable && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600">
           {t('Consultation seulement : ce dossier est hors de ce que vous pouvez modifier.')}
+        </div>
+      )}
+      {soiMeme && modifiable && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-800">
+          {t('Votre propre fiche : vous pouvez modifier vos informations. Votre rôle et votre statut actif restent verrouillés pour éviter de vous retirer l’accès par erreur.')}
         </div>
       )}
       <fieldset disabled={!modifiable} className="space-y-5">
@@ -141,11 +148,11 @@ export default function EditEmployeForm({ employe, departements, modifiable, rol
       <ChampExterne role={role} clinique={clinique} externe={externe} organisation={organisation}
         setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
         cmcPossible={!estGestionnaire && cliniquesPossibles.includes('CMC')} setClinique={estGestionnaire ? undefined : setClinique} />
-      <div className="flex items-center gap-3">
+      {!soiMeme && <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
         <label htmlFor="actif" className="text-sm font-medium text-gray-700">{t('Employé actif')}</label>
-      </div>
+      </div>}
       </fieldset>
       <div className="flex gap-3 pt-2">
         {modifiable && <button type="submit" disabled={loading}
