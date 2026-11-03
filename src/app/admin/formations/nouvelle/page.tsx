@@ -52,6 +52,7 @@ export default function AssistantFormation() {
   const charge = useRef(false)
   const [repris, setRepris] = useState(false)
   const viaLien = useRef(false)
+  const [quizModifie, setQuizModifie] = useState(false)
 
   const chargerLecons = useCallback(async (fid: string) => {
     const { data } = await createClient().from('modules').select('titre, ordre, lessons(id, titre, ordre, blocs:content_blocks(id))').eq('formation_id', fid)
@@ -93,7 +94,7 @@ export default function AssistantFormation() {
           setB({ ...VIDE, ...d.b })
           if (d.formationId) {
             const { data: f } = await createClient().from('formations').select('id').eq('id', d.formationId).maybeSingle()
-            if (f) { setFormationId(f.id); setRepris(true); const l = await chargerLecons(f.id); if (l[0]) ouvrirLecon(l[0].id); setEtape(d.etape ?? 3) }
+            if (f) { setFormationId(f.id); setRepris(true); const l = await chargerLecons(f.id); if (l[0]) ouvrirLecon(l[0].id); setEtape(Math.max(3, Number(d.etape) || 3)) }
           }
         }
       } catch {}
@@ -154,6 +155,7 @@ export default function AssistantFormation() {
       if (l[0]) await ouvrirLecon(l[0].id)
       return
     }
+    try {
     for (let i = 0; i < b.modules.length; i++) {
       const m = b.modules[i]
       const { data: mod, error: em } = await sb.from('modules').insert({ formation_id: f.id, titre: m.titre.trim(), contenu: m.contenu ?? '', duree_minutes: m.duree, ordre: i + 1 }).select('id').single()
@@ -165,6 +167,11 @@ export default function AssistantFormation() {
       const textes = (ls ?? []).map(x => ({ x, texte: liste[x.ordre - 1]?.texte })).filter(v => v.texte)
       if (textes.length) await sb.from('content_blocks').insert(textes.map(v => ({ lesson_id: v.x.id, type: 'text', contenu: v.texte, ordre: 1 })))
     }
+    } catch (e) {
+      // Échec en cours de route : on retire le brouillon incomplet (un nouvel essai repart proprement)
+      await sb.from('formations').delete().eq('id', f.id)
+      throw e
+    }
     setFormationId(f.id)
     const l = await chargerLecons(f.id)
     if (l[0]) await ouvrirLecon(l[0].id)
@@ -173,6 +180,7 @@ export default function AssistantFormation() {
   async function suivant() {
     setEssai(true)
     if (!valide) return
+    if (etape === 4 && quizModifie) { setErreur(t('Enregistrez d’abord le questionnaire (bouton « Enregistrer le questionnaire » en bas).')); return }
     setErreur(''); setEnCours(true)
     try {
       if (etape <= 1 && formationId) await enregistrerInfos()
@@ -478,7 +486,9 @@ export default function AssistantFormation() {
                         </div>
                       )}
                     </>
-                  ) : <p className="text-gray-400">{t('Chargement…')}</p>}
+                  ) : lecons.length === 0 && formationId
+                    ? <p className="text-gray-500">{t('Aucune leçon dans cette formation. Ajoutez-en dans l’éditeur classique (lien en haut à droite).')}</p>
+                    : <p className="text-gray-400">{t('Chargement…')}</p>}
                 </div>
               </div>
             </div>
@@ -487,7 +497,7 @@ export default function AssistantFormation() {
           {etape === 4 && formationId && (
             <div className="space-y-5">
               <Entete icone="✅" titre={t('Un quiz pour finir')} sous={t('Il vérifie la compréhension et déclenche le certificat. Vous pouvez passer cette étape et l’ajouter plus tard.')} />
-              <EditeurQuestionnaire formationId={formationId} titreFormation={b.titre} />
+              <EditeurQuestionnaire formationId={formationId} titreFormation={b.titre} onModifie={setQuizModifie} />
             </div>
           )}
 

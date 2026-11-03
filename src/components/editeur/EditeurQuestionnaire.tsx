@@ -1,13 +1,13 @@
 'use client'
 // Éditeur du questionnaire de fin de formation : questions, réponses (une bonne réponse), points, seuil et tentatives.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '@/lib/i18n/client'
 import type { QuestionEdition } from '@/lib/questionnaire-edition'
 
 const vide = (): QuestionEdition => ({ texte: '', points: 1, reponses: [{ texte: '', est_correcte: true }, { texte: '', est_correcte: false }] })
 const champ = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
 
-export default function EditeurQuestionnaire({ formationId, titreFormation }: { formationId: string; titreFormation: string }) {
+export default function EditeurQuestionnaire({ formationId, titreFormation, onModifie }: { formationId: string; titreFormation: string; /** true = modifications non enregistrées */ onModifie?: (nonEnregistre: boolean) => void }) {
   const { t } = useT()
   const [charge, setCharge] = useState(false)
   const [titre, setTitre] = useState('')
@@ -17,6 +17,21 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
   const [dejaPasses, setDejaPasses] = useState(0)
   const [etat, setEtat] = useState<'' | 'envoi' | 'ok'>('')
   const [erreur, setErreur] = useState<string | null>(null)
+  const [modifie, setModifie] = useState(false)
+  const initial = useRef(true)
+  useEffect(() => {
+    if (!charge) return
+    if (initial.current) { initial.current = false; return }
+    setModifie(true)
+  }, [titre, seuil, tentatives, questions]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onModifie?.(modifie) }, [modifie, onModifie])
+  // Quitter la page avec des questions non enregistrées : le navigateur demande confirmation
+  useEffect(() => {
+    if (!modifie) return
+    const avant = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', avant)
+    return () => window.removeEventListener('beforeunload', avant)
+  }, [modifie])
 
   useEffect(() => {
     fetch(`/api/admin/formations/${formationId}/questionnaire`).then(async r => {
@@ -45,7 +60,7 @@ export default function EditeurQuestionnaire({ formationId, titreFormation }: { 
     })
     const d = await r.json().catch(() => ({}))
     if (!r.ok) { setEtat(''); setErreur(d.error ?? t('Enregistrement impossible')); return }
-    setEtat('ok')
+    setEtat('ok'); setModifie(false)
   }
 
   if (!charge) return <p className="text-sm text-gray-500">{t('Chargement...')}</p>
