@@ -34,10 +34,16 @@ export default function DupliquerFormation({ formationId, titre, clinique, clini
             <p className="text-sm text-gray-500 mb-4">{t('Modules, leçons, contenus et questionnaire sont copiés. La copie est créée en brouillon, sans assignation.')}</p>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('Titre de la copie')}</label>
             <input value={nom} onChange={e => setNom(e.target.value)} maxLength={300} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3" />
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('Clinique')}</label>
-            <select value={cible} onChange={e => setCible(e.target.value as CliniqueContenu)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4">
-              {cliniques.map(c => <option key={c} value={c}>{t(CLINIQUE_CONTENU_LABEL[c])}</option>)}
-            </select>
+            <p className="block text-sm font-medium text-gray-700 mb-1">{t('Pour quelle clinique ?')}</p>
+            <div className="grid gap-2 mb-4" role="radiogroup">
+              {cliniques.map(c => (
+                <label key={c} className={'flex items-center gap-3 rounded-lg border-2 px-3 py-2 text-sm cursor-pointer ' + (cible === c ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300')}>
+                  <input type="radio" name="clinique-copie" checked={cible === c} onChange={() => setCible(c)} />
+                  <span className="font-medium text-gray-900">{c === 'CMC' ? '🟣' : c === 'WSSC' ? '🔵' : '🟣🔵'} {t(CLINIQUE_CONTENU_LABEL[c])}</span>
+                  {c === clinique && <span className="ml-auto text-xs text-gray-500">{t('clinique actuelle')}</span>}
+                </label>
+              ))}
+            </div>
             {erreur && <p className="text-sm text-red-600 mb-3">{erreur}</p>}
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setOuvert(false)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700">{t('Annuler')}</button>

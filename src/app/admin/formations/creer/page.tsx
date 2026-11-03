@@ -1,7 +1,7 @@
 // Assistant de création d'une formation : choix du point de départ.
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getActeur, peutCreerFormations, serviceClient, cliniquesContenuVisibles, cliniquesContenuGerables } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, serviceClient, cliniquesContenuVisibles, cliniquesContenuGerables, cliniquesContenuGerablesToutes } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
 import CopierExistante from './CopierExistante'
 
@@ -47,7 +47,7 @@ export default async function CreerFormationPage() {
         <div className="mt-6 rounded-2xl border border-dashed border-gray-300 bg-white p-5">
           <p className="font-semibold text-gray-900">⧉ {t('Ou copier une formation existante')}</p>
           <p className="text-sm text-gray-500 mt-1 mb-3">{t('Modules, leçons, contenus et questionnaire sont copiés dans un nouveau brouillon.')}</p>
-          <CopierExistante formations={(formations ?? []) as { id: string; titre: string; clinique: 'CMC' | 'WSSC' | 'LES_DEUX' }[]} cliniques={cliniquesContenuGerables(acteur)} />
+          <CopierExistante formations={(formations ?? []) as { id: string; titre: string; clinique: 'CMC' | 'WSSC' | 'LES_DEUX' }[]} cliniques={cliniquesContenuGerablesToutes(acteur)} />
         </div>
       )}
     </div>

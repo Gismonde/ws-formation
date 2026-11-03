@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
-import { getActeur, peutCreerFormations, cliniquesContenuGerables } from '@/lib/permissions'
+import { getActeur, peutCreerFormations, cliniquesContenuGerables, cliniquesContenuGerablesToutes } from '@/lib/permissions'
 import { peutModifierFormation } from '@/lib/droits-formation'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
@@ -141,7 +141,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             {peutCreer && !copieDe && (
               <div className="flex items-start gap-2">
                 {peutGererCetteFormation && formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
-                <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerables(acteurCourant) : []} />
+                <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerablesToutes(acteurCourant) : []} />
                 {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} />}
               </div>
             )}

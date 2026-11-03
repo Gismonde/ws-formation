@@ -2622,4 +2622,7 @@ export const EN: Record<string, string> = {
   'Ce certificat est fièrement décerné à': 'This certificate is proudly awarded to',
   'FORMATION CERTIFIÉE': 'CERTIFIED TRAINING',
   'de formation': 'of training',
+  'Pour quelle clinique ?': 'For which clinic?',
+  'clinique actuelle': 'current clinic',
+  'Pour quelle clinique ?': 'For which clinic?',
 }
