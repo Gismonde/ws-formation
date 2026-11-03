@@ -1,7 +1,8 @@
 'use client'
 // Création / modification d'un événement en présentiel.
 import { useState } from 'react'
-import { TYPES_EVENEMENT, PLACES_ILLIMITEES, FONDS_EVENEMENT, fondEvenement, typeEvenement, EMOJIS_EVENEMENT, emojiEvenement, type TypeEvenement } from '@/lib/evenements-types'
+import { PLACES_ILLIMITEES, FONDS_EVENEMENT, fondEvenement as fondEv, typeEvenement as typeEv, EMOJIS_EVENEMENT, emojiEvenement as emojiEv, tousLesTypes, type TypeEvenement, type TypePerso } from '@/lib/evenements-types'
+import NouveauType from './NouveauType'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from '@/components/politiques/ChampsCiblage'
@@ -10,6 +11,8 @@ import type { CliniqueEmploye } from '@/lib/cliniques'
 export type OptionsEvenement = {
   /** Bannière en vedette et fond : droit « Mise en page des événements » */
   miseEnPage?: boolean
+  /** Types créés par les admins */
+  typesPerso?: TypePerso[]
   cliniques: CliniqueEmploye[]
   departements: { id: string; nom: string }[]
   postes: string[]
@@ -50,6 +53,11 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [image, setImage] = useState<'repos' | 'envoi'>('repos')
+  const [persos, setPersos] = useState<TypePerso[]>(options.typesPerso ?? [])
+  const [creationType, setCreationType] = useState(false)
+  const typeEvenement = (x: Parameters<typeof typeEv>[0]) => typeEv(x, persos)
+  const fondEvenement = (x: Parameters<typeof fondEv>[0]) => fondEv(x, persos)
+  const emojiEvenement = (x: Parameters<typeof emojiEv>[0]) => emojiEv(x, persos)
   const set = (p: Partial<ValeursEvenement>) => setV(x => ({ ...x, ...p }))
   const input = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
   const label = 'block text-sm font-medium text-gray-700 mb-1'
@@ -102,14 +110,21 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       <div>
         <label className={label}>{t('Type d’événement')}</label>
         <div className="grid gap-2 sm:grid-cols-3">
-          {TYPES_EVENEMENT.map(ty => (
+          {tousLesTypes(persos).map(ty => (
             <button key={ty.id} type="button" onClick={() => set({ type: ty.id })}
               className={'rounded-xl border-2 p-3 text-left transition ' + ((v.type ?? 'formation') === ty.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300')}>
               <span className="text-2xl" aria-hidden>{ty.emoji}</span>
               <span className="block text-sm font-semibold text-gray-900">{t(ty.libelle)}</span>
             </button>
           ))}
+          {!creationType && (
+            <button type="button" onClick={() => setCreationType(true)} className="rounded-xl border-2 border-dashed border-gray-300 p-3 text-left text-gray-500 transition hover:border-indigo-400 hover:text-indigo-700">
+              <span className="text-2xl" aria-hidden>＋</span>
+              <span className="block text-sm font-semibold">{t('Nouveau type')}</span>
+            </button>
+          )}
         </div>
+        {creationType && <NouveauType onAnnuler={() => setCreationType(false)} onCree={tp => { setPersos(p => [...p.filter(x => x.id !== tp.id), tp]); set({ type: tp.id, fond: null }); setCreationType(false) }} />}
       </div>
       <div>
         <label className={label}>{t('Emoji de l’événement')}</label>

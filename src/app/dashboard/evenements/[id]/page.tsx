@@ -58,7 +58,7 @@ export default async function EvenementEmployePage({ params }: { params: Promise
         })()} />
       ) : <InscriptionEvenement
         evenementId={ev.id}
-        participer={typeEvenement(ev).id !== 'formation'}
+        participer={typeEvenement(ev).mode === 'participation'}
         maSeance={ma ? { id: ma.id, statut: mienne!.statut, present: mienne!.present ?? null, peutAnnuler: mienne!.statut === 'attente' || peutSeDesinscrire(ma, ev.desinscription_heures), limite: limiteDesinscription(ma, ev.desinscription_heures).toISOString() } : null}
         seances={seances.filter(s => !s.annulee).map(s => ({ id: s.id, jour: fmt(s.debut), heures: `${h(s.debut)} – ${h(s.fin)}`, lieu: s.lieu, restantes: s.restantes, places: s.places, ouverte: seanceOuverte(s) }))}
       />}

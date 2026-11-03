@@ -4,7 +4,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { evenementsDeLEmploye, seanceOuverte, placesIllimitees, typeEvenement, fondEvenement, emojiEvenement, TYPES_EVENEMENT } from '@/lib/evenements'
+import { evenementsDeLEmploye, seanceOuverte, placesIllimitees, typeEvenement, fondEvenement, emojiEvenement, TYPES_EVENEMENT, type InfoType } from '@/lib/evenements'
 import { i18n } from '@/lib/i18n/serveur'
 import CompteARebours from './CompteARebours'
 
@@ -25,11 +25,14 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
 
   const aVenirTous = liste.filter(x => !x.termine).sort((a, b) => (a.prochaine ?? '9').localeCompare(b.prochaine ?? '9'))
   const passes = liste.filter(x => x.termine)
+  // Types affichés : les trois de base + ceux créés par les admins qui ont des événements
+  const typesPresents: InfoType[] = [...TYPES_EVENEMENT]
+  for (const x of liste) { const ty = typeEvenement(x.ev); if (!typesPresents.some(y => y.id === ty.id)) typesPresents.push(ty) }
   const filtre = (x: X) => !sp.type ? true : sp.type === 'a_venir' ? !!x.ev.date_a_venir && !x.seances.some(s => seanceOuverte(s)) : typeEvenement(x.ev).id === sp.type
   const aVenir = aVenirTous.filter(filtre).filter(x => vue !== 'miennes' || !!x.mienne)
 
   // Participants (initiales) pour les événements sociaux et de la clinique
-  const ids = liste.filter(x => typeEvenement(x.ev).id !== 'formation').map(x => x.ev.id)
+  const ids = liste.filter(x => typeEvenement(x.ev).mode === 'participation').map(x => x.ev.id)
   const { data: ins } = ids.length ? await sb.from('evenements_inscriptions').select('evenement_id, employe_id').in('evenement_id', ids).eq('statut', 'inscrit') : { data: [] }
   const empIds = Array.from(new Set((ins ?? []).map(i => i.employe_id as string)))
   const { data: emps } = empIds.length ? await sb.from('employes').select('id, prenom, nom').in('id', empIds.slice(0, 500)) : { data: [] }
@@ -67,7 +70,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
     if (!ouvertes.length && x.ev.date_a_venir) return <span className="rounded-xl bg-indigo-50 px-3.5 py-2 text-sm font-extrabold text-indigo-700">🔔 {t('Me prévenir')}</span>
     if (!ouvertes.length) return <span className="rounded-xl bg-gray-100 px-3.5 py-2 text-sm font-bold text-gray-600">{t('Inscriptions fermées')}</span>
     if (!ouvertes.some(s => s.restantes > 0)) return <span className="rounded-xl bg-gray-100 px-3.5 py-2 text-sm font-extrabold text-gray-700">{t('Liste d’attente')}</span>
-    return <span className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-white" style={{ background: ty.couleur }}>{ty.id === 'formation' ? t('S’inscrire') : `🎟️ ${t('Je participe')}`}</span>
+    return <span className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-white" style={{ background: ty.couleur }}>{ty.mode === 'inscription' ? t('S’inscrire') : `🎟️ ${t('Je participe')}`}</span>
   }
 
   const Carte = ({ x }: { x: X }) => {
@@ -107,7 +110,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
           </div>
           <div className="mt-auto flex items-end justify-between gap-3 pt-4">
             <div className="min-w-0">
-              {ty.id !== 'formation' ? <Avatars x={x} />
+              {ty.mode === 'participation' ? <Avatars x={x} />
                 : s && !illimite ? (<>
                   <div className={'text-xs font-bold ' + (s.restantes === 0 ? 'text-red-600' : s.restantes <= 3 ? 'text-amber-700' : 'text-green-700')}>{s.restantes === 0 ? t('Complet') : t('{n} place(s) restante(s)', { n: s.restantes })}</div>
                   <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-slate-100"><i className="block h-full" style={{ width: `${Math.round((pris / Math.max(1, s.places)) * 100)}%`, background: s.restantes === 0 ? '#ef4444' : s.restantes <= 3 ? '#f59e0b' : '#22c55e' }} /></div>
@@ -162,9 +165,9 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <span className="rounded-xl bg-white px-5 py-3 text-[15px] font-extrabold shadow-lg" style={{ color: tyV.couleur }}>
-                {vedette.mienne?.statut === 'inscrit' ? `✓ ${t('Vous y serez !')}` : vedette.mienne?.statut === 'attente' ? t('Liste d’attente') : !sV && vedette.ev.date_a_venir ? `🔔 ${t('Me prévenir')}` : tyV.id === 'formation' ? t('S’inscrire') : `🎟️ ${t('Je participe')}`}
+                {vedette.mienne?.statut === 'inscrit' ? `✓ ${t('Vous y serez !')}` : vedette.mienne?.statut === 'attente' ? t('Liste d’attente') : !sV && vedette.ev.date_a_venir ? `🔔 ${t('Me prévenir')}` : tyV.mode === 'inscription' ? t('S’inscrire') : `🎟️ ${t('Je participe')}`}
               </span>
-              {tyV.id !== 'formation' && <Avatars x={vedette} clair />}
+              {tyV.mode === 'participation' && <Avatars x={vedette} clair />}
             </div>
           </div>
           {sV && vedette.ev.compte_a_rebours && (
@@ -184,7 +187,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
 
       {/* Filtres */}
       <div className="mt-6 flex flex-wrap gap-2.5">
-        {[{ id: undefined, l: t('Tous'), n: aVenirTous.length }, ...TYPES_EVENEMENT.map(ty => ({ id: ty.id as string, l: `${ty.emoji} ${t(ty.libelle)}`, n: aVenirTous.filter(x => typeEvenement(x.ev).id === ty.id).length })),
+        {[{ id: undefined, l: t('Tous'), n: aVenirTous.length }, ...typesPresents.map(ty => ({ id: ty.id as string, l: `${ty.emoji} ${t(ty.libelle)}`, n: aVenirTous.filter(x => typeEvenement(x.ev).id === ty.id).length })),
           { id: 'a_venir', l: `📅 ${t('Dates à venir')}`, n: aVenirTous.filter(x => x.ev.date_a_venir && !x.seances.some(s => seanceOuverte(s))).length }]
           .filter(c => c.id === undefined || c.n > 0 || sp.type === c.id).map(c => (
             <Link key={c.id ?? 'tous'} href={lien({ type: c.id })} className={'flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-bold ' + (sp.type === c.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300')}>
@@ -240,7 +243,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
                 })}
               </div>
               <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
-                {TYPES_EVENEMENT.map(ty => <span key={ty.id}><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full" style={{ background: ty.couleur }} />{t(ty.court)}</span>)}
+                {typesPresents.map(ty => <span key={ty.id}><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full" style={{ background: ty.couleur }} />{t(ty.court)}</span>)}
               </div>
             </>
           )}

@@ -58,7 +58,7 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
       ...(c.places_prevues === null ? { places_prevues: null } : Number.isFinite(Number(c.places_prevues)) && c.places_prevues !== undefined && c.places_prevues !== '' ? { places_prevues: Math.min(1000, Math.max(1, Math.round(Number(c.places_prevues)))) } : {}),
       ...(typeof c.compte_a_rebours === 'boolean' ? { compte_a_rebours: c.compte_a_rebours } : {}),
-      ...(c.type === 'formation' || c.type === 'social' || c.type === 'clinique' ? { type: c.type } : {}),
+      ...(typeof c.type === 'string' && (['formation', 'social', 'clinique'].includes(c.type) || /^[0-9a-f-]{36}$/i.test(c.type)) ? { type: c.type } : {}),
       ...(peutMettreEnPageEvenements(a) && typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
       ...(c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond)) ? { fond: c.fond } : {}),
       ...(c.emoji === null || typeof c.emoji === 'string' ? { emoji: typeof c.emoji === 'string' && c.emoji.trim() ? c.emoji.trim().slice(0, 8) : null } : {}),
@@ -152,12 +152,14 @@ export async function optionsEvenement(sb: SupabaseClient, a: Acteur) {
     optionsCiblage(sb, a),
     sb.from('formations').select('id, titre').eq('publiee', true).in('clinique', cliniquesContenuVisibles(a)).order('titre'),
   ])
-  return { miseEnPage: peutMettreEnPageEvenements(a), cliniques: cliniquesEvenement(a), departements: o.departements, postes: o.postes, familles: o.familles, employes: o.employes, formations: (formations ?? []) as { id: string; titre: string }[] }
+  const { typesPerso } = await import('@/lib/evenements')
+  return { typesPerso: await typesPerso(sb), miseEnPage: peutMettreEnPageEvenements(a), cliniques: cliniquesEvenement(a), departements: o.departements, postes: o.postes, familles: o.familles, employes: o.employes, formations: (formations ?? []) as { id: string; titre: string }[] }
 }
 
 /** Événements que cette personne peut gérer (liste admin). */
 export async function evenementsGerables(sb: SupabaseClient, a: Acteur) {
   const { CHAMPS_EVENEMENT } = await import('@/lib/evenements')
   const { data } = await sb.from('evenements').select(CHAMPS_EVENEMENT).order('created_at', { ascending: false })
-  return ((data ?? []) as unknown as Evenement[]).filter(ev => peutGererEvenement(a, ev))
+  const { joindreTypesPerso } = await import('@/lib/evenements')
+  return joindreTypesPerso(sb, ((data ?? []) as unknown as Evenement[]).filter(ev => peutGererEvenement(a, ev)))
 }
