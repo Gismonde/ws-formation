@@ -2612,4 +2612,10 @@ export const EN: Record<string, string> = {
   'Ajoutez au moins une date, ou cochez « Date à venir ».': 'Add at least one date, or check “Date to be announced”.',
   'Annoncez l’événement avant d’en connaître la date. Les employés peuvent demander à être prévenus ; dès que vous ajoutez une date, ils reçoivent un courriel.': 'Announce the event before its date is known. Employees can ask to be notified; as soon as you add a date, they get an email.',
   'La date de cet événement n’est pas encore fixée. Demandez à être prévenu(e) : vous recevrez un courriel dès qu’elle sera annoncée.': 'This event’s date is not set yet. Ask to be notified: you will get an email as soon as it is announced.',
+  'Responsable du suivi': 'Follow-up owner',
+  '👤 Assigner à…': '👤 Assign to…',
+  'Moi-même': 'Myself',
+  'Assignées à moi': 'Assigned to me',
+  'Assignée à moi': 'Assigned to me',
+  'Assignée à {nom}': 'Assigned to {nom}',
 }

@@ -26,6 +26,8 @@ export type Suggestion = {
   id: string; type: TypeSuggestion; formation_id: string | null; sujet: string | null; message: string
   employe_id: string | null; anonyme: boolean; clinique: string | null; statut: StatutSuggestion
   reponse: string | null; repondu_le: string | null; created_at: string
+  /** Administrateur responsable du suivi (migration suggestions_assignation.sql) */
+  assigne_a?: string | null; assigne_le?: string | null
 }
 
 /** Empreinte non réversible de l'auteur (sel secret côté serveur) */

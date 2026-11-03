@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { STATUTS_SUGGESTION, type StatutSuggestion } from '@/lib/suggestions'
 
-export default function TraiterSuggestion({ id, statut, reponse, anonyme }: { id: string; statut: StatutSuggestion; reponse: string | null; anonyme: boolean }) {
+export default function TraiterSuggestion({ id, statut, reponse, anonyme, assigneA, admins = [], moi }: {
+  id: string; statut: StatutSuggestion; reponse: string | null; anonyme: boolean
+  /** Administrateur responsable (undefined : colonne absente) */
+  assigneA?: string | null
+  admins?: { id: string; nom: string }[]
+  moi: string
+}) {
   const { t } = useT()
   const router = useRouter()
   const [s, setS] = useState(statut)
   const [r, setR] = useState(reponse ?? '')
+  const [assigne, setAssigne] = useState(assigneA ?? '')
   const [etat, setEtat] = useState<'ok' | 'envoi' | 'enregistre' | string>('ok')
   const enregistrer = async (corps: Record<string, unknown>) => {
     setEtat('envoi')
@@ -20,6 +27,12 @@ export default function TraiterSuggestion({ id, statut, reponse, anonyme }: { id
   }
   return (
     <div className="mt-3 flex flex-wrap items-start gap-2">
+      {assigneA !== undefined && <select value={assigne} onChange={e => { setAssigne(e.target.value); enregistrer({ assigne_a: e.target.value || null }) }} title={t('Responsable du suivi')}
+        className={'border rounded-lg px-2 py-1.5 text-sm ' + (assigne ? 'border-indigo-300 bg-indigo-50 text-indigo-900' : 'border-gray-300')}>
+        <option value="">{t('👤 Assigner à…')}</option>
+        <option value={moi}>{t('Moi-même')}</option>
+        {admins.filter(a => a.id !== moi).map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
+      </select>}
       <select value={s} onChange={e => { setS(e.target.value as StatutSuggestion); enregistrer({ statut: e.target.value }) }} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
         {STATUTS_SUGGESTION.map(x => <option key={x.id} value={x.id}>{t(x.libelle)}</option>)}
       </select>

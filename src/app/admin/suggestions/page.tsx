@@ -8,7 +8,7 @@ import { i18n } from '@/lib/i18n/serveur'
 
 // Suggestions des employés : demandes de formation et commentaires (administrateurs de la clinique),
 // idées pour la plateforme (administrateur global).
-export default async function SuggestionsAdminPage({ searchParams }: { searchParams: Promise<{ statut?: string; type?: string }> }) {
+export default async function SuggestionsAdminPage({ searchParams }: { searchParams: Promise<{ statut?: string; type?: string; assignees?: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!estAdministrateur(acteur.role)) redirect('/admin')
@@ -17,13 +17,19 @@ export default async function SuggestionsAdminPage({ searchParams }: { searchPar
   const sb = serviceClient()
   const { data, error } = await sb.from('suggestions').select('*').order('created_at', { ascending: false }).limit(500)
   const visibles = ((data ?? []) as Suggestion[]).filter(s => peutTraiterSuggestion(acteur, s))
-  const liste = visibles.filter(s => (!sp.statut ? s.statut !== 'realisee' && s.statut !== 'refusee' : sp.statut === 'toutes' || s.statut === sp.statut) && (!sp.type || s.type === sp.type))
+  const liste = visibles.filter(s => (!sp.statut ? s.statut !== 'realisee' && s.statut !== 'refusee' : sp.statut === 'toutes' || s.statut === sp.statut) && (!sp.type || s.type === sp.type)
+    && (sp.assignees !== 'moi' || s.assigne_a === acteur.id))
+  // Administrateurs à qui une suggestion peut être assignée
+  const { data: adm } = await sb.from('employes').select('id, prenom, nom, role, clinique, actif').in('role', ['admin', 'super_admin']).or('actif.is.null,actif.eq.true').order('prenom')
+  const admins = (adm ?? []).map(a => ({ ...a, libelle: `${a.prenom ?? ''} ${a.nom ?? ''}`.trim() + (a.role === 'super_admin' ? ` (${t('admin global')})` : '') }))
+  const colonneAssignation = (data ?? []).length === 0 || 'assigne_a' in ((data ?? [])[0] ?? {})
   const ids = Array.from(new Set(liste.flatMap(s => [s.employe_id, s.formation_id]).filter(Boolean))) as string[]
   const [{ data: emps }, { data: fos }] = await Promise.all([
     ids.length ? sb.from('employes').select('id, prenom, nom').in('id', ids) : Promise.resolve({ data: [] as { id: string; prenom: string; nom: string }[] }),
     ids.length ? sb.from('formations').select('id, titre').in('id', ids) : Promise.resolve({ data: [] as { id: string; titre: string }[] }),
   ])
   const nom = (id: string | null) => { const e = (emps ?? []).find(x => x.id === id); return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : null }
+  const nomAdmin = (id: string | null | undefined) => admins.find(a => a.id === id)?.libelle ?? null
   const formation = (id: string | null) => (fos ?? []).find(x => x.id === id)
   const lien = (p: Record<string, string | undefined>) => '/admin/suggestions?' + new URLSearchParams(Object.entries({ ...sp, ...p }).filter(([, v]) => v) as [string, string][]).toString()
   const compte = (st: string) => visibles.filter(s => s.statut === st).length
@@ -41,6 +47,7 @@ export default async function SuggestionsAdminPage({ searchParams }: { searchPar
             <Link href={lien({ statut: undefined })} className={puce(!sp.statut)}>{t('À traiter')} ({visibles.filter(s => s.statut !== 'realisee' && s.statut !== 'refusee').length})</Link>
             {STATUTS_SUGGESTION.map(x => <Link key={x.id} href={lien({ statut: x.id })} className={puce(sp.statut === x.id)}>{t(x.libelle)} ({compte(x.id)})</Link>)}
             <Link href={lien({ statut: 'toutes' })} className={puce(sp.statut === 'toutes')}>{t('Toutes')}</Link>
+            {colonneAssignation && <Link href={lien({ assignees: sp.assignees === 'moi' ? undefined : 'moi' })} className={puce(sp.assignees === 'moi')}>👤 {t('Assignées à moi')} ({visibles.filter(s => s.assigne_a === acteur.id && s.statut !== 'realisee' && s.statut !== 'refusee').length})</Link>}
           </div>
           <div className="flex flex-wrap gap-2 mb-5">
             <Link href={lien({ type: undefined })} className={puce(!sp.type)}>{t('Tous les types')}</Link>
@@ -58,13 +65,16 @@ export default async function SuggestionsAdminPage({ searchParams }: { searchPar
                       <span>{ty.icone}</span>
                       <span className="font-semibold text-gray-900">{s.sujet || (f ? f.titre : t(ty.libelle))}</span>
                       {f && <Link href={`/admin/formations/${f.id}`} className="text-xs text-indigo-600 hover:underline">{t('Voir la formation')}</Link>}
-                      <span className={'ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ' + st.couleur}>{t(st.libelle)}</span>
+                      {s.assigne_a && <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800">👤 {s.assigne_a === acteur.id ? t('Assignée à moi') : t('Assignée à {nom}', { nom: nomAdmin(s.assigne_a) ?? '—' })}</span>}
+                      <span className={(s.assigne_a ? '' : 'ml-auto ') + 'text-xs font-semibold px-2 py-0.5 rounded-full ' + st.couleur}>{t(st.libelle)}</span>
                     </div>
                     <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">{s.message}</p>
                     <p className="text-xs text-gray-400 mt-2">
                       {t(ty.libelle)} · {new Date(s.created_at).toLocaleDateString(loc, { dateStyle: 'medium' })} · {s.anonyme ? t('Anonyme') : (nom(s.employe_id) ?? '—')}{s.clinique && s.clinique !== 'LES_DEUX' ? ' · ' + s.clinique : ''}
                     </p>
-                    <TraiterSuggestion id={s.id} statut={s.statut} reponse={s.reponse} anonyme={s.anonyme} />
+                    <TraiterSuggestion id={s.id} statut={s.statut} reponse={s.reponse} anonyme={s.anonyme} moi={acteur.id}
+                      assigneA={colonneAssignation ? (s.assigne_a ?? null) : undefined}
+                      admins={admins.filter(a => peutTraiterSuggestion(a, s)).map(a => ({ id: a.id, nom: a.libelle }))} />
                   </li>
                 )
               })}
