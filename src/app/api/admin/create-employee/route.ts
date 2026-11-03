@@ -1,3 +1,4 @@
+import { droitMiseEnPagePossible } from '@/lib/evenements-types'
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, validerAttribution, ipEtAgent } from '@/lib/permissions'
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       ...((acteur.role === 'super_admin' || acteur.role === 'admin') ? droitsAEnregistrer(role, body, undefined, clinique) : AUCUN_DROIT),
       // Gestion des formulaires (WSSC) : accordée seulement par l'administrateur global
       ...(acteur.role === 'super_admin' && body.peut_creer_formulaires === true && droitFormulairesPossible(role, clinique) ? { peut_creer_formulaires: true } : {}),
+      ...(acteur.role === 'super_admin' && body.peut_mise_en_page_evenements === true && droitMiseEnPagePossible(role, body.peut_creer_evenements === true) ? { peut_mise_en_page_evenements: true } : {}),
       actif: true,
     })
     .select('id')

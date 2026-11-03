@@ -1,5 +1,7 @@
 'use client'
 import CaseGestionFormulaires from '@/components/formulaires/CaseGestionFormulaires'
+import CaseMiseEnPageEvenements from '@/components/CaseMiseEnPageEvenements'
+import { droitMiseEnPagePossible } from '@/lib/evenements-types'
 import { droitFormulairesPossible } from '@/lib/formulaires'
 import { useT } from '@/lib/i18n/client'
 import { useState } from 'react'
@@ -39,6 +41,8 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const [droits, setDroits] = useState<Droits>({ ...AUCUN_DROIT })
   const [formulaires, setFormulaires] = useState(false)
+  const [miseEnPage, setMiseEnPage] = useState(false)
+  const miseEnPagePossible = droitFormulaires && droitMiseEnPagePossible(form.role, droits.peut_creer_evenements)
   const [externe, setExterne] = useState(false)
   const [organisation, setOrganisation] = useState('')
 
@@ -50,7 +54,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
       const res = await fetch('/api/admin/create-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, externe, organisation, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}), ...(droitFormulaires && droitFormulairesPossible(form.role, form.clinique) ? { peut_creer_formulaires: formulaires } : {}) })
+        body: JSON.stringify({ ...form, externe, organisation, ...(afficherAutorisationCreation && form.role === 'gestionnaire' ? droits : {}), ...(droitFormulaires && droitFormulairesPossible(form.role, form.clinique) ? { peut_creer_formulaires: formulaires } : {}), ...(miseEnPagePossible ? { peut_mise_en_page_evenements: miseEnPage } : {}) })
       })
       const data = await res.json()
       if (data.error) {
@@ -137,6 +141,7 @@ export default function NouvelEmployeForm({ departements, rolesPossibles, cliniq
         droits={droits} setDroits={setDroits}
       />
       {droitFormulaires && droitFormulairesPossible(form.role, form.clinique) && <CaseGestionFormulaires coche={formulaires} onChange={setFormulaires} />}
+      {miseEnPagePossible && <CaseMiseEnPageEvenements coche={miseEnPage} onChange={setMiseEnPage} />}
       <ChampExterne role={form.role} clinique={form.clinique} externe={externe} organisation={organisation}
         setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
         cmcPossible={cliniquesPossibles.includes('CMC')} setClinique={v => set('clinique', v)} />

@@ -1,5 +1,7 @@
 'use client'
 import CaseGestionFormulaires from '@/components/formulaires/CaseGestionFormulaires'
+import CaseMiseEnPageEvenements from '@/components/CaseMiseEnPageEvenements'
+import { droitMiseEnPagePossible } from '@/lib/evenements-types'
 import { droitFormulairesPossible } from '@/lib/formulaires'
 import { useT } from '@/lib/i18n/client'
 import { droitsDe, type Droits } from '@/lib/droits'
@@ -35,6 +37,8 @@ interface Props {
   soiMeme?: boolean
   /** L'administrateur global peut donner le droit de créer des formulaires à un administrateur */
   droitFormulaires?: boolean
+  /** Administrateur global : peut accorder « Mise en page des événements » */
+  droitMiseEnPage?: boolean
   rolesPossibles: Role[]
   cliniquesPossibles: CliniqueEmploye[]
   estGestionnaire: boolean
@@ -42,7 +46,7 @@ interface Props {
   postes?: { famille: string; postes: string[] }[]
 }
 
-export default function EditEmployeForm({ employe, departements, modifiable, soiMeme = false, droitFormulaires = false, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, soiMeme = false, droitFormulaires = false, droitMiseEnPage = false, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -59,6 +63,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
   const [externe, setExterne] = useState(!!employe.externe)
   const [organisation, setOrganisation] = useState(employe.organisation ?? '')
   const [formulaires, setFormulaires] = useState((employe as { peut_creer_formulaires?: boolean }).peut_creer_formulaires === true)
+  const [miseEnPage, setMiseEnPage] = useState((employe as { peut_mise_en_page_evenements?: boolean }).peut_mise_en_page_evenements === true)
+  const miseEnPagePossible = droitMiseEnPage && droitMiseEnPagePossible(role, droits.peut_creer_evenements)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -77,7 +83,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
           ...(soiMeme ? {} : { actif }),
-          ...(droitFormulaires && droitFormulairesPossible(role, clinique) ? { peut_creer_formulaires: formulaires } : {})
+          ...(droitFormulaires && droitFormulairesPossible(role, clinique) ? { peut_creer_formulaires: formulaires } : {}),
+          ...(miseEnPagePossible ? { peut_mise_en_page_evenements: miseEnPage } : {})
         })
       })
       const data = await res.json()
@@ -155,6 +162,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
         setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
         cmcPossible={!estGestionnaire && cliniquesPossibles.includes('CMC')} setClinique={estGestionnaire ? undefined : setClinique} />
       {droitFormulaires && droitFormulairesPossible(role, clinique) && <CaseGestionFormulaires coche={formulaires} onChange={setFormulaires} />}
+      {miseEnPagePossible && <CaseMiseEnPageEvenements coche={miseEnPage} onChange={setMiseEnPage} />}
       {!soiMeme && <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-indigo-600 rounded border-gray-300" />

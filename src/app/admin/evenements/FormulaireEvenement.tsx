@@ -8,6 +8,8 @@ import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from
 import type { CliniqueEmploye } from '@/lib/cliniques'
 
 export type OptionsEvenement = {
+  /** Bannière en vedette et fond : droit « Mise en page des événements » */
+  miseEnPage?: boolean
   cliniques: CliniqueEmploye[]
   departements: { id: string; nom: string }[]
   postes: string[]
@@ -103,6 +105,7 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
           ))}
         </div>
       </div>
+      {options.miseEnPage && <>
       <div>
         <label className={label}>{t('Fond de la carte et de la bannière')}</label>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
@@ -126,6 +129,7 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
         <input type="checkbox" className="mt-0.5" checked={!!v.en_vedette} onChange={e => set({ en_vedette: e.target.checked })} />
         <span className="text-sm"><strong>⭐ {t('Mettre en vedette')}</strong><span className="block text-xs text-gray-500">{t('Affiché en grande bannière, avec compte à rebours, en haut de la page Événements des employés.')}</span></span>
       </label>
+      </>}
       <div>
         <label className={label}>{t('Titre *')}</label>
         <input className={input} value={v.titre} onChange={e => set({ titre: e.target.value })} maxLength={200} placeholder={t('Ex. : Formation RCR — mise à jour annuelle')} />

@@ -27,3 +27,7 @@ const FOND_PAR_TYPE: Record<TypeEvenement, string> = { formation: 'ocean', socia
 /** Fond choisi par l'admin, sinon celui du type. */
 export const fondEvenement = (ev: { type?: string | null; fond?: string | null }): FondEvenement =>
   FONDS_EVENEMENT.find(f => f.id === ev.fond) ?? FONDS_EVENEMENT.find(f => f.id === FOND_PAR_TYPE[typeEvenement(ev).id])!
+
+/** Le droit « Mise en page des événements » peut être donné à qui peut créer des événements (admin, ou gestionnaire autorisé). */
+export const droitMiseEnPagePossible = (role: string, peutCreerEvenements?: boolean | null) =>
+  role === 'admin' || (role === 'gestionnaire' && peutCreerEvenements === true)
