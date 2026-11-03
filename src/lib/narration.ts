@@ -10,6 +10,17 @@ export function narrationDe(b: BlocLu): string | null {
   return typeof n === 'string' && n.trim() ? n.trim() : null
 }
 
+/** Fichier audio enregistré pour un bloc (référence « media:… » ou adresse), ou null. */
+export function audioDe(b: BlocLu): string | null {
+  const a = b.metadata?.audio
+  return typeof a === 'string' && a.trim() ? a.trim() : null
+}
+
+/** Fichiers audio d'une suite de blocs, dans l'ordre. */
+export function audiosDe(blocs: BlocLu[]): string[] {
+  return blocs.map(audioDe).filter((a): a is string => !!a)
+}
+
 /** Nettoie le Markdown / HTML pour la synthèse vocale. */
 export function texteParlable(brut: string): string {
   return brut
@@ -26,10 +37,14 @@ export function texteParlable(brut: string): string {
     .trim()
 }
 
-/** Ce que la voix lit pour une suite de blocs : la narration si elle existe, sinon le texte affiché. */
+/**
+ * Ce que la voix de synthèse lit pour une suite de blocs : la narration si elle existe, sinon le texte affiché.
+ * Un bloc qui a son propre fichier audio n'est pas lu (son fichier le remplace).
+ */
 export function texteAudio(blocs: BlocLu[], intro?: string | null): string {
   const parties = [intro ?? '']
   for (const b of blocs) {
+    if (audioDe(b)) continue
     const n = narrationDe(b)
     if (n) parties.push(n)
     else if (b.type === 'text' && b.contenu) parties.push(b.contenu)

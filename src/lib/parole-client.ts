@@ -20,6 +20,9 @@ export function useParole() {
   const [disponible, setDisponible] = useState(true)
   const voix = useRef<SpeechSynthesisVoice | null>(null)
   const generation = useRef(0)
+  const lecteur = useRef<HTMLAudioElement | null>(null) // fichiers audio (MP3…)
+  const vitesseRef = useRef(1)
+  vitesseRef.current = vitesse
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) { setDisponible(false); return }
@@ -30,19 +33,53 @@ export function useParole() {
       window.speechSynthesis.removeEventListener('voiceschanged', charger)
       generation.current++
       window.speechSynthesis.cancel()
+      lecteur.current?.pause()
     }
   }, [])
+
+  // La vitesse s'applique aussi au fichier en cours
+  useEffect(() => { if (lecteur.current) lecteur.current.playbackRate = vitesse }, [vitesse])
+
+  const couperFichier = () => { if (lecteur.current) { lecteur.current.onended = null; lecteur.current.pause() } }
 
   const arreter = useCallback(() => {
     generation.current++
     if (typeof window !== 'undefined') window.speechSynthesis?.cancel()
+    couperFichier()
     setEtat('arret')
+  }, [])
+
+  /** Joue des fichiers audio l'un après l'autre. */
+  const jouer = useCallback((urls: string[], onFin?: () => void) => {
+    const g = ++generation.current
+    window.speechSynthesis?.cancel()
+    couperFichier()
+    if (!urls.length) { setEtat('arret'); return }
+    setBloque(false)
+    if (!lecteur.current) lecteur.current = new Audio()
+    const a = lecteur.current
+    let i = 0
+    const suivant = () => {
+      if (g !== generation.current) return
+      if (i >= urls.length) { setEtat('arret'); onFin?.(); return }
+      a.src = urls[i++]
+      a.playbackRate = vitesseRef.current
+      a.onended = suivant
+      a.play().then(() => { if (g === generation.current) setEtat('lecture') }).catch(e => {
+        if (g !== generation.current) return
+        if ((e as DOMException).name === 'NotAllowedError') { setBloque(true); setEtat('arret') }
+        else suivant()
+      })
+    }
+    setEtat('lecture')
+    suivant()
   }, [])
 
   const lire = useCallback((texte: string, onFin?: () => void) => {
     if (!window.speechSynthesis) return
     const g = ++generation.current
     window.speechSynthesis.cancel()
+    couperFichier()
     const file = morceaux(texte)
     if (!file.length) { setEtat('arret'); return }
     setBloque(false)
@@ -66,8 +103,15 @@ export function useParole() {
     suivant()
   }, [vitesse])
 
-  const pause = useCallback(() => { window.speechSynthesis?.pause(); setEtat('pause') }, [])
-  const reprendre = useCallback(() => { window.speechSynthesis?.resume(); setEtat('lecture') }, [])
+  const pause = useCallback(() => {
+    if (lecteur.current && !lecteur.current.paused) lecteur.current.pause(); else window.speechSynthesis?.pause()
+    setEtat('pause')
+  }, [])
+  const reprendre = useCallback(() => {
+    if (lecteur.current && lecteur.current.src && lecteur.current.paused && !lecteur.current.ended && lecteur.current.currentTime > 0) lecteur.current.play().catch(() => {})
+    else window.speechSynthesis?.resume()
+    setEtat('lecture')
+  }, [])
 
-  return { etat, lire, pause, reprendre, arreter, vitesse, setVitesse, bloque, setBloque, disponible }
+  return { etat, lire, jouer, pause, reprendre, arreter, vitesse, setVitesse, bloque, setBloque, disponible }
 }
