@@ -1,11 +1,11 @@
 // Gestion d'un événement. PATCH { action, ... } — auteur ou administrateur de ses cliniques.
-//   modifier | publier | annuler | ajouter_seance | modifier_seance | annuler_seance | presence | retirer_inscription
+//   modifier | publier | annuler | archiver | desarchiver | ajouter_seance | modifier_seance | annuler_seance | presence | retirer_inscription
 // DELETE : supprimer un brouillon.
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
 import { origineDepuis } from '@/lib/courriels'
-import { chargerEvenement, seanceOuverte, type Seance } from '@/lib/evenements'
+import { chargerEvenement, seanceOuverte, peutArchiver, type Seance } from '@/lib/evenements'
 import { peutGererEvenement, validerEvenement, validerSeance, promouvoirListeAttente, enregistrerPresence, desinscrire } from '@/lib/evenements-admin'
 import { annoncerEvenement, avertirChangementSeance, avertirAnnulationEvenement, avertirPromotion, avertirInteresses } from '@/lib/evenements-courriels'
 
@@ -52,6 +52,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       await sb.from('evenements_inscriptions').update({ statut: 'annule', annule_le: new Date().toISOString() }).eq('evenement_id', id).neq('statut', 'annule')
       await journal(`Événement annulé : ${ev.titre}`)
       return NextResponse.json({ ok: true, courriels })
+    }
+    case 'archiver':
+    case 'desarchiver': {
+      const archiver = corps.action === 'archiver'
+      if (archiver && !peutArchiver(ev, seances)) return NextResponse.json({ error: 'Seuls les événements annulés ou passés peuvent être archivés.' }, { status: 400 })
+      const { error } = await sb.from('evenements').update({ archive_le: archiver ? new Date().toISOString() : null }).eq('id', id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await journal(`Événement ${archiver ? 'archivé' : 'désarchivé'} : ${ev.titre}`)
+      return NextResponse.json({ ok: true })
     }
     case 'ajouter_seance': {
       const v = validerSeance(corps)

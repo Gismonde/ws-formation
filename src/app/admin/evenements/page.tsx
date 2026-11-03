@@ -2,19 +2,22 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient, peutCreerEvenements } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
-import { evenementsDisponibles, placesRestantes, typeEvenement, type Seance, type Inscription } from '@/lib/evenements'
+import { evenementsDisponibles, placesRestantes, typeEvenement, peutArchiver, type Seance, type Inscription } from '@/lib/evenements'
 import { evenementsGerables } from '@/lib/evenements-admin'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EvenementsAdminPage() {
+export default async function EvenementsAdminPage({ searchParams }: { searchParams: Promise<{ archives?: string }> }) {
+  const archives = (await searchParams).archives === '1'
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutCreerEvenements(acteur)) redirect('/admin')
   const { t, loc } = await i18n()
   const sb = serviceClient()
   if (!(await evenementsDisponibles(sb))) return <p className="text-sm text-amber-700">{t('Module événements non activé (migration manquante).')}</p>
-  const evs = await evenementsGerables(sb, acteur)
+  const tous = await evenementsGerables(sb, acteur)
+  const evs = tous.filter(e => !!e.archive_le === archives)
+  const nbArchives = tous.filter(e => !!e.archive_le).length
   const ids = evs.map(e => e.id)
   const [{ data: ss }, { data: ins }] = ids.length
     ? await Promise.all([sb.from('evenements_seances').select('*').in('evenement_id', ids).order('debut'), sb.from('evenements_inscriptions').select('seance_id, evenement_id, statut').in('evenement_id', ids)])
@@ -33,8 +36,12 @@ export default async function EvenementsAdminPage() {
         </div>
         <Link href="/admin/evenements/nouveau" className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">{t('+ Nouvel événement')}</Link>
       </div>
+      <nav className="mb-4 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 text-sm font-semibold w-fit">
+        <Link href="/admin/evenements" className={'rounded-lg px-4 py-2 ' + (!archives ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:text-gray-900')}>{t('Événements')}</Link>
+        <Link href="/admin/evenements?archives=1" className={'rounded-lg px-4 py-2 ' + (archives ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:text-gray-900')}>🗄️ {t('Archivés')} {nbArchives ? <span className="ml-1 rounded-full bg-black/10 px-1.5 text-xs">{nbArchives}</span> : null}</Link>
+      </nav>
       {evs.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center text-sm text-gray-500">{t('Aucun événement pour le moment.')}</div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center text-sm text-gray-500">{archives ? t('Aucun événement archivé.') : t('Aucun événement pour le moment.')}</div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {evs.map(ev => {
@@ -51,6 +58,7 @@ export default async function EvenementsAdminPage() {
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className={'text-xs font-semibold px-2 py-0.5 rounded-full ' + cls}>{l}</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: typeEvenement(ev).fond, color: typeEvenement(ev).couleur }}>{typeEvenement(ev).emoji} {t(typeEvenement(ev).court)}</span>
+                    {!archives && 'archive_le' in ev && peutArchiver(ev, seances.filter(s => s.evenement_id === ev.id)) && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">🗄️ {t('À archiver')}</span>}
                     {ev.en_vedette && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">⭐ {t('En vedette')}</span>}
                     {ev.obligatoire && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">{t('Obligatoire')}</span>}
                   </div>

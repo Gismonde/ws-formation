@@ -16,7 +16,7 @@ const champsDate = (iso: string) => {
 }
 
 export default function GestionEvenement({ evenement, seances, inscriptions }: {
-  evenement: { id: string; titre: string; statut: string; aFormation: boolean; placesPrevues?: number | null; dateAVenir?: boolean }
+  evenement: { id: string; titre: string; statut: string; aFormation: boolean; placesPrevues?: number | null; dateAVenir?: boolean; archivable?: boolean; archive?: boolean }
   seances: SeanceVue[]
   inscriptions: InscriptionVue[]
 }) {
@@ -71,6 +71,14 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
             if (await confirmer({ titre: t('Annuler l’événement'), message: t('Toutes les inscriptions seront annulées et les personnes inscrites prévenues par courriel.'), bouton: t('Annuler l’événement'), danger: true }))
               agir({ action: 'annuler' }, () => t('Événement annulé.'))
           }} className="text-sm px-4 py-2 rounded-lg border border-red-300 text-red-700 bg-white">{t('Annuler l’événement')}</button>
+        )}
+        {evenement.archive ? (
+          <button type="button" disabled={envoi} onClick={() => agir({ action: 'desarchiver' }, () => t('Événement désarchivé.'))} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white">📤 {t('Désarchiver')}</button>
+        ) : evenement.archivable && (
+          <button type="button" disabled={envoi} onClick={async () => {
+            if (await confirmer({ titre: t('Archiver l’événement'), message: t('L’événement passera dans la liste des archives et disparaîtra du portail des employés. Vous pourrez le désarchiver.'), bouton: t('Archiver') }))
+              agir({ action: 'archiver' }, () => t('Événement archivé.'))
+          }} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white">🗄️ {t('Archiver')}</button>
         )}
         {evenement.statut === 'brouillon' && (
           <button type="button" disabled={envoi} onClick={async () => {
