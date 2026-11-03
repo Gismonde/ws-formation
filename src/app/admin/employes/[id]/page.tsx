@@ -99,6 +99,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           departements={departements}
           modifiable={ficheModifiable}
           soiMeme={soiMeme}
+          droitFormulaires={acteur.role === "super_admin" && "peut_creer_formulaires" in employe}
           rolesPossibles={soiMeme ? [employe.role] : rolesAttribuables(acteur)}
           cliniquesPossibles={cliniquesAttribuables(acteur)}
           estGestionnaire={acteur.role === "gestionnaire"}

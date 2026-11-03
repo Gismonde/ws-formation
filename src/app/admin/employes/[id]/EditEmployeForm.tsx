@@ -31,6 +31,8 @@ interface Props {
   modifiable: boolean
   /** Sa propre fiche : rôle et statut actif verrouillés */
   soiMeme?: boolean
+  /** L'administrateur global peut donner le droit de créer des formulaires à un administrateur */
+  droitFormulaires?: boolean
   rolesPossibles: Role[]
   cliniquesPossibles: CliniqueEmploye[]
   estGestionnaire: boolean
@@ -38,7 +40,7 @@ interface Props {
   postes?: { famille: string; postes: string[] }[]
 }
 
-export default function EditEmployeForm({ employe, departements, modifiable, soiMeme = false, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
+export default function EditEmployeForm({ employe, departements, modifiable, soiMeme = false, droitFormulaires = false, rolesPossibles, cliniquesPossibles, estGestionnaire, afficherAutorisationCreation, postes = [] }: Props) {
   const { t } = useT()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -54,6 +56,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
   const [droits, setDroits] = useState<Droits>(droitsDe(employe))
   const [externe, setExterne] = useState(!!employe.externe)
   const [organisation, setOrganisation] = useState(employe.organisation ?? '')
+  const [formulaires, setFormulaires] = useState((employe as { peut_creer_formulaires?: boolean }).peut_creer_formulaires === true)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,7 +74,8 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
           externe, organisation,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
-          ...(soiMeme ? {} : { actif })
+          ...(soiMeme ? {} : { actif }),
+          ...(droitFormulaires && role === 'admin' ? { peut_creer_formulaires: formulaires } : {})
         })
       })
       const data = await res.json()
@@ -148,6 +152,15 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
       <ChampExterne role={role} clinique={clinique} externe={externe} organisation={organisation}
         setExterne={setExterne} setOrganisation={setOrganisation} inputCls={inputCls} labelCls={labelCls}
         cmcPossible={!estGestionnaire && cliniquesPossibles.includes('CMC')} setClinique={estGestionnaire ? undefined : setClinique} />
+      {droitFormulaires && role === 'admin' && (
+        <div className="flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+          <input type="checkbox" id="peut_creer_formulaires" checked={formulaires} onChange={e => setFormulaires(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600" />
+          <label htmlFor="peut_creer_formulaires" className="text-sm font-medium text-gray-800">
+            📝 {t('Peut créer des formulaires')}
+            <span className="block text-xs font-normal text-gray-500">{t('Droit accordé par l’administrateur global. Cet administrateur pourra créer des formulaires à remplir par les employés et recevoir leurs réponses.')}</span>
+          </label>
+        </div>
+      )}
       {!soiMeme && <div className="flex items-center gap-3">
         <input type="checkbox" id="actif" checked={actif} onChange={e => setActif(e.target.checked)}
           className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
