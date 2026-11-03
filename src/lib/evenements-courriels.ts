@@ -59,6 +59,12 @@ export async function annoncerEvenement(sb: SupabaseClient, ev: Evenement, seanc
   const dates = seances.filter(s => seanceOuverte(s)).map(s => `• ${quand(s)}`)
   const cfg = await chargerNotifications(sb)
   if (!modeleEnVigueur(cfg, 'nouvelle_session_participants')?.actif) return 0
+  // Annoncé sans date : les employés peuvent demander à être prévenus
+  if (!dates.length && ev.date_a_venir) return envoyer(invites.map(e => courriel(origine, e, `📅 Bientôt : ${ev.titre}`, [
+    `${(ev.type ?? 'formation') === 'formation' ? 'Une formation en présentiel' : 'Un événement'} se prépare : « ${ev.titre} ».`,
+    ...(ev.description ? [ev.description.slice(0, 500)] : []),
+    'La date sera annoncée bientôt. Cliquez sur « Me prévenir » pour recevoir un courriel dès qu’elle sera connue.',
+  ], { libelle: 'Me prévenir', lien: lienEvenement(origine, ev) })))
   if (cfg.modeles.has('nouvelle_session_participants')) return envoyer(invites.map(e => notif(cfg, 'nouvelle_session_participants', origine, e, ev, null, lienEvenement(origine, ev))))
   const formation = (ev.type ?? 'formation') === 'formation'
   if (!formation) return envoyer(invites.map(e => courriel(origine, e, `${ev.type === 'social' ? '🥂' : '🏥'} Vous êtes invité(e) : ${ev.titre}`, [

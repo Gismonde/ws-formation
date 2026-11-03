@@ -16,7 +16,7 @@ const champsDate = (iso: string) => {
 }
 
 export default function GestionEvenement({ evenement, seances, inscriptions }: {
-  evenement: { id: string; titre: string; statut: string; aFormation: boolean; placesPrevues?: number | null }
+  evenement: { id: string; titre: string; statut: string; aFormation: boolean; placesPrevues?: number | null; dateAVenir?: boolean }
   seances: SeanceVue[]
   inscriptions: InscriptionVue[]
 }) {
@@ -59,8 +59,8 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
         {evenement.statut === 'brouillon' && (
-          <button type="button" disabled={envoi || actives.length === 0} onClick={async () => {
-            if (await confirmer({ titre: t('Publier l’événement'), message: t('Les personnes ciblées le verront dans leur portail et recevront un courriel pour s’inscrire.'), bouton: t('Publier') }))
+          <button type="button" disabled={envoi || (actives.length === 0 && !evenement.dateAVenir)} onClick={async () => {
+            if (await confirmer({ titre: t('Publier l’événement'), message: actives.length === 0 ? t('Les personnes ciblées verront l’événement « Date à venir » dans leur portail et pourront demander à être prévenues dès que la date sera annoncée.') : t('Les personnes ciblées le verront dans leur portail et recevront un courriel pour s’inscrire.'), bouton: t('Publier') }))
               agir({ action: 'publier' }, d => t('Événement publié.') + (Number(d.courriels) ? ' ' + t('{n} courriel(s) envoyé(s).', { n: Number(d.courriels) }) : ''))
           }} className="text-sm font-semibold px-4 py-2 rounded-lg bg-green-600 text-white disabled:opacity-50">{t('Publier')}</button>
         )}

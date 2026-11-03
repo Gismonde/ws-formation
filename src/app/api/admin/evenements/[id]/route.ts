@@ -40,7 +40,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     case 'publier': {
       if (ev.statut !== 'brouillon') return NextResponse.json({ error: 'Déjà publié.' }, { status: 400 })
       if (!ev.date_a_venir && !seances.some(s => seanceOuverte(s))) return NextResponse.json({ error: 'Ajoutez au moins une séance à venir avant de publier (ou cochez « Date à venir »).' }, { status: 400 })
-      await sb.from('evenements').update({ statut: 'publie', publie_le: new Date().toISOString() }).eq('id', id)
+      const { error: errPub } = await sb.from('evenements').update({ statut: 'publie', publie_le: new Date().toISOString() }).eq('id', id)
+      if (errPub) return NextResponse.json({ error: errPub.message }, { status: 500 })
       const courriels = corps.notifier === false ? 0 : await annoncerEvenement(sb, { ...ev, statut: 'publie' }, seances, origine)
       await journal(`Événement publié : ${ev.titre} (${courriels} courriel(s))`)
       return NextResponse.json({ ok: true, courriels })
