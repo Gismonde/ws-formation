@@ -22,9 +22,12 @@ export function statutFormation(p: {
   aQuestionnaire: boolean
   certificatValide: boolean
   commence: boolean
+  /** Questionnaire réussi d'une formation qui ne délivre pas de certificat */
+  questionnaireReussi?: boolean
 }): StatutFormation {
   if (p.certificatValide) return 'certifie'
-  if (p.progressionPct >= 100 && !p.aQuestionnaire) return 'termine'
+  // Avec questionnaire, la formation n'est terminée qu'une fois le questionnaire réussi
+  if (p.progressionPct >= 100 && (!p.aQuestionnaire || p.questionnaireReussi === true)) return 'termine'
   if (p.progressionPct > 0 || p.commence) return 'en_cours'
   return 'non_commence'
 }
@@ -67,6 +70,14 @@ export async function chargerEtatsFormations(
     sb.from('modules').select('id, formation_id').in('formation_id', formationIds),
     sb.from('questionnaires').select('id, formation_id, actif').in('formation_id', formationIds),
   ])
+  // Formations sans certificat : le questionnaire réussi tient lieu de preuve de fin
+  const { data: sansCert } = await sb.from('formations').select('id').in('id', formationIds).eq('delivre_certificat', false)
+  const qSansCert = (questionnaires ?? []).filter(q => q.actif !== false && (sansCert ?? []).some(f => f.id === q.formation_id))
+  const { data: reussites } = qSansCert.length
+    ? await sb.from('tentatives_questionnaire').select('employe_id, questionnaire_id').in('employe_id', employeIds).in('questionnaire_id', qSansCert.map(q => q.id)).eq('reussi', true)
+    : { data: [] as { employe_id: string; questionnaire_id: string }[] }
+  const formationDuQ = new Map(qSansCert.map(q => [q.id as string, q.formation_id as string]))
+  const questionnairesReussis = new Set((reussites ?? []).map(r => cle(r.employe_id, formationDuQ.get(r.questionnaire_id) ?? '')))
   const [{ data: certs }, { data: progMods }] = await Promise.all([
     sb.from('certificats').select('employe_id, formation_id, numero_certificat, date_emission, date_expiration, valide, note_finale')
       .in('employe_id', employeIds).in('formation_id', formationIds),
@@ -103,6 +114,7 @@ export async function chargerEtatsFormations(
       statut: statutFormation({
         progressionPct: progression,
         aQuestionnaire: avecQuestionnaire.has(formationId),
+        questionnaireReussi: questionnairesReussis.has(k),
         certificatValide: valide,
         commence: commences.has(k) || (s?.lecons_terminees ?? 0) > 0,
       }),
