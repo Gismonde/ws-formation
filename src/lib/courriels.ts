@@ -1,17 +1,21 @@
-// Envoi de courriels. Deux fournisseurs possibles, choisis selon les variables Vercel :
-//  - Mailgun (prioritaire) : MAILGUN_API_KEY, MAILGUN_DOMAIN (ex. « mg.wssurgical.com »),
+// Envoi de courriels. Fournisseurs possibles, choisis selon les variables Vercel :
+//  - SMTP (prioritaire, ex. Mailgun SMTP) : SMTP_HOST (« smtp.mailgun.org »), SMTP_PORT (587 par défaut),
+//    SMTP_USER (« postmaster@… »), SMTP_PASS
+//  - API Mailgun : MAILGUN_API_KEY, MAILGUN_DOMAIN (ex. « mg.wssurgical.com »),
 //    MAILGUN_REGION (« us » par défaut, ou « eu »)
 //  - Resend : RESEND_API_KEY
-// Dans les deux cas : COURRIEL_EXPEDITEUR (ex. « WS Formation <formation@wssurgical.com> »).
+// Dans tous les cas : COURRIEL_EXPEDITEUR (ex. « WS Formation <formation@wssurgical.com> »).
 // Sans ces variables, rien n'est envoyé et l'application continue de fonctionner normalement.
 
 import { rendreCourriel } from '@/lib/notifications-catalogue'
+import nodemailer from 'nodemailer'
 
 export type Courriel = { a: string; sujet: string; html: string; texte: string }
 type Resultat = { envoyes: number; erreur?: string }
 
-function fournisseur(): 'mailgun' | 'resend' | null {
+function fournisseur(): 'smtp' | 'mailgun' | 'resend' | null {
   if (!process.env.COURRIEL_EXPEDITEUR) return null
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) return 'smtp'
   if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) return 'mailgun'
   if (process.env.RESEND_API_KEY) return 'resend'
   return null
@@ -25,7 +29,37 @@ export function courrielsActifs(): boolean {
 export async function envoyerCourriels(courriels: Courriel[]): Promise<Resultat> {
   const f = fournisseur()
   if (!f || courriels.length === 0) return { envoyes: 0, erreur: f ? undefined : 'non_configure' }
+  if (f === 'smtp') return envoyerSmtp(courriels)
   return f === 'mailgun' ? envoyerMailgun(courriels) : envoyerResend(courriels)
+}
+
+/** SMTP (ex. Mailgun SMTP) : une connexion réutilisée, un message par destinataire. */
+async function envoyerSmtp(courriels: Courriel[]): Promise<Resultat> {
+  const port = Number(process.env.SMTP_PORT) || 587
+  const transport = nodemailer.createTransport({
+    host: process.env.SMTP_HOST, port, secure: port === 465, pool: true, maxConnections: 3,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  })
+  let envoyes = 0
+  let erreur: string | undefined
+  try {
+    for (let i = 0; i < courriels.length; i += 5) {
+      await Promise.all(courriels.slice(i, i + 5).map(async c => {
+        try {
+          await transport.sendMail({ from: process.env.COURRIEL_EXPEDITEUR, to: c.a, subject: c.sujet, html: c.html, text: c.texte })
+          envoyes++
+        } catch (e: any) {
+          console.error('[Courriels] SMTP a refusé l’envoi', e?.responseCode, e?.message)
+          erreur = e?.code === 'EAUTH' ? 'Identifiants SMTP refusés' : `Envoi refusé (${e?.responseCode ?? e?.code ?? 'SMTP'})`
+        }
+      }))
+      // Identifiants invalides : inutile d'insister pour les suivants
+      if (erreur && envoyes === 0 && /SMTP refusés/.test(erreur)) break
+    }
+  } finally {
+    transport.close()
+  }
+  return { envoyes, erreur }
 }
 
 /** Mailgun : un message par destinataire (5 envois simultanés au maximum). */
