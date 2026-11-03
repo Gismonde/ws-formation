@@ -13,7 +13,7 @@ export default async function MesFormulairesPage() {
   const sb = serviceClient()
   const [{ data: fs, error }, { data: envois }] = await Promise.all([
     sb.from('formulaires').select('id, titre, code, description, clinique, actif, archive').eq('actif', true).eq('archive', false).order('titre'),
-    sb.from('formulaire_reponses').select('id, numero, statut, soumis_le, definition').eq('employe_id', acteur.id).order('soumis_le', { ascending: false }).limit(50),
+    sb.from('formulaire_reponses').select('*').eq('employe_id', acteur.id).order('soumis_le', { ascending: false }).limit(50),
   ])
   const disponibles = ((fs ?? []) as Formulaire[]).filter(f => formulairePourEmploye(f, espace.actif, acteur.role === 'super_admin' ? 'LES_DEUX' : acteur.clinique))
 
@@ -21,8 +21,9 @@ export default async function MesFormulairesPage() {
     <div style={{ maxWidth: '860px' }}>
       <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>{t('Formulaires')}</h1>
       <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0 24px' }}>
-        {t('Remplissez ici les formulaires de la clinique (déclarations, demandes…). Ils sont transmis directement à la personne responsable, de façon confidentielle.')}
+        {t('Remplissez ici les formulaires de la clinique (déclarations, demandes…). Ils sont transmis directement à la personne responsable, de façon confidentielle. Vous êtes avisé(e) à chaque étape du traitement.')}
       </p>
+      <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 10px' }}>📝 {t('Formulaires disponibles à remplir')}</h2>
 
       {error ? (
         <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-400">{t('Les formulaires ne sont pas encore disponibles.')}</div>
@@ -48,7 +49,7 @@ export default async function MesFormulairesPage() {
 
       {(envois ?? []).length > 0 && (
         <section style={{ marginTop: '32px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 10px' }}>{t('Mes envois')}</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 10px' }}>{t('Mes formulaires envoyés')}</h2>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
             {(envois ?? []).map(r => {
               const s = STATUTS[r.statut as StatutReponse] ?? STATUTS.recu
@@ -57,6 +58,7 @@ export default async function MesFormulairesPage() {
                   <span className="font-mono text-xs text-gray-500">{numeroReponse(r.numero)}</span>
                   <span className="min-w-0 flex-1 text-sm font-medium text-gray-900">{(r.definition as { titre?: string })?.titre}</span>
                   <span className="text-xs text-gray-500">{new Date(r.soumis_le).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                  {r.reponse_employe && <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-800">💬 {t('Réponse reçue')}</span>}
                   <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ background: s.fond, color: s.couleur }}>{t(s.libelle)}</span>
                 </Link>
               )

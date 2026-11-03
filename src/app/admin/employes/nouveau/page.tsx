@@ -32,6 +32,7 @@ export default async function NouvelEmployePage() {
         cliniqueParDefaut={acteur.role === 'gestionnaire' ? acteur.clinique ?? '' : cliniques.length === 2 ? cliniques[0] : ''}
         departementParDefaut={acteur.role === 'gestionnaire' ? acteur.departement_id ?? '' : ''}
         afficherAutorisationCreation={acteur.role === 'super_admin' || acteur.role === 'admin'}
+        droitFormulaires={acteur.role === 'super_admin'}
         postes={parFamille(await chargerPostes(serviceClient()))}
       />
     </div>

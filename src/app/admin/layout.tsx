@@ -84,7 +84,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     validation: peutValiderFormations(employe), evenements: peutCreerEvenements(employe),
   }
   // Formulaires : créateurs autorisés, et administrateurs qui reçoivent des réponses
-  const aFormulaires = isAdmin && (peutCreerFormulaires(employe) || (await formulairesRecus(serviceClient(), employe)).length > 0)
+  const aFormulaires = peutCreerFormulaires(employe) || (await formulairesRecus(serviceClient(), employe)).length > 0
   const visible = (l: EntreeNav) => (!l.adminOnly || isAdmin) && (!l.formulaires || aFormulaires) && (!l.createurs || peutCreerFormations(employe)) && (!l.superAdmin || employe.role === 'super_admin')
     && (!l.droits || l.droits.some(d => droits[d]))
   const groupes: GroupeMenu[] = adminNav

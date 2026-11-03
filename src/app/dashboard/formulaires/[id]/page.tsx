@@ -22,6 +22,6 @@ export default async function RemplirFormulairePage({ params }: { params: Promis
   const initiales = valeursPreremplies(f.champs, { prenom: acteur.prenom, nom: acteur.nom, email: acteur.email, poste: acteur.poste, departement })
   return (
     <RemplirFormulaire formulaireId={f.id} titre={f.titre} code={f.code} description={f.description} instructions={f.instructions}
-      champs={f.champs} initiales={initiales} accent={theme.accent} />
+      champs={f.champs} initiales={initiales} accent={theme.accent} anonymePermis={f.anonyme_permis === true} messageAnonymat={f.message_anonymat ?? null} />
   )
 }

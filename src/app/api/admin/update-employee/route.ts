@@ -4,6 +4,7 @@ import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, peutModifierFiche, validerAttribution, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { droitsDe, droitsAEnregistrer, changementsDroits, AUCUN_DROIT } from '@/lib/droits'
+import { droitFormulairesPossible } from '@/lib/formulaires'
 
 export async function PUT(request: Request) {
   try {
@@ -55,12 +56,12 @@ export async function PUT(request: Request) {
       : attribution.valeurs.role === 'gestionnaire' ? avant : { ...AUCUN_DROIT }
     Object.assign(updateData, apres)
     const changements = changementsDroits(avant, apres)
-    // Création de formulaires : accordée par l'administrateur global, seulement à un administrateur
-    if (attribution.valeurs.role !== 'admin') {
-      if (cible.peut_creer_formulaires) { updateData.peut_creer_formulaires = false; changements.push('− Créer des formulaires') }
+    // Gestion des formulaires (WSSC) : accordée par l'administrateur global, à un admin ou un gestionnaire du WSSC
+    if (!droitFormulairesPossible(attribution.valeurs.role, attribution.valeurs.clinique)) {
+      if (cible.peut_creer_formulaires) { updateData.peut_creer_formulaires = false; changements.push('− Gestion des formulaires') }
     } else if (acteur.role === 'super_admin' && typeof body.peut_creer_formulaires === 'boolean' && body.peut_creer_formulaires !== (cible.peut_creer_formulaires === true)) {
       updateData.peut_creer_formulaires = body.peut_creer_formulaires
-      changements.push(`${body.peut_creer_formulaires ? '+' : '−'} Créer des formulaires`)
+      changements.push(`${body.peut_creer_formulaires ? '+' : '−'} Gestion des formulaires`)
     }
 
     const { error } = await sb.from('employes').update(updateData).eq('id', id)

@@ -83,7 +83,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       <main className="dashboard-main contenu-adaptatif">
         <EnteteEmploye />
-        <OngletsEmploye compteurs={compteurs} />
+        <OngletsEmploye compteurs={compteurs} masques={espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']} />
         {children}
       </main>
 

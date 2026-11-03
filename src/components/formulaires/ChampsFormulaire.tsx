@@ -4,22 +4,24 @@
 // partie = 'employe' : champs de l'employé (les sections réservées sont masquées)
 // partie = 'reserve' : seulement les sections réservées (personne qui reçoit)
 import { useT } from '@/lib/i18n/client'
-import { champsAvecReserve, CLE_AUTRE, type Champ, type Reponses } from '@/lib/formulaires'
+import { champsAvecReserve, estChampIdentite, CLE_AUTRE, type Champ, type Reponses } from '@/lib/formulaires'
 import { TexteRiche } from '@/lib/texte-riche'
 
 const champCls = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50'
 
-export default function ChampsFormulaire({ champs, valeurs, onChange, partie, desactive = false, accent = '#4f46e5' }: {
+export default function ChampsFormulaire({ champs, valeurs, onChange, partie, desactive = false, accent = '#4f46e5', masquerIdentite = false }: {
   champs: Champ[]
   valeurs: Reponses
   onChange: (v: Reponses) => void
   partie: 'employe' | 'reserve'
   desactive?: boolean
   accent?: string
+  /** Envoi anonyme : les champs qui identifient l'employé (nom, courriel, poste, signature…) sont masqués */
+  masquerIdentite?: boolean
 }) {
   const { t } = useT()
   const maj = (cle: string, v: unknown) => onChange({ ...valeurs, [cle]: v })
-  const visibles = champsAvecReserve(champs).filter(c => c.estReserve === (partie === 'reserve'))
+  const visibles = champsAvecReserve(champs).filter(c => c.estReserve === (partie === 'reserve') && !(masquerIdentite && estChampIdentite(c)))
 
   // Regroupe les champs par section (cartes)
   const groupes: { section: Champ | null; champs: Champ[] }[] = []
@@ -168,7 +170,7 @@ export default function ChampsFormulaire({ champs, valeurs, onChange, partie, de
 
   return (
     <div className="space-y-5">
-      {groupes.map((g, i) => (
+      {groupes.filter(g => g.champs.length > 0).map((g, i) => (
         <section key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {g.section && (
             <header className="px-5 py-3 text-white" style={{ background: partie === 'reserve' ? '#374151' : accent }}>
