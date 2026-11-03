@@ -123,11 +123,23 @@ export async function avertirChangementSeance(sb: SupabaseClient, ev: Evenement,
     { libelle: 'Voir l’événement', lien: lienEvenement(origine, ev) })))
 }
 
-/** Événement annulé : tous les inscrits sont prévenus. */
+/** Événement annulé : les inscrits (et la liste d'attente) sont prévenus, ainsi que les personnes qui ont demandé « Me prévenir ». */
 export async function avertirAnnulationEvenement(sb: SupabaseClient, ev: Evenement, inscriptions: Inscription[], origine: string) {
-  const pers = await personnes(sb, Array.from(new Set(inscriptions.filter(i => i.statut !== 'annule').map(i => i.employe_id))))
+  const inscrits = new Set(inscriptions.filter(i => i.statut !== 'annule').map(i => i.employe_id))
+  const pers = await personnes(sb, Array.from(inscrits))
   const cfg = await chargerNotifications(sb)
-  return envoyer(Array.from(pers.values()).map(e => notif(cfg, 'annulation_occurrence', origine, e, ev, null, `${origine}/dashboard/evenements`)))
+  let n = await envoyer(Array.from(pers.values()).map(e => notif(cfg, 'annulation_occurrence', origine, e, ev, null, `${origine}/dashboard/evenements`)))
+  // « Me prévenir » : seulement ceux qui ne sont pas déjà prévenus comme inscrits
+  const { data: interets } = await sb.from('evenements_interets').select('employe_id').eq('evenement_id', ev.id)
+  const ids = Array.from(new Set((interets ?? []).map(d => d.employe_id as string).filter(id => !inscrits.has(id))))
+  if (ids.length) {
+    const gens = await personnes(sb, ids)
+    n += await envoyer(Array.from(gens.values()).map(e => courriel(origine, e, `Événement annulé : ${ev.titre}`, [
+      `Vous aviez demandé à être prévenu(e) pour « ${ev.titre} ».`,
+      'Cet événement est annulé. Nous vous tiendrons au courant des prochains événements.',
+    ], { libelle: 'Voir les événements', lien: `${origine}/dashboard/evenements` })))
+  }
+  return n
 }
 
 /**
