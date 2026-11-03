@@ -92,7 +92,10 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
           <div><span className="block text-xs text-gray-500">{t('Date')}</span><input type="date" className={input} value={edition.date} onChange={e => setEdition({ ...edition, date: e.target.value })} /></div>
           <div><span className="block text-xs text-gray-500">{t('Début')}</span><input type="time" className={input} value={edition.debut} onChange={e => setEdition({ ...edition, debut: e.target.value })} /></div>
           <div><span className="block text-xs text-gray-500">{t('Fin')}</span><input type="time" className={input} value={edition.fin} onChange={e => setEdition({ ...edition, fin: e.target.value })} /></div>
-          <div className="w-24"><span className="block text-xs text-gray-500">{t('Places')}</span><input type="number" min={1} className={input + ' w-full'} value={edition.places} onChange={e => setEdition({ ...edition, places: e.target.value })} /></div>
+          <div className="w-28"><span className="block text-xs text-gray-500">{t('Places')}</span>
+            {Number(edition.places) >= 1000 ? <div className="py-2 text-sm">♾️ {t('Illimitées')}</div> : <input type="number" min={1} className={input + ' w-full'} value={edition.places} onChange={e => setEdition({ ...edition, places: e.target.value })} />}
+            <label className="mt-1 flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={Number(edition.places) >= 1000} onChange={e => setEdition({ ...edition, places: e.target.checked ? '1000' : '12' })} /> {t('Illimitées')}</label>
+          </div>
           <div className="flex-1 min-w-[160px]"><span className="block text-xs text-gray-500">{t('Lieu (si différent)')}</span><input className={input + ' w-full'} value={edition.lieu} onChange={e => setEdition({ ...edition, lieu: e.target.value })} /></div>
           <button type="button" disabled={envoi || !edition.date} onClick={enregistrerSeance} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">{t('Enregistrer')}</button>
           <button type="button" onClick={() => setEdition(null)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 bg-white">{t('Annuler')}</button>
@@ -112,7 +115,7 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
               <div>
                 <p className="font-semibold text-gray-900 first-letter:uppercase">{quand(s)}{s.annulee && <span className="ml-2 text-xs font-semibold text-red-700">{t('Annulée')}</span>}</p>
                 {s.lieu && <p className="text-xs text-gray-500">📍 {s.lieu}</p>}
-                <p className="text-sm text-gray-600 mt-1">{t('{i} / {p} place(s) prise(s)', { i: inscrits.length, p: s.places })}{attente.length ? ' · ' + t('{n} en liste d’attente', { n: attente.length }) : ''}</p>
+                <p className="text-sm text-gray-600 mt-1">{s.places >= 1000 ? t('{n} participant(s) · places illimitées', { n: inscrits.length }) : t('{i} / {p} place(s) prise(s)', { i: inscrits.length, p: s.places })}{attente.length ? ' · ' + t('{n} en liste d’attente', { n: attente.length }) : ''}</p>
               </div>
               {!s.annulee && evenement.statut !== 'annule' && (
                 <div className="flex gap-2">

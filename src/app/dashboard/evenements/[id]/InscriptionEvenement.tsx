@@ -6,7 +6,8 @@ import { useConfirmer } from '@/components/Confirmation'
 
 type S = { id: string; jour: string; heures: string; lieu: string | null; restantes: number; places: number; ouverte: boolean }
 
-export default function InscriptionEvenement({ evenementId, maSeance, seances }: {
+export default function InscriptionEvenement({ evenementId, maSeance, seances, participer }: {
+  participer?: boolean
   evenementId: string
   maSeance: { id: string; statut: string; present: boolean | null; peutAnnuler: boolean; limite: string } | null
   seances: S[]
@@ -73,13 +74,13 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances }:
               <div style={{ fontWeight: 600, color: '#111827', textTransform: 'capitalize' }}>{s.jour}</div>
               <div style={{ fontSize: '13px', color: '#6b7280' }}>{s.heures}{s.lieu ? ` · ${s.lieu}` : ''}</div>
               <div style={{ fontSize: '12px', marginTop: '2px', color: s.restantes > 0 ? '#166534' : '#b45309' }}>
-                {s.restantes > 0 ? t('{n} place(s) disponible(s) sur {p}', { n: s.restantes, p: s.places }) : t('Complet')}
+                {s.places >= 1000 ? t('Places illimitées') : s.restantes > 0 ? t('{n} place(s) disponible(s) sur {p}', { n: s.restantes, p: s.places }) : t('Complet')}
               </div>
             </div>
             {mienne ? <span style={{ fontSize: '13px', fontWeight: 600, color: '#166534' }}>{t('Ma séance')}</span>
               : s.ouverte && maSeance?.present !== true ? (
                 <button type="button" disabled={!!envoi} onClick={() => sInscrire(s)} style={bouton(true)}>
-                  {envoi === s.id ? '…' : s.restantes > 0 ? (maSeance ? t('Choisir cette date') : t('M’inscrire')) : t('Liste d’attente')}
+                  {envoi === s.id ? '…' : s.restantes > 0 ? (maSeance ? t('Choisir cette date') : participer ? t('Je participe') : t('M’inscrire')) : t('Liste d’attente')}
                 </button>
               ) : !s.ouverte ? <span style={{ fontSize: '12px', color: '#9ca3af' }}>{t('Terminée')}</span> : null}
           </div>

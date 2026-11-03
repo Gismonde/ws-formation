@@ -1,6 +1,7 @@
 'use client'
 // Création / modification d'un événement en présentiel.
 import { useState } from 'react'
+import { TYPES_EVENEMENT, PLACES_ILLIMITEES, FONDS_EVENEMENT, fondEvenement, typeEvenement, type TypeEvenement } from '@/lib/evenements-types'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from '@/components/politiques/ChampsCiblage'
@@ -21,9 +22,14 @@ export type ValeursEvenement = {
   ciblage: Ciblage
   /** Annoncé sans date : les employés peuvent demander à être prévenus */
   date_a_venir?: boolean
+  /** formation | social | clinique */
+  type?: TypeEvenement
+  /** Bannière « en vedette » du portail */
+  en_vedette?: boolean
+  fond?: string | null
 }
 
-type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string }
+type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string; illimite?: boolean }
 
 /** Date locale (Montréal) → ISO. Le navigateur est dans le fuseau de la personne. */
 const iso = (date: string, heure: string) => new Date(`${date}T${heure}`).toISOString()
@@ -66,7 +72,11 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       duree_minutes: v.duree_minutes ? Number(v.duree_minutes) : null, ...corpsCiblage(v.ciblage),
       // Envoyé seulement s'il est utilisé (la colonne peut ne pas encore exister)
       ...(v.date_a_venir || initial?.date_a_venir ? { date_a_venir: !!v.date_a_venir } : {}),
-      seances: seancesValides.map(s => ({ debut: iso(s.date, s.debut), fin: iso(s.date, s.fin), places: Number(s.places), lieu: s.lieu || null })),
+      seances: seancesValides.map(s => ({ debut: iso(s.date, s.debut), fin: iso(s.date, s.fin), places: s.illimite ? PLACES_ILLIMITEES : Number(s.places), lieu: s.lieu || null })),
+      // Envoyés seulement s'ils sont utilisés (colonnes de la migration evenements_types.sql)
+      ...((v.type && v.type !== 'formation') || initial?.type ? { type: v.type ?? 'formation' } : {}),
+      ...(v.en_vedette || initial?.en_vedette ? { en_vedette: !!v.en_vedette } : {}),
+      ...(v.fond || initial?.fond ? { fond: v.fond || null } : {}),
     }
     const r = evenementId
       ? await fetch(`/api/admin/evenements/${evenementId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'modifier', ...corps }) })
@@ -81,6 +91,41 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-5">
       {erreur && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{erreur}</div>}
+      <div>
+        <label className={label}>{t('Type d’événement')}</label>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {TYPES_EVENEMENT.map(ty => (
+            <button key={ty.id} type="button" onClick={() => set({ type: ty.id })}
+              className={'rounded-xl border-2 p-3 text-left transition ' + ((v.type ?? 'formation') === ty.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300')}>
+              <span className="text-2xl" aria-hidden>{ty.emoji}</span>
+              <span className="block text-sm font-semibold text-gray-900">{t(ty.libelle)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className={label}>{t('Fond de la carte et de la bannière')}</label>
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+          {FONDS_EVENEMENT.map(f => {
+            const actif = fondEvenement(v).id === f.id
+            return (
+              <button key={f.id} type="button" onClick={() => set({ fond: f.id })} title={t(f.nom)}
+                className={'flex h-14 items-center justify-center rounded-xl text-2xl transition ' + (actif ? 'ring-4 ring-indigo-500 ring-offset-2' : 'hover:scale-105')} style={{ background: f.hero }}>
+                <span aria-hidden>{actif ? '✓' : typeEvenement(v).emoji}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex h-24 items-center gap-3 overflow-hidden rounded-xl px-5 text-white" style={{ background: fondEvenement(v).hero }}>
+          <span className="text-3xl" aria-hidden>{typeEvenement(v).emoji}</span>
+          <span className="truncate text-lg font-extrabold">{v.titre || t('Aperçu de la bannière')}</span>
+        </div>
+        <p className="mt-1 text-xs text-gray-500">{t('L’image de l’événement (facultative) s’affiche dans la page de l’événement, quand l’employé clique dessus.')}</p>
+      </div>
+      <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 cursor-pointer">
+        <input type="checkbox" className="mt-0.5" checked={!!v.en_vedette} onChange={e => set({ en_vedette: e.target.checked })} />
+        <span className="text-sm"><strong>⭐ {t('Mettre en vedette')}</strong><span className="block text-xs text-gray-500">{t('Affiché en grande bannière, avec compte à rebours, en haut de la page Événements des employés.')}</span></span>
+      </label>
       <div>
         <label className={label}>{t('Titre *')}</label>
         <input className={input} value={v.titre} onChange={e => set({ titre: e.target.value })} maxLength={200} placeholder={t('Ex. : Formation RCR — mise à jour annuelle')} />
@@ -125,7 +170,10 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
                 <div><span className="block text-xs text-gray-500">{t('Date')}</span><input type="date" className={input} value={s.date} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))} /></div>
                 <div><span className="block text-xs text-gray-500">{t('Début')}</span><input type="time" className={input} value={s.debut} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, debut: e.target.value } : x)))} /></div>
                 <div><span className="block text-xs text-gray-500">{t('Fin')}</span><input type="time" className={input} value={s.fin} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, fin: e.target.value } : x)))} /></div>
-                <div className="w-24"><span className="block text-xs text-gray-500">{t('Places')}</span><input type="number" min={1} className={input} value={s.places} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, places: e.target.value } : x)))} /></div>
+                <div className="w-28"><span className="block text-xs text-gray-500">{t('Places')}</span>
+                  {s.illimite ? <div className="py-2 text-sm text-gray-700">♾️ {t('Illimitées')}</div> : <input type="number" min={1} className={input} value={s.places} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, places: e.target.value } : x)))} />}
+                  <label className="mt-1 flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={!!s.illimite} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, illimite: e.target.checked } : x)))} /> {t('Illimitées')}</label>
+                </div>
                 <div className="flex-1 min-w-[160px]"><span className="block text-xs text-gray-500">{t('Lieu (si différent)')}</span><input className={input} value={s.lieu} onChange={e => setSeances(ss => ss.map((x, j) => (j === i ? { ...x, lieu: e.target.value } : x)))} /></div>
                 {seances.length > 1 && <button type="button" onClick={() => setSeances(ss => ss.filter((_, j) => j !== i))} className="text-sm text-gray-400 hover:text-red-600 pb-2" aria-label={t('Retirer')}>✕</button>}
               </div>

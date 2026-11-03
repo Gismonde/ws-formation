@@ -60,6 +60,14 @@ export async function annoncerEvenement(sb: SupabaseClient, ev: Evenement, seanc
   const cfg = await chargerNotifications(sb)
   if (!modeleEnVigueur(cfg, 'nouvelle_session_participants')?.actif) return 0
   if (cfg.modeles.has('nouvelle_session_participants')) return envoyer(invites.map(e => notif(cfg, 'nouvelle_session_participants', origine, e, ev, null, lienEvenement(origine, ev))))
+  const formation = (ev.type ?? 'formation') === 'formation'
+  if (!formation) return envoyer(invites.map(e => courriel(origine, e, `${ev.type === 'social' ? '🥂' : '🏥'} Vous êtes invité(e) : ${ev.titre}`, [
+    `Vous êtes invité(e) à l’événement « ${ev.titre} ».`,
+    ...(ev.description ? [ev.description.slice(0, 500)] : []),
+    ...(dates.length ? ['Quand :', ...dates] : []),
+    ...(ev.lieu ? [`Lieu : ${ev.lieu}`] : []),
+    'Confirmez votre présence en un clic.',
+  ], { libelle: 'Je participe', lien: lienEvenement(origine, ev) })))
   return envoyer(invites.map(e => courriel(origine, e, `${ev.obligatoire ? 'Formation obligatoire' : 'Nouvelle formation en présentiel'} : ${ev.titre}`, [
     `Une formation en présentiel vous est proposée : « ${ev.titre} ».`,
     ...(ev.description ? [ev.description.slice(0, 500)] : []),

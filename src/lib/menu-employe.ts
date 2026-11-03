@@ -1,4 +1,4 @@
-// Menu du portail employé : 5 entrées, chacune avec ses onglets en haut de la page.
+// Menu du portail employé : 6 entrées, chacune avec ses onglets en haut de la page.
 export type OngletEmploye = { href: string; label: string; emoji: string }
 export type GroupeEmploye = { id: string; label: string; emoji: string; onglets: OngletEmploye[] }
 
@@ -6,9 +6,9 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
   { id: 'accueil', label: 'Accueil', emoji: '🏠', onglets: [{ href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' }] },
   { id: 'formations', label: 'Formations', emoji: '🎓', onglets: [
     { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
-    { href: '/dashboard/evenements', label: 'Événements', emoji: '📅' },
     { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   ] },
+  { id: 'evenements', label: 'Événements', emoji: '🎉', onglets: [{ href: '/dashboard/evenements', label: 'Événements', emoji: '🎉' }] },
   { id: 'reussites', label: 'Réussites', emoji: '🏆', onglets: [
     { href: '/dashboard/certificats', label: 'Mes certificats', emoji: '🏆' },
     { href: '/dashboard/badges', label: 'Mes badges', emoji: '🏅' },

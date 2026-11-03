@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient, peutCreerEvenements } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
-import { evenementsDisponibles, placesRestantes, type Seance, type Inscription } from '@/lib/evenements'
+import { evenementsDisponibles, placesRestantes, typeEvenement, type Seance, type Inscription } from '@/lib/evenements'
 import { evenementsGerables } from '@/lib/evenements-admin'
 
 export const dynamic = 'force-dynamic'
@@ -50,6 +50,8 @@ export default async function EvenementsAdminPage() {
                 <div className="p-4 flex-1 flex flex-col gap-2">
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className={'text-xs font-semibold px-2 py-0.5 rounded-full ' + cls}>{l}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: typeEvenement(ev).fond, color: typeEvenement(ev).couleur }}>{typeEvenement(ev).emoji} {t(typeEvenement(ev).court)}</span>
+                    {ev.en_vedette && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">⭐ {t('En vedette')}</span>}
                     {ev.obligatoire && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">{t('Obligatoire')}</span>}
                   </div>
                   <p className="font-semibold text-gray-900">{ev.titre}</p>
