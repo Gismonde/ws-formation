@@ -2,10 +2,11 @@
 
 // Mode « présentation » d'une leçon : un écran à la fois, comme un diaporama.
 // Tous les écrans restent montés (cachés) pour garder l'état des vidéos et des exercices.
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useT } from '@/lib/i18n/client'
+import { useParole, sonAutorise } from '@/lib/parole-client'
 
-export default function Diaporama({ titre, description, couverture, accent, ecrans, fin }: {
+export default function Diaporama({ titre, description, couverture, accent, ecrans, fin, narrations = [], audioAuto = false }: {
   titre: string
   description?: string | null
   couverture?: string | null
@@ -13,11 +14,29 @@ export default function Diaporama({ titre, description, couverture, accent, ecra
   ecrans: ReactNode[]
   /** Fin de leçon (attestation, « Terminer la leçon ») : sous le dernier écran */
   fin: ReactNode
+  /** Texte lu à voix haute pour chaque écran (index 0 = écran titre) */
+  narrations?: string[]
+  /** La narration démarre d'elle-même à chaque écran */
+  audioAuto?: boolean
 }) {
   const { t } = useT()
   const total = ecrans.length
   const [i, setI] = useState(0) // 0 = écran titre
   const couleur = accent || '#4f46e5'
+  const parole = useParole()
+  const [audioActif, setAudioActif] = useState(audioAuto)
+  const aNarration = parole.disponible && narrations.some(n => n && n.trim())
+  const narrationIci = narrations[i] ?? ''
+  const lireRef = useRef(parole.lire)
+  lireRef.current = parole.lire
+  const { arreter, setBloque } = parole
+
+  // À chaque écran : on lit sa narration (si l'audio est activé), sinon on coupe
+  useEffect(() => {
+    if (!audioActif || !narrationIci) { arreter(); return }
+    if (!sonAutorise()) { arreter(); setBloque(true); return }
+    lireRef.current(narrationIci)
+  }, [i, audioActif, narrationIci, arreter, setBloque])
   const aller = useCallback((n: number) => {
     setI(Math.max(0, Math.min(total, n)))
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -46,6 +65,43 @@ export default function Diaporama({ titre, description, couverture, accent, ecra
         </div>
         <span className="text-xs tabular-nums text-gray-500">{i === 0 ? t('Début') : t('Écran {n} sur {total}', { n: i, total })}</span>
       </div>
+
+      {/* Narration audio */}
+      {aNarration && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-2.5 text-white shadow" style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)' }}>
+          <span aria-hidden>🎧</span>
+          {!audioActif ? (
+            <button type="button" onClick={() => setAudioActif(true)} className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-900 hover:bg-indigo-50">
+              ▶ {t('Écouter la narration')}
+            </button>
+          ) : parole.bloque ? (
+            <button type="button" onClick={() => narrationIci && parole.lire(narrationIci)} className="animate-pulse rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-900">
+              ▶ {t('Cliquez pour démarrer l’audio')}
+            </button>
+          ) : (
+            <>
+              <button type="button" disabled={!narrationIci}
+                onClick={() => parole.etat === 'lecture' ? parole.pause() : parole.etat === 'pause' ? parole.reprendre() : parole.lire(narrationIci)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-indigo-900 disabled:opacity-40" title={parole.etat === 'lecture' ? t('Pause') : t('Lire')}>
+                {parole.etat === 'lecture' ? '⏸' : '▶'}
+              </button>
+              <button type="button" disabled={!narrationIci} onClick={() => parole.lire(narrationIci)} className="rounded-full px-2 py-1 text-sm text-indigo-100 hover:bg-white/10 disabled:opacity-40" title={t('Réécouter')}>↻</button>
+              <span className="text-sm text-indigo-100">
+                {!narrationIci ? t('Pas de narration sur cet écran') : parole.etat === 'lecture' ? t('Lecture en cours…') : parole.etat === 'pause' ? t('En pause') : t('Narration terminée')}
+              </span>
+            </>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <select value={parole.vitesse} onChange={e => parole.setVitesse(Number(e.target.value))} title={t('Vitesse')}
+              className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white">
+              {[0.75, 1, 1.25, 1.5].map(v => <option key={v} value={v} className="text-black">{v}×</option>)}
+            </select>
+            {audioActif && (
+              <button type="button" onClick={() => setAudioActif(false)} className="rounded-full px-2 py-1 text-xs text-indigo-100 hover:bg-white/10">🔇 {t('Couper le son')}</button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Écran titre */}
       <section hidden={i !== 0} className="relative overflow-hidden rounded-3xl shadow-lg" style={{ background: couleur }}>

@@ -418,8 +418,9 @@ export default function EditeurBlocs({ leconId, formationId, blocsInitiaux, onMo
               {b.type === 'slide' && <EditeurLien bloc={b} {...props} />}
               {b.type === 'interactif' && (
                 <EditeurInteractif titre={b.titre} donnees={meta(b) as unknown as DonneesInteractif} urls={urlsMedias}
-                  onTitre={v => modifier(b.id, { titre: v })} onDonnees={dd => modifier(b.id, { metadata: dd as unknown as Record<string, unknown> })} setErreur={setErreur} />
+                  onTitre={v => modifier(b.id, { titre: v })} onDonnees={dd => modifier(b.id, { metadata: { ...(dd as unknown as Record<string, unknown>), ...(meta(b).narration ? { narration: meta(b).narration } : {}) } })} setErreur={setErreur} />
               )}
+              {b.type !== 'quiz' && <ChampNarration bloc={b} modifier={modifier} />}
             </div>
           </div>
           <ZoneInsertion index={i + 1} ouvert={menuOuvert === i + 1} setOuvert={setMenuOuvert} onChoisir={ajouter} onLibrairie={p => { setMenuOuvert(null); setChoixLibrairie({ position: p }) }}
@@ -647,6 +648,37 @@ function EditeurImage(p: PropsBloc) {
         placeholder={t('Légende (affichée sous l\'image)')} className={champ} />
       <input value={String(meta(bloc).alt ?? '')} onChange={e => modifier(bloc.id, { metadata: { ...meta(bloc), alt: e.target.value } })}
         placeholder={t('Description pour l\'accessibilité (lecteurs d\'écran)')} className={champ + ' text-xs'} />
+    </div>
+  )
+}
+
+/** Narration audio : texte lu à voix haute pendant la formation, jamais affiché à l'écran. */
+function ChampNarration({ bloc, modifier }: { bloc: Bloc; modifier: (id: string, changes: Partial<Bloc>, immediat?: boolean) => void }) {
+  const { t } = useT()
+  const valeur = typeof meta(bloc).narration === 'string' ? String(meta(bloc).narration) : ''
+  const [ouvert, setOuvert] = useState(!!valeur)
+  if (!ouvert) {
+    return (
+      <button type="button" onClick={() => setOuvert(true)} className="mt-3 text-xs font-medium text-indigo-600 hover:underline">
+        🎧 {t('+ Narration audio (texte entendu, non affiché)')}
+      </button>
+    )
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="text-xs font-semibold text-indigo-900">🎧 {t('Narration audio')}</label>
+        {!valeur && <button type="button" onClick={() => setOuvert(false)} className="text-xs text-gray-500 hover:underline">{t('Fermer')}</button>}
+      </div>
+      <ZoneTexteAuto value={valeur} rows={2}
+        onChange={e => {
+          const m = { ...meta(bloc) }
+          if (e.target.value.trim()) m.narration = e.target.value; else delete m.narration
+          modifier(bloc.id, { metadata: m })
+        }}
+        placeholder={t('Ce que la voix dit pendant ce bloc. Ce texte n’apparaît pas à l’écran.')}
+        className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      <p className="mt-1 text-[11px] text-indigo-700/80">{t('Si ce champ est rempli, la voix lit ce texte au lieu du texte affiché du bloc.')}</p>
     </div>
   )
 }
