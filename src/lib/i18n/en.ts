@@ -2618,4 +2618,8 @@ export const EN: Record<string, string> = {
   'Assignées à moi': 'Assigned to me',
   'Assignée à moi': 'Assigned to me',
   'Assignée à {nom}': 'Assigned to {nom}',
+  'CERTIFIÉ': 'CERTIFIED',
+  'Ce certificat est fièrement décerné à': 'This certificate is proudly awarded to',
+  'FORMATION CERTIFIÉE': 'CERTIFIED TRAINING',
+  'de formation': 'of training',
 }
