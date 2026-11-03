@@ -6,7 +6,7 @@ import { estVise, type CiblePolitique } from '@/lib/politiques'
 export type StatutEvenement = 'brouillon' | 'publie' | 'annule'
 
 /** Types d'événements : chacun a sa couleur, son visuel et son bouton d'inscription. */
-export { TYPES_EVENEMENT, typeEvenement, PLACES_ILLIMITEES, placesIllimitees, FONDS_EVENEMENT, fondEvenement, type TypeEvenement } from './evenements-types'
+export { TYPES_EVENEMENT, typeEvenement, PLACES_ILLIMITEES, placesIllimitees, FONDS_EVENEMENT, fondEvenement, emojiEvenement, type TypeEvenement } from './evenements-types'
 import type { TypeEvenement } from './evenements-types'
 
 export type Evenement = CiblePolitique & {
@@ -31,6 +31,7 @@ export type Evenement = CiblePolitique & {
   /** Mis en vedette (bannière du haut du portail) */
   en_vedette?: boolean
   fond?: string | null
+  emoji?: string | null
 }
 
 export type Seance = {

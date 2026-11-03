@@ -1,7 +1,7 @@
 'use client'
 // Création / modification d'un événement en présentiel.
 import { useState } from 'react'
-import { TYPES_EVENEMENT, PLACES_ILLIMITEES, FONDS_EVENEMENT, fondEvenement, typeEvenement, type TypeEvenement } from '@/lib/evenements-types'
+import { TYPES_EVENEMENT, PLACES_ILLIMITEES, FONDS_EVENEMENT, fondEvenement, typeEvenement, EMOJIS_EVENEMENT, emojiEvenement, type TypeEvenement } from '@/lib/evenements-types'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from '@/components/politiques/ChampsCiblage'
@@ -29,6 +29,7 @@ export type ValeursEvenement = {
   /** Bannière « en vedette » du portail */
   en_vedette?: boolean
   fond?: string | null
+  emoji?: string | null
 }
 
 type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string; illimite?: boolean }
@@ -79,6 +80,7 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       ...((v.type && v.type !== 'formation') || initial?.type ? { type: v.type ?? 'formation' } : {}),
       ...(v.en_vedette || initial?.en_vedette ? { en_vedette: !!v.en_vedette } : {}),
       ...(v.fond || initial?.fond ? { fond: v.fond || null } : {}),
+      ...(v.emoji || initial?.emoji ? { emoji: v.emoji || null } : {}),
     }
     const r = evenementId
       ? await fetch(`/api/admin/evenements/${evenementId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'modifier', ...corps }) })
@@ -105,7 +107,16 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
           ))}
         </div>
       </div>
-      {options.miseEnPage && <>
+      <div>
+        <label className={label}>{t('Emoji de l’événement')}</label>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {EMOJIS_EVENEMENT.map(em => (
+            <button key={em} type="button" onClick={() => set({ emoji: em === typeEvenement(v).emoji ? null : em })}
+              className={'flex h-10 w-10 items-center justify-center rounded-lg text-xl transition ' + (emojiEvenement(v) === em ? 'bg-indigo-100 ring-2 ring-indigo-500' : 'bg-gray-50 hover:bg-gray-100')}>{em}</button>
+          ))}
+          <input className="h-10 w-20 rounded-lg border border-gray-300 px-2 text-center text-xl" maxLength={8} value={v.emoji ?? ''} onChange={e => set({ emoji: e.target.value })} placeholder={typeEvenement(v).emoji} aria-label={t('Autre emoji')} title={t('Autre emoji')} />
+        </div>
+      </div>
       <div>
         <label className={label}>{t('Fond de la carte et de la bannière')}</label>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
@@ -114,22 +125,21 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
             return (
               <button key={f.id} type="button" onClick={() => set({ fond: f.id })} title={t(f.nom)}
                 className={'flex h-14 items-center justify-center rounded-xl text-2xl transition ' + (actif ? 'ring-4 ring-indigo-500 ring-offset-2' : 'hover:scale-105')} style={{ background: f.hero }}>
-                <span aria-hidden>{actif ? '✓' : typeEvenement(v).emoji}</span>
+                <span aria-hidden>{actif ? '✓' : emojiEvenement(v)}</span>
               </button>
             )
           })}
         </div>
         <div className="mt-2 flex h-24 items-center gap-3 overflow-hidden rounded-xl px-5 text-white" style={{ background: fondEvenement(v).hero }}>
-          <span className="text-3xl" aria-hidden>{typeEvenement(v).emoji}</span>
+          <span className="text-3xl" aria-hidden>{emojiEvenement(v)}</span>
           <span className="truncate text-lg font-extrabold">{v.titre || t('Aperçu de la bannière')}</span>
         </div>
         <p className="mt-1 text-xs text-gray-500">{t('L’image de l’événement (facultative) s’affiche dans la page de l’événement, quand l’employé clique dessus.')}</p>
       </div>
-      <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 cursor-pointer">
+      {options.miseEnPage && <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 cursor-pointer">
         <input type="checkbox" className="mt-0.5" checked={!!v.en_vedette} onChange={e => set({ en_vedette: e.target.checked })} />
         <span className="text-sm"><strong>⭐ {t('Mettre en vedette')}</strong><span className="block text-xs text-gray-500">{t('Affiché en grande bannière, avec compte à rebours, en haut de la page Événements des employés.')}</span></span>
-      </label>
-      </>}
+      </label>}
       <div>
         <label className={label}>{t('Titre *')}</label>
         <input className={input} value={v.titre} onChange={e => set({ titre: e.target.value })} maxLength={200} placeholder={t('Ex. : Formation RCR — mise à jour annuelle')} />

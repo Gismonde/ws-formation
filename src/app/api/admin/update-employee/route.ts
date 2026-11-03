@@ -64,13 +64,13 @@ export async function PUT(request: Request) {
       updateData.peut_creer_formulaires = body.peut_creer_formulaires
       changements.push(`${body.peut_creer_formulaires ? '+' : '−'} Gestion des formulaires`)
     }
-    // Mise en page des événements : accordée par l'administrateur global, à qui peut créer des événements
+    // Mise en vedette des événements : accordée par l'administrateur global, à qui peut créer des événements
     if ('peut_mise_en_page_evenements' in cible) {
       if (!droitMiseEnPagePossible(attribution.valeurs.role, apres.peut_creer_evenements)) {
-        if (cible.peut_mise_en_page_evenements) { updateData.peut_mise_en_page_evenements = false; changements.push('− Mise en page des événements') }
+        if (cible.peut_mise_en_page_evenements) { updateData.peut_mise_en_page_evenements = false; changements.push('− Mise en vedette des événements') }
       } else if (acteur.role === 'super_admin' && typeof body.peut_mise_en_page_evenements === 'boolean' && body.peut_mise_en_page_evenements !== (cible.peut_mise_en_page_evenements === true)) {
         updateData.peut_mise_en_page_evenements = body.peut_mise_en_page_evenements
-        changements.push(`${body.peut_mise_en_page_evenements ? '+' : '−'} Mise en page des événements`)
+        changements.push(`${body.peut_mise_en_page_evenements ? '+' : '−'} Mise en vedette des événements`)
       }
     }
 

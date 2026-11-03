@@ -157,7 +157,7 @@ export function peutCreerEvenements(a: Acteur | null): boolean {
   return !!a && (estAdmin(a) || (a.role === 'gestionnaire' && a.peut_creer_evenements === true))
 }
 
-/** Mise en page des événements (bannière en vedette, fond) : administrateur global, ou personne à qui il l'a accordée. */
+/** Mise en vedette des événements (bannière) : administrateur global, ou personne à qui il l'a accordée. */
 export function peutMettreEnPageEvenements(a: Acteur | null): boolean {
   return !!a && (a.role === 'super_admin' || (peutCreerEvenements(a) && a.peut_mise_en_page_evenements === true))
 }

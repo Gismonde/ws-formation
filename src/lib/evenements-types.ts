@@ -31,3 +31,8 @@ export const fondEvenement = (ev: { type?: string | null; fond?: string | null }
 /** Le droit « Mise en page des événements » peut être donné à qui peut créer des événements (admin, ou gestionnaire autorisé). */
 export const droitMiseEnPagePossible = (role: string, peutCreerEvenements?: boolean | null) =>
   role === 'admin' || (role === 'gestionnaire' && peutCreerEvenements === true)
+
+/** Emojis proposés pour un événement (l'admin peut aussi en coller un autre). */
+export const EMOJIS_EVENEMENT = ['🎓', '🥂', '🏥', '🎉', '🎄', '🎃', '🍕', '🍰', '☕', '🍻', '🏆', '🎂', '🎶', '🏃', '⚽', '🧘', '❤️', '🩺', '💉', '🫀', '🧪', '📢', '🤝', '🌸'] as const
+/** Emoji choisi pour l'événement, sinon celui de son type. */
+export const emojiEvenement = (ev: { type?: string | null; emoji?: string | null }) => (ev.emoji && ev.emoji.trim()) || typeEvenement(ev).emoji

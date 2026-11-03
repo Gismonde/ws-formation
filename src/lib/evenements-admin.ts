@@ -58,7 +58,8 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
       ...(c.type === 'formation' || c.type === 'social' || c.type === 'clinique' ? { type: c.type } : {}),
       ...(peutMettreEnPageEvenements(a) && typeof c.en_vedette === 'boolean' ? { en_vedette: c.en_vedette } : {}),
-      ...(peutMettreEnPageEvenements(a) && (c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond))) ? { fond: c.fond } : {}),
+      ...(c.fond === null || (typeof c.fond === 'string' && FONDS_EVENEMENT.some(f => f.id === c.fond)) ? { fond: c.fond } : {}),
+      ...(c.emoji === null || typeof c.emoji === 'string' ? { emoji: typeof c.emoji === 'string' && c.emoji.trim() ? c.emoji.trim().slice(0, 8) : null } : {}),
     },
   }
 }

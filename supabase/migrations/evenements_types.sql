@@ -5,3 +5,4 @@ ALTER TABLE public.evenements ADD CONSTRAINT evenements_type_check CHECK (type I
 -- Événement mis en vedette (bannière du haut, choisie par l'admin)
 ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS en_vedette boolean NOT NULL DEFAULT false;
 ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS fond text;
+ALTER TABLE public.evenements ADD COLUMN IF NOT EXISTS emoji text;
