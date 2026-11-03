@@ -68,6 +68,21 @@ export async function annoncerEvenement(sb: SupabaseClient, ev: Evenement, seanc
   ], { libelle: 'S’inscrire', lien: lienEvenement(origine, ev) })))
 }
 
+/** Date annoncée pour un événement « date à venir » : on prévient les personnes qui l'ont demandé. */
+export async function avertirInteresses(sb: SupabaseClient, ev: Evenement, seances: Seance[], origine: string) {
+  const { data, error } = await sb.from('evenements_interets').select('employe_id').eq('evenement_id', ev.id).is('avise_le', null)
+  if (error || !data?.length) return 0
+  const gens = await personnes(sb, data.map(d => d.employe_id as string))
+  const dates = seances.filter(s => seanceOuverte(s)).map(s => `• ${quand(s)}`)
+  const n = await envoyer(Array.from(gens.values()).map(e => courriel(origine, e, `Date annoncée : ${ev.titre}`, [
+    `Vous avez demandé à être prévenu(e) : la date de « ${ev.titre} » est maintenant annoncée.`,
+    ...(dates.length ? ['Dates proposées :', ...dates] : []),
+    'Les places sont limitées : inscrivez-vous à la date qui vous convient.',
+  ], { libelle: 'S’inscrire', lien: lienEvenement(origine, ev) })))
+  await sb.from('evenements_interets').update({ avise_le: new Date().toISOString() }).eq('evenement_id', ev.id).is('avise_le', null)
+  return n
+}
+
 /** Confirmation d'inscription (ou de mise en liste d'attente). */
 export async function confirmerInscription(sb: SupabaseClient, ev: Evenement, s: Seance, employeId: string, statut: 'inscrit' | 'attente', origine: string) {
   const e = (await personnes(sb, [employeId])).get(employeId)

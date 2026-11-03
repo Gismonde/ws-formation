@@ -19,6 +19,8 @@ export type ValeursEvenement = {
   titre: string; description: string; image: string; lieu: string; responsable: string
   obligatoire: boolean; desinscription_heures: number; formation_id: string; duree_minutes: string
   ciblage: Ciblage
+  /** Annoncé sans date : les employés peuvent demander à être prévenus */
+  date_a_venir?: boolean
 }
 
 type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string }
@@ -56,12 +58,14 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
     if (!v.titre.trim()) return setErreur(t('Le titre est obligatoire.'))
     if (ciblageVide(v.ciblage)) return setErreur(t('Choisissez au moins un critère pour le public ciblé.'))
     const seancesValides = seances.filter(s => s.date)
-    if (!evenementId && seancesValides.length === 0) return setErreur(t('Ajoutez au moins une date.'))
+    if (!evenementId && !v.date_a_venir && seancesValides.length === 0) return setErreur(t('Ajoutez au moins une date, ou cochez « Date à venir ».'))
     setEnvoi(true)
     const corps = {
       titre: v.titre, description: v.description, image: v.image || null, lieu: v.lieu, responsable: v.responsable,
       obligatoire: v.obligatoire, desinscription_heures: v.desinscription_heures, formation_id: v.formation_id || null,
       duree_minutes: v.duree_minutes ? Number(v.duree_minutes) : null, ...corpsCiblage(v.ciblage),
+      // Envoyé seulement s'il est utilisé (la colonne peut ne pas encore exister)
+      ...(v.date_a_venir || initial?.date_a_venir ? { date_a_venir: !!v.date_a_venir } : {}),
       seances: seancesValides.map(s => ({ debut: iso(s.date, s.debut), fin: iso(s.date, s.fin), places: Number(s.places), lieu: s.lieu || null })),
     }
     const r = evenementId
@@ -107,7 +111,12 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
         </div>
       </div>
 
-      {!evenementId && (
+      <label className="flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 cursor-pointer">
+        <input type="checkbox" className="mt-0.5" checked={!!v.date_a_venir} onChange={e => set({ date_a_venir: e.target.checked })} />
+        <span className="text-sm"><strong>📅 {t('Date à venir (coming soon)')}</strong><span className="block text-xs text-gray-500">{t('Annoncez l’événement avant d’en connaître la date. Les employés peuvent demander à être prévenus ; dès que vous ajoutez une date, ils reçoivent un courriel.')}</span></span>
+      </label>
+
+      {!evenementId && !v.date_a_venir && (
         <div>
           <label className={label}>{t('Dates (séances) *')}</label>
           <div className="space-y-2">

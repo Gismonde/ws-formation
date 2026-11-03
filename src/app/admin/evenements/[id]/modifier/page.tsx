@@ -24,6 +24,7 @@ export default async function ModifierEvenementPage({ params }: { params: Promis
         titre: ev.titre, description: ev.description ?? '', image: ev.image ?? '', lieu: ev.lieu ?? '', responsable: ev.responsable ?? '',
         obligatoire: ev.obligatoire, desinscription_heures: ev.desinscription_heures, formation_id: ev.formation_id ?? '', duree_minutes: ev.duree_minutes ? String(ev.duree_minutes) : '',
         ciblage: { clinique: ev.clinique, tous: estPourToute(ev), departements: ev.departements ?? [], employes: ev.employes ?? [], roles: ev.roles ?? [], postes: ev.postes ?? [] },
+        date_a_venir: ev.date_a_venir === true,
       }} />
     </div>
   )

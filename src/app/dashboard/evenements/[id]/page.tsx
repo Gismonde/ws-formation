@@ -4,6 +4,7 @@ import { getActeur, serviceClient } from '@/lib/permissions'
 import { evenementsDeLEmploye, limiteDesinscription, peutSeDesinscrire, seanceOuverte } from '@/lib/evenements'
 import { i18n } from '@/lib/i18n/serveur'
 import InscriptionEvenement from './InscriptionEvenement'
+import BoutonInteret from './BoutonInteret'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,11 +37,16 @@ export default async function EvenementEmployePage({ params }: { params: Promise
         </div>
       </div>
 
-      <InscriptionEvenement
+      {ev.date_a_venir && !seances.some(s => seanceOuverte(s)) ? (
+        <BoutonInteret evenementId={ev.id} interesse={await (async () => {
+          const { data } = await serviceClient().from('evenements_interets').select('employe_id').eq('evenement_id', ev.id).eq('employe_id', acteur.id).maybeSingle()
+          return !!data
+        })()} />
+      ) : <InscriptionEvenement
         evenementId={ev.id}
         maSeance={ma ? { id: ma.id, statut: mienne!.statut, present: mienne!.present ?? null, peutAnnuler: mienne!.statut === 'attente' || peutSeDesinscrire(ma, ev.desinscription_heures), limite: limiteDesinscription(ma, ev.desinscription_heures).toISOString() } : null}
         seances={seances.filter(s => !s.annulee).map(s => ({ id: s.id, jour: fmt(s.debut), heures: `${h(s.debut)} – ${h(s.fin)}`, lieu: s.lieu, restantes: s.restantes, places: s.places, ouverte: seanceOuverte(s) }))}
-      />
+      />}
     </div>
   )
 }

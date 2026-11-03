@@ -54,6 +54,7 @@ export function validerEvenement(a: Acteur, c: Record<string, unknown>): { erreu
       desinscription_heures: Number.isFinite(heures) ? Math.min(Math.max(Math.round(heures), 0), 24 * 30) : 24,
       formation_id: typeof c.formation_id === 'string' && UUID.test(c.formation_id) ? c.formation_id : null,
       duree_minutes: duree !== null && Number.isFinite(duree) && duree > 0 ? Math.round(duree) : null,
+      ...(typeof c.date_a_venir === 'boolean' ? { date_a_venir: c.date_a_venir } : {}),
     },
   }
 }
