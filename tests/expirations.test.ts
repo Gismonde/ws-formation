@@ -74,6 +74,8 @@ describe('État d’une formation', () => {
     expect(statutFormation({ progressionPct: 40, aQuestionnaire: true, certificatValide: true, commence: true })).toBe('certifie')
     expect(statutFormation({ progressionPct: 100, aQuestionnaire: false, certificatValide: false, commence: true })).toBe('termine')
     expect(statutFormation({ progressionPct: 100, aQuestionnaire: true, certificatValide: false, commence: true })).toBe('en_cours')
+    expect(statutFormation({ progressionPct: 100, aQuestionnaire: true, questionnaireReussi: true, certificatValide: false, commence: true })).toBe('termine')
+    expect(statutFormation({ progressionPct: 60, aQuestionnaire: true, questionnaireReussi: true, certificatValide: false, commence: true })).toBe('en_cours')
     expect(statutFormation({ progressionPct: 0, aQuestionnaire: true, certificatValide: false, commence: false })).toBe('non_commence')
   })
 
