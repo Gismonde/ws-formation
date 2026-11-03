@@ -56,6 +56,11 @@ export default function BienvenueForm() {
           : t('Impossible d’enregistrer le mot de passe : {detail}', { detail: errMaj.message }))
         return
       }
+      // Compte activé : les courriels « formation assignée » retenus jusque-là sont envoyés maintenant
+      try {
+        const { data: { session } } = await sb.auth.getSession()
+        if (session?.access_token) await fetch('/api/auth/activation', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token } })
+      } catch { /* sans gravité : la personne voit ses formations en se connectant */ }
       await sb.auth.signOut({ scope: 'local' })
       window.location.href = '/login?bienvenue=1'
     } finally {

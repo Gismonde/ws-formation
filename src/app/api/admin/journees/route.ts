@@ -5,6 +5,7 @@ import { getActeur, serviceClient, ipEtAgent, cliniquesContenuVisibles } from '@
 import { peutPublierPolitiques } from '@/lib/politiques'
 import { employesDeLaCible, assignerFormations, assignerPolitiques } from '@/lib/assignations-groupees'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
+import { comptesActives } from '@/lib/comptes-actives'
 import { lireJournee, peutGererJournees, contenuJournee, CHAMPS_JOURNEE } from '@/lib/journees'
 import { logAudit } from '@/lib/audit'
 
@@ -64,7 +65,11 @@ export async function POST(req: Request) {
         ...c.politiques.map(p => `• Politique à lire et confirmer : ${p.titre}`),
         ...c.librairie.map(l => `• À visionner : ${l.titre}`),
       ]
-      const envoi = await envoyerCourriels(employes.filter(e => e.email).map(e => {
+      // Compte pas encore activé : courriel retenu (ses formations lui sont envoyées à l'activation)
+      const { data: auths } = await sb.from('employes').select('id, auth_user_id').in('id', employes.map(e => e.id))
+      const authDe = new Map((auths ?? []).map(x => [x.id as string, x.auth_user_id as string | null]))
+      const actives = await comptesActives(sb, Array.from(authDe.values()))
+      const envoi = await envoyerCourriels(employes.filter(e => e.email && authDe.get(e.id) && actives.has(authDe.get(e.id)!)).map(e => {
         const { html, texte } = gabarit({
           origine, clinique: e.clinique,
           titre: `Journée de formation — ${j.nom}`,
