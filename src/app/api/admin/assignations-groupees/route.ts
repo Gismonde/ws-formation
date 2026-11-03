@@ -9,6 +9,7 @@ import { peutPublierPolitiques } from '@/lib/politiques'
 import { avertirPolitique } from '@/lib/politiques-courriels'
 import { lireCible, employesDeLaCible, assignerFormations, assignerPolitiques } from '@/lib/assignations-groupees'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
+import { comptesActives } from '@/lib/comptes-actives'
 import { logAudit } from '@/lib/audit'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -50,7 +51,11 @@ export async function POST(req: Request) {
         const titres = new Map(resultats.map(r => [r.formation_id, r.titre]))
         const echeance = dateEcheance ? new Date(dateEcheance + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'long' }) : null
         const cfg = await chargerNotifications(sb)
-        const envoi = await envoyerCourriels(employes.filter(e => e.email && nouvelles.has(e.id)).map(e => {
+        // Compte pas encore activé : courriel retenu, envoyé automatiquement à l'activation
+        const { data: auths } = await sb.from('employes').select('id, auth_user_id').in('id', Array.from(nouvelles.keys()))
+        const authDe = new Map((auths ?? []).map(x => [x.id as string, x.auth_user_id as string | null]))
+        const actives = await comptesActives(sb, Array.from(authDe.values()))
+        const envoi = await envoyerCourriels(employes.filter(e => e.email && nouvelles.has(e.id) && authDe.get(e.id) && actives.has(authDe.get(e.id)!)).map(e => {
           const ids = nouvelles.get(e.id)!
           const liste = ids.map(fid => titres.get(fid) ?? 'Formation')
           return composerNotification(cfg, 'inscription_cours_assignation', {

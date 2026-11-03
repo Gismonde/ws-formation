@@ -7,6 +7,7 @@ import { logAudit } from '@/lib/audit'
 import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement, peutVoirContenu, employeConcerneParClinique } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { envoyerCourriels, gabarit, origineDepuis, courrielsActifs } from '@/lib/courriels'
+import { comptesActives } from '@/lib/comptes-actives'
 
 const serviceRole = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -131,14 +132,16 @@ export async function POST(req: NextRequest) {
     if (body.notifier !== false && courrielsActifs()) {
       const [{ data: formation }, { data: dest }] = await Promise.all([
         serviceRole.from('formations').select('titre, description').eq('id', formationId).single(),
-        serviceRole.from('employes').select('id, prenom, nom, email, clinique, actif').in('id', toAssign),
+        serviceRole.from('employes').select('id, prenom, nom, email, clinique, actif, auth_user_id').in('id', toAssign),
       ])
       const origine = origineDepuis(req)
       const echeance = dateEcheance
         ? new Date(dateEcheance + (String(dateEcheance).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('fr-CA', { dateStyle: 'long' })
         : null
       const cfg = await chargerNotifications(serviceRole)
-      const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email).map((e: any) => composerNotification(cfg, 'inscription_cours_assignation', {
+      // Compte pas encore activé (mot de passe pas créé) : courriel retenu, envoyé à l'activation
+      const actives = await comptesActives(serviceRole, (dest ?? []).map((e: any) => e.auth_user_id))
+      const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email && e.auth_user_id && actives.has(e.auth_user_id)).map((e: any) => composerNotification(cfg, 'inscription_cours_assignation', {
         a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom,
         vars: { activite: formation?.titre ?? 'Formation', date: echeance ?? '', echeance: echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.' },
         lien: `${origine}/formations/${formationId}`,
