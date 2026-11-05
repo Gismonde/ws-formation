@@ -12,7 +12,7 @@ export default async function MesFormulairesPage() {
   const { t, loc } = await i18n()
   const sb = serviceClient()
   const [{ data: fs, error }, { data: envois }] = await Promise.all([
-    sb.from('formulaires').select('id, titre, code, description, clinique, actif, archive').eq('actif', true).eq('archive', false).order('titre'),
+    sb.from('formulaires').select('*').eq('actif', true).eq('archive', false).order('titre'),
     sb.from('formulaire_reponses').select('*').eq('employe_id', acteur.id).order('soumis_le', { ascending: false }).limit(50),
   ])
   const disponibles = ((fs ?? []) as Formulaire[]).filter(f => formulairePourEmploye(f, espace.actif, acteur.role === 'super_admin' ? 'LES_DEUX' : acteur.clinique))
@@ -34,7 +34,9 @@ export default async function MesFormulairesPage() {
           {disponibles.map(f => (
             <Link key={f.id} href={`/dashboard/formulaires/${f.id}`} className="group block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow">
               <div className="flex items-start gap-3">
-                <span className="text-2xl" aria-hidden>📝</span>
+                {f.image
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt="" className="h-28 w-20 flex-shrink-0 rounded-md border border-gray-200 bg-white object-cover object-top shadow-sm transition group-hover:shadow-md" />
+                  : <span className="text-2xl" aria-hidden>📝</span>}
                 <div className="min-w-0">
                   <div className="font-semibold text-gray-900 group-hover:text-indigo-700">{f.titre}</div>
                   {f.code && <div className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{f.code}</div>}

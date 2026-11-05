@@ -87,6 +87,8 @@ export type Formulaire = {
   anonyme_permis?: boolean
   /** Message à accepter pour un envoi anonyme (modifiable par le créateur) */
   message_anonymat?: string | null
+  /** Photo du formulaire papier (vignette affichée aux employés) */
+  image?: string | null
   created_at?: string
   updated_at?: string
 }

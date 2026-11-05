@@ -54,6 +54,8 @@ export async function validerFormulaire(sb: SupabaseClient, _a: Acteur, b: Recor
       anonyme_permis: b.anonyme_permis === true,
       message_anonymat: b.anonyme_permis === true ? (txt(b.message_anonymat, 2000) ?? MESSAGE_ANONYMAT_DEFAUT) : txt(b.message_anonymat, 2000),
       actif: b.actif === true,
+      // Colonne ajoutée par formulaires_image.sql : écrite seulement si envoyée
+      ...('image' in b ? { image: txt(b.image, 500) } : {}),
     },
   }
 }
