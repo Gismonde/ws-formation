@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const espace = await getEspace(employe)
   const { t } = await i18n()
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
-  const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe) : 0
+  const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
