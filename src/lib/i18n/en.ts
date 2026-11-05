@@ -2753,4 +2753,6 @@ export const EN: Record<string, string> = {
   'Une invitation plus récente vous a été envoyée : utilisez le lien du dernier courriel reçu.': 'A more recent invitation was sent to you: use the link in the latest email.',
   'Sélectionner tous les employés de ce groupe': 'Select all employees in this group',
   '{n} à confirmer': '{n} to confirm',
+  '{n} formation(s)': '{n} training(s)',
+  '{p} publiée(s) · {b} brouillon(s)': '{p} published · {b} draft(s)',
 }
