@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '@/lib/i18n/client'
@@ -21,6 +21,9 @@ const label: React.CSSProperties = { display: 'block', fontSize: '13px', fontWei
 export default function BienvenueForm() {
   const params = useSearchParams()
   const tokenHash = params.get('token_hash')
+  // Lien d'invitation du portail (nouveaux employés) : sans expiration, consommé à l'envoi du formulaire
+  const invitation = params.get('invitation')
+  const [etatInvitation, setEtatInvitation] = useState<{ valide: boolean; email?: string; error?: string } | null>(null)
   const type = params.get('type') === 'recovery' ? 'recovery' : 'invite'
   const [mdp, setMdp] = useState('')
   const [conf, setConf] = useState('')
@@ -28,7 +31,21 @@ export default function BienvenueForm() {
   const [erreur, setErreur] = useState<string | null>(null)
   const { t } = useT()
 
-  if (!tokenHash) {
+  useEffect(() => {
+    if (!invitation) return
+    fetch('/api/auth/invitation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jeton: invitation, verifier: true }) })
+      .then(r => r.json()).then(setEtatInvitation).catch(() => setEtatInvitation({ valide: false, error: t('Erreur de connexion. Réessayez dans un instant.') }))
+  }, [invitation, t])
+
+  if (invitation) {
+    if (!etatInvitation) return <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>…</p>
+    if (!etatInvitation.valide) return (
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ color: '#dc2626', fontSize: '14px' }}>{t(etatInvitation.error ?? 'Lien invalide.')}</p>
+        <a href="/login" style={{ display: 'inline-block', marginTop: '8px', color: '#1e40af', fontSize: '14px', fontWeight: 600 }}>{t('Aller à la connexion →')}</a>
+      </div>
+    )
+  } else if (!tokenHash) {
     return <p style={{ color: '#dc2626', fontSize: '14px', textAlign: 'center' }}>{t('Lien invalide. Demandez à votre gestionnaire de vous renvoyer l’invitation.')}</p>
   }
 
@@ -39,6 +56,17 @@ export default function BienvenueForm() {
     if (r) return setErreur(r)
     if (mdp !== conf) return setErreur(t('Les deux mots de passe ne correspondent pas.'))
     setEnCours(true)
+    if (invitation) {
+      try {
+        const r2 = await fetch('/api/auth/invitation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jeton: invitation, motDePasse: mdp }) })
+        const d = await r2.json().catch(() => ({}))
+        if (!r2.ok) { setErreur(t(d.error ?? 'Erreur')); return }
+        window.location.href = '/login?bienvenue=1'
+      } catch {
+        setErreur(t('Erreur de connexion. Réessayez dans un instant.'))
+      } finally { setEnCours(false) }
+      return
+    }
     try {
       // Client isolé : le lien n'est consommé qu'au moment de l'envoi du formulaire
       // (les antivirus de messagerie qui « ouvrent » les liens ne peuvent pas l'invalider).
@@ -70,6 +98,7 @@ export default function BienvenueForm() {
 
   return (
     <form onSubmit={soumettre}>
+      {etatInvitation?.email && <p style={{ textAlign: 'center', fontSize: '13px', color: '#374151', margin: '0 0 14px' }}>{t('Votre identifiant : {email}', { email: etatInvitation.email })}</p>}
       <div style={{ marginBottom: '14px' }}>
         <label style={label}>{t('Nouveau mot de passe')}</label>
         <input type="password" style={input} value={mdp} onChange={e => setMdp(e.target.value)} autoComplete="new-password" required />
