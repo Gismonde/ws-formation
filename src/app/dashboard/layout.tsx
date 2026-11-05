@@ -124,6 +124,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .dashboard-main .text-indigo-600, .dashboard-main .text-blue-600, .dashboard-main .text-indigo-700 { color: var(--accent-clinique) !important; }
         .dashboard-main .bg-indigo-50, .dashboard-main .bg-blue-50 { background-color: var(--accent-clinique-clair) !important; }
         .sidebar-emoji { font-size: 18px; width: 26px; text-align: center; }
+        .sidebar-icone { display: inline-flex; width: 26px; justify-content: center; color: rgba(255,255,255,0.78); }
+        .sidebar-nav-item[aria-current="page"] .sidebar-icone { color: #fff; }
         .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.07); }
         .sidebar-user-info { padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.06); margin-bottom: 8px; }
         .sidebar-user-label { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }

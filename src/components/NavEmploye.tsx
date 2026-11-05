@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { MENU_EMPLOYE, groupeActif, correspond } from '@/lib/menu-employe'
+import IconeMenu from './IconeMenu'
 
 export type Compteurs = Record<string, number>
 
@@ -23,7 +24,7 @@ export function MenuEmploye({ compteurs, masques = [] }: { compteurs: Compteurs;
         return (
           <Link key={g.id} href={g.onglets[0].href} className="sidebar-nav-item" aria-current={estActif ? 'page' : undefined}
             style={estActif ? { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 600 } : undefined}>
-            <span className="sidebar-emoji">{g.emoji}</span>
+            <span className="sidebar-icone"><IconeMenu id={g.id} /></span>
             <span>{t(g.label)}</span>
             <Pastille n={total} couleur={couleur} />
           </Link>
