@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { politiquesDeLEmploye } from '@/lib/politiques'
+import { politiquesDeLEmploye, categoriesPolitiques } from '@/lib/politiques'
+import { parCategorie } from '@/lib/politiques-categories'
 import { getEspace } from '@/lib/espace'
 import { i18n } from '@/lib/i18n/serveur'
 
@@ -13,6 +14,8 @@ export default async function MesPolitiquesPage() {
   const politiques = await politiquesDeLEmploye(serviceClient(), acteur, espace.actif)
   const enAttente = politiques.filter(p => !p.confirme_le)
   const confirmees = politiques.filter(p => p.confirme_le)
+  const categories = await categoriesPolitiques(serviceClient())
+  const catDe = (id?: string | null) => categories.find(c => c.id === id) ?? null
 
   const carte = (p: (typeof politiques)[number]) => (
     <Link key={p.id} href={`/dashboard/politiques/${p.id}`}
@@ -20,6 +23,7 @@ export default async function MesPolitiquesPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '22px' }}>📜</span>
         <div style={{ flex: 1, minWidth: '200px' }}>
+          {catDe(p.categorie_id) && <div style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', marginBottom: '2px' }}>{catDe(p.categorie_id)!.emoji ?? '📁'} {catDe(p.categorie_id)!.code} — {catDe(p.categorie_id)!.nom}</div>}
           <div style={{ fontWeight: 600, color: '#111827' }}>{p.titre}</div>
           <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
             {t('Version {version}', { version: p.version })} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}
@@ -60,7 +64,14 @@ export default async function MesPolitiquesPage() {
       {confirmees.length > 0 && (
         <section>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 10px' }}>{t('Déjà confirmées ({n})', { n: confirmees.length })}</h2>
-          <div style={{ display: 'grid', gap: '10px' }}>{confirmees.map(carte)}</div>
+          {categories.length === 0 ? <div style={{ display: 'grid', gap: '10px' }}>{confirmees.map(carte)}</div> : parCategorie(confirmees, categories).map(g => (
+            <div key={g.categorie?.id ?? 'aucune'} style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
+                {g.categorie ? `${g.categorie.emoji ?? '📁'} ${g.categorie.code} — ${g.categorie.nom}` : t('Autres politiques')} <span style={{ color: '#9ca3af', fontWeight: 500 }}>({g.politiques.length})</span>
+              </h3>
+              <div style={{ display: 'grid', gap: '10px' }}>{g.politiques.map(carte)}</div>
+            </div>
+          ))}
         </section>
       )}
     </div>

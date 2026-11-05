@@ -1,7 +1,7 @@
 import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { cliniquesPolitiquePossibles, peutPublierPolitiques, optionsCiblage } from '@/lib/politiques'
+import { cliniquesPolitiquePossibles, peutPublierPolitiques, optionsCiblage, categoriesPolitiques } from '@/lib/politiques'
 import { courrielsActifs } from '@/lib/courriels'
 import FormulairePolitique from './FormulairePolitique'
 
@@ -23,6 +23,7 @@ export default async function NouvellePolitiquePage() {
         cliniques={cliniquesPolitiquePossibles(acteur)}
         options={options}
         courrielsActifs={courrielsActifs()}
+        categories={await categoriesPolitiques(serviceClient())}
       />
     </div>
   )

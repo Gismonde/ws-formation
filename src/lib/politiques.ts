@@ -1,5 +1,6 @@
 // Politiques de la clinique : ciblage (clinique + départements), droits et statistiques de confirmation.
 // Côté serveur uniquement.
+import type { CategoriePolitique } from '@/lib/politiques-categories'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Acteur, cliniquesAdministrees, filtrerEmployes } from '@/lib/permissions'
 import { Clinique, CliniqueEmploye, cliniquesDe } from '@/lib/cliniques'
@@ -35,6 +36,8 @@ export type Politique = {
   publiee_par: string | null
   actif: boolean
   created_at: string
+  /** Catégorie de rangement (politiques_categories.sql) */
+  categorie_id?: string | null
 }
 
 export type EmployeVise = {
@@ -151,10 +154,18 @@ export async function validerCiblage(acteur: Acteur, body: Record<string, unknow
   if (!rolesPostes && (roles.length || postes.length)) {
     return { erreur: 'Le ciblage par rôle ou par poste demande une mise à jour de la base de données (politiques_roles_postes.sql).' }
   }
+  // Catégorie : écrite seulement si envoyée (la colonne peut ne pas encore exister)
+  let categorie: { categorie_id?: string | null } = {}
+  if ('categorie_id' in body) {
+    const cid = body.categorie_id ? String(body.categorie_id) : null
+    if (cid && !UUID.test(cid)) return { erreur: 'Catégorie inconnue' }
+    categorie = { categorie_id: cid }
+  }
   return {
     valeurs: {
       titre, description: String(body.description ?? '').trim() || null, clinique, departements, employes,
       ...(rolesPostes ? { roles, postes } : {}),
+      ...categorie,
     },
   }
 }
@@ -272,4 +283,10 @@ export async function optionsCiblage(sb: SupabaseClient, a: Acteur) {
     })).sort((x, y) => x.nom.localeCompare(y.nom, 'fr')),
     rolesPostes,
   }
+}
+
+/** Catégories de rangement des politiques (table absente avant la migration : liste vide). */
+export async function categoriesPolitiques(sb: SupabaseClient): Promise<CategoriePolitique[]> {
+  const { data, error } = await sb.from('politiques_categories').select('id, code, nom, emoji, departements, ordre').order('ordre').order('code')
+  return error ? [] : ((data ?? []) as CategoriePolitique[]).map(c => ({ ...c, departements: c.departements ?? [] }))
 }
