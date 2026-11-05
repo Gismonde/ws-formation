@@ -11,12 +11,12 @@ const Pastille = ({ n, couleur }: { n: number; couleur: string }) =>
   n > 0 ? <span style={{ marginLeft: 'auto', background: couleur, color: '#fff', fontSize: '11px', fontWeight: 700, borderRadius: '999px', padding: '1px 7px' }}>{n}</span> : null
 const COULEUR: Record<string, string> = { '/dashboard/evenements': '#4f46e5', '/dashboard/politiques': '#f59e0b' }
 
-export function MenuEmploye({ compteurs }: { compteurs: Compteurs }) {
+export function MenuEmploye({ compteurs, masques = [] }: { compteurs: Compteurs; masques?: string[] }) {
   const { t } = useT()
   const actif = groupeActif(usePathname() ?? '')
   return (
     <nav className="sidebar-nav">
-      {MENU_EMPLOYE.map(g => {
+      {MENU_EMPLOYE.filter(g => g.onglets.some(o => !masques.includes(o.href))).map(g => {
         const total = g.onglets.reduce((s, o) => s + (compteurs[o.href] ?? 0), 0)
         const couleur = g.onglets.map(o => COULEUR[o.href]).find((c, i) => c && (compteurs[g.onglets[i].href] ?? 0) > 0) ?? '#4f46e5'
         const estActif = actif?.groupe.id === g.id

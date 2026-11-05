@@ -1,4 +1,4 @@
-// Menu du portail employé : 6 entrées, chacune avec ses onglets en haut de la page.
+// Menu du portail employé : 7 entrées (Formulaires : WSSC seulement), chacune avec ses onglets en haut de la page.
 export type OngletEmploye = { href: string; label: string; emoji: string }
 export type GroupeEmploye = { id: string; label: string; emoji: string; onglets: OngletEmploye[] }
 
@@ -14,11 +14,11 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
     { href: '/dashboard/badges', label: 'Mes badges', emoji: '🏅' },
     { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
   ] },
-  { id: 'politiques', label: 'Politiques, SOP & formulaires', emoji: '📜', onglets: [
+  { id: 'politiques', label: 'Politiques & SOP', emoji: '📜', onglets: [
     { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
     { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
-    { href: '/dashboard/formulaires', label: 'Formulaires', emoji: '📝' },
   ] },
+  { id: 'formulaires', label: 'Formulaires', emoji: '📝', onglets: [{ href: '/dashboard/formulaires', label: 'Formulaires', emoji: '📝' }] },
   { id: 'compte', label: 'Mon compte', emoji: '👤', onglets: [
     { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
     { href: '/dashboard/securite', label: 'Sécurité', emoji: '🔐' },

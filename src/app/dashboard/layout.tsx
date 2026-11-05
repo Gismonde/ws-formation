@@ -59,7 +59,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div style={{ marginTop: '10px' }}><ChoixLangue sombre /></div>
         </div>
 
-        <MenuEmploye compteurs={compteurs} />
+        <MenuEmploye compteurs={compteurs} masques={espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']} />
 
         <div className="sidebar-footer">
           <div className="sidebar-user-info">
