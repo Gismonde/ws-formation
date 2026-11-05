@@ -36,7 +36,7 @@ export default async function MesFormulairesPage() {
               {/* Vignette du formulaire papier : la moitié de la carte */}
               <div className="flex w-1/2 flex-shrink-0 items-start justify-center border-r border-gray-100 bg-gray-50 p-3">
                 {f.image
-                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt={t('Aperçu du formulaire {titre}', { titre: f.titre })} className="aspect-[3/4] w-full rounded-md border border-gray-200 bg-white object-cover object-top shadow-sm transition group-hover:shadow-md" />
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt={t('Aperçu du formulaire {titre}', { titre: f.titre })} className="aspect-[3/4] w-full rounded-md border border-gray-200 bg-white object-contain object-top shadow-sm transition group-hover:shadow-md" />
                   : <span className="flex aspect-[3/4] w-full items-center justify-center rounded-md border border-dashed border-gray-300 text-5xl" aria-hidden>📝</span>}
               </div>
               <div className="flex min-w-0 flex-1 flex-col p-4">
