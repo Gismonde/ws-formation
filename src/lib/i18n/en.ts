@@ -344,7 +344,7 @@ export const EN: Record<string, string> = {
   'Commentaire ou suggestion (facultatif)': 'Comment or suggestion (optional)',
   'Ce qui vous a plu, ce qui pourrait être amélioré…': 'What you liked, what could be improved…',
   'Les résultats sont présentés à l’équipe de formation sans votre nom.': 'Results are shared with the training team without your name.',
-  'Envoi…': 'Sending…',
+  'Envoi…': 'Uploading…',
   'Envoyer mon avis': 'Send my feedback',
   'Veuillez sélectionner un fichier': 'Please select a file',
   'Erreur lors du téléversement': 'Upload error',
@@ -2755,4 +2755,8 @@ export const EN: Record<string, string> = {
   '{n} à confirmer': '{n} to confirm',
   '{n} formation(s)': '{n} training(s)',
   '{p} publiée(s) · {b} brouillon(s)': '{p} published · {b} draft(s)',
+  'Photo du formulaire papier (vignette affichée aux employés)': 'Photo of the paper form (thumbnail shown to employees)',
+  'Choisir une image': 'Choose an image',
+  'Une photo ou une capture de la première page : les employés reconnaissent le formulaire au premier coup d’œil.': 'A photo or a capture of the first page: employees recognize the form at a glance.',
+  'Une photo ou une capture de la première page : les employés reconnaissent le formulaire au premier coup d’œil.': 'A photo or a capture of the first page: employees recognize the form at a glance.',
 }

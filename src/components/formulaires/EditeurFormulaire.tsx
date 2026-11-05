@@ -12,7 +12,7 @@ import { TexteRiche } from '@/lib/texte-riche'
 type Personne = { id: string; prenom: string | null; nom: string | null; role: string; clinique: string | null; departement_id?: string | null }
 type Departement = { id: string; nom: string; gestionnaires: number }
 type Brouillon = Pick<Formulaire, 'titre' | 'code' | 'description' | 'instructions' | 'clinique' | 'champs' | 'actif'> & {
-  destinataires: Destinataire[]; anonyme_permis: boolean; message_anonymat: string | null
+  destinataires: Destinataire[]; anonyme_permis: boolean; message_anonymat: string | null; image?: string | null
 }
 
 const nouvelId = () => 'c' + Math.random().toString(36).slice(2, 10)
@@ -35,6 +35,17 @@ export default function EditeurFormulaire({ id, initial, personnes, departements
   const [etat, setEtat] = useState<{ type: 'ok' | 'erreur'; msg: string } | null>(null)
   const [envoi, setEnvoi] = useState(false)
   const [apercuValeurs, setApercuValeurs] = useState<Reponses>({})
+  const [envoiImage, setEnvoiImage] = useState(false)
+
+  async function televerserImage(fichier: File | undefined) {
+    if (!fichier) return
+    setEnvoiImage(true); setEtat(null)
+    const fd = new FormData(); fd.append('file', fichier)
+    const r = await fetch('/api/upload-lesson-image', { method: 'POST', body: fd })
+    const d = await r.json().catch(() => ({}))
+    setEnvoiImage(false)
+    if (d.url) maj({ image: d.url }); else setEtat({ type: 'erreur', msg: d.error ?? t('Envoi de l’image impossible') })
+  }
 
   const maj = (p: Partial<Brouillon>) => { setF(x => ({ ...x, ...p })); setEtat(null) }
   const majChamp = (i: number, p: Partial<Champ>) => maj({ champs: f.champs.map((c, j) => j === i ? { ...c, ...p } : c) })
@@ -143,6 +154,22 @@ export default function EditeurFormulaire({ id, initial, personnes, departements
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('Description courte (liste des formulaires)')}</label>
               <input className={champCls} value={f.description ?? ''} onChange={e => maj({ description: e.target.value })} maxLength={1000} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">🖼️ {t('Photo du formulaire papier (vignette affichée aux employés)')}</label>
+              <div className="flex items-center gap-4">
+                {f.image
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt="" className="h-28 w-20 rounded-md border border-gray-200 object-cover object-top shadow-sm" />
+                  : <div className="flex h-28 w-20 items-center justify-center rounded-md border border-dashed border-gray-300 text-2xl text-gray-300">📝</div>}
+                <div className="space-y-1.5 text-sm">
+                  <label className="inline-block cursor-pointer rounded-lg border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50">
+                    {envoiImage ? t('Envoi…') : f.image ? t('Changer l’image') : t('Choisir une image')}
+                    <input type="file" accept="image/*" className="hidden" disabled={envoiImage} onChange={e => televerserImage(e.target.files?.[0])} />
+                  </label>
+                  {f.image && <button type="button" onClick={() => maj({ image: null })} className="block text-xs text-red-600 hover:underline">{t('Retirer l’image')}</button>}
+                  <p className="text-xs text-gray-500">{t('Une photo ou une capture de la première page : les employés reconnaissent le formulaire au premier coup d’œil.')}</p>
+                </div>
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">💡 {t('Texte d’aide pour l’employé : quoi et comment remplir')}</label>

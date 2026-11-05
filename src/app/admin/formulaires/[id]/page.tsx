@@ -21,6 +21,6 @@ export default async function ModifierFormulairePage({ params }: { params: Promi
     <EditeurFormulaire id={f.id} personnes={personnes.filter(p => p.id !== f.cree_par)} departements={departements}
       createurNom={createur ? `${createur.prenom ?? ''} ${createur.nom ?? ''}`.trim() : '—'}
       initial={{ titre: f.titre, code: f.code, description: f.description, instructions: f.instructions, clinique: f.clinique, actif: f.actif, champs: f.champs,
-        destinataires, anonyme_permis: f.anonyme_permis === true, message_anonymat: f.message_anonymat ?? null }} />
+        destinataires, anonyme_permis: f.anonyme_permis === true, message_anonymat: f.message_anonymat ?? null, ...('image' in f ? { image: f.image ?? null } : {}) }} />
   )
 }
