@@ -74,8 +74,11 @@ export async function PATCH(req: Request) {
   }
   const { error } = await sb.from('librairie_categories').update(maj).eq('id', c.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  // Renommage : les éléments de la librairie suivent
-  if (maj.nom && maj.nom !== c.nom) await sb.from('librairie').update({ categorie: maj.nom }).eq('categorie', c.nom)
+  // Renommage : les éléments de la librairie et les formations de cette catégorie suivent
+  if (maj.nom && maj.nom !== c.nom) {
+    await sb.from('librairie').update({ categorie: maj.nom }).eq('categorie', c.nom)
+    await sb.from('formations').update({ categorie: maj.nom }).eq('categorie', c.nom)
+  }
   await logAudit({ acteur_id: a.id, type_action: 'PARAMETRE_MODIFIE', description: maj.nom && maj.nom !== c.nom ? `Librairie : catégorie « ${c.nom} » renommée « ${maj.nom} »` : `Librairie : catégorie « ${c.nom} » déplacée` })
   return NextResponse.json({ ok: true })
 }
