@@ -2,6 +2,7 @@
 // Règles pures (testées) + accès aux données côté serveur.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { estVise, type CiblePolitique } from '@/lib/politiques'
+import { cliniquesDe, type Clinique } from '@/lib/cliniques'
 
 export type StatutEvenement = 'brouillon' | 'publie' | 'annule'
 
@@ -170,11 +171,12 @@ export async function chargerEvenement(sb: SupabaseClient, id: string) {
 }
 
 /** Événements publiés auxquels l'employé est invité, avec son inscription éventuelle. */
-export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }) {
+export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }, espace?: Clinique | null) {
   if (!(await evenementsDisponibles(sb))) return []
   const { data: evs } = await sb.from('evenements').select(CHAMPS_EVENEMENT).eq('statut', 'publie').order('created_at', { ascending: false })
   // Les événements archivés disparaissent du portail des employés
-  const invites = ((evs ?? []) as Evenement[]).filter(ev => !ev.archive_le && estInvite(ev, e))
+  // Espace actif (CMC ou WSSC) : seulement les événements de cette clinique
+  const invites = ((evs ?? []) as Evenement[]).filter(ev => !ev.archive_le && estInvite(ev, e) && (!espace || cliniquesDe(ev.clinique).includes(espace)))
   if (!invites.length) return []
   await joindreTypesPerso(sb, invites)
   const ids = invites.map(v => v.id)
@@ -193,9 +195,9 @@ export async function evenementsDeLEmploye(sb: SupabaseClient, e: { id: string; 
 }
 
 /** Nombre d'événements ouverts où l'employé n'est pas encore inscrit (badge du menu). */
-export async function nombreEvenementsAInscrire(sb: SupabaseClient, e: Parameters<typeof evenementsDeLEmploye>[1]): Promise<number> {
+export async function nombreEvenementsAInscrire(sb: SupabaseClient, e: Parameters<typeof evenementsDeLEmploye>[1], espace?: Clinique | null): Promise<number> {
   try {
-    return (await evenementsDeLEmploye(sb, e)).filter(x => !x.mienne && !x.termine && x.seances.some(s => seanceOuverte(s))).length
+    return (await evenementsDeLEmploye(sb, e, espace)).filter(x => !x.mienne && !x.termine && x.seances.some(s => seanceOuverte(s))).length
   } catch {
     return 0
   }

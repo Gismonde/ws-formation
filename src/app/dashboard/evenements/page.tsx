@@ -7,6 +7,7 @@ import { getActeur, serviceClient } from '@/lib/permissions'
 import { evenementsDeLEmploye, seanceOuverte, placesIllimitees, typeEvenement, fondEvenement, emojiEvenement, TYPES_EVENEMENT, type InfoType } from '@/lib/evenements'
 import { i18n } from '@/lib/i18n/serveur'
 import CompteARebours from './CompteARebours'
+import { getEspace } from '@/lib/espace'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,8 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
   const { t, loc } = await i18n()
   const sp = await searchParams
   const sb = serviceClient()
-  const liste = await evenementsDeLEmploye(sb, acteur)
+  const espace = await getEspace(acteur)
+  const liste = await evenementsDeLEmploye(sb, acteur, espace.actif)
   const vue = sp.vue === 'calendrier' || sp.vue === 'miennes' ? sp.vue : 'cartes'
 
   const aVenirTous = liste.filter(x => !x.termine).sort((a, b) => (a.prochaine ?? '9').localeCompare(b.prochaine ?? '9'))
