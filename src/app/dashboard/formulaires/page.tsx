@@ -32,17 +32,18 @@ export default async function MesFormulairesPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {disponibles.map(f => (
-            <Link key={f.id} href={`/dashboard/formulaires/${f.id}`} className="group block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow">
-              <div className="flex items-start gap-3">
+            <Link key={f.id} href={`/dashboard/formulaires/${f.id}`} className="group flex overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
+              {/* Vignette du formulaire papier : la moitié de la carte */}
+              <div className="flex w-1/2 flex-shrink-0 items-start justify-center border-r border-gray-100 bg-gray-50 p-3">
                 {f.image
-                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt="" className="h-28 w-20 flex-shrink-0 rounded-md border border-gray-200 bg-white object-cover object-top shadow-sm transition group-hover:shadow-md" />
-                  : <span className="text-2xl" aria-hidden>📝</span>}
-                <div className="min-w-0">
-                  <div className="font-semibold text-gray-900 group-hover:text-indigo-700">{f.titre}</div>
-                  {f.code && <div className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{f.code}</div>}
-                  {f.description && <p className="mt-1 line-clamp-3 text-sm text-gray-600">{f.description}</p>}
-                  <span className="mt-3 inline-block text-sm font-semibold text-indigo-600">{t('Remplir →')}</span>
-                </div>
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.image} alt={t('Aperçu du formulaire {titre}', { titre: f.titre })} className="aspect-[3/4] w-full rounded-md border border-gray-200 bg-white object-cover object-top shadow-sm transition group-hover:shadow-md" />
+                  : <span className="flex aspect-[3/4] w-full items-center justify-center rounded-md border border-dashed border-gray-300 text-5xl" aria-hidden>📝</span>}
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col p-4">
+                <div className="font-semibold text-gray-900 group-hover:text-indigo-700">{f.titre}</div>
+                {f.code && <div className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{f.code}</div>}
+                {f.description && <p className="mt-1 line-clamp-6 text-sm text-gray-600">{f.description}</p>}
+                <span className="mt-auto pt-3 text-sm font-semibold text-indigo-600">{t('Remplir →')}</span>
               </div>
             </Link>
           ))}
