@@ -88,7 +88,7 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
       { titre: 'Visite virtuelle', texte: 'Découvrez nos installations en photos.', image: B_WSSC + '1792597624209.webp', lien: '#visite' },
       { titre: 'Site du WSSC', texte: 'Chirurgies, informations aux patients et articles.', image: B_WSSC + '1792597654000.webp', lien: 'https://wssurgical.com/' },
       { titre: 'Bibliothèque', texte: 'Procédures (SOP) et documents de référence.', image: B_WSSC + '1792597634377.webp', lien: '/dashboard/sop' },
-      { titre: 'À propos', texte: 'Notre équipe et nos salles d’opération.', image: B_WSSC + '1792597662415.webp', lien: 'https://wssurgical.com/about-us' },
+      { titre: 'Gérer vos horaires', texte: 'Consultez votre horaire dans Agendrix.', image: '/cliniques/wssc/agendrix.webp', lien: 'https://app.agendrix.com/fr/connexion' },
     ],
     visite: {
       titre: 'Visite virtuelle',
@@ -126,6 +126,8 @@ const ACCUEIL_EN: Record<string, string> = {
   'Site du WSSC': 'WSSC website',
   'Chirurgies, informations aux patients et articles.': 'Surgeries, patient information and articles.',
   'À propos': 'About us',
+  'Gérer vos horaires': 'Manage your schedule',
+  'Consultez votre horaire dans Agendrix.': 'Check your schedule in Agendrix.',
   'Notre équipe et nos salles d’opération.': 'Our team and our operating rooms.',
   'Un aperçu des lieux où vous travaillez.': 'A look at the place where you work.',
   'Hall d’entrée et information': 'Entrance hall and information',
