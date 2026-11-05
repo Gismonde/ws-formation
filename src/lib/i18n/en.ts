@@ -2736,4 +2736,8 @@ export const EN: Record<string, string> = {
   'Ex. : Médicaments et substances contrôlées': 'E.g.: Medications and controlled substances',
   'Les politiques de {code} ne seront pas supprimées : elles passeront dans « Sans catégorie ».': 'Policies in {code} will not be deleted: they will move to “Uncategorized”.',
   'Public ajouté automatiquement : {deps}': 'Audience added automatically: {deps}',
+  'Tout déplier': 'Expand all',
+  'Tout réduire': 'Collapse all',
+  '{n} confirmation(s) en attente': '{n} confirmation(s) pending',
+  'À jour': 'Up to date',
 }

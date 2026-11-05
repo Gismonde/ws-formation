@@ -23,3 +23,12 @@ export function parCategorie<P extends { categorie_id?: string | null }>(pols: P
 }
 
 export const EMOJIS_CATEGORIE = ['💊', '🚶', '🔒', '🩺', '🏢', '🧼', '🚨', '📋', '👥', '⚖️', '🧯', '🩸', '🫀', '🧪', '📁', '🛏️'] as const
+
+const COULEURS = ['#4f46e5', '#0d9488', '#db2777', '#d97706', '#2563eb', '#7c3aed', '#059669', '#dc2626', '#0891b2', '#65a30d']
+/** Couleur stable d'une catégorie (d'après son code). */
+export function couleurCategorie(code: string | null | undefined): string {
+  if (!code) return '#6b7280'
+  let h = 0
+  for (const ch of code) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return COULEURS[h % COULEURS.length]
+}

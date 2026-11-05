@@ -6,6 +6,8 @@ import {
   employesDansPortee, peutPublierPolitiques, peutSuivrePolitique, Politique, statistiquesPolitiques, categoriesPolitiques,
 } from '@/lib/politiques'
 import { parCategorie } from '@/lib/politiques-categories'
+import SectionCategorie from '@/components/politiques/SectionCategorie'
+import ToutReplier from '@/components/politiques/ToutReplier'
 import { publicDe } from '@/lib/politiques-affichage'
 
 function Barre({ pct }: { pct: number }) {
@@ -87,52 +89,58 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
           {peutPublier && !voirArchives && <Link href="/admin/politiques/nouvelle" className="inline-block mt-3 text-indigo-600 text-sm hover:underline">{t('Publier la première politique →')}</Link>}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-xs uppercase text-gray-500">
-                <th className="text-left px-5 py-3 font-semibold">{t('Politique')}</th>
-                <th className="text-left px-3 py-3 font-semibold">{t('S’adresse à')}</th>
-                <th className="text-left px-3 py-3 font-semibold">{t('Lu et compris')}</th>
-                <th className="text-center px-3 py-3 font-semibold">{t('En attente')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupes.map(g => [
-                (categories.length > 0 && (
-                  <tr key={'g-' + (g.categorie?.id ?? 'aucune')} className="border-t border-gray-200 bg-indigo-50/50">
-                    <td colSpan={4} className="px-5 py-2 text-xs font-bold uppercase tracking-wide text-indigo-900">
-                      {g.categorie ? <>{g.categorie.emoji ?? '📁'} <span className="font-mono">{g.categorie.code}</span> — {g.categorie.nom}</> : t('Sans catégorie')}
-                      <span className="ml-2 font-normal normal-case text-indigo-700/70">{t('{n} politique(s)', { n: g.politiques.length })}</span>
-                    </td>
-                  </tr>
-                )),
-                ...g.politiques.map(p => {
-                const s = stats[p.id]
-                return (
-                  <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-5 py-3">
-                      <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-indigo-700">{p.titre}</Link>
-                      <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
-                    </td>
-                    <td className="px-3 py-3 text-gray-600">{publicDe(p, noms, t)}</td>
-                    <td className="px-3 py-3">
-                      {s.total === 0 ? <span className="text-xs text-gray-500">{t('Aucun employé visé')}</span> : (<>
-                        <Barre pct={s.pourcentage} />
-                        <div className="text-xs text-gray-400 mt-0.5">{t('{c} / {n} employé(s)', { c: s.confirmes, n: s.total })}</div>
-                      </>)}
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <Link href={`/admin/politiques/${p.id}?filtre=attente`} className={'font-semibold ' + (s.total - s.confirmes > 0 ? 'text-amber-700 hover:underline' : 'text-gray-300')}>
-                        {s.total - s.confirmes}
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })])}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {categories.length > 0 && <div className="mb-3 flex justify-end"><ToutReplier /></div>}
+          {groupes.map(g => {
+            const table = (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs uppercase text-gray-500">
+                      <th className="text-left px-5 py-3 font-semibold">{t('Politique')}</th>
+                      <th className="text-left px-3 py-3 font-semibold">{t('S’adresse à')}</th>
+                      <th className="text-left px-3 py-3 font-semibold">{t('Lu et compris')}</th>
+                      <th className="text-center px-3 py-3 font-semibold">{t('En attente')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.politiques.map(p => {
+                      const s = stats[p.id]
+                      return (
+                        <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
+                          <td className="px-5 py-3">
+                            <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-indigo-700">{p.titre}</Link>
+                            <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
+                          </td>
+                          <td className="px-3 py-3 text-gray-600">{publicDe(p, noms, t)}</td>
+                          <td className="px-3 py-3">
+                            {s.total === 0 ? <span className="text-xs text-gray-500">{t('Aucun employé visé')}</span> : (<>
+                              <Barre pct={s.pourcentage} />
+                              <div className="text-xs text-gray-400 mt-0.5">{t('{c} / {n} employé(s)', { c: s.confirmes, n: s.total })}</div>
+                            </>)}
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <Link href={`/admin/politiques/${p.id}?filtre=attente`} className={'font-semibold ' + (s.total - s.confirmes > 0 ? 'text-amber-700 hover:underline' : 'text-gray-300')}>
+                              {s.total - s.confirmes}
+                            </Link>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+            if (categories.length === 0) return <div key="toutes" className="bg-white border border-gray-200 rounded-xl">{table}</div>
+            const attente = g.politiques.reduce((n, p) => n + (stats[p.id].total - stats[p.id].confirmes), 0)
+            return (
+              <SectionCategorie key={g.categorie?.id ?? 'aucune'} categorie={g.categorie} titreSans={t('Sans catégorie')} nombre={t('{n} politique(s)', { n: g.politiques.length })}
+                detail={attente > 0 ? <span className="text-amber-700">⏳ {t('{n} confirmation(s) en attente', { n: attente })}</span> : <span className="text-green-700">✓ {t('À jour')}</span>}>
+                {table}
+              </SectionCategorie>
+            )
+          })}
+        </>
       )}
     </div>
   )
