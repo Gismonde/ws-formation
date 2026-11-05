@@ -40,7 +40,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
   const participants = (id: string) => (ins ?? []).filter(i => i.evenement_id === id).map(i => initiales.get(i.employe_id as string) ?? '·')
 
   // Bannière : l'événement mis en vedette par l'admin, sinon le prochain
-  const vedette = aVenirTous.find(x => x.ev.en_vedette) ?? aVenirTous.find(x => x.prochaine) ?? null
+  const vedette = aVenirTous.find(x => x.ev.en_vedette) ?? aVenirTous.find(x => x.prochaine) ?? aVenirTous[0] ?? null
 
   const jourCourt = (d: string) => new Date(d).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })
   const heure = (d: string) => new Date(d).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
