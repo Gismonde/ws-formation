@@ -2759,4 +2759,5 @@ export const EN: Record<string, string> = {
   'Choisir une image': 'Choose an image',
   'Une photo ou une capture de la première page : les employés reconnaissent le formulaire au premier coup d’œil.': 'A photo or a capture of the first page: employees recognize the form at a glance.',
   'Une photo ou une capture de la première page : les employés reconnaissent le formulaire au premier coup d’œil.': 'A photo or a capture of the first page: employees recognize the form at a glance.',
+  'Aperçu du formulaire {titre}': 'Preview of form {titre}',
 }
