@@ -15,7 +15,7 @@ describe('catalogue des notifications', () => {
     const { html, texte } = rendreCourriel({ origine: 'https://x', clinique: 'CMC', destinataire: 'Marie Tremblay', message: 'Inscription à {activite}.', vars: { activite: 'SST <base>' }, bouton: { libelle: 'Accéder à mon activité', lien: 'https://x/f' }, reglages: { contact_courriel: 'a@b.c' } })
     expect(html).toContain('Bonjour <span')
     expect(html).toContain('SST &lt;base&gt;')
-    expect(html).toContain('grs-montreal.png')
+    expect(html).not.toContain('grs-montreal.png')
     expect(html).toContain('Accéder à mon activité')
     expect(html).toContain('a@b.c')
     expect(texte).toContain('Bonjour Marie Tremblay,')
