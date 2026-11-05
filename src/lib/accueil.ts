@@ -14,6 +14,14 @@ export type ContenuAccueil = {
 
 // Photos de l’aménagement du WSSC (Entre Quatre Murs / Espace 313), hébergées dans le stockage de la plateforme
 const B_WSSC = 'https://vtuegggoruiowjxoiocd.supabase.co/storage/v1/object/public/lesson-images/cdee052a-af6e-4209-a182-5f9aa074abf9/'
+// Espaces cliniques du WSSC (photos fournies par la clinique)
+export const PHOTOS_CLINIQUES_WSSC = [
+  { url: '/cliniques/wssc/salle-op.webp', legende: 'Salle d’opération' },
+  { url: '/cliniques/wssc/repos-convalescence.webp', legende: 'Espace repos — patients en convalescence' },
+  { url: '/cliniques/wssc/attente-250.webp', legende: 'Salle d’attente du 250' },
+  { url: '/cliniques/wssc/pacu-c190.webp', legende: 'PACU (salle de réveil) — C-190' },
+]
+
 const photosWssc = [
   { url: B_WSSC + '1792597624209.webp', legende: 'Accueil' },
   { url: B_WSSC + '1792597627366.webp', legende: 'Réception' },
@@ -86,6 +94,7 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
       titre: 'Visite virtuelle',
       texte: 'Un aperçu des lieux où vous travaillez.',
       photos: [
+        ...PHOTOS_CLINIQUES_WSSC,
         ...photosWssc,
         ...galerieWssc,
       ],
@@ -128,6 +137,9 @@ const ACCUEIL_EN: Record<string, string> = {
   'Salon': 'Lounge',
   'Entrée': 'Entrance',
   'Salle de réveil': 'Recovery room',
+  'Espace repos — patients en convalescence': 'Rest area — convalescent patients',
+  'Salle d’attente du 250': 'Waiting room — suite 250',
+  'PACU (salle de réveil) — C-190': 'PACU (recovery room) — C-190',
   'Accueil': 'Front desk',
   'Réception': 'Reception',
   'Salle d’attente': 'Waiting room',

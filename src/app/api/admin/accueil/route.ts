@@ -14,6 +14,14 @@ async function autoriser(clinique: unknown) {
   return { acteur, clinique: clinique as Clinique }
 }
 
+/** Contenu enregistré (FR et EN) d'une clinique, pour l'édition. */
+export async function GET(req: NextRequest) {
+  const a = await autoriser(req.nextUrl.searchParams.get('clinique'))
+  if ('erreur' in a) return a.erreur
+  const { ligne } = await lireLigneAccueil(serviceClient(), a.clinique)
+  return NextResponse.json({ fr: partieAccueil(ligne, 'fr'), en: partieAccueil(ligne, 'en') })
+}
+
 export async function PUT(req: NextRequest) {
   const corps = await req.json().catch(() => ({}))
   const a = await autoriser(corps.clinique)
