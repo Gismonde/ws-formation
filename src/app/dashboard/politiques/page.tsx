@@ -25,7 +25,7 @@ export default async function MesPolitiquesPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '22px' }}>📜</span>
         <div style={{ flex: 1, minWidth: '200px' }}>
-          {catDe(p.categorie_id) && <div style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', marginBottom: '2px' }}>{catDe(p.categorie_id)!.emoji ?? '📁'} {catDe(p.categorie_id)!.code} — {catDe(p.categorie_id)!.nom}</div>}
+          {categories.length === 0 && catDe(p.categorie_id) && <div style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', marginBottom: '2px' }}>{catDe(p.categorie_id)!.emoji ?? '📁'} {catDe(p.categorie_id)!.code} — {catDe(p.categorie_id)!.nom}</div>}
           <div style={{ fontWeight: 600, color: '#111827' }}>{p.titre}</div>
           <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
             {t('Version {version}', { version: p.version })} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}
@@ -60,16 +60,23 @@ export default async function MesPolitiquesPage() {
       {enAttente.length > 0 && (
         <section style={{ marginBottom: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#92400e', margin: '0 0 10px' }}>{t('À confirmer ({n})', { n: enAttente.length })}</h2>
-          <div style={{ display: 'grid', gap: '10px' }}>{enAttente.map(carte)}</div>
+          {categories.length === 0 ? <div style={{ display: 'grid', gap: '10px' }}>{enAttente.map(carte)}</div> : (<>
+            <div className="mb-3 flex justify-end"><ToutReplier /></div>
+            {parCategorie(enAttente, categories).map(g => (
+              <SectionCategorie key={'a-' + (g.categorie?.id ?? 'aucune')} categorie={g.categorie} titreSans={t('Autres politiques')} nombre={t('{n} à confirmer', { n: g.politiques.length })}>
+                <div style={{ display: 'grid', gap: '10px', padding: '12px' }}>{g.politiques.map(carte)}</div>
+              </SectionCategorie>
+            ))}
+          </>)}
         </section>
       )}
       {confirmees.length > 0 && (
         <section>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 10px' }}>{t('Déjà confirmées ({n})', { n: confirmees.length })}</h2>
           {categories.length === 0 ? <div style={{ display: 'grid', gap: '10px' }}>{confirmees.map(carte)}</div> : (<>
-            <div className="mb-3 flex justify-end"><ToutReplier /></div>
+            {enAttente.length === 0 && <div className="mb-3 flex justify-end"><ToutReplier /></div>}
             {parCategorie(confirmees, categories).map(g => (
-              <SectionCategorie key={g.categorie?.id ?? 'aucune'} categorie={g.categorie} titreSans={t('Autres politiques')} nombre={t('{n} politique(s)', { n: g.politiques.length })}>
+              <SectionCategorie key={g.categorie?.id ?? 'aucune'} categorie={g.categorie} titreSans={t('Autres politiques')} nombre={t('{n} politique(s)', { n: g.politiques.length })} ouvert={false}>
                 <div style={{ display: 'grid', gap: '10px', padding: '12px' }}>{g.politiques.map(carte)}</div>
               </SectionCategorie>
             ))}
