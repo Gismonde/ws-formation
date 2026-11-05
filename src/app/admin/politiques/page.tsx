@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import {
-  employesDansPortee, peutPublierPolitiques, peutSuivrePolitique, Politique, statistiquesPolitiques,
+  employesDansPortee, peutPublierPolitiques, peutSuivrePolitique, Politique, statistiquesPolitiques, categoriesPolitiques,
 } from '@/lib/politiques'
+import { parCategorie } from '@/lib/politiques-categories'
 import { publicDe } from '@/lib/politiques-affichage'
 
 function Barre({ pct }: { pct: number }) {
@@ -19,11 +20,11 @@ function Barre({ pct }: { pct: number }) {
   )
 }
 
-export default async function PolitiquesAdminPage({ searchParams }: { searchParams: Promise<{ archives?: string }> }) {
+export default async function PolitiquesAdminPage({ searchParams }: { searchParams: Promise<{ archives?: string; cat?: string }> }) {
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
-  const { archives } = await searchParams
+  const { archives, cat } = await searchParams
   const voirArchives = archives === '1'
 
   const sb = serviceClient()
@@ -32,7 +33,11 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
     sb.from('departements').select('id, nom'),
   ])
   const noms = new Map((deps ?? []).map(d => [d.id as string, d.nom as string]))
-  const politiques = ((data ?? []) as Politique[]).filter(p => peutSuivrePolitique(acteur, p))
+  const toutes = ((data ?? []) as Politique[]).filter(p => peutSuivrePolitique(acteur, p))
+  const categories = await categoriesPolitiques(sb)
+  const politiques = !cat ? toutes : cat === 'aucune' ? toutes.filter(p => !p.categorie_id) : toutes.filter(p => p.categorie_id === cat)
+  const groupes = parCategorie(politiques, categories)
+  const lienCat = (c?: string) => '/admin/politiques?' + new URLSearchParams({ ...(voirArchives ? { archives: '1' } : {}), ...(c ? { cat: c } : {}) }).toString()
   const stats = await statistiquesPolitiques(sb, politiques, await employesDansPortee(sb, acteur))
   const peutPublier = peutPublierPolitiques(acteur)
 
@@ -50,11 +55,28 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
             {voirArchives ? 'Politiques en vigueur' : 'Archives'}
           </Link>
           {peutPublier && (
+            <Link href="/admin/politiques/categories" className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">🗂️ {t('Catégories')}</Link>
+          )}
+          {peutPublier && (
             <Link href="/admin/politiques/nouvelle" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium">{t('+ Nouvelle politique')}</Link>
           )}
         </div>
       </div>
 
+      {categories.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {[{ id: undefined as string | undefined, l: t('Toutes'), n: toutes.length },
+            ...categories.map(c => ({ id: c.id as string | undefined, l: `${c.emoji ?? '📁'} ${c.code}`, n: toutes.filter(p => p.categorie_id === c.id).length, titre: c.nom })),
+            { id: 'aucune', l: t('Sans catégorie'), n: toutes.filter(p => !p.categorie_id).length }]
+            .filter(c => c.id === undefined || c.n > 0 || cat === c.id)
+            .map(c => (
+              <Link key={c.id ?? 'toutes'} href={lienCat(c.id)} title={'titre' in c ? String(c.titre) : undefined}
+                className={'rounded-full border px-3.5 py-1.5 text-xs font-bold ' + (cat === c.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300')}>
+                {c.l} <span className="opacity-60">{c.n}</span>
+              </Link>
+            ))}
+        </div>
+      )}
       {error ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-amber-800">
           Le module Politiques n’est pas encore activé dans la base de données (script SQL <code>{t('politiques.sql')}</code> à exécuter dans Supabase).
@@ -76,7 +98,16 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
               </tr>
             </thead>
             <tbody>
-              {politiques.map(p => {
+              {groupes.map(g => [
+                (categories.length > 0 && (
+                  <tr key={'g-' + (g.categorie?.id ?? 'aucune')} className="border-t border-gray-200 bg-indigo-50/50">
+                    <td colSpan={4} className="px-5 py-2 text-xs font-bold uppercase tracking-wide text-indigo-900">
+                      {g.categorie ? <>{g.categorie.emoji ?? '📁'} <span className="font-mono">{g.categorie.code}</span> — {g.categorie.nom}</> : t('Sans catégorie')}
+                      <span className="ml-2 font-normal normal-case text-indigo-700/70">{t('{n} politique(s)', { n: g.politiques.length })}</span>
+                    </td>
+                  </tr>
+                )),
+                ...g.politiques.map(p => {
                 const s = stats[p.id]
                 return (
                   <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
@@ -98,7 +129,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
                     </td>
                   </tr>
                 )
-              })}
+              })])}
             </tbody>
           </table>
         </div>

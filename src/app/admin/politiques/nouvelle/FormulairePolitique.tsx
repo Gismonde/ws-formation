@@ -9,6 +9,8 @@ import ChampsCiblage, { Ciblage, EmployeOption, corpsCiblage, ciblageVide } from
 import { CliniqueEmploye } from '@/lib/cliniques'
 import { REGLES_MEDIAS } from '@/lib/medias'
 import { titreDepuisFichier } from '@/lib/titre-fichier'
+import ChoixCategorie from '@/components/politiques/ChoixCategorie'
+import type { CategoriePolitique } from '@/lib/politiques-categories'
 
 type Ligne = {
   cle: string
@@ -21,7 +23,8 @@ type Ligne = {
   id?: string
 }
 
-export default function FormulairePolitique({ cliniques, options, courrielsActifs }: {
+export default function FormulairePolitique({ cliniques, options, courrielsActifs, categories = [] }: {
+  categories?: CategoriePolitique[]
   cliniques: CliniqueEmploye[]
   options: { departements: { id: string; nom: string }[]; postes: string[]; familles: { famille: string; postes: string[] }[]; employes: EmployeOption[]; rolesPostes: boolean }
   courrielsActifs: boolean
@@ -32,6 +35,7 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
   const [lignes, setLignes] = useState<Ligne[]>([])
   const [ciblage, setCiblage] = useState<Ciblage>({ clinique: cliniques[0], tous: true, departements: [], employes: [], roles: [], postes: [] })
   const [notifier, setNotifier] = useState(true)
+  const [categorie, setCategorie] = useState<string | null>(null)
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState('')
   const [survol, setSurvol] = useState(false)
@@ -63,7 +67,7 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
     for (const l of aPublier) {
       const res = await fetch('/api/politiques', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre: l.titre, description: l.description, ...corpsCiblage(ciblage), fichier: l.reference, nom_fichier: l.nomFichier, notifier }),
+        body: JSON.stringify({ titre: l.titre, description: l.description, ...corpsCiblage(ciblage), ...(categorie ? { categorie_id: categorie } : {}), fichier: l.reference, nom_fichier: l.nomFichier, notifier }),
       })
       const d = await res.json().catch(() => ({}))
       if (res.ok) { maj(l.cle, { etat: 'publiee', id: d.id }); derniere = d.id }
@@ -117,6 +121,12 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
           ))}
         </div>
       )}
+
+      <ChoixCategorie categories={categories} departements={options.departements} valeur={categorie} onChange={(id, cat) => {
+        setCategorie(id)
+        // Ciblage automatique : les départements associés à la catégorie sont ajoutés au public
+        if (cat?.departements.length) setCiblage(c => ({ ...c, tous: false, departements: Array.from(new Set([...c.departements, ...cat.departements])) }))
+      }} />
 
       <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={cliniques} departements={options.departements} postes={options.postes} familles={options.familles} employes={options.employes} rolesPostes={options.rolesPostes} />
 

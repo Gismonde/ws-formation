@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import {
   cliniquesPolitiquePossibles, employesDansPortee, peutGererPolitique, peutSuivrePolitique, Politique, statistiquesPolitiques,
-  estPourToute, optionsCiblage,
+  estPourToute, optionsCiblage, categoriesPolitiques,
 } from '@/lib/politiques'
 import { publicDe } from '@/lib/politiques-affichage'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
@@ -88,6 +88,9 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
         ciblage={{ clinique: pol.clinique, tous: estPourToute(pol), departements: pol.departements ?? [], employes: pol.employes ?? [], roles: pol.roles ?? [], postes: pol.postes ?? [] }}
         options={peutGererPolitique(acteur, pol) ? await optionsCiblage(sb, acteur) : null}
         actif={pol.actif}
+        categorieId={pol.categorie_id ?? null}
+        categories={await categoriesPolitiques(sb)}
+        categoriesActives={'categorie_id' in pol}
         enAttente={stat.total - stat.confirmes}
         peutGerer={peutGererPolitique(acteur, pol)}
         courrielsActifs={courrielsActifs()}
