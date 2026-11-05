@@ -6,6 +6,9 @@ import ZoneSelection from './ZoneSelection'
 import { getActeur, serviceClient, filtrerEmployes, peutGererEmploye, cliniquesAdministrees } from '@/lib/permissions'
 import { aAccesAdmin, ROLE_LABEL, CLINIQUE_INFO, Clinique, gestionnaireAvecDroits } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
+import SectionRepliable from '@/components/SectionRepliable'
+import ToutReplier from '@/components/politiques/ToutReplier'
+import { couleurCategorie } from '@/lib/politiques-categories'
 
 const roleStyles: Record<string, { bg: string; color: string; border: string }> = {
   super_admin: { bg: '#faf5ff', color: '#7c3aed', border: '#e9d5ff' },
@@ -78,6 +81,70 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   }
   const tdStyle = { padding: '14px 16px', fontSize: '14px', color: '#374151' }
 
+  // Regroupement par département d'affiliation (ordre alphabétique, « Non assigné » à la fin)
+  const groupesDep = (() => {
+    const m = new Map<string, { id: string | null; nom: string; employes: any[]; gestionnaires: string[] }>()
+    for (const e of actifs) {
+      const id = (e.departement_id as string | null) ?? null
+      const cle = id ?? '—'
+      if (!m.has(cle)) m.set(cle, { id, nom: e.departements?.nom ?? t('Non assigné'), employes: [], gestionnaires: [] })
+      const g = m.get(cle)!
+      g.employes.push(e)
+      if (e.role === 'gestionnaire') g.gestionnaires.push(`${e.prenom} ${e.nom}`)
+    }
+    return Array.from(m.values()).sort((x, y) => (x.id ? 0 : 1) - (y.id ? 0 : 1) || x.nom.localeCompare(y.nom, 'fr'))
+  })()
+
+  const ligneActif = (emp: any, i: number, n: number, groupe: string) => {
+              const rs = roleStyles[emp.role] ?? { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
+              return (
+                <tr key={emp.id} style={{ borderBottom: i < n - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                  <td style={{ ...tdStyle, paddingRight: 0 }}>
+                    <input type="checkbox" name="employe" value={emp.id} data-groupe={groupe} data-actif="1" data-gerable={peutGerer(emp) ? '1' : '0'} aria-label={`Sélectionner ${emp.prenom} ${emp.nom}`} />
+                  </td>
+                  <td style={tdStyle}>
+                    <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
+                    {emp.pronoms && <span style={{ marginLeft: '6px', fontSize: '12px', color: '#9ca3af' }}>({emp.pronoms})</span>}
+                    {emp.externe && <span title={emp.organisation ?? undefined} style={{ marginLeft: '6px', display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: '#f4ecf7', color: '#5b3f6b', border: '1px solid #e2d2ea', verticalAlign: 'middle' }}>{t('Externe')}</span>}
+                    {(emp.poste || (emp.externe && emp.organisation)) && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{[emp.poste, emp.externe ? emp.organisation : null].filter(Boolean).join(' · ')}</div>}
+                  </td>
+                  <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
+                  <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
+                  <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? t('Non assigné')}</td>
+                  <td style={tdStyle}>
+                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
+                      {t(roleLabel[emp.role] ?? emp.role)}
+                    </span>
+                    {emp.role === 'gestionnaire' && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {([['peut_suivre_employes', '👥', t('Suivi')], ['peut_creer_formations', '✏️', t('Formations')], ['peut_valider_formations', '✅', t('Validation')], ['peut_creer_evenements', '📅', t('Événements')], ['peut_assigner_externes', '🤝', t('Externes')]] as const)
+                          .filter(([cle]) => emp[cle]).map(([cle, icone, libelle]) => (
+                            <span key={cle} style={{ padding: '1px 7px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>{icone} {libelle}</span>
+                          ))}
+                        {!gestionnaireAvecDroits(emp) && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{t('Sans accès admin')}</span>}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbAssign(emp.id)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbCerts(emp.id)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center' as const }}>
+                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', fontSize: '12px', fontWeight: '600', border: '1px solid #bbf7d0' }}>{t('Actif')}</span>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center' as const }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eef2ff', color: '#4f46e5', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #c7d2fe' }}>
+                        {t('Dossier')}
+                      </Link>
+                      <Link href={`/admin/employes/${emp.id}?onglet=preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
+                        {t('Preuves')}
+                      </Link>
+                      {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />}
+                    </div>
+                  </td>
+                </tr>
+              )
+  }
+
   return (
     <div>
       {/* Header */}
@@ -146,76 +213,40 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
       )}
 
       <ZoneSelection>
-      {/* Active employees table */}
-      <div style={{ ...tableStyle, marginBottom: '32px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
-          <thead>
-            <tr>
-              <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout="actifs" aria-label={t('Sélectionner tous les employés actifs')} /></th>
-              <th style={thStyle}>{t('Nom')}</th>
-              <th style={thStyle}>{t('Email')}</th>
-              <th style={thStyle}>{t('Clinique')}</th>
-              <th style={thStyle}>{t('Département')}</th>
-              <th style={thStyle}>{t('Rôle')}</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Formations')}</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Certificats')}</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Statut')}</th>
-              <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {actifs.map((emp: any, i: number) => {
-              const rs = roleStyles[emp.role] ?? { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
-              return (
-                <tr key={emp.id} style={{ borderBottom: i < actifs.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                  <td style={{ ...tdStyle, paddingRight: 0 }}>
-                    <input type="checkbox" name="employe" value={emp.id} data-groupe="actifs" data-actif="1" data-gerable={peutGerer(emp) ? '1' : '0'} aria-label={`Sélectionner ${emp.prenom} ${emp.nom}`} />
-                  </td>
-                  <td style={tdStyle}>
-                    <Link href={`/admin/employes/${emp.id}`} style={{ fontWeight: '600', color: '#111827', textDecoration: 'none' }}>{emp.prenom} {emp.nom}</Link>
-                    {emp.pronoms && <span style={{ marginLeft: '6px', fontSize: '12px', color: '#9ca3af' }}>({emp.pronoms})</span>}
-                    {emp.externe && <span title={emp.organisation ?? undefined} style={{ marginLeft: '6px', display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: '#f4ecf7', color: '#5b3f6b', border: '1px solid #e2d2ea', verticalAlign: 'middle' }}>{t('Externe')}</span>}
-                    {(emp.poste || (emp.externe && emp.organisation)) && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{[emp.poste, emp.externe ? emp.organisation : null].filter(Boolean).join(' · ')}</div>}
-                  </td>
-                  <td style={{ ...tdStyle, color: '#6b7280' }}>{emp.email}</td>
-                  <td style={tdStyle}><CliniqueBadge clinique={emp.clinique} role={emp.role} /></td>
-                  <td style={{ ...tdStyle, color: '#9ca3af', fontStyle: 'italic' }}>{emp.departements?.nom ?? t('Non assigné')}</td>
-                  <td style={tdStyle}>
-                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: rs.bg, color: rs.color, fontSize: '12px', fontWeight: '600', border: `1px solid ${rs.border}` }}>
-                      {t(roleLabel[emp.role] ?? emp.role)}
-                    </span>
-                    {emp.role === 'gestionnaire' && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                        {([['peut_suivre_employes', '👥', t('Suivi')], ['peut_creer_formations', '✏️', t('Formations')], ['peut_valider_formations', '✅', t('Validation')], ['peut_creer_evenements', '📅', t('Événements')], ['peut_assigner_externes', '🤝', t('Externes')]] as const)
-                          .filter(([cle]) => emp[cle]).map(([cle, icone, libelle]) => (
-                            <span key={cle} style={{ padding: '1px 7px', borderRadius: '20px', background: '#eef2ff', color: '#4f46e5', fontSize: '11px', fontWeight: 600, border: '1px solid #c7d2fe' }}>{icone} {libelle}</span>
-                          ))}
-                        {!gestionnaireAvecDroits(emp) && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{t('Sans accès admin')}</span>}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbAssign(emp.id)}</td>
-                  <td style={{ ...tdStyle, textAlign: 'center' as const, fontWeight: '600' }}>{nbCerts(emp.id)}</td>
-                  <td style={{ ...tdStyle, textAlign: 'center' as const }}>
-                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', fontSize: '12px', fontWeight: '600', border: '1px solid #bbf7d0' }}>{t('Actif')}</span>
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' as const }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <Link href={`/admin/employes/${emp.id}`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#eef2ff', color: '#4f46e5', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #c7d2fe' }}>
-                        {t('Dossier')}
-                      </Link>
-                      <Link href={`/admin/employes/${emp.id}?onglet=preuves`} style={{ padding: '5px 12px', borderRadius: '6px', background: '#fefce8', color: '#ca8a04', textDecoration: 'none', fontSize: '12px', fontWeight: '600', border: '1px solid #fde68a' }}>
-                        {t('Preuves')}
-                      </Link>
-                      {peutGerer(emp) && <ToggleActifButton id={emp.id} actif={true} nom={`${emp.prenom} ${emp.nom}`} />}
-                    </div>
-                  </td>
+      {/* Employés actifs, regroupés par département (sections repliables) */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}><ToutReplier /></div>
+      {groupesDep.map(g => {
+        const groupe = 'dep-' + (g.id ?? 'aucun')
+        return (
+          <SectionRepliable key={groupe} couleur={g.id ? couleurCategorie(g.nom) : '#9ca3af'} icone={g.id ? '🏥' : '❔'} titre={g.id ? g.nom : t('Non assigné')}
+            sousTitre={t('{n} employé(s) actif(s)', { n: g.employes.length })}
+            detail={g.gestionnaires.length ? <span style={{ color: '#ea580c' }}>👤 {g.gestionnaires.join(', ')}</span> : undefined}
+            ouvert={groupesDep.length <= 1}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '14px' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thStyle, width: '36px', paddingRight: 0 }}><input type="checkbox" data-tout={groupe} aria-label={t('Sélectionner tous les employés de ce groupe')} /></th>
+                  <th style={thStyle}>{t('Nom')}</th>
+                  <th style={thStyle}>{t('Email')}</th>
+                  <th style={thStyle}>{t('Clinique')}</th>
+                  <th style={thStyle}>{t('Département')}</th>
+                  <th style={thStyle}>{t('Rôle')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Formations')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Certificats')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Statut')}</th>
+                  <th style={{ ...thStyle, textAlign: 'center' as const }}>{t('Actions')}</th>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+                <tbody>
+                  {g.employes.map((emp: any, i: number) => ligneActif(emp, i, g.employes.length, groupe))}
+                </tbody>
+              </table>
+            </div>
+          </SectionRepliable>
+        )
+      })}
+      <div style={{ marginBottom: '32px' }} />
 
       {/* Archived employees */}
       {archives.length > 0 && (
