@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     objectifs: Array.isArray(c.objectifs) ? c.objectifs.slice(0, 12).map(String) : [],
     image_couverture: txt(c.image_couverture, 1000) || null, creee_par: a.id,
   }
+  if (Number(c.validite_mois) > 0) base.validite_mois = Math.min(120, Math.round(Number(c.validite_mois)))
   if (c.mode_presentation === 'ecrans') base.mode_presentation = 'ecrans'
   if (c.audio_auto === true) base.audio_auto = true
   const remplacerId = typeof c.remplacer_id === 'string' ? c.remplacer_id : null
