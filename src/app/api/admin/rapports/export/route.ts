@@ -1,6 +1,7 @@
 // Export de la page Rapports : progression par formation (Excel ou PDF).
 import { NextRequest, NextResponse } from 'next/server'
-import { getActeur, serviceClient, libellePerimetre, cliniquesAdministrees } from '@/lib/permissions'
+import { getActeur, serviceClient, libellePerimetre, cliniquesAdministrees, idsEmployesDansPortee } from '@/lib/permissions'
+import { rapportInteret, type LigneInteret } from '@/lib/formations-libres'
 import { aAccesAdmin, ROLE_LABEL } from '@/lib/cliniques'
 import { chargerConformite, synthese, rapportParFormation, formationsDuRapport, type LigneRapportFormation } from '@/lib/conformite'
 import { classeurExcel, nomFichier, reponseFichier, type Colonne } from '@/lib/export-tableur'
@@ -23,6 +24,18 @@ const COLONNES: Colonne<LigneRapportFormation>[] = [
   { titre: 'Taux de complétion (%)', valeur: l => (l.assignes ? l.taux : ''), largeur: 14 },
 ]
 
+const COLONNES_INTERET: Colonne<LigneInteret>[] = [
+  { titre: 'Formation', valeur: l => l.titre, largeur: 42 },
+  { titre: 'Accès', valeur: l => (l.mode === 'libre' ? 'Sans obligation' : 'Sur demande'), largeur: 16 },
+  { titre: 'Clinique', valeur: l => clinique(l.clinique), largeur: 12 },
+  { titre: 'Inscriptions volontaires', valeur: l => l.inscrits, largeur: 14 },
+  { titre: 'Terminées', valeur: l => l.termines, largeur: 10 },
+  { titre: 'Demandes en attente', valeur: l => (l.mode === 'demande' ? l.en_attente : ''), largeur: 12 },
+  { titre: 'Demandes acceptées', valeur: l => (l.mode === 'demande' ? l.acceptees : ''), largeur: 12 },
+  { titre: 'Demandes refusées', valeur: l => (l.mode === 'demande' ? l.refusees : ''), largeur: 12 },
+  { titre: 'Départements intéressés', valeur: l => l.departements.map(d => `${d.nom} (${d.n})`).join(', '), largeur: 40 },
+]
+
 export async function GET(req: NextRequest) {
   const acteur = await getActeur()
   if (!acteur || !aAccesAdmin(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
@@ -41,7 +54,8 @@ export async function GET(req: NextRequest) {
   })
 
   if (format === 'xlsx') {
-    const xlsx = await classeurExcel([{ nom: 'Progression par formation', colonnes: COLONNES, lignes }], { titre: 'Rapports — WS Formation' })
+    const interet = await rapportInteret(sb, formations, await idsEmployesDansPortee(acteur, sb)).catch(() => [] as LigneInteret[])
+    const xlsx = await classeurExcel([{ nom: 'Progression par formation', colonnes: COLONNES, lignes }, { nom: 'Formations disponibles', colonnes: COLONNES_INTERET, lignes: interet }], { titre: 'Rapports — WS Formation' })
     return reponseFichier(xlsx, nomFichier('rapport-formations', 'xlsx'))
   }
 
