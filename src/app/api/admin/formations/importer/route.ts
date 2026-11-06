@@ -1,5 +1,7 @@
 // Import d'une formation complète (formation, modules, leçons, blocs, questionnaire) à partir d'un JSON.
 // Réservé aux administrateurs. La formation est créée en brouillon.
+// Avec « remplacer_id » : remplace le contenu d'une formation existante restée en brouillon,
+// jamais assignée ni commencée (même identifiant, aucun doublon).
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, peutGererContenu } from '@/lib/permissions'
 import { estCliniqueContenu } from '@/lib/cliniques'
@@ -36,13 +38,42 @@ export async function POST(req: Request) {
   }
   if (c.mode_presentation === 'ecrans') base.mode_presentation = 'ecrans'
   if (c.audio_auto === true) base.audio_auto = true
-  let { data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()
+  const remplacerId = typeof c.remplacer_id === 'string' ? c.remplacer_id : null
+  if (remplacerId) {
+    const { data: ex } = await sb.from('formations').select('id, publiee, clinique').eq('id', remplacerId).maybeSingle()
+    if (!ex) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
+    if (ex.publiee) return NextResponse.json({ error: 'Formation publiée : remplacement refusé' }, { status: 409 })
+    if (!peutGererContenu(a, ex.clinique)) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
+    const [{ count: nbAss }, { count: nbProg }] = await Promise.all([
+      sb.from('assignations').select('*', { count: 'exact', head: true }).eq('formation_id', remplacerId),
+      sb.from('progressions').select('*', { count: 'exact', head: true }).eq('formation_id', remplacerId),
+    ])
+    if ((nbAss ?? 0) > 0 || (nbProg ?? 0) > 0) return NextResponse.json({ error: 'Formation déjà assignée ou commencée : remplacement refusé' }, { status: 409 })
+    const { creee_par: _c, ...maj } = base
+    void _c
+    let { error: eu } = await sb.from('formations').update(maj).eq('id', remplacerId)
+    if (eu && /audio_auto|mode_presentation/.test(eu.message)) { delete maj.audio_auto; delete maj.mode_presentation; ({ error: eu } = await sb.from('formations').update(maj).eq('id', remplacerId)) }
+    if (eu) return NextResponse.json({ error: eu.message }, { status: 500 })
+    const { data: qz } = await sb.from('questionnaires').select('id').eq('formation_id', remplacerId)
+    const qIds = (qz ?? []).map(q => q.id)
+    if (qIds.length) {
+      const { data: qus } = await sb.from('questions').select('id').in('questionnaire_id', qIds)
+      const quIds = (qus ?? []).map(q => q.id)
+      if (quIds.length) await sb.from('reponses_possibles').delete().in('question_id', quIds)
+      await sb.from('questions').delete().in('questionnaire_id', qIds)
+      await sb.from('questionnaires').delete().in('id', qIds)
+    }
+    await sb.from('modules').delete().eq('formation_id', remplacerId)
+  }
+  let { data: f, error } = remplacerId
+    ? { data: { id: remplacerId }, error: null as { message: string } | null }
+    : await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()
   if (error && /audio_auto/.test(error.message)) { delete base.audio_auto; ({ data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()) }
   if (error && /mode_presentation/.test(error.message)) { delete base.mode_presentation; ({ data: f, error } = await sb.from('formations').insert({ ...base, delivre_certificat: true }).select('id').single()) }
   if (error && /delivre_certificat/.test(error.message)) ({ data: f, error } = await sb.from('formations').insert(base).select('id').single())
   if (error || !f) return NextResponse.json({ error: error?.message ?? 'Création impossible' }, { status: 500 })
 
-  const nettoyer = async (msg: string) => { await sb.from('formations').delete().eq('id', f!.id); return NextResponse.json({ error: msg }, { status: 500 }) }
+  const nettoyer = async (msg: string) => { if (!remplacerId) await sb.from('formations').delete().eq('id', f!.id); return NextResponse.json({ error: msg }, { status: 500 }) }
   let nbLecons = 0, nbBlocs = 0
   for (let i = 0; i < modules.length; i++) {
     const m = modules[i]
@@ -80,6 +111,6 @@ export async function POST(req: Request) {
       await sb.from('reponses_possibles').insert(qs[i].reponses.map((r, k) => ({ question_id: qu.id, texte: txt(r.texte, 500), est_correcte: r.est_correcte === true, ordre: k + 1 })))
     }
   }
-  await logAudit({ acteur_id: a.id, formation_id: f.id, type_action: 'FORMATION_CREEE', description: `Formation importée : « ${base.titre} » (${modules.length} modules, ${nbLecons} leçons, ${nbBlocs} blocs)`, metadata: { historique: true, import: true } })
+  await logAudit({ acteur_id: a.id, formation_id: f.id, type_action: remplacerId ? 'FORMATION_MODIFIEE' : 'FORMATION_CREEE', description: `${remplacerId ? 'Contenu remplacé' : 'Formation importée'} : « ${base.titre} » (${modules.length} modules, ${nbLecons} leçons, ${nbBlocs} blocs)`, metadata: { historique: true, import: true } })
   return NextResponse.json({ id: f.id, modules: modules.length, lecons: nbLecons, blocs: nbBlocs, questions: qs.length })
 }
