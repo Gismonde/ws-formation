@@ -3,10 +3,12 @@
 //   blocs   : [{ lecon, apres?, bloc }]  — insère un bloc dans une leçon (après le bloc titré « apres », sinon à la fin)
 //   modifs  : [{ lecon, bloc, champs }]   — modifie titre/contenu/url/metadata d'un bloc existant (repéré par son titre)
 //   lecons  : [{ module, apres?, titre, description?, duree_minutes?, blocs }] — ajoute une leçon dans un module
-//   reglages: { image_couverture? }       — réglages simples de la formation
+//   reglages: { image_couverture?, acces_hors_assignation? } — réglages simples de la formation
+//   publier : true                         — publie la formation à la fin (première version notée si besoin)
+// La « clinique affichée » de l'espace Admin ne limite pas cette route (seulement les droits réels).
 // Réservé aux administrateurs qui gèrent la clinique de la formation.
 import { NextResponse } from 'next/server'
-import { getActeur, serviceClient, peutGererContenu } from '@/lib/permissions'
+import { getActeur, serviceClient, cliniquesContenuGerablesToutes } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
 
 const TYPES = ['text', 'image', 'video', 'file', 'slide', 'quiz', 'interactif']
@@ -26,7 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const sb = serviceClient()
   const { data: f } = await sb.from('formations').select('id, titre, publiee, clinique').eq('id', id).maybeSingle()
   if (!f) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
-  if (!peutGererContenu(a, f.clinique)) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
+  if (!cliniquesContenuGerablesToutes(a).includes((f.clinique ?? 'LES_DEUX') as never)) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
   if (f.publiee) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
 
   const { data: mods } = await sb.from('modules').select('id, titre, ordre').eq('formation_id', id).order('ordre')
@@ -85,11 +87,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (c.reglages && typeof c.reglages === 'object') {
     const maj: Record<string, unknown> = {}
     if (typeof c.reglages.image_couverture === 'string') maj.image_couverture = txt(c.reglages.image_couverture, 1000) || null
+    if (['aucun', 'libre', 'demande'].includes(c.reglages.acces_hors_assignation)) maj.acces_hors_assignation = c.reglages.acces_hors_assignation
     if (Object.keys(maj).length) {
       const { error } = await sb.from('formations').update(maj).eq('id', id)
       if (error) return NextResponse.json({ error: error.message, journal }, { status: 500 })
       journal.push('Réglages modifiés : ' + Object.keys(maj).join(', '))
     }
+  }
+
+  if (c.publier === true) {
+    const { data: fr } = await sb.from('formations').select('*').eq('id', id).single()
+    const { error } = await sb.from('formations').update({ publiee: true }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message, journal }, { status: 500 })
+    if (fr && 'publiee_le' in fr && !fr.publiee_le) {
+      const maintenant = new Date().toISOString()
+      await sb.from('formations').update({ publiee_le: maintenant, version: 1, version_le: maintenant }).eq('id', id)
+      await sb.from('formations_versions').insert({ formation_id: id, version: 1, publiee_le: maintenant, note: 'Publication initiale', publiee_par: a.id })
+    }
+    journal.push('Formation publiée')
   }
 
   if (journal.length) await logAudit({ acteur_id: a.id, formation_id: id, type_action: 'FORMATION_MODIFIEE', description: `Contenu complété : ${journal.join(' · ')}`.slice(0, 1000), metadata: { historique: true } })
