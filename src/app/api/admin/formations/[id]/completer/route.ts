@@ -3,7 +3,9 @@
 //   blocs   : [{ lecon, apres?, bloc }]  — insère un bloc dans une leçon (après le bloc titré « apres », sinon à la fin)
 //   modifs  : [{ lecon, bloc, champs }]   — modifie titre/contenu/url/metadata d'un bloc existant (repéré par son titre)
 //   lecons  : [{ module, apres?, titre, description?, duree_minutes?, blocs }] — ajoute une leçon dans un module
-//   reglages: { image_couverture?, acces_hors_assignation? } — réglages simples de la formation
+//   reglages: { titre?, description?, objectifs?, categorie?, image_couverture?, validite_mois?, acces_hors_assignation?, responsable_id? }
+//   questions: [{ texte, reponses: [{ texte, est_correcte }] }] — ajoutées à la fin du questionnaire final (créé au besoin)
+//   note_passage: nombre — seuil du questionnaire final
 //   publier : true                         — publie la formation à la fin (première version notée si besoin)
 // La « clinique affichée » de l'espace Admin ne limite pas cette route (seulement les droits réels).
 // Réservé aux administrateurs qui gèrent la clinique de la formation.
@@ -88,10 +90,44 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const maj: Record<string, unknown> = {}
     if (typeof c.reglages.image_couverture === 'string') maj.image_couverture = txt(c.reglages.image_couverture, 1000) || null
     if (['aucun', 'libre', 'demande'].includes(c.reglages.acces_hors_assignation)) maj.acces_hors_assignation = c.reglages.acces_hors_assignation
+    if (typeof c.reglages.titre === 'string' && c.reglages.titre.trim()) maj.titre = txt(c.reglages.titre, 300)
+    if (typeof c.reglages.description === 'string') maj.description = txt(c.reglages.description, 4000) || null
+    if (typeof c.reglages.categorie === 'string' && c.reglages.categorie.trim()) maj.categorie = txt(c.reglages.categorie, 80)
+    if (Array.isArray(c.reglages.objectifs)) maj.objectifs = c.reglages.objectifs.slice(0, 12).map((o: unknown) => txt(o, 300)).filter(Boolean)
+    if ('validite_mois' in c.reglages) maj.validite_mois = Number(c.reglages.validite_mois) > 0 ? Math.min(120, Math.round(Number(c.reglages.validite_mois))) : null
+    if ('responsable_id' in c.reglages) {
+      const rid = c.reglages.responsable_id ? String(c.reglages.responsable_id) : null
+      if (rid) { const { data: r } = await sb.from('employes').select('id').eq('id', rid).maybeSingle(); if (!r) return NextResponse.json({ error: 'Responsable introuvable', journal }, { status: 400 }) }
+      maj.responsable_id = rid
+    }
     if (Object.keys(maj).length) {
       const { error } = await sb.from('formations').update(maj).eq('id', id)
       if (error) return NextResponse.json({ error: error.message, journal }, { status: 500 })
       journal.push('Réglages modifiés : ' + Object.keys(maj).join(', '))
+    }
+  }
+
+  // Questions ajoutées au questionnaire final
+  const nouvellesQ = (Array.isArray(c.questions) ? c.questions : []) as { texte: string; reponses: { texte: string; est_correcte: boolean }[] }[]
+  if (nouvellesQ.length || Number(c.note_passage) > 0) {
+    let { data: qz } = await sb.from('questionnaires').select('id').eq('formation_id', id).limit(1).maybeSingle()
+    if (!qz) {
+      const { data: cree, error } = await sb.from('questionnaires').insert({ formation_id: id, titre: 'Questionnaire final', note_passage: Math.min(100, Math.max(1, Number(c.note_passage) || 100)) }).select('id').single()
+      if (error || !cree) return NextResponse.json({ error: error?.message ?? 'Questionnaire', journal }, { status: 500 })
+      qz = cree
+    } else if (Number(c.note_passage) > 0) {
+      await sb.from('questionnaires').update({ note_passage: Math.min(100, Math.max(1, Number(c.note_passage))) }).eq('id', qz.id)
+      journal.push(`Seuil de réussite : ${Number(c.note_passage)} %`)
+    }
+    const { data: der } = await sb.from('questions').select('ordre').eq('questionnaire_id', qz.id).order('ordre', { ascending: false }).limit(1).maybeSingle()
+    let ordre = (der?.ordre as number | undefined) ?? 0
+    for (const q of nouvellesQ) {
+      const reps = (Array.isArray(q.reponses) ? q.reponses : []).filter(r => txt(r?.texte, 500))
+      if (!txt(q.texte, 1000) || reps.length < 2 || !reps.some(r => r.est_correcte === true)) return NextResponse.json({ error: `Question invalide (texte, 2 réponses et une bonne réponse) : ${q.texte ?? ''}`, journal }, { status: 400 })
+      const { data: qu, error } = await sb.from('questions').insert({ questionnaire_id: qz.id, texte: txt(q.texte, 1000), type: 'choix_multiple', ordre: ++ordre }).select('id').single()
+      if (error || !qu) return NextResponse.json({ error: error?.message ?? 'Question', journal }, { status: 500 })
+      await sb.from('reponses_possibles').insert(reps.map((r, k) => ({ question_id: qu.id, texte: txt(r.texte, 500), est_correcte: r.est_correcte === true, ordre: k + 1 })))
+      journal.push(`Question ajoutée : ${txt(q.texte, 80)}`)
     }
   }
 
