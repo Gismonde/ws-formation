@@ -43,13 +43,14 @@ export default async function AdminEmployesPage({ searchParams }: { searchParams
   const ids = (employes ?? []).map((e: any) => e.id)
 
   const { data: assignations } = ids.length
-    ? await sb.from('assignations').select('employe_id, formation_id').in('employe_id', ids)
+    ? await sb.from('assignations').select('*').in('employe_id', ids)
     : { data: [] as any[] }
   const { data: certificats } = ids.length
     ? await sb.from('certificats').select('employe_id').eq('valide', true).in('employe_id', ids)
     : { data: [] as any[] }
 
-  const nbAssign = (id: string) => assignations?.filter((a: any) => a.employe_id === id).length ?? 0
+  // Les inscriptions volontaires (formations disponibles) ne sont pas des assignations
+  const nbAssign = (id: string) => assignations?.filter((a: any) => a.employe_id === id && a.volontaire !== true).length ?? 0
   const nbCerts = (id: string) => certificats?.filter((c: any) => c.employe_id === id).length ?? 0
   const peutGerer = (emp: any) => peutGererEmploye(acteur, emp)
   const peutCreer = !isGestionnaire || (!!acteur.departement_id && !!acteur.clinique)

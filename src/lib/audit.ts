@@ -38,6 +38,17 @@ export type AuditActionType =
   | 'FORMULAIRE_SOUMIS'
   | 'FORMULAIRE_TRAITE'
   | 'CONSULTATION_DOSSIER'
+  // Formations disponibles hors assignation
+  | 'INSCRIPTION_VOLONTAIRE'
+  | 'DEMANDE_ACCES_ENVOYEE'
+  | 'DEMANDE_ACCES_TRAITEE'
+
+/** Type existant utilisé si un nouveau type n'est pas encore dans l'énumération de la base */
+const TYPES_DE_REPLI: Partial<Record<AuditActionType, AuditActionType>> = {
+  INSCRIPTION_VOLONTAIRE: 'FORMATION_ASSIGNEE',
+  DEMANDE_ACCES_ENVOYEE: 'FORMATION_ASSIGNEE',
+  DEMANDE_ACCES_TRAITEE: 'FORMATION_ASSIGNEE',
+}
 
 export interface LogAuditParams {
     acteur_id: string
@@ -63,18 +74,22 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
             { auth: { autoRefreshToken: false, persistSession: false } }
                 )
 
-      const { error } = await serviceClient
-            .from('audit_logs')
-            .insert({
+      const ligne = {
                       acteur_id: params.acteur_id,
-                      type_action: params.type_action,
+                      type_action: params.type_action as string,
                       description: params.description,
                       formation_id: params.formation_id ?? null,
                       cible_employe_id: params.cible_employe_id ?? null,
                       metadata: params.metadata ?? null,
                       ip_address: params.ip_address ?? null,
                       user_agent: params.user_agent ?? null,
-            })
+            }
+      let { error } = await serviceClient.from('audit_logs').insert(ligne)
+      // Type pas encore ajouté à l'énumération de la base (migration non exécutée) : on garde la trace sous un type voisin
+      const repli = TYPES_DE_REPLI[params.type_action]
+      if (error && repli && /enum|invalid input value/i.test(error.message)) {
+              ({ error } = await serviceClient.from('audit_logs').insert({ ...ligne, type_action: repli, metadata: { ...(ligne.metadata ?? {}), type_prevu: params.type_action } }))
+      }
 
       if (error) {
               console.error('[AuditLog] Erreur lors de l\'enregistrement:', error.message)

@@ -3,7 +3,7 @@ import { feuillesDossiers, statutPreuve, type Dossier } from '@/lib/dossier-empl
 
 const dossier = (prenom: string, journal = false): Dossier => ({
   profil: { id: prenom, prenom, nom: 'Test', email: `${prenom}@x.ca`, poste: '', role: 'employe', role_libelle: 'Employé', clinique: 'CMC', departement: 'Bloc', date_embauche: null, actif: true, invitation_acceptee: true, cree_le: null },
-  formations: [{ formation_id: 'f', titre: 'Hygiène', obligatoire: true, assignee_le: '2026-01-01', echeance: '2026-02-01', en_retard: true, statut: 'en_cours', statut_libelle: 'En cours', progression: 40, lecons: '2/5', certificat: '' }],
+  formations: [{ formation_id: 'f', titre: 'Hygiène', obligatoire: true, volontaire: false, assignee_le: '2026-01-01', echeance: '2026-02-01', en_retard: true, statut: 'en_cours', statut_libelle: 'En cours', progression: 40, lecons: '2/5', certificat: '' }],
   lecons: [], certificats: [], preuves: [], politiques: [],
   journal: journal ? [{ date: '2026-01-01T10:00:00Z', action: 'Connexion', description: '', par: prenom }] : [],
 })

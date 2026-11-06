@@ -28,6 +28,8 @@ export type FormationDossier = {
   formation_id: string
   titre: string
   obligatoire: boolean
+  /** Inscription volontaire (formation disponible hors assignation) : hors conformité */
+  volontaire: boolean
   assignee_le: string | null
   echeance: string | null
   en_retard: boolean
@@ -107,7 +109,7 @@ export async function chargerDossier(
   if (!e) return null
 
   const [{ data: assignations }, { data: certs }, { data: preuves }, { data: confs }] = await Promise.all([
-    sb.from('assignations').select('formation_id, date_assignation, date_echeance').eq('employe_id', employeId),
+    sb.from('assignations').select('*').eq('employe_id', employeId),
     sb.from('certificats').select('id, formation_id, numero_certificat, date_emission, date_expiration, valide, note_finale').eq('employe_id', employeId)
       .order('date_emission', { ascending: false }),
     sb.from('preuves_externes').select('id, formation_id, nom_fichier, fichier_url, statut, commentaire, soumis_le, valide_le').eq('employe_id', employeId)
@@ -141,7 +143,8 @@ export async function chargerDossier(
     return {
       formation_id: a.formation_id,
       titre: nomFormation(a.formation_id),
-      obligatoire: titre.get(a.formation_id)?.obligatoire === true,
+      volontaire: (a as { volontaire?: boolean }).volontaire === true,
+      obligatoire: (a as { volontaire?: boolean }).volontaire !== true && titre.get(a.formation_id)?.obligatoire === true,
       assignee_le: jourSeul(a.date_assignation),
       echeance,
       en_retard: !!echeance && !fini && echeance < aujourdhui,
@@ -256,6 +259,7 @@ export function feuillesDossiers(dossiers: Dossier[]): Feuille<unknown>[] {
     feuille<FormationDossier>('Formations', [
       { titre: 'Formation', valeur: f => f.titre, largeur: 40 },
       { titre: 'Obligatoire', valeur: f => (f.obligatoire ? 'Oui' : 'Non'), largeur: 11 },
+      { titre: 'Volontaire', valeur: f => (f.volontaire ? 'Oui' : 'Non'), largeur: 11 },
       { titre: 'Assignée le', valeur: f => dt(f.assignee_le), largeur: 13 },
       { titre: 'Échéance', valeur: f => dt(f.echeance), largeur: 13 },
       { titre: 'En retard', valeur: f => (f.en_retard ? 'Oui' : ''), largeur: 10 },

@@ -21,6 +21,7 @@ interface Certificat {
     credits_heures?: number | null
     credits_organisme?: string | null
     credits_numero?: string | null
+    clinique?: string | null
   } | null
 }
 
@@ -176,6 +177,12 @@ export default function CertificatPDF({ certificat, employe, clinique, retour, a
                     </span>
                   ) : null}
                 </div>
+                {/* WSSC, formation non créditée : préciser la portée interne du certificat */}
+                {(f?.clinique ? f.clinique === 'WSSC' : liste.length === 1 && liste[0] === 'WSSC') && !(f?.credits_admissible && f.credits_heures) && (
+                  <div className="cert-sans" style={{ marginTop: '0.8cqw', maxWidth: '62cqw', fontSize: '0.92cqw', lineHeight: 1.4, color: '#6b7280', fontStyle: 'italic' }}>
+                    {t('Attestation de formation interne au Centre de chirurgie Westmount Square. Ce document n’est ni un diplôme ni une certification professionnelle et n’est pas reconnu à l’extérieur du WSSC.')}
+                  </div>
+                )}
               </div>
 
               {/* Pied : date, sceau en relief, signature et numéro */}

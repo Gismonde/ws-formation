@@ -136,6 +136,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
                     <td className="px-4 py-2.5">
                       <Link href={`/admin/formations/${f.formation_id}`} className="font-medium text-gray-900 hover:underline">{f.titre}</Link>
                       {f.obligatoire && <span className="ml-2 text-[10px] font-bold uppercase text-red-600">{t('Obligatoire')}</span>}
+                      {f.volontaire && <span className="ml-2 text-[10px] font-bold uppercase text-emerald-700" title={t('Inscription volontaire : hors conformité')}>{t('Volontaire')}</span>}
                     </td>
                     <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{jour(f.assignee_le)}</td>
                     <td className={"px-3 py-2.5 whitespace-nowrap " + (f.en_retard ? "text-red-600 font-semibold" : "text-gray-600")}>

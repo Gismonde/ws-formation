@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (mode === 'libre') {
     const err = await inscrireVolontaire(sb, moi.id, id, moi.id)
     if (err) return NextResponse.json({ error: err }, { status: 500 })
-    await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'FORMATION_ASSIGNEE', description: `Inscription volontaire : « ${f.titre} »`, metadata: { volontaire: true } })
+    await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'INSCRIPTION_VOLONTAIRE', description: `Inscription volontaire : « ${f.titre} »`, metadata: { volontaire: true } })
     return NextResponse.json({ ok: true, statut: 'inscrit' })
   }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     traitee_par: null, traitee_le: null, motif: null,
   }, { onConflict: 'formation_id,employe_id' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'FORMATION_ASSIGNEE', description: `Demande d’accès : « ${f.titre} »`, metadata: { demande: true } })
+  await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'DEMANDE_ACCES_ENVOYEE', description: `Demande d’accès : « ${f.titre} »`, metadata: { demande: true } })
 
   // Avis au responsable de la formation, sinon aux admins de la clinique
   if (courrielsActifs()) {
