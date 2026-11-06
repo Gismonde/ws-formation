@@ -12,7 +12,7 @@ import { noterReglages } from '@/lib/actions/formations'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import { ChampPrerequis } from '@/components/ChampPrerequis'
 import { ChampCategorie } from '@/components/ChampCategorie'
-import type { CliniqueContenu } from '@/lib/cliniques'
+import { cliniquesDe, type CliniqueContenu } from '@/lib/cliniques'
 
 interface Formation {
   id: string
@@ -62,7 +62,8 @@ export default function ModifierFormationPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [employes, setEmployes] = useState<{ id: string; prenom: string | null; nom: string | null; poste: string | null }[]>([])
+  const [employes, setEmployes] = useState<{ id: string; prenom: string | null; nom: string | null; poste: string | null; role?: string | null; clinique?: string | null }[]>([])
+  const ROLE_RESP: Record<string, string> = { super_admin: t('Admin global'), admin: t('Administrateur'), gestionnaire: t('Gestionnaire') }
 
   useEffect(() => {
     async function loadData() {
@@ -75,8 +76,13 @@ export default function ModifierFormationPage() {
       const formationId = params.id as string
       const { data: f } = await supabase.from('formations').select('*').eq('id', formationId).single()
       if (f) { setFormation(f); setInitiale(f) }
-      const { data: liste } = await supabase.from('employes').select('id, prenom, nom, poste').or('actif.is.null,actif.eq.true').order('prenom')
-      setEmployes(liste ?? [])
+      // Responsables possibles : administrateurs et gestionnaires de la clinique de la formation (et la personne déjà choisie)
+      const { data: liste } = await supabase.from('employes').select('id, prenom, nom, poste, role, clinique').or('actif.is.null,actif.eq.true').order('prenom')
+      const clFormation = cliniquesDe(f?.clinique ?? 'LES_DEUX')
+      setEmployes((liste ?? []).filter(e => e.id === f?.responsable_id || (
+        ['super_admin', 'admin', 'gestionnaire'].includes(e.role as string)
+        && (e.role === 'super_admin' || cliniquesDe(e.clinique as string | null).some(c => clFormation.includes(c)))
+      )))
       setLoading(false)
     }
     loadData()
@@ -248,7 +254,7 @@ export default function ModifierFormationPage() {
                 </div>
               </div>
             </div>
-            <ChampPrerequis formationId={formation.id} valeur={formation.prerequis_ids ?? []} onChange={ids => updateField('prerequis_ids', ids)} />
+            <ChampPrerequis formationId={formation.id} clinique={formation.clinique} valeur={formation.prerequis_ids ?? []} onChange={ids => updateField('prerequis_ids', ids)} />
             {formation.sondage_actif !== undefined && (
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="sondage" checked={formation.sondage_actif} onChange={e => updateField('sondage_actif', e.target.checked)} className="h-4 w-4 text-indigo-600 rounded" />
@@ -302,9 +308,9 @@ export default function ModifierFormationPage() {
                     <label htmlFor="responsable_id" className="block text-sm font-medium text-gray-700 mb-1">{t('Responsable qui traite les demandes')}</label>
                     <select id="responsable_id" value={formation.responsable_id ?? ''} onChange={e => updateField('responsable_id', e.target.value || null)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
                       <option value="">{t('Aucun — les admins traitent les demandes')}</option>
-                      {employes.map(e => <option key={e.id} value={e.id}>{[e.prenom, e.nom].filter(Boolean).join(' ')}{e.poste ? ` — ${e.poste}` : ''}</option>)}
+                      {employes.map(e => <option key={e.id} value={e.id}>{[e.prenom, e.nom].filter(Boolean).join(' ')}{e.role ? ` — ${ROLE_RESP[e.role] ?? e.role}` : ''}{e.poste ? ` · ${e.poste}` : ''}</option>)}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">{t('Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes » de la formation, comme les admins.')}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('Administrateurs et gestionnaires de la clinique de la formation. Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes d’accès » de la formation, comme les admins.')}</p>
                   </div>
                 )}
               </div>

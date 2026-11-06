@@ -3,13 +3,16 @@
 import { useT } from '@/lib/i18n/client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { prerequisCompatible } from '@/lib/cliniques'
 
 /**
  * Choix des prérequis bloquants d'une formation : l'employé ne pourra l'ouvrir
  * qu'après avoir terminé (ou été certifié pour) les formations cochées.
  */
-export function ChampPrerequis({ formationId, valeur, onChange }: {
+export function ChampPrerequis({ formationId, clinique, valeur, onChange }: {
   formationId?: string
+  /** Clinique de la formation : seuls les prérequis de la même clinique (ou communs) sont proposés */
+  clinique?: string | null
   valeur: string[]
   onChange: (ids: string[]) => void
 }) {
@@ -17,10 +20,12 @@ export function ChampPrerequis({ formationId, valeur, onChange }: {
   const [formations, setFormations] = useState<{ id: string; titre: string }[] | null>(null)
 
   useEffect(() => {
-    createClient().from('formations').select('id, titre, prerequis_ids').eq('publiee', true).order('titre')
+    createClient().from('formations').select('id, titre, prerequis_ids, clinique').eq('publiee', true).order('titre')
       // Exclut la formation elle-même et celles qui l'ont déjà en prérequis (sinon blocage mutuel)
-      .then(({ data }) => setFormations((data ?? []).filter(f => f.id !== formationId && !(formationId && (f.prerequis_ids ?? []).includes(formationId)))))
-  }, [formationId])
+      .then(({ data }) => setFormations((data ?? []).filter(f => f.id !== formationId && !(formationId && (f.prerequis_ids ?? []).includes(formationId))
+        && (clinique === undefined || prerequisCompatible(clinique, f.clinique) || valeur.includes(f.id)))))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formationId, clinique])
 
   return (
     <div>

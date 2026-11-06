@@ -201,3 +201,12 @@ export function variablesTheme(t: ThemeClinique): Record<string, string> {
     '--barre-clinique': t.fondBarre,
   }
 }
+
+/**
+ * Une formation peut-elle servir de prérequis à une autre ? Elle doit être offerte à tous ceux qui suivront
+ * la formation : même clinique, ou commune aux deux. Une formation commune n'accepte que des prérequis communs.
+ */
+export function prerequisCompatible(cliniqueFormation: string | null | undefined, cliniquePrerequis: string | null | undefined): boolean {
+  const f = cliniqueFormation ?? 'LES_DEUX', p = cliniquePrerequis ?? 'LES_DEUX'
+  return p === 'LES_DEUX' || p === f
+}
