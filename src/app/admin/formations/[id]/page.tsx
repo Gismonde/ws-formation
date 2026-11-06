@@ -20,12 +20,15 @@ import { CarteCopieTravail, BandeauCopie } from './CopieTravail'
 import { copieEnCours } from '@/lib/copie-travail'
 import { serviceClient } from '@/lib/permissions'
 import { historiqueFormation } from '@/lib/historique-formation'
+import { demandesDeFormation, peutTraiterDemandes } from '@/lib/formations-libres'
+import DemandesAcces from '@/components/formations/DemandesAcces'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
-export default async function AdminFormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminFormationDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ onglet?: string }> }) {
   const { t } = await i18n()
   const { id } = await params
+  const { onglet } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -80,6 +83,14 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
     lecons.forEach(l => { enAttente += ((l.blocs ?? []) as { type?: string; contenu?: string | null }[]).filter(b => b.type === 'text' && titreAttendu(b.contenu) !== null).length })
     modulesAvecLecons.push({ ...mod, lecons })
   }
+
+  // Demandes d'accès (formation disponible sur demande / sans obligation)
+  const fa = formation as unknown as { acces_hors_assignation?: string; responsable_id?: string | null; clinique: string | null }
+  const avecAcces = fa.acces_hors_assignation !== undefined
+  const traiteDemandes = avecAcces && peutTraiterDemandes(acteurCourant, fa)
+  const demandes = traiteDemandes ? await demandesDeFormation(serviceClient(), id) : []
+  const voirDemandes = traiteDemandes && onglet === 'demandes'
+  const nbAttente = demandes.filter(d => d.statut === 'en_attente').length
 
   const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
     debutant: { bg: '#f0fdf4', color: '#16a34a', label: 'Débutant' },
@@ -271,6 +282,15 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
 
         {peutCreer && enAttente > 0 && <BrancherLibrairie formationId={id} enAttente={enAttente} />}
 
+        {traiteDemandes && (
+          <div className="flex gap-1 border-b border-gray-200 mb-4" role="tablist">
+            <Link href={`/admin/formations/${id}`} role="tab" aria-selected={!voirDemandes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${!voirDemandes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>{t('Contenu')}</Link>
+            <Link href={`/admin/formations/${id}?onglet=demandes`} role="tab" aria-selected={voirDemandes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${voirDemandes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+              📩 {t('Demandes d’accès')}{nbAttente > 0 && <span className="ml-1 text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">{nbAttente}</span>}
+            </Link>
+          </div>
+        )}
+        {voirDemandes ? <DemandesAcces formationId={id} demandes={demandes} mode={fa.acces_hors_assignation ?? 'aucun'} /> : (<>
         {/* Structure du cours */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -372,6 +392,7 @@ export default async function AdminFormationDetailPage({ params }: { params: Pro
             )}
           </details>
         )}
+        </>)}
       </div>
     </div>
   )

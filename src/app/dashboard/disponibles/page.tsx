@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
-import { formationsLibres } from '@/lib/formations-libres'
+import { formationsDisponibles } from '@/lib/formations-libres'
 import { i18n } from '@/lib/i18n/serveur'
 import BoutonCommencer from './BoutonCommencer'
 
@@ -10,13 +10,13 @@ export default async function FormationsDisponiblesPage() {
   if (!moi) redirect('/login')
   const { t } = await i18n()
   const espace = await getEspace(moi)
-  const liste = await formationsLibres(serviceClient(), moi.id, espace.cliniquesContenu as string[])
+  const liste = await formationsDisponibles(serviceClient(), moi.id, espace.cliniquesContenu as string[])
 
   return (
     <div>
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1f36', margin: 0 }}>{t('Formations disponibles')}</h1>
-        <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>{t('Des formations ouvertes à tous, à suivre si vous le souhaitez : elles ne sont ni assignées ni obligatoires.')}</p>
+        <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>{t('Des formations à suivre si vous le souhaitez, sans obligation : certaines se commencent directement, d’autres sur demande.')}</p>
       </div>
       {liste.length === 0 ? (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '48px', textAlign: 'center', color: '#6b7280' }}>
@@ -32,6 +32,7 @@ export default async function FormationsDisponiblesPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={f.image_couverture} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <span style={{ fontSize: '32px' }}>📚</span>}
+                <span style={{ position: 'absolute', top: '8px', left: '8px', background: f.mode === 'libre' ? '#ecfdf5' : '#eff6ff', color: f.mode === 'libre' ? '#065f46' : '#1e40af', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{f.mode === 'libre' ? t('Accès libre') : t('Sur demande')}</span>
                 {f.inscrit && <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', color: '#065f46', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>✓ {t('Commencée')}</span>}
               </div>
               <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
@@ -41,7 +42,7 @@ export default async function FormationsDisponiblesPage() {
                   {f.description && <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>{f.description.slice(0, 140)}{f.description.length > 140 ? '…' : ''}</p>}
                 </div>
                 {f.duree_estimee_minutes ? <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>⏱️ {t('{n} min', { n: f.duree_estimee_minutes })}</p> : null}
-                <BoutonCommencer id={f.id} inscrit={f.inscrit} />
+                <BoutonCommencer id={f.id} mode={f.mode} inscrit={f.inscrit} demande={f.demande} motif={f.motif} />
               </div>
             </div>
           ))}
