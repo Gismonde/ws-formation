@@ -2809,4 +2809,8 @@ export const EN: Record<string, string> = {
   'Motif : {m}': 'Reason: {m}',
   'Pourquoi souhaitez-vous suivre cette formation ? (facultatif)': 'Why would you like to take this training? (optional)',
   'Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes » de la formation, comme les admins.': 'Gets an email for each request and can accept or refuse it in the training’s “Requests” tab, like admins.',
+  'Admin global': 'Global admin',
+  'Administrateur': 'Administrator',
+  'Administrateurs et gestionnaires de la clinique de la formation. Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes d’accès » de la formation, comme les admins.': 'Administrators and managers of the training’s clinic. Gets an email for each request and can accept or refuse it in the training’s “Access requests” tab, like admins.',
+  'Administrateurs et gestionnaires de la clinique de la formation. Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes d’accès » de la formation, comme les admins.': 'Administrators and managers of the training’s clinic. Gets an email for each request and can accept or refuse it in the training’s “Access requests” tab, like admins.',
 }

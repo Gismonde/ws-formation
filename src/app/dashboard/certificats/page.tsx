@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { i18n } from '@/lib/i18n/serveur'
+import { getEspace } from '@/lib/espace'
 
 export default async function CertificatsPage() {
   const supabase = await createClient()
@@ -10,17 +11,20 @@ export default async function CertificatsPage() {
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, prenom, nom')
+    .select('id, prenom, nom, clinique, role')
     .eq('auth_user_id', user.id)
     .single()
 
   if (!employe) redirect('/login')
 
-  const { data: certificats } = await supabase
+  const { data: certificatsBruts } = await supabase
     .from('certificats')
-    .select('*, formations(titre, categorie)')
+    .select('*, formations(titre, categorie, clinique)')
     .eq('employe_id', employe.id)
     .order('date_emission', { ascending: false })
+  // Seulement l'espace actif (CMC ou WSSC) et les formations communes
+  const espace = await getEspace(employe)
+  const certificats = (certificatsBruts ?? []).filter((c: any) => (espace.cliniquesContenu as string[]).includes(c.formations?.clinique ?? 'LES_DEUX'))
 
   return (
     <div>

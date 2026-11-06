@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { i18n } from '@/lib/i18n/serveur'
+import { getEspace } from '@/lib/espace'
 
 export default async function HistoriquePage() {
   const supabase = await createClient()
@@ -10,18 +11,21 @@ export default async function HistoriquePage() {
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id')
+    .select('id, clinique, role')
     .eq('auth_user_id', user.id)
     .single()
 
   if (!employe) redirect('/login')
 
-  const { data: progressions } = await supabase
+  const { data: progressionsBrutes } = await supabase
     .from('progressions')
-    .select('id, statut, updated_at, module_id, formation_id, modules(titre), formations(titre)')
+    .select('id, statut, updated_at, module_id, formation_id, modules(titre), formations(titre, clinique)')
     .eq('employe_id', employe.id)
     .order('updated_at', { ascending: false })
-    .limit(50)
+    .limit(200)
+  // Seulement l'espace actif (CMC ou WSSC) et les formations communes
+  const espace = await getEspace(employe)
+  const progressions = (progressionsBrutes ?? []).filter((p: any) => (espace.cliniquesContenu as string[]).includes(p.formations?.clinique ?? 'LES_DEUX')).slice(0, 50)
 
   return (
     <div>

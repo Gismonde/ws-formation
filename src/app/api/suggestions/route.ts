@@ -1,6 +1,7 @@
 // Envoi d'une suggestion par l'employé (3 par semaine au plus). Anonyme : le nom n'est pas enregistré.
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
+import { getEspace } from '@/lib/espace'
 import { lireSuggestion, empreinteAuteur, MAX_PAR_SEMAINE } from '@/lib/suggestions'
 
 export async function POST(req: Request) {
@@ -16,7 +17,8 @@ export async function POST(req: Request) {
   if ((count ?? 0) >= MAX_PAR_SEMAINE) return NextResponse.json({ error: `Vous avez déjà envoyé ${MAX_PAR_SEMAINE} suggestions cette semaine. Merci ! Vous pourrez en envoyer d’autres bientôt.` }, { status: 429 })
   const { error } = await sb.from('suggestions').insert({
     ...v.valeurs, empreinte, employe_id: v.valeurs.anonyme ? null : acteur.id,
-    clinique: acteur.clinique ?? 'LES_DEUX',
+    // L'espace d'où elle est envoyée (CMC ou WSSC) : seuls les admins de cette clinique la reçoivent
+    clinique: (await getEspace(acteur)).actif ?? acteur.clinique ?? 'LES_DEUX',
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

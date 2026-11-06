@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { empreinteAuteur, MAX_PAR_SEMAINE, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
 import FormulaireSuggestion from './FormulaireSuggestion'
+import { getEspace } from '@/lib/espace'
 import { i18n } from '@/lib/i18n/serveur'
 
 // « Aidez-nous à nous améliorer » : envoyer une suggestion et suivre les siennes.
@@ -13,10 +14,11 @@ export default async function SuggestionsPage() {
   const empreinte = empreinteAuteur(acteur.id)
   const [{ data: miennes, error }, { data: assign }] = await Promise.all([
     sb.from('suggestions').select('*').eq('empreinte', empreinte).order('created_at', { ascending: false }).limit(50),
-    sb.from('assignations').select('formations(id, titre)').eq('employe_id', acteur.id),
+    sb.from('assignations').select('formations(id, titre, clinique)').eq('employe_id', acteur.id),
   ])
-  const formations = (assign ?? []).map(a => (Array.isArray(a.formations) ? a.formations[0] : a.formations) as { id: string; titre: string } | null)
-    .filter((f): f is { id: string; titre: string } => !!f).sort((a, b) => a.titre.localeCompare(b.titre, 'fr'))
+  const espace = await getEspace(acteur)
+  const formations = (assign ?? []).map(a => (Array.isArray(a.formations) ? a.formations[0] : a.formations) as { id: string; titre: string; clinique: string | null } | null)
+    .filter((f): f is { id: string; titre: string; clinique: string | null } => !!f && (espace.cliniquesContenu as string[]).includes(f.clinique ?? 'LES_DEUX')).sort((a, b) => a.titre.localeCompare(b.titre, 'fr'))
   const semaine = Date.now() - 7 * 86_400_000
   const restantes = Math.max(0, MAX_PAR_SEMAINE - (miennes ?? []).filter(s => Date.parse(s.created_at) >= semaine).length)
   const titreFormation = (id: string | null) => formations.find(f => f.id === id)?.titre ?? ''
