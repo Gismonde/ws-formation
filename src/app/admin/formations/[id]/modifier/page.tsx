@@ -32,8 +32,10 @@ interface Formation {
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
   obligatoire?: boolean | null
-  /** Absent tant que la migration formations_libre_acces.sql n'est pas exécutée */
-  libre_acces?: boolean
+  /** 'aucun' | 'libre' | 'demande' — absent tant que la migration formations_libre_acces.sql n'est pas exécutée */
+  acces_hors_assignation?: string
+  /** Employé qui traite les demandes d'accès (avec les admins) */
+  responsable_id?: string | null
   /** 'defilement' | 'ecrans' — absent tant que formations_presentation.sql n'est pas exécutée */
   mode_presentation?: string
   /** Narration démarrée d'elle-même — absent tant que formations_audio_auto.sql n'est pas exécutée */
@@ -60,6 +62,7 @@ export default function ModifierFormationPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [employes, setEmployes] = useState<{ id: string; prenom: string | null; nom: string | null; poste: string | null }[]>([])
 
   useEffect(() => {
     async function loadData() {
@@ -72,6 +75,8 @@ export default function ModifierFormationPage() {
       const formationId = params.id as string
       const { data: f } = await supabase.from('formations').select('*').eq('id', formationId).single()
       if (f) { setFormation(f); setInitiale(f) }
+      const { data: liste } = await supabase.from('employes').select('id, prenom, nom, poste').or('actif.is.null,actif.eq.true').order('prenom')
+      setEmployes(liste ?? [])
       setLoading(false)
     }
     loadData()
@@ -102,7 +107,8 @@ export default function ModifierFormationPage() {
         ...(formation.objectifs !== undefined ? { objectifs: nettoyerObjectifs(formation.objectifs) } : {}),
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
-        ...(formation.libre_acces !== undefined ? { libre_acces: formation.libre_acces === true } : {}),
+        ...(formation.acces_hors_assignation !== undefined ? { acces_hors_assignation: ['libre', 'demande'].includes(formation.acces_hors_assignation) ? formation.acces_hors_assignation : 'aucun' } : {}),
+        ...(formation.responsable_id !== undefined ? { responsable_id: formation.responsable_id || null } : {}),
         ...(formation.audio_auto !== undefined ? { audio_auto: formation.audio_auto === true } : {}),
         ...(formation.mode_presentation !== undefined ? { mode_presentation: formation.mode_presentation === 'ecrans' ? 'ecrans' : 'defilement' } : {}),
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
@@ -280,13 +286,27 @@ export default function ModifierFormationPage() {
                 <span className="block text-xs font-normal text-gray-500">{t('Signalée comme obligatoire dans « Mes formations », la conformité et les rapports. Une formation non cochée peut quand même être assignée.')}</span>
               </label>
             </div>
-            {formation.libre_acces !== undefined && (
-              <div className="flex items-start gap-3">
-                <input type="checkbox" id="libre_acces" checked={formation.libre_acces === true} onChange={e => updateField('libre_acces', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
-                <label htmlFor="libre_acces" className="text-sm font-medium text-gray-700">
-                  🧭 {t('Disponible en libre accès')}
-                  <span className="block text-xs font-normal text-gray-500">{t('Une fois publiée, la formation apparaît dans « Formations disponibles » : tout employé de la clinique peut la suivre sans qu’elle lui soit assignée. Ces inscriptions volontaires ne comptent pas dans la conformité.')}</span>
-                </label>
+            {formation.acces_hors_assignation !== undefined && (
+              <div className="border rounded-lg p-3 bg-gray-50 space-y-3">
+                <div>
+                  <label htmlFor="acces_hors" className="block text-sm font-medium text-gray-700 mb-1">🧭 {t('Accès hors assignation')}</label>
+                  <select id="acces_hors" value={formation.acces_hors_assignation || 'aucun'} onChange={e => updateField('acces_hors_assignation', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                    <option value="aucun">{t('Aucun — uniquement les employés assignés')}</option>
+                    <option value="libre">{t('Disponible sans obligation — chacun peut la commencer')}</option>
+                    <option value="demande">{t('Disponible sur demande — accès accordé après approbation')}</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">{t('Les employés assignés la suivent toujours comme une formation obligatoire. Pour les autres, une fois publiée, elle apparaît dans « Formations disponibles ». Ces inscriptions volontaires ne comptent pas dans la conformité.')}</p>
+                </div>
+                {formation.responsable_id !== undefined && (
+                  <div>
+                    <label htmlFor="responsable_id" className="block text-sm font-medium text-gray-700 mb-1">{t('Responsable qui traite les demandes')}</label>
+                    <select id="responsable_id" value={formation.responsable_id ?? ''} onChange={e => updateField('responsable_id', e.target.value || null)} className="w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                      <option value="">{t('Aucun — les admins traitent les demandes')}</option>
+                      {employes.map(e => <option key={e.id} value={e.id}>{[e.prenom, e.nom].filter(Boolean).join(' ')}{e.poste ? ` — ${e.poste}` : ''}</option>)}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">{t('Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes » de la formation, comme les admins.')}</p>
+                  </div>
+                )}
               </div>
             )}
             {formation.delivre_certificat !== undefined && (

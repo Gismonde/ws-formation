@@ -198,7 +198,7 @@ export async function reorderModules(
 const LIBELLE_REGLAGE: Record<string, string> = {
   titre: 'titre', description: 'description', objectifs: 'objectifs', categorie: 'catégorie', niveau: 'niveau', duree_estimee_minutes: 'durée',
   publiee: 'publication', clinique: 'clinique', validite_mois: 'validité du certificat', prerequis_ids: 'prérequis',
-  image_couverture: 'image de couverture', sondage_actif: 'sondage', obligatoire: 'obligatoire (LSST)', libre_acces: 'libre accès',
+  image_couverture: 'image de couverture', sondage_actif: 'sondage', obligatoire: 'obligatoire (LSST)', acces_hors_assignation: 'accès hors assignation', responsable_id: 'responsable des demandes',
   delivre_certificat: 'certificat', responsable_formation: 'responsable de la formation',
   credits_admissible: 'formation continue', credits_heures: 'heures créditables', credits_organisme: 'ordre professionnel', credits_numero: 'n° d’accréditation',
 }

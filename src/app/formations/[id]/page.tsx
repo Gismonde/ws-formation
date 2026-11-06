@@ -9,9 +9,13 @@ import { etatSondage } from '@/lib/sondages'
 import { i18n } from '@/lib/i18n/serveur'
 import { modeApercu } from '@/lib/apercu-employe'
 import DisponibleHorsLigne from '@/components/DisponibleHorsLigne'
+import { getActeur } from '@/lib/permissions'
+import { demandesDeFormation, peutTraiterDemandes } from '@/lib/formations-libres'
+import DemandesAcces from '@/components/formations/DemandesAcces'
 
-export default async function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FormationDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ onglet?: string }> }) {
   const { id } = await params
+  const { onglet } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -28,10 +32,32 @@ export default async function FormationDetailPage({ params }: { params: Promise<
   // Admins/gestionnaires peuvent accéder sans assignation
   const isAdmin = ['super_admin', 'admin', 'gestionnaire'].includes(employe.role)
   // Mode employé (aperçu) : brouillon autorisé, progression simulée, rien n'est enregistré
-  const { data: brut } = await serviceClient().from('formations').select('id, clinique').eq('id', id).maybeSingle()
+  const { data: brut } = await serviceClient().from('formations').select('*').eq('id', id).maybeSingle()
   const apercu = brut ? await modeApercu(brut) : { actif: false, lecons: new Set<string>() }
+  // Responsable de la formation (ou admin) : traite les demandes d'accès, même sans assignation
+  const traiteDemandes = !!brut && brut.acces_hors_assignation !== undefined && peutTraiterDemandes(await getActeur(), brut)
+  const estResponsable = !!brut && !!brut.responsable_id && brut.responsable_id === employe.id
 
-  if (!isAdmin && !apercu.actif) {
+  if (traiteDemandes && onglet === 'demandes' && brut) {
+    const demandes = await demandesDeFormation(serviceClient(), id)
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 text-sm">{t('← Tableau de bord')}</Link>
+          </div>
+        </nav>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {traiteDemandes && <OngletsFormation id={id} demandes actif="formation" nb={0} t={t} />}
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{brut.titre}</h1>
+          <OngletsFormation id={id} demandes actif="demandes" nb={demandes.filter(d => d.statut === 'en_attente').length} t={t} />
+          <DemandesAcces formationId={id} demandes={demandes} mode={brut.acces_hors_assignation ?? 'aucun'} />
+        </main>
+      </div>
+    )
+  }
+
+  if (!isAdmin && !apercu.actif && !estResponsable) {
     const { data: assignation } = await supabase
       .from('assignations')
       .select('formation_id')
@@ -43,6 +69,7 @@ export default async function FormationDetailPage({ params }: { params: Promise<
 
   const { data: formation } = apercu.actif
     ? await serviceClient().from('formations').select('*').eq('id', id).single()
+    : estResponsable ? await serviceClient().from('formations').select('*').eq('id', id).eq('publiee', true).single()
     : await supabase.from('formations').select('*').eq('id', id).eq('publiee', true).single()
 
   if (!formation) notFound()
@@ -294,6 +321,19 @@ export default async function FormationDetailPage({ params }: { params: Promise<
         </div>
 
       </main>
+    </div>
+  )
+}
+
+/** Onglets « Formation » / « Demandes d'accès », visibles du responsable de la formation et des admins. */
+function OngletsFormation({ id, actif, nb, t }: { id: string; demandes: boolean; actif: 'formation' | 'demandes'; nb: number; t: (c: string) => string }) {
+  const style = (on: boolean) => `px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${on ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`
+  return (
+    <div className="flex gap-1 border-b border-gray-200 mb-5" role="tablist">
+      <Link href={`/formations/${id}`} role="tab" aria-selected={actif === 'formation'} className={style(actif === 'formation')}>{t('Formation')}</Link>
+      <Link href={`/formations/${id}?onglet=demandes`} role="tab" aria-selected={actif === 'demandes'} className={style(actif === 'demandes')}>
+        📩 {t('Demandes d’accès')}{nb > 0 && <span className="ml-1 text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">{nb}</span>}
+      </Link>
     </div>
   )
 }
