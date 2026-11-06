@@ -61,8 +61,14 @@ export async function chargerConformite(sb: SupabaseClient, acteur: Acteur, filt
   if (actifs.length === 0) return []
   const ids = actifs.map(e => e.id as string)
 
-  const { data: assignations } = await sb.from('assignations')
-    .select('employe_id, formation_id, date_assignation, date_echeance').in('employe_id', ids)
+  // Les inscriptions volontaires (formations en libre accès) ne comptent pas dans la conformité
+  type LigneAss = { employe_id: string; formation_id: string; date_assignation: string | null; date_echeance: string | null; volontaire?: boolean }
+  const avecVol = await sb.from('assignations')
+    .select('employe_id, formation_id, date_assignation, date_echeance, volontaire').in('employe_id', ids)
+  const brut = (avecVol.error
+    ? (await sb.from('assignations').select('employe_id, formation_id, date_assignation, date_echeance').in('employe_id', ids)).data
+    : avecVol.data) as LigneAss[] | null
+  const assignations = (brut ?? []).filter(a => a.volontaire !== true)
   const formationIds = Array.from(new Set((assignations ?? []).map(a => a.formation_id as string)))
   const { data: formations } = formationIds.length
     ? await sb.from('formations').select('id, titre, clinique, obligatoire')

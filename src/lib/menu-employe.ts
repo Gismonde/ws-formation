@@ -6,6 +6,7 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
   { id: 'accueil', label: 'Accueil', emoji: '🏠', onglets: [{ href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' }] },
   { id: 'formations', label: 'Formations', emoji: '🎓', onglets: [
     { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
+    { href: '/dashboard/disponibles', label: 'Formations disponibles', emoji: '🧭' },
     { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   ] },
   { id: 'evenements', label: 'Événements', emoji: '🎉', onglets: [{ href: '/dashboard/evenements', label: 'Événements', emoji: '🎉' }] },

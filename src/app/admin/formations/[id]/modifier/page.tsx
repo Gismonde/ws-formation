@@ -32,6 +32,8 @@ interface Formation {
   /** Absent tant que la migration conformite_suivi.sql n'est pas exécutée */
   sondage_actif?: boolean
   obligatoire?: boolean | null
+  /** Absent tant que la migration formations_libre_acces.sql n'est pas exécutée */
+  libre_acces?: boolean
   /** 'defilement' | 'ecrans' — absent tant que formations_presentation.sql n'est pas exécutée */
   mode_presentation?: string
   /** Narration démarrée d'elle-même — absent tant que formations_audio_auto.sql n'est pas exécutée */
@@ -100,6 +102,7 @@ export default function ModifierFormationPage() {
         ...(formation.objectifs !== undefined ? { objectifs: nettoyerObjectifs(formation.objectifs) } : {}),
         ...(formation.sondage_actif !== undefined ? { sondage_actif: formation.sondage_actif } : {}),
         obligatoire: formation.obligatoire === true,
+        ...(formation.libre_acces !== undefined ? { libre_acces: formation.libre_acces === true } : {}),
         ...(formation.audio_auto !== undefined ? { audio_auto: formation.audio_auto === true } : {}),
         ...(formation.mode_presentation !== undefined ? { mode_presentation: formation.mode_presentation === 'ecrans' ? 'ecrans' : 'defilement' } : {}),
         ...(formation.delivre_certificat !== undefined ? { delivre_certificat: formation.delivre_certificat } : {}),
@@ -277,6 +280,15 @@ export default function ModifierFormationPage() {
                 <span className="block text-xs font-normal text-gray-500">{t('Signalée comme obligatoire dans « Mes formations », la conformité et les rapports. Une formation non cochée peut quand même être assignée.')}</span>
               </label>
             </div>
+            {formation.libre_acces !== undefined && (
+              <div className="flex items-start gap-3">
+                <input type="checkbox" id="libre_acces" checked={formation.libre_acces === true} onChange={e => updateField('libre_acces', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
+                <label htmlFor="libre_acces" className="text-sm font-medium text-gray-700">
+                  🧭 {t('Disponible en libre accès')}
+                  <span className="block text-xs font-normal text-gray-500">{t('Une fois publiée, la formation apparaît dans « Formations disponibles » : tout employé de la clinique peut la suivre sans qu’elle lui soit assignée. Ces inscriptions volontaires ne comptent pas dans la conformité.')}</span>
+                </label>
+              </div>
+            )}
             {formation.delivre_certificat !== undefined && (
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="certificat" checked={formation.delivre_certificat} onChange={e => updateField('delivre_certificat', e.target.checked)} className="h-4 w-4 mt-0.5 text-indigo-600 rounded" />
