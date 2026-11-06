@@ -11,7 +11,7 @@ export type LigneEmployeStat = {
   date_assignation: string | null; date_echeance: string | null; en_retard: boolean
 }
 export type StatistiquesFormation = {
-  totaux: { assignes: number; commences: number; termines: number; certifies: number; en_retard: number; taux: number }
+  totaux: { assignes: number; commences: number; termines: number; certifies: number; en_retard: number; taux: number; volontaires: number }
   delaiMoyenJours: number | null
   lecons: { id: string; titre: string; module: string; commencees: number; terminees: number }[]
   questionnaire: null | {
@@ -49,7 +49,9 @@ export async function statistiquesFormation(sb: SupabaseClient, acteur: Acteur, 
   const portee = await idsEmployesDansPortee(acteur, sb)
 
   // Employés assignés (portée de l'acteur), avec leur état réel
-  const { data: assign } = await sb.from('assignations').select('employe_id').eq('formation_id', formationId)
+  const { data: assign } = await sb.from('assignations').select('*').eq('formation_id', formationId)
+  // Inscriptions volontaires (formation disponible hors assignation) : comptées à part, hors conformité
+  const volontaires = new Set((assign ?? []).filter(a => (a as { volontaire?: boolean }).volontaire === true).map(a => a.employe_id as string).filter(id => !portee || portee.includes(id))).size
   const assignesIds = Array.from(new Set((assign ?? []).map(a => a.employe_id as string))).filter(id => !portee || portee.includes(id))
   const conformite = assignesIds.length ? await chargerConformite(sb, acteur, { employe_ids: assignesIds }) : []
   const employes: LigneEmployeStat[] = conformite.flatMap(e => e.assignations.filter(a => a.formation_id === formationId).map(a => ({
@@ -66,6 +68,7 @@ export async function statistiquesFormation(sb: SupabaseClient, acteur: Acteur, 
     certifies: employes.filter(e => e.statut === 'certifie').length,
     en_retard: employes.filter(e => e.en_retard).length,
     taux: pct(termines, employes.length),
+    volontaires,
   }
 
   // Leçons : entonnoir (commencées / terminées)

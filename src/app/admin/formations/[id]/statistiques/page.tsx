@@ -57,6 +57,7 @@ export default async function StatistiquesFormationPage({ params }: { params: Pr
           <Tuile v={s.totaux.termines} l={t('Terminé')} c="text-indigo-700" />
           <Tuile v={s.totaux.certifies} l={t('Certifiés')} c="text-green-700" />
           <Tuile v={s.totaux.en_retard} l={t('En retard')} c={s.totaux.en_retard ? 'text-red-600' : 'text-gray-900'} />
+          {s.totaux.volontaires > 0 && <Tuile v={s.totaux.volontaires} l={t('Inscriptions volontaires')} sous={t('Hors conformité, non comptées ci-contre')} c="text-emerald-700" />}
           <Tuile v={s.totaux.taux + ' %'} l={t('Taux de complétion')} sous={s.delaiMoyenJours !== null ? t('{n} j en moyenne pour terminer', { n: s.delaiMoyenJours }) : undefined} />
         </div>
 

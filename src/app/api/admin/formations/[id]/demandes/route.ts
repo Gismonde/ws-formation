@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   const { error } = await sb.from('demandes_acces_formation').update({ statut: decision, motif, traitee_par: moi.id, traitee_le: new Date().toISOString() }).eq('id', d.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'FORMATION_ASSIGNEE', description: `Demande d’accès ${decision === 'acceptee' ? 'acceptée' : 'refusée'} : « ${f.titre} »`, metadata: { demande: d.id, employe: d.employe_id } })
+  await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'DEMANDE_ACCES_TRAITEE', cible_employe_id: d.employe_id, description: `Demande d’accès ${decision === 'acceptee' ? 'acceptée' : 'refusée'} : « ${f.titre} »`, metadata: { demande: d.id, employe: d.employe_id } })
 
   if (courrielsActifs()) {
     const { data: e } = await sb.from('employes').select('email, prenom').eq('id', d.employe_id).maybeSingle()

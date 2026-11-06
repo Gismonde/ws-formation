@@ -2813,4 +2813,13 @@ export const EN: Record<string, string> = {
   'Administrateur': 'Administrator',
   'Administrateurs et gestionnaires de la clinique de la formation. Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes d’accès » de la formation, comme les admins.': 'Administrators and managers of the training’s clinic. Gets an email for each request and can accept or refuse it in the training’s “Access requests” tab, like admins.',
   'Administrateurs et gestionnaires de la clinique de la formation. Reçoit un courriel à chaque demande et peut l’accepter ou la refuser dans l’onglet « Demandes d’accès » de la formation, comme les admins.': 'Administrators and managers of the training’s clinic. Gets an email for each request and can accept or refuse it in the training’s “Access requests” tab, like admins.',
+  'Hors conformité, non comptées ci-contre': 'Outside compliance, not counted alongside',
+  'Inscription volontaire : hors conformité': 'Voluntary enrolment: outside compliance',
+  'Inscriptions volontaires': 'Voluntary enrolments',
+  'Volontaire': 'Voluntary',
+  'Inscription volontaire': 'Voluntary enrolment',
+  'Demande d’accès envoyée': 'Access request sent',
+  'Demande d’accès traitée': 'Access request processed',
+  'Inscription volontaire : hors conformité': 'Voluntary enrolment: outside compliance',
+  'Attestation de formation interne au Centre de chirurgie Westmount Square. Ce document n’est ni un diplôme ni une certification professionnelle et n’est pas reconnu à l’extérieur du WSSC.': 'Internal training record of Westmount Square Surgical Center. This document is not a diploma or professional certification and is not recognized outside WSSC.',
 }
