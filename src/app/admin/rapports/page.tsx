@@ -1,7 +1,8 @@
 import { i18n } from '@/lib/i18n/serveur'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getActeur, serviceClient, cliniquesAdministrees } from '@/lib/permissions'
+import { getActeur, serviceClient, cliniquesAdministrees, idsEmployesDansPortee } from '@/lib/permissions'
+import { rapportInteret } from '@/lib/formations-libres'
 import { aAccesAdmin, CLINIQUE_INFO, estCliniqueEmploye } from '@/lib/cliniques'
 import { chargerConformite, synthese, rapportParFormation, formationsDuRapport } from '@/lib/conformite'
 
@@ -17,6 +18,7 @@ export default async function AdminRapportsPage() {
 
   const [donnees, formations] = await Promise.all([chargerConformite(sb, acteur), formationsDuRapport(sb, acteur)])
   const s = synthese(donnees)
+  const interet = await rapportInteret(sb, formations, await idsEmployesDansPortee(acteur, sb)).catch(() => [])
   const lignes = rapportParFormation(donnees, formations)
 
   // Derniers certificats émis (dans le périmètre)
@@ -93,6 +95,41 @@ export default async function AdminRapportsPage() {
                     <span className="text-xs text-gray-500 w-10 text-right">{l.assignes ? l.taux + ' %' : '—'}</span>
                   </div>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="interet" className="bg-white rounded-xl border border-gray-200 mb-6 overflow-x-auto">
+        <h2 className="text-base font-semibold text-gray-800 px-6 pt-5">🧭 {t('Intérêt pour les formations disponibles')}</h2>
+        <p className="text-xs text-gray-500 px-6 pb-3 mt-1">{t('Inscriptions volontaires et demandes d’accès, hors assignation et hors conformité. Utile pour repérer les sujets qui intéressent les équipes.')}</p>
+        <table className="w-full text-sm min-w-[760px]">
+          <thead>
+            <tr className="bg-gray-50 text-xs uppercase text-gray-500">
+              <th className="text-left px-6 py-3 font-semibold">{t('Formation')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Inscrits')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Terminé')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('En attente')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Acceptées')}</th>
+              <th className="text-center px-3 py-3 font-semibold">{t('Refusées')}</th>
+              <th className="text-left px-3 py-3 font-semibold">{t('Départements intéressés')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {interet.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400">{t('Aucune formation disponible sans obligation ou sur demande.')}</td></tr>}
+            {interet.map(l => (
+              <tr key={l.formation_id} className="border-t border-gray-100">
+                <td className="px-6 py-3">
+                  <Link href={`/admin/formations/${l.formation_id}${l.mode === 'demande' ? '?onglet=demandes' : ''}`} className="font-medium text-gray-900 hover:underline">{l.titre}</Link>
+                  <div className="text-xs text-gray-400">{l.mode === 'libre' ? t('Accès libre') : t('Sur demande')}{l.clinique ? ' · ' + (l.clinique === 'LES_DEUX' ? 'CMC + WSSC' : l.clinique) : ''}</div>
+                </td>
+                <td className="text-center px-3 py-3 font-semibold text-emerald-700">{l.inscrits}</td>
+                <td className="text-center px-3 py-3 text-gray-700">{l.termines}</td>
+                <td className={'text-center px-3 py-3 ' + (l.en_attente ? 'text-amber-700 font-semibold' : 'text-gray-400')}>{l.mode === 'demande' ? l.en_attente : '—'}</td>
+                <td className="text-center px-3 py-3 text-gray-700">{l.mode === 'demande' ? l.acceptees : '—'}</td>
+                <td className="text-center px-3 py-3 text-gray-700">{l.mode === 'demande' ? l.refusees : '—'}</td>
+                <td className="px-3 py-3 text-xs text-gray-600">{l.departements.length ? l.departements.slice(0, 4).map(d => `${d.nom === 'Sans département' ? t('Sans département') : d.nom} (${d.n})`).join(' · ') : '—'}</td>
               </tr>
             ))}
           </tbody>

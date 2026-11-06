@@ -78,3 +78,54 @@ export async function inscrireVolontaire(sb: SupabaseClient, employeId: string, 
   }
   return error ? error.message : null
 }
+
+// ── Rapport : intérêt pour les formations disponibles ─────────────────────────
+export type LigneInteret = {
+  formation_id: string; titre: string; clinique: string | null; mode: 'libre' | 'demande'
+  inscrits: number; termines: number; en_attente: number; acceptees: number; refusees: number
+  departements: { nom: string; n: number }[]
+}
+
+/**
+ * Pour chaque formation disponible (sans obligation ou sur demande) visible par l'acteur :
+ * inscriptions volontaires, formations terminées par ces volontaires, demandes par statut,
+ * et départements d'où viennent l'intérêt (inscriptions + demandes). Limité aux employés de la portée.
+ */
+export async function rapportInteret(sb: SupabaseClient, formations: { id: string; titre: string; clinique: string | null }[], portee: string[] | null): Promise<LigneInteret[]> {
+  if (!formations.length) return []
+  const { data: fs } = await sb.from('formations').select('id, acces_hors_assignation').in('id', formations.map(f => f.id))
+  const modes = new Map((fs ?? []).filter(f => f.acces_hors_assignation === 'libre' || f.acces_hors_assignation === 'demande').map(f => [f.id as string, f.acces_hors_assignation as 'libre' | 'demande']))
+  const ids = [...modes.keys()]
+  if (!ids.length) return []
+  const dans = (id: string) => !portee || portee.includes(id)
+  const [{ data: ass }, { data: dem }, { data: certs }] = await Promise.all([
+    sb.from('assignations').select('*').in('formation_id', ids).eq('volontaire', true),
+    sb.from('demandes_acces_formation').select('formation_id, employe_id, statut').in('formation_id', ids),
+    sb.from('certificats').select('formation_id, employe_id').in('formation_id', ids).eq('valide', true),
+  ])
+  const assV = (ass ?? []).filter(a => dans(a.employe_id as string))
+  const demV = (dem ?? []).filter(d => dans(d.employe_id as string))
+  const empIds = Array.from(new Set([...assV.map(a => a.employe_id as string), ...demV.map(d => d.employe_id as string)]))
+  const { data: emps } = empIds.length ? await sb.from('employes').select('id, departements(nom)').in('id', empIds) : { data: [] as { id: string; departements: unknown }[] }
+  const dep = new Map((emps ?? []).map(e => {
+    const d = Array.isArray(e.departements) ? e.departements[0] : e.departements
+    return [e.id as string, ((d as { nom?: string } | null)?.nom) || 'Sans département']
+  }))
+  const certifies = new Set((certs ?? []).map(c => `${c.formation_id}:${c.employe_id}`))
+  return formations.filter(f => modes.has(f.id)).map(f => {
+    const a = assV.filter(x => x.formation_id === f.id)
+    const d = demV.filter(x => x.formation_id === f.id)
+    const interesses = new Set([...a.map(x => x.employe_id as string), ...d.map(x => x.employe_id as string)])
+    const parDep = new Map<string, number>()
+    interesses.forEach(id => { const n = dep.get(id) ?? 'Sans département'; parDep.set(n, (parDep.get(n) ?? 0) + 1) })
+    return {
+      formation_id: f.id, titre: f.titre, clinique: f.clinique, mode: modes.get(f.id)!,
+      inscrits: a.length,
+      termines: a.filter(x => certifies.has(`${f.id}:${x.employe_id}`)).length,
+      en_attente: d.filter(x => x.statut === 'en_attente').length,
+      acceptees: d.filter(x => x.statut === 'acceptee').length,
+      refusees: d.filter(x => x.statut === 'refusee').length,
+      departements: [...parDep].map(([nom, n]) => ({ nom, n })).sort((x, y) => y.n - x.n),
+    }
+  }).sort((x, y) => (y.inscrits + y.en_attente) - (x.inscrits + x.en_attente) || x.titre.localeCompare(y.titre, 'fr'))
+}
