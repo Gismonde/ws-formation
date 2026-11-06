@@ -9,6 +9,8 @@ import { parCategorie } from '@/lib/politiques-categories'
 import SectionCategorie from '@/components/politiques/SectionCategorie'
 import ToutReplier from '@/components/politiques/ToutReplier'
 import { publicDe } from '@/lib/politiques-affichage'
+import BadgeRevision from '@/components/politiques/BadgeRevision'
+import { joursAvantRevision, ALERTE_REVISION_JOURS } from '@/lib/politiques'
 
 function Barre({ pct }: { pct: number }) {
   const couleur = pct === 100 ? '#16a34a' : pct >= 70 ? '#2563eb' : pct >= 40 ? '#f59e0b' : '#dc2626'
@@ -42,6 +44,8 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
   const lienCat = (c?: string) => '/admin/politiques?' + new URLSearchParams({ ...(voirArchives ? { archives: '1' } : {}), ...(c ? { cat: c } : {}) }).toString()
   const stats = await statistiquesPolitiques(sb, politiques, await employesDansPortee(sb, acteur))
   const peutPublier = peutPublierPolitiques(acteur)
+  const aReviser = voirArchives ? [] : toutes.filter(p => { const j = joursAvantRevision(p); return j !== null && j <= ALERTE_REVISION_JOURS })
+  const brouillons = toutes.filter(p => p.brouillon).length
 
   return (
     <div>
@@ -64,6 +68,18 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
           )}
         </div>
       </div>
+
+      {(aReviser.length > 0 || brouillons > 0) && (
+        <div className="mb-4 flex flex-wrap gap-2 text-sm">
+          {aReviser.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-4 py-2">
+              📅 {t('{n} politique(s) à réviser dans les 30 jours ou en retard :', { n: aReviser.length })}{' '}
+              {aReviser.slice(0, 4).map((p, i) => <span key={p.id}>{i ? ', ' : ''}<Link href={`/admin/politiques/${p.id}`} className="underline">{p.titre}</Link></span>)}{aReviser.length > 4 ? '…' : ''}
+            </div>
+          )}
+          {brouillons > 0 && <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-4 py-2">📝 {t('{n} brouillon(s) non diffusé(s)', { n: brouillons })}</div>}
+        </div>
+      )}
 
       {categories.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
@@ -110,19 +126,21 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
                         <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                           <td className="px-5 py-3">
                             <Link href={`/admin/politiques/${p.id}`} className="font-semibold text-gray-900 hover:text-indigo-700">{p.titre}</Link>
-                            <div className="text-xs text-gray-400">{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
+                            <div className="text-xs text-gray-400">{p.brouillon ? <span className="bg-indigo-100 text-indigo-800 rounded-full px-2 py-0.5 font-semibold mr-1">{t('Brouillon')}</span> : null}{t('Version')}{' '}{p.version} · {new Date(p.publiee_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</div>
+                            {p.date_revision && <div className="mt-1"><BadgeRevision p={p} t={t} loc={loc} compact /></div>}
                           </td>
                           <td className="px-3 py-3 text-gray-600">{publicDe(p, noms, t)}</td>
                           <td className="px-3 py-3">
-                            {s.total === 0 ? <span className="text-xs text-gray-500">{t('Aucun employé visé')}</span> : (<>
+                            {p.brouillon ? <span className="text-xs text-indigo-700">{t('Non diffusée')}</span> : s.total === 0 ? <span className="text-xs text-gray-500">{t('Aucun employé visé')}</span> : (<>
                               <Barre pct={s.pourcentage} />
                               <div className="text-xs text-gray-400 mt-0.5">{t('{c} / {n} employé(s)', { c: s.confirmes, n: s.total })}</div>
                             </>)}
                           </td>
                           <td className="px-3 py-3 text-center">
+                            {p.brouillon ? <span className="text-gray-300">—</span> : (
                             <Link href={`/admin/politiques/${p.id}?filtre=attente`} className={'font-semibold ' + (s.total - s.confirmes > 0 ? 'text-amber-700 hover:underline' : 'text-gray-300')}>
                               {s.total - s.confirmes}
-                            </Link>
+                            </Link>)}
                           </td>
                         </tr>
                       )
@@ -132,7 +150,7 @@ export default async function PolitiquesAdminPage({ searchParams }: { searchPara
               </div>
             )
             if (categories.length === 0) return <div key="toutes" className="bg-white border border-gray-200 rounded-xl">{table}</div>
-            const attente = g.politiques.reduce((n, p) => n + (stats[p.id].total - stats[p.id].confirmes), 0)
+            const attente = g.politiques.filter(p => !p.brouillon).reduce((n, p) => n + (stats[p.id].total - stats[p.id].confirmes), 0)
             return (
               <SectionCategorie key={g.categorie?.id ?? 'aucune'} categorie={g.categorie} titreSans={t('Sans catégorie')} nombre={t('{n} politique(s)', { n: g.politiques.length })}
                 detail={attente > 0 ? <span className="text-amber-700">⏳ {t('{n} confirmation(s) en attente', { n: attente })}</span> : <span className="text-green-700">✓ {t('À jour')}</span>}>

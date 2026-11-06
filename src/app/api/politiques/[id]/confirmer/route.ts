@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const sb = serviceClient()
   const { data } = await sb.from('politiques').select('*').eq('id', id).single()
   const pol = data as Politique | null
-  if (!pol || !pol.actif || !estVise(pol, acteur)) return NextResponse.json({ error: 'Politique introuvable' }, { status: 404 })
+  if (!pol || !pol.actif || pol.brouillon === true || !estVise(pol, acteur)) return NextResponse.json({ error: 'Politique introuvable' }, { status: 404 })
   if (version !== pol.version) {
     return NextResponse.json({ error: 'Une nouvelle version vient d’être publiée. Rechargez la page pour la lire.' }, { status: 409 })
   }
