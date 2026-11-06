@@ -25,6 +25,10 @@ type Props = {
   categories?: CategoriePolitique[]
   /** La colonne categorie_id existe (migration exécutée) */
   categoriesActives?: boolean
+  /** Brouillon (pas encore diffusé) */
+  brouillon?: boolean
+  /** Date de révision (AAAA-MM-JJ) ; undefined = colonne absente */
+  dateRevision?: string | null
 }
 
 export default function ActionsPolitique(p: Props) {
@@ -43,6 +47,8 @@ export default function ActionsPolitique(p: Props) {
   const [description, setDescription] = useState(p.description ?? '')
   const [ciblage, setCiblage] = useState<Ciblage>(p.ciblage)
   const [categorie, setCategorie] = useState<string | null>(p.categorieId ?? null)
+  const [dateRevision, setDateRevision] = useState(p.dateRevision ?? '')
+  const [notifierPublication, setNotifierPublication] = useState(false)
 
   async function appeler(corps: Record<string, unknown>, succes: (d: Record<string, unknown>) => string) {
     setEnCours(true); setMsg(null)
@@ -57,8 +63,26 @@ export default function ActionsPolitique(p: Props) {
   const btn = 'px-4 py-2 rounded-lg text-sm font-medium border disabled:opacity-50'
   return (
     <div className="mb-6">
+      {p.brouillon && p.peutGerer && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-3 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[16rem]">
+            <p className="font-semibold text-indigo-900 text-sm">📝 {t('Brouillon : cette politique n’est pas encore diffusée')}</p>
+            <p className="text-xs text-indigo-800 mt-0.5">{t('Les employés ne la voient pas et aucun courriel n’est envoyé. Vérifiez le document et le public, puis publiez-la.')}</p>
+            <label className={'flex items-center gap-2 text-xs mt-2 ' + (p.courrielsActifs ? 'text-indigo-900' : 'text-gray-400')}>
+              <input type="checkbox" checked={notifierPublication && p.courrielsActifs} disabled={!p.courrielsActifs} onChange={e => setNotifierPublication(e.target.checked)} />
+              {t('Avertir les employés concernés par courriel à la publication')}
+            </label>
+          </div>
+          <button className={btn + ' border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700'} disabled={enCours || ciblageVide(p.ciblage)}
+            title={ciblageVide(p.ciblage) ? t('Choisissez d’abord un public (Modifier titre / catégorie / public).') : ''}
+            onClick={async () => (await confirmer({ message: t('Publier cette politique ? Les employés visés devront la confirmer.'), bouton: t('Publier') })) &&
+              appeler({ action: 'publier', notifier: notifierPublication }, d => Number(d.courriels) ? t('Politique publiée — {n} courriel(s) envoyé(s).', { n: Number(d.courriels) }) : t('Politique publiée.'))}>
+            🚀 {t('Publier maintenant')}
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
-        {p.actif && p.enAttente > 0 && (
+        {p.actif && !p.brouillon && p.enAttente > 0 && (
           <button className={btn + ' border-amber-500 text-amber-800 bg-amber-50 hover:bg-amber-100'} disabled={enCours || !p.courrielsActifs}
             title={p.courrielsActifs ? '' : t('Envoi de courriels pas encore configuré')}
             onClick={async () => (await confirmer({ message: t('Envoyer un rappel par courriel aux {n} employé(s) en attente ?', { n: p.enAttente }), bouton: t('Envoyer') })) &&
@@ -120,10 +144,16 @@ export default function ActionsPolitique(p: Props) {
             if (cat?.departements.length) setCiblage(c => ({ ...c, tous: false, departements: Array.from(new Set([...c.departements, ...cat.departements])) }))
           }} />}
           {p.options && <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={p.cliniques} departements={p.options.departements} postes={p.options.postes} familles={p.options.familles} employes={p.options.employes} rolesPostes={p.options.rolesPostes} />}
-          <p className="text-xs text-gray-500">Les employés ajoutés au public devront confirmer ; les confirmations déjà faites sont conservées.</p>
+          {p.dateRevision !== undefined && (
+            <div>
+              <label htmlFor="date_revision_mod" className="block text-sm font-medium text-gray-700 mb-1">📅 {t('Date de révision')}</label>
+              <input id="date_revision_mod" type="date" value={dateRevision} onChange={e => setDateRevision(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          )}
+          <p className="text-xs text-gray-500">{t('Les employés ajoutés au public devront confirmer ; les confirmations déjà faites sont conservées.')}</p>
           <button className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-            disabled={enCours || ciblageVide(ciblage)}
-            onClick={() => appeler({ action: 'modifier', titre, description, ...corpsCiblage(ciblage), ...(p.categoriesActives ? { categorie_id: categorie } : {}) }, () => t('Modifications enregistrées.'))}>
+            disabled={enCours || (!p.brouillon && ciblageVide(ciblage))}
+            onClick={() => appeler({ action: 'modifier', titre, description, ...corpsCiblage(ciblage), ...(p.categoriesActives ? { categorie_id: categorie } : {}), ...(p.dateRevision !== undefined ? { date_revision: dateRevision || null } : {}) }, () => t('Modifications enregistrées.'))}>
             {t('Enregistrer')}
           </button>
         </div>

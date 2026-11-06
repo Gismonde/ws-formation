@@ -38,7 +38,24 @@ export type Politique = {
   created_at: string
   /** Catégorie de rangement (politiques_categories.sql) */
   categorie_id?: string | null
+  /** Préparée mais pas encore diffusée (politiques_brouillon_revision.sql) */
+  brouillon?: boolean | null
+  /** Date à laquelle la politique doit être révisée */
+  date_revision?: string | null
+  revision_alerte_le?: string | null
 }
+
+/** Brouillon : invisible des employés, hors statistiques et hors courriels. */
+export const estBrouillon = (p: { brouillon?: boolean | null }) => p.brouillon === true
+
+/** Nombre de jours avant la date de révision (négatif : dépassée), ou null sans date. */
+export function joursAvantRevision(p: { date_revision?: string | null }, aujourdhui = new Date()): number | null {
+  if (!p.date_revision) return null
+  const d = new Date(p.date_revision + 'T12:00:00'); const a = new Date(aujourdhui.toISOString().slice(0, 10) + 'T12:00:00')
+  return Math.round((d.getTime() - a.getTime()) / 86400000)
+}
+/** Délai d'alerte avant la date de révision (jours). */
+export const ALERTE_REVISION_JOURS = 30
 
 export type EmployeVise = {
   id: string
@@ -161,13 +178,29 @@ export async function validerCiblage(acteur: Acteur, body: Record<string, unknow
     if (cid && !UUID.test(cid)) return { erreur: 'Catégorie inconnue' }
     categorie = { categorie_id: cid }
   }
+  // Date de révision : écrite seulement si envoyée (colonne de politiques_brouillon_revision.sql)
+  let revision: { date_revision?: string | null; revision_alerte_le?: null } = {}
+  if ('date_revision' in body) {
+    const d = body.date_revision ? String(body.date_revision).slice(0, 10) : null
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return { erreur: 'Date de révision invalide' }
+    revision = { date_revision: d, revision_alerte_le: null }
+  }
   return {
     valeurs: {
       titre, description: String(body.description ?? '').trim() || null, clinique, departements, employes,
       ...(rolesPostes ? { roles, postes } : {}),
       ...categorie,
+      ...revision,
     },
   }
+}
+
+/** Message clair quand une colonne récente manque (migration pas encore exécutée). */
+export function messageColonne(msg?: string | null): string | null {
+  if (msg && /brouillon|date_revision|revision_alerte_le/.test(msg) && /column|colonne|schema cache/i.test(msg)) {
+    return 'Les brouillons et la date de révision demandent une mise à jour de la base de données (politiques_brouillon_revision.sql).'
+  }
+  return null
 }
 
 /** Les colonnes roles / postes existent-elles ? (migration politiques_roles_postes.sql) */
@@ -231,6 +264,7 @@ export async function statistiquesPolitiques(
 export async function politiquesDeLEmploye(sb: SupabaseClient, e: { id: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null }, espace?: Clinique | null) {
   const { data } = await sb.from('politiques').select('*').eq('actif', true).order('publiee_le', { ascending: false })
   const pols = ((data ?? []) as Politique[])
+    .filter(p => !estBrouillon(p))
     .filter(p => estVise(p, e))
     .filter(p => !espace || cliniquesDe(p.clinique).includes(espace))
   if (pols.length === 0) return []

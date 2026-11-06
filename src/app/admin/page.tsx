@@ -44,7 +44,7 @@ export default async function TableauDeBord() {
   const aRenouveler = expirations.filter(l => l.statut !== 'valide')
 
   // Politiques : confirmations en attente
-  const politiques = ((pols ?? []) as Politique[]).filter(p => peutSuivrePolitique(acteur, p))
+  const politiques = ((pols ?? []) as Politique[]).filter(p => p.brouillon !== true && peutSuivrePolitique(acteur, p))
   const stats = await statistiquesPolitiques(sb, politiques, portee)
   const enAttente = politiques.map(p => ({ p, st: stats[p.id] })).filter(x => x.st && x.st.total > x.st.confirmes)
     .sort((a, b) => (b.st.total - b.st.confirmes) - (a.st.total - a.st.confirmes))

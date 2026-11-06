@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
-import { peutPublierPolitiques, Politique, validerCiblage, colonnesRolesPostes, estPourToute } from '@/lib/politiques'
+import { peutPublierPolitiques, Politique, validerCiblage, colonnesRolesPostes, estPourToute, messageColonne } from '@/lib/politiques'
 import { avertirPolitique } from '@/lib/politiques-courriels'
 import { origineDepuis } from '@/lib/courriels'
 import { estMediaPrive } from '@/lib/medias'
@@ -19,8 +19,10 @@ export async function POST(request: Request) {
   }
 
   const maintenant = new Date().toISOString()
+  const brouillon = body.brouillon === true
   const { data: pol, error } = await sb.from('politiques').insert({
     ...v.valeurs,
+    ...(brouillon ? { brouillon: true } : {}),
     version: 1,
     fichier: body.fichier,
     nom_fichier: body.nom_fichier ?? null,
@@ -28,11 +30,16 @@ export async function POST(request: Request) {
     publiee_par: acteur.id,
     actif: true,
   }).select('*').single()
-  if (error || !pol) return NextResponse.json({ error: error?.message ?? 'Erreur' }, { status: 500 })
+  if (error || !pol) return NextResponse.json({ error: messageColonne(error?.message) ?? error?.message ?? 'Erreur' }, { status: 500 })
 
   await sb.from('politiques_versions').insert({
     politique_id: pol.id, version: 1, fichier: pol.fichier, nom_fichier: pol.nom_fichier, publiee_le: maintenant, publiee_par: acteur.id,
   })
+
+  if (brouillon) {
+    await logAudit({ acteur_id: acteur.id, type_action: 'POLITIQUE_MODIFIEE', description: `Politique enregistrée en brouillon : ${pol.titre}`, metadata: { politique_id: pol.id, brouillon: true }, ...ipEtAgent(request) })
+    return NextResponse.json({ success: true, id: pol.id, courriels: 0, brouillon: true })
+  }
 
   await logAudit({
     acteur_id: acteur.id,

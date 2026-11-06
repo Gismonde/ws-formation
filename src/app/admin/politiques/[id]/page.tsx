@@ -10,6 +10,7 @@ import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { courrielsActifs } from '@/lib/courriels'
 import { CLINIQUE_EMPLOYE_LABEL, CliniqueEmploye } from '@/lib/cliniques'
 import ActionsPolitique from './ActionsPolitique'
+import BadgeRevision from '@/components/politiques/BadgeRevision'
 import ListeConfirmations, { LigneConfirmation } from './ListeConfirmations'
 
 export default async function PolitiqueAdminPage({ params, searchParams }: {
@@ -62,10 +63,12 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-2xl font-bold text-gray-900">
             {pol.titre} {!pol.actif && <span className="text-xs align-middle bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2">{t('Archivée')}</span>}
+            {pol.brouillon && <span className="text-xs align-middle bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full ml-2">{t('Brouillon')}</span>}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Version {pol.version}{' '}{t('· publiée le')}{' '}{new Date(pol.publiee_le).toLocaleDateString(loc, { dateStyle: 'long' })} · {publicDe(pol, noms, t)}
           </p>
+          <BadgeRevision p={pol} t={t} loc={loc} />
           {pol.description && <p className="text-sm text-gray-700 mt-2">{pol.description}</p>}
           {urls[pol.fichier] && (
             <a href={urls[pol.fichier]} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm text-indigo-700 hover:underline">
@@ -91,6 +94,8 @@ export default async function PolitiqueAdminPage({ params, searchParams }: {
         categorieId={pol.categorie_id ?? null}
         categories={await categoriesPolitiques(sb)}
         categoriesActives={'categorie_id' in pol}
+        brouillon={pol.brouillon === true}
+        dateRevision={'date_revision' in pol ? pol.date_revision ?? null : undefined}
         enAttente={stat.total - stat.confirmes}
         peutGerer={peutGererPolitique(acteur, pol)}
         courrielsActifs={courrielsActifs()}

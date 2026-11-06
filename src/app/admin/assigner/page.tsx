@@ -26,7 +26,7 @@ export default async function AssignerPage({ searchParams }: { searchParams: Pro
   return (
     <AssignationGroupee
       formations={(formations ?? []).map(f => ({ id: f.id, titre: f.titre, detail: [f.categorie, f.clinique === 'LES_DEUX' ? 'CMC + WSSC' : f.clinique, f.publiee ? null : 'brouillon'].filter(Boolean).join(' · '), obligatoire: f.obligatoire === true }))}
-      politiques={((politiques ?? []) as Politique[]).filter(p => peutGererPolitique(acteur, p)).map(p => ({ id: p.id, titre: p.titre, detail: `${CLINIQUE_EMPLOYE_LABEL[p.clinique]} · v${p.version}` }))}
+      politiques={((politiques ?? []) as Politique[]).filter(p => peutGererPolitique(acteur, p)).map(p => ({ id: p.id, titre: p.titre, detail: `${CLINIQUE_EMPLOYE_LABEL[p.clinique]} · v${p.version}${p.brouillon ? ' · brouillon' : ''}` }))}
       employes={(employes ?? []).map(e => {
         const c = cliniqueAffichee(e.clinique, e.role)
         const d = e.departements as { nom?: string } | { nom?: string }[] | null

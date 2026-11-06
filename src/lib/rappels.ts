@@ -9,7 +9,7 @@ import { palierRelanceEcheance, estEnRetard } from '@/lib/echeances'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import { cliniquesDe } from '@/lib/cliniques'
 
-export type TypeRappel = 'certificat_expiration' | 'formation_echeance'
+export type TypeRappel = 'certificat_expiration' | 'formation_echeance' | 'politique_revision'
 
 export type BilanRappels = {
   type: TypeRappel
@@ -203,6 +203,57 @@ export async function rappelsEcheances(sb: SupabaseClient, origine: string, aujo
 }
 
 // ---------------------------------------------------------------------------
+// Politiques à réviser : un courriel aux administrateurs de la clinique 30 jours avant la date de révision,
+// puis un autre une fois la date dépassée. Le suivi se fait par politiques.revision_alerte_le.
+
+export async function rappelsRevisionPolitiques(sb: SupabaseClient, origine: string, aujourdhui = new Date()): Promise<BilanRappels> {
+  const bilan: BilanRappels = { type: 'politique_revision', candidats: 0, envoyes: 0, ignores: 0 }
+  const { data: pols, error } = await sb.from('politiques').select('id, titre, clinique, date_revision, revision_alerte_le, brouillon, actif')
+    .eq('actif', true).not('date_revision', 'is', null)
+  if (error) { bilan.erreur = 'Colonne date_revision absente : exécuter supabase/migrations/politiques_brouillon_revision.sql'; return bilan }
+  const jour = aujourdhui.toISOString().slice(0, 10)
+  const jours = (d: string) => Math.round((new Date(d + 'T12:00:00').getTime() - new Date(jour + 'T12:00:00').getTime()) / 86400000)
+  const aTraiter = (pols ?? []).filter(p => {
+    const j = jours(p.date_revision as string)
+    if (j > 30) return false
+    const derniere = p.revision_alerte_le as string | null
+    // J-30 : une fois ; date dépassée : une fois de plus (après la date de révision)
+    return j >= 0 ? !derniere : !derniere || derniere < (p.date_revision as string)
+  })
+  bilan.candidats = aTraiter.length
+  if (!aTraiter.length) return bilan
+  const { data: admins } = await sb.from('employes').select('id, prenom, email, role, clinique, actif').in('role', ['admin', 'super_admin'])
+  for (const p of aTraiter) {
+    const cl = cliniquesDe(p.clinique as string)
+    const dest = (admins ?? []).filter(a => a.actif !== false && a.email && (a.role === 'super_admin' || cliniquesDe(a.clinique as string).some(c => cl.includes(c))))
+    if (!dest.length) { bilan.ignores++; continue }
+    const j = jours(p.date_revision as string)
+    const titre = j < 0 ? `Politique à réviser : ${p.titre}` : `Révision prévue dans ${j} jour(s) : ${p.titre}`
+    const courriels: Courriel[] = dest.map(a => {
+      const g = gabarit({
+        origine, clinique: cl.length === 1 ? cl[0] : null, titre,
+        paragraphes: [
+          `Bonjour ${a.prenom ?? ''},`,
+          j < 0
+            ? `La date de révision de la politique « ${p.titre} » (${dateLongue(p.date_revision as string)}) est dépassée.`
+            : `La politique « ${p.titre} » doit être révisée le ${dateLongue(p.date_revision as string)}.`,
+          'Révisez le document puis publiez une nouvelle version, ou reportez la date de révision depuis la fiche de la politique.',
+        ],
+        bouton: { libelle: 'Ouvrir la politique', lien: `${origine}/admin/politiques/${p.id}` },
+      })
+      return { a: a.email as string, sujet: titre, html: g.html, texte: g.texte }
+    })
+    const r = await envoyerCourriels(courriels)
+    if (r.envoyes > 0) {
+      bilan.envoyes += r.envoyes
+      await sb.from('politiques').update({ revision_alerte_le: jour }).eq('id', p.id)
+    }
+    if (r.erreur) bilan.erreur = r.erreur
+  }
+  return bilan
+}
+
+// ---------------------------------------------------------------------------
 
 export async function executerRappels(sb: SupabaseClient, origine: string): Promise<{ actif: boolean; raison?: string; bilans: BilanRappels[] }> {
   if (!courrielsActifs()) return { actif: false, raison: 'Courriels non configurés (SMTP_HOST + SMTP_USER + SMTP_PASS, ou MAILGUN_API_KEY + MAILGUN_DOMAIN, ou RESEND_API_KEY ; et COURRIEL_EXPEDITEUR)', bilans: [] }
@@ -210,5 +261,6 @@ export async function executerRappels(sb: SupabaseClient, origine: string): Prom
   const bilans: BilanRappels[] = []
   bilans.push(await rappelsCertificats(sb, origine))
   bilans.push(await rappelsEcheances(sb, origine))
+  bilans.push(await rappelsRevisionPolitiques(sb, origine))
   return { actif: true, bilans }
 }

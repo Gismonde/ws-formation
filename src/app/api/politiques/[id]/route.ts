@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import {
-  employesDansPortee, peutGererPolitique, validerCiblage, colonnesRolesPostes, peutSuivrePolitique, Politique, statistiquesPolitiques,
+  employesDansPortee, peutGererPolitique, validerCiblage, colonnesRolesPostes, peutSuivrePolitique, Politique, statistiquesPolitiques, estBrouillon, messageColonne,
 } from '@/lib/politiques'
 import { avertirPolitique } from '@/lib/politiques-courriels'
 import { origineDepuis } from '@/lib/courriels'
@@ -14,6 +14,7 @@ import { estMediaPrive } from '@/lib/medias'
  *  - nouvelle_version: nouveau document → tout le monde doit reconfirmer
  *  - archiver / reactiver
  *  - rappel          : courriel aux employés en attente (dans la portée de l'acteur)
+ *  - publier         : diffuse un brouillon (courriel facultatif)
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,6 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const action = body.action as string
   const origine = origineDepuis(request)
 
+  if (action === 'rappel' && estBrouillon(pol)) return NextResponse.json({ error: 'Brouillon : publiez la politique d’abord' }, { status: 400 })
   if (action === 'rappel') {
     const employes = await employesDansPortee(sb, acteur)
     const stat = (await statistiquesPolitiques(sb, [pol], employes))[pol.id]
@@ -44,7 +46,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const v = await validerCiblage(acteur, body, sb, await colonnesRolesPostes(sb))
     if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
     const { error } = await sb.from('politiques').update({ ...v.valeurs, updated_at: new Date().toISOString() }).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: messageColonne(error.message) ?? error.message }, { status: 500 })
     await logAudit({ acteur_id: acteur.id, type_action: 'POLITIQUE_MODIFIEE', description: `Politique modifiée : ${v.valeurs.titre}`, metadata: { politique_id: id }, ...ipEtAgent(request) })
     return NextResponse.json({ success: true })
   }
@@ -74,6 +76,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     let courriels = 0
     if (body.notifier !== false) courriels = (await avertirPolitique(sb, { ...pol, ...maj }, origine, 'version')).envoyes
     return NextResponse.json({ success: true, version, courriels })
+  }
+
+  if (action === 'publier') {
+    if (!estBrouillon(pol)) return NextResponse.json({ error: 'Cette politique est déjà publiée' }, { status: 400 })
+    const maintenant = new Date().toISOString()
+    const { error } = await sb.from('politiques').update({ brouillon: false, publiee_le: maintenant, publiee_par: acteur.id, actif: true, updated_at: maintenant }).eq('id', id)
+    if (error) return NextResponse.json({ error: messageColonne(error.message) ?? error.message }, { status: 500 })
+    await sb.from('politiques_versions').update({ publiee_le: maintenant, publiee_par: acteur.id }).eq('politique_id', id).eq('version', pol.version)
+    await logAudit({
+      acteur_id: acteur.id, type_action: 'POLITIQUE_PUBLIEE',
+      description: `Brouillon publié : ${pol.titre}`, metadata: { politique_id: id, version: pol.version }, ...ipEtAgent(request),
+    })
+    let courriels = 0
+    if (body.notifier === true) courriels = (await avertirPolitique(sb, { ...pol, brouillon: false, publiee_le: maintenant }, origine, 'nouvelle')).envoyes
+    return NextResponse.json({ success: true, courriels })
   }
 
   if (action === 'archiver' || action === 'reactiver') {

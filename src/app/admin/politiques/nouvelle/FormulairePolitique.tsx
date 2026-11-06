@@ -35,6 +35,8 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
   const [lignes, setLignes] = useState<Ligne[]>([])
   const [ciblage, setCiblage] = useState<Ciblage>({ clinique: cliniques[0], tous: true, departements: [], employes: [], roles: [], postes: [] })
   const [notifier, setNotifier] = useState(true)
+  const [dateRevision, setDateRevision] = useState('')
+  const brouillonRef = useRef(false)
   const [categorie, setCategorie] = useState<string | null>(null)
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState('')
@@ -58,16 +60,18 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
 
   async function publier(e: React.FormEvent) {
     e.preventDefault()
+    const brouillon = brouillonRef.current
+    brouillonRef.current = false
     setErreur('')
     if (aPublier.length === 0) return setErreur(t('Ajoutez au moins un document.'))
     if (aPublier.some(l => !l.titre.trim())) return setErreur(t('Chaque politique doit avoir un titre.'))
-    if (ciblageVide(ciblage)) return setErreur(t('Choisissez au moins un critère pour le public ciblé.'))
+    if (!brouillon && ciblageVide(ciblage)) return setErreur(t('Choisissez au moins un critère pour le public ciblé.'))
     setEnCours(true)
     let derniere: string | undefined
     for (const l of aPublier) {
       const res = await fetch('/api/politiques', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre: l.titre, description: l.description, ...corpsCiblage(ciblage), ...(categorie ? { categorie_id: categorie } : {}), fichier: l.reference, nom_fichier: l.nomFichier, notifier }),
+        body: JSON.stringify({ titre: l.titre, description: l.description, ...corpsCiblage(ciblage), ...(categorie ? { categorie_id: categorie } : {}), fichier: l.reference, nom_fichier: l.nomFichier, notifier: !brouillon && notifier, ...(dateRevision ? { date_revision: dateRevision } : {}), ...(brouillon ? { brouillon: true } : {}) }),
       })
       const d = await res.json().catch(() => ({}))
       if (res.ok) { maj(l.cle, { etat: 'publiee', id: d.id }); derniere = d.id }
@@ -130,6 +134,12 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
 
       <ChampsCiblage valeur={ciblage} onChange={setCiblage} cliniques={cliniques} departements={options.departements} postes={options.postes} familles={options.familles} employes={options.employes} rolesPostes={options.rolesPostes} />
 
+      <div>
+        <label htmlFor="date_revision" className="block text-sm font-medium text-gray-700 mb-1">📅 {t('Date de révision')}</label>
+        <input id="date_revision" type="date" value={dateRevision} onChange={e => setDateRevision(e.target.value)} className={inputCls + ' max-w-xs'} />
+        <p className="text-xs text-gray-500 mt-1">{t('Facultatif. Les administrateurs sont avertis 30 jours avant, puis la politique est signalée « à réviser » une fois la date passée.')}</p>
+      </div>
+
       <label className={'flex items-start gap-2 text-sm ' + (courrielsActifs ? 'text-gray-700' : 'text-gray-400')}>
         <input type="checkbox" className="mt-0.5" checked={notifier && courrielsActifs} disabled={!courrielsActifs} onChange={e => setNotifier(e.target.checked)} />
         <span>
@@ -140,6 +150,9 @@ export default function FormulairePolitique({ cliniques, options, courrielsActif
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={enCours || envoiEnCours || aPublier.length === 0} className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm">
           {enCours ? t('Publication…') : envoiEnCours ? t('Envoi des documents…') : aPublier.length > 1 ? t('Publier les {n} politiques', { n: aPublier.length }) : t('Publier la politique')}
+        </button>
+        <button type="submit" onClick={() => { brouillonRef.current = true }} disabled={enCours || envoiEnCours || aPublier.length === 0} title={t('Visible seulement des administrateurs ; aucun courriel. Publiez-la plus tard depuis sa fiche.')} className="px-5 py-2.5 border border-indigo-300 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 disabled:opacity-50">
+          📝 {t('Enregistrer en brouillon')}
         </button>
         <a href="/admin/politiques" className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">{t('Annuler')}</a>
       </div>

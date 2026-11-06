@@ -10,6 +10,8 @@ export type MotifCourriel = 'nouvelle' | 'version' | 'rappel'
  * (ex. rappel aux employés en attente dans la portée de l'acteur).
  */
 export async function avertirPolitique(sb: SupabaseClient, p: Politique, origine: string, motif: MotifCourriel, destinataires?: EmployeVise[]) {
+  // Un brouillon n'est jamais annoncé
+  if (p.brouillon === true) return { envoyes: 0, erreur: undefined as string | undefined }
   if (!courrielsActifs()) return { envoyes: 0, erreur: 'non_configure' as string | undefined }
   let liste = destinataires
   if (!liste) {
