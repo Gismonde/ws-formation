@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span>
               &copy; {new Date().getFullYear()} WS Formation
             </span>
-            <span style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <span className="pied-liens" style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
               <Link href="/confidentialite" style={{ color: "#6b7280", textDecoration: "underline" }}>
                 {t("Politique de confidentialité")}
               </Link>

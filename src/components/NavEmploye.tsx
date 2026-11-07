@@ -1,6 +1,7 @@
 'use client'
 // Menu latéral (5 entrées) et onglets du groupe actif, pour le portail employé.
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { MENU_EMPLOYE, groupeActif, correspond } from '@/lib/menu-employe'
@@ -39,9 +40,18 @@ export function OngletsEmploye({ compteurs, masques = [] }: { compteurs: Compteu
   const chemin = usePathname() ?? ''
   const actif = groupeActif(chemin)
   const onglets = actif ? actif.groupe.onglets.filter(o => !masques.includes(o.href)) : []
+  const barre = useRef<HTMLDivElement>(null)
+  // Sur téléphone, les onglets défilent : on amène l'onglet ouvert dans l'écran
+  useEffect(() => {
+    const b = barre.current
+    const sel = b?.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!b || !sel) return
+    const gauche = sel.offsetLeft - b.offsetLeft
+    if (gauche + sel.offsetWidth > b.scrollLeft + b.clientWidth || gauche < b.scrollLeft) b.scrollLeft = Math.max(0, gauche - (b.clientWidth - sel.offsetWidth) / 2)
+  }, [chemin])
   if (!actif || onglets.length < 2) return null
   return (
-    <div role="tablist" aria-label={t(actif.groupe.label)} style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e7eb', marginBottom: '24px', overflowX: 'auto' }}>
+    <div ref={barre} role="tablist" aria-label={t(actif.groupe.label)} style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e7eb', marginBottom: '24px', overflowX: 'auto' }}>
       {onglets.map(o => {
         const sel = correspond(o.href, chemin)
         return (

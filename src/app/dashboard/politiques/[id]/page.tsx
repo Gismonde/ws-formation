@@ -31,7 +31,14 @@ export default async function PolitiquePage({ params }: { params: Promise<{ id: 
       {p.description && <p style={{ color: '#374151', fontSize: '15px', margin: '0 0 16px' }}>{p.description}</p>}
 
       {url && estPdf ? (
-        <iframe src={url} title={p.titre} style={{ width: '100%', height: '70vh', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff' }} />
+        // Sur téléphone, un PDF dans la page s'affiche mal (souvent une seule page, ou rien) : gros bouton à la place
+        <a href={url} target="_blank" rel="noopener noreferrer" className="pdf-bouton-mobile"
+          style={{ alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 16px', borderRadius: '12px', background: 'var(--accent-clinique)', color: '#fff', fontWeight: 700, fontSize: '15px', textDecoration: 'none', marginBottom: '4px' }}>
+          📄 {t('Lire le document')}
+        </a>
+      ) : null}
+      {url && estPdf ? (
+        <iframe className="pdf-apercu" src={url} title={p.titre} style={{ width: '100%', height: '70vh', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff' }} />
       ) : null}
       {url && (
         <p style={{ margin: '10px 0 0', fontSize: '14px' }}>

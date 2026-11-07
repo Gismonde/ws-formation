@@ -249,7 +249,7 @@ export default async function FormationDetailPage({ params, searchParams }: { pa
                           {!leconAccessible(idsOrdre, leconsFaites, l.id) ? (
                             <span className="flex items-center gap-2 text-sm text-gray-400" title={t('Terminez d’abord les leçons précédentes')}><span>🔒</span>{l.titre}</span>
                           ) :
-                          <Link href={`/formations/${id}/lecon/${l.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700">
+                          <Link href={`/formations/${id}/lecon/${l.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700 py-1.5 sm:py-0">
                             <span className={leconsFaites.has(l.id) ? 'text-green-600' : 'text-gray-300'}>{leconsFaites.has(l.id) ? '✓' : '○'}</span>
                             {l.titre}
                           </Link>}
