@@ -7,7 +7,7 @@ import { envoyerCourriels, gabarit, courrielsActifs, type Courriel } from '@/lib
 import { joursRestants, palierRappelCertificat } from '@/lib/expirations'
 import { palierRelanceEcheance, estEnRetard } from '@/lib/echeances'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
-import { cliniquesDe } from '@/lib/cliniques'
+import { cliniquesDe, adminConcerne } from '@/lib/cliniques'
 
 export type TypeRappel = 'certificat_expiration' | 'formation_echeance' | 'politique_revision'
 
@@ -225,7 +225,7 @@ export async function rappelsRevisionPolitiques(sb: SupabaseClient, origine: str
   const { data: admins } = await sb.from('employes').select('id, prenom, email, role, clinique, actif').in('role', ['admin', 'super_admin'])
   for (const p of aTraiter) {
     const cl = cliniquesDe(p.clinique as string)
-    const dest = (admins ?? []).filter(a => a.actif !== false && a.email && (a.role === 'super_admin' || cliniquesDe(a.clinique as string).some(c => cl.includes(c))))
+    const dest = (admins ?? []).filter(a => !!a.email && adminConcerne(a, p.clinique as string))
     if (!dest.length) { bilan.ignores++; continue }
     const j = jours(p.date_revision as string)
     const titre = j < 0 ? `Politique à réviser : ${p.titre}` : `Révision prévue dans ${j} jour(s) : ${p.titre}`

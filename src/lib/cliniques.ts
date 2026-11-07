@@ -210,3 +210,23 @@ export function prerequisCompatible(cliniqueFormation: string | null | undefined
   const f = cliniqueFormation ?? 'LES_DEUX', p = cliniquePrerequis ?? 'LES_DEUX'
   return p === 'LES_DEUX' || p === f
 }
+
+/**
+ * Peut être responsable des demandes d'accès d'une formation : l'admin global, ou un administrateur ou
+ * gestionnaire de la clinique de la formation. Jamais une personne de l'autre clinique.
+ */
+export function responsableAdmissible(p: { role?: string | null; clinique?: string | null }, cliniqueFormation: string | null | undefined): boolean {
+  if (p.role === 'super_admin') return true
+  if (p.role !== 'admin' && p.role !== 'gestionnaire') return false
+  const cf = cliniquesDe(cliniqueFormation ?? 'LES_DEUX')
+  return cliniquesDe(p.clinique).some(c => cf.includes(c))
+}
+
+/** Administrateur concerné par un contenu (avis, alertes) : l'admin global, ou un admin de la clinique du contenu. */
+export function adminConcerne(p: { role?: string | null; clinique?: string | null; actif?: boolean | null }, cliniqueContenu: string | null | undefined): boolean {
+  if (p.actif === false) return false
+  if (p.role === 'super_admin') return true
+  if (p.role !== 'admin') return false
+  const cc = cliniquesDe(cliniqueContenu ?? 'LES_DEUX')
+  return cliniquesDe(p.clinique).some(c => cc.includes(c))
+}

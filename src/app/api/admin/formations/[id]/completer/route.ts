@@ -1,5 +1,6 @@
 // Ajouts ciblés dans une formation en brouillon, sans toucher au reste du contenu
 // (contrairement à l'import avec « remplacer_id », qui remplace tout).
+import { responsableAdmissible } from '@/lib/cliniques'
 //   blocs   : [{ lecon, apres?, bloc }]  — insère un bloc dans une leçon (après le bloc titré « apres », sinon à la fin)
 //   modifs  : [{ lecon, bloc, champs }]   — modifie titre/contenu/url/metadata d'un bloc existant (repéré par son titre)
 //   lecons  : [{ module, apres?, titre, description?, duree_minutes?, blocs }] — ajoute une leçon dans un module
@@ -101,7 +102,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if ('validite_mois' in c.reglages) maj.validite_mois = Number(c.reglages.validite_mois) > 0 ? Math.min(120, Math.round(Number(c.reglages.validite_mois))) : null
     if ('responsable_id' in c.reglages) {
       const rid = c.reglages.responsable_id ? String(c.reglages.responsable_id) : null
-      if (rid) { const { data: r } = await sb.from('employes').select('id').eq('id', rid).maybeSingle(); if (!r) return NextResponse.json({ error: 'Responsable introuvable', journal }, { status: 400 }) }
+      if (rid) {
+        const { data: r } = await sb.from('employes').select('id, role, clinique').eq('id', rid).maybeSingle()
+        if (!r) return NextResponse.json({ error: 'Responsable introuvable', journal }, { status: 400 })
+        const { data: fc } = await sb.from('formations').select('clinique').eq('id', id).maybeSingle()
+        if (!responsableAdmissible(r, fc?.clinique)) return NextResponse.json({ error: 'Le responsable doit être un administrateur ou un gestionnaire de la clinique de la formation', journal }, { status: 400 })
+      }
       maj.responsable_id = rid
     }
     if (Object.keys(maj).length) {

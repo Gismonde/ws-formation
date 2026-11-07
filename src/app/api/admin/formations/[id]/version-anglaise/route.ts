@@ -2,7 +2,7 @@
 // Les employés dont la langue de formation est l'anglais reçoivent alors la version anglaise.
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, cliniquesContenuGerablesToutes, ipEtAgent } from '@/lib/permissions'
-import { lierVersionAnglaise } from '@/lib/langues-formation'
+import { lierVersionAnglaise, versionsCompatibles } from '@/lib/langues-formation'
 import { logAudit } from '@/lib/audit'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -28,7 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   if (fr.version_de) return NextResponse.json({ error: 'Cette formation est elle-même une version anglaise' }, { status: 400 })
   if (en) {
-    if ((en.clinique ?? null) !== (fr.clinique ?? null)) return NextResponse.json({ error: 'Les deux versions doivent appartenir à la même clinique' }, { status: 400 })
+    if (!versionsCompatibles(fr, en)) return NextResponse.json({ error: 'Les deux versions doivent appartenir à la même clinique' }, { status: 400 })
     if (en.version_de && en.version_de !== id) return NextResponse.json({ error: 'Cette formation est déjà la version anglaise d’une autre formation' }, { status: 400 })
     const { count } = await sb.from('formations').select('id', { count: 'exact', head: true }).eq('version_de', en.id)
     if ((count ?? 0) > 0) return NextResponse.json({ error: 'Cette formation a elle-même une version liée' }, { status: 400 })
