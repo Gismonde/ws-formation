@@ -106,7 +106,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
   }
 
   // Données de la vue détaillée (filtres côté navigateur)
-  const cartes: CarteFormation[] = ((formations ?? []) as any[]).map(f => {
+  const cartes: CarteFormation[] = ((toutes ?? []) as any[]).map(f => {
     const en = anglaiseDe.get(f.id); const c = conc.get(f.id)
     return {
       id: f.id, titre: f.titre, description: f.description ?? null, categorie: String(f.categorie ?? "").trim(), niveau: f.niveau ?? null,
@@ -261,7 +261,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
         </div>
       </div>
 
-      {vue === "cartes" && <VueCartes formations={cartes} />}
+      {vue === "cartes" && <VueCartes formations={cartes} statutInitial={statut ?? ""} />}
 
       {/* Liste : formations rangées par catégorie, en sections repliables (la vue détaillée a ses propres filtres : VueCartes) */}
       {vue === "liste" && (

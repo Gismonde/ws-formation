@@ -40,12 +40,14 @@ export function BadgeVersions({ en, t }: { en: CarteFormation['en']; t: (s: stri
   )
 }
 
-export default function VueCartes({ formations }: { formations: CarteFormation[] }) {
+export default function VueCartes({ formations, statutInitial = '' }: { formations: CarteFormation[]; statutInitial?: '' | 'publiee' | 'brouillon' }) {
   const { t } = useT()
   const [q, setQ] = useState('')
   const [categorie, setCategorie] = useState('')
   const [motCle, setMotCle] = useState('')
   const [versions, setVersions] = useState<'' | 'fr_en' | 'fr' | 'ecart'>('')
+  const [statut, setStatut] = useState<'' | 'publiee' | 'brouillon'>(statutInitial)
+  useEffect(() => { setStatut(statutInitial) }, [statutInitial])
   // Rangement : par catégorie, ou tout ensemble (une seule grille, comme avant). Choix mémorisé dans ce navigateur.
   const [rangement, setRangement] = useState<'categories' | 'ensemble'>('categories')
   useEffect(() => { try { if (localStorage.getItem('ws_rangement_formations') === 'ensemble') setRangement('ensemble') } catch { /* stockage indisponible */ } }, [])
@@ -70,7 +72,7 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
     nom,
     liste: filtrees.filter(f => f.categorie === nom).sort((a, b) => (a.publiee === b.publiee ? 0 : a.publiee ? -1 : 1) || a.titre.localeCompare(b.titre, 'fr')),
   })).filter(g => g.liste.length)
-  const actifs = !!(q || categorie || motCle || versions)
+  const actifs = !!(q || categorie || motCle || versions || statut)
   const champ = 'rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm !w-auto flex-none max-w-[230px]'
 
   return (
@@ -87,13 +89,18 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
             {motsCles.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         )}
+        <select value={statut} onChange={e => setStatut(e.target.value as typeof statut)} aria-label={t('Statut')} className={champ}>
+          <option value="">{t('Publiées et brouillons')} ({formations.length})</option>
+          <option value="publiee">{t('Publiées')} ({formations.filter(f => f.publiee).length})</option>
+          <option value="brouillon">{t('Brouillons')} ({formations.filter(f => !f.publiee).length})</option>
+        </select>
         <select value={versions} onChange={e => setVersions(e.target.value as typeof versions)} aria-label={t('Versions linguistiques')} className={champ}>
           <option value="">{t('Toutes les versions')}</option>
           <option value="fr_en">{t('Français et anglais')}</option>
           <option value="fr">{t('Français seulement')}</option>
           <option value="ecart">⚠ {t('Écart FR/EN à vérifier')}</option>
         </select>
-        {actifs && <button type="button" onClick={() => { setQ(''); setCategorie(''); setMotCle(''); setVersions('') }} className="text-sm text-indigo-700 hover:underline">{t('Effacer les filtres')}</button>}
+        {actifs && <button type="button" onClick={() => { setQ(''); setCategorie(''); setMotCle(''); setVersions(''); setStatut('') }} className="text-sm text-indigo-700 hover:underline">{t('Effacer les filtres')}</button>}
         <span className="ml-auto flex flex-none flex-wrap items-center gap-2">
           <span role="group" aria-label={t('Rangement')} className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 text-xs font-semibold">
             {([['categories', t('Par catégorie')], ['ensemble', t('Tout ensemble')]] as const).map(([v, l]) => (
