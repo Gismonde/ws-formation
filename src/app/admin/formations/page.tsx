@@ -4,6 +4,8 @@ import { createClient as createAdmin } from "@supabase/supabase-js"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import LienVue from "./LienVue"
+import VueCartes, { type CarteFormation } from "./VueCartes"
+import { concordances } from "@/lib/concordance-langues"
 import SectionRepliable from "@/components/SectionRepliable"
 import ToutReplier from "@/components/politiques/ToutReplier"
 import { couleurCategorie } from "@/lib/politiques-categories"
@@ -81,11 +83,18 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     .from("assignations")
     .select("id, formation_id")
 
+  // Concordance FR / EN de chaque formation qui a une version anglaise (pastille ⚠ en cas d'écart)
+  const conc = await concordances(adminSupabase, Array.from(anglaiseDe.entries()).map(([fr, en]) => ({ fr, en: en.id as string })))
+
   const nbModules = (id: string) => modules?.filter((m: any) => m.formation_id === id).length ?? 0
   const nbAssign = (id: string) => assignations?.filter((a: any) => a.formation_id === id || a.formation_id === anglaiseDe.get(id)?.id).length ?? 0
   const badgeEN = (f: any) => {
     const en = anglaiseDe.get(f.id)
-    return en ? <Link href={`/admin/formations/${en.id}`} title={en.titre} style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#075985", background: "#e0f2fe", padding: "1px 8px", borderRadius: "999px", textDecoration: "none" }}>FR · EN{en.publiee ? "" : " (" + t("brouillon") + ")"}</Link> : null
+    if (!en) return null
+    const c = conc.get(f.id)
+    const alerte = !!c && (c.ecarts.length > 0 || c.fr_modifiee_apres)
+    const titre = en.titre + (c?.ecarts.length ? " — " + t("{n} écart(s) de structure FR/EN", { n: c.ecarts.length }) : "") + (c?.fr_modifiee_apres ? " — " + t("Version française modifiée après la version anglaise") : "")
+    return <Link href={`/admin/formations/${en.id}`} title={titre} style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: alerte ? "#92400e" : "#075985", background: alerte ? "#fef3c7" : "#e0f2fe", padding: "1px 8px", borderRadius: "999px", textDecoration: "none" }}>FR · EN{alerte ? " ⚠" : ""}{en.publiee ? "" : " (" + t("brouillon") + ")"}</Link>
   }
   const lien = (c: CliniqueContenu | null, v: "liste" | "cartes", st: "brouillon" | "publiee" | null = statut) => {
     const q = new URLSearchParams()
@@ -95,6 +104,18 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     const s = q.toString()
     return "/admin/formations" + (s ? "?" + s : "")
   }
+
+  // Données de la vue détaillée (filtres côté navigateur)
+  const cartes: CarteFormation[] = ((formations ?? []) as any[]).map(f => {
+    const en = anglaiseDe.get(f.id); const c = conc.get(f.id)
+    return {
+      id: f.id, titre: f.titre, description: f.description ?? null, categorie: String(f.categorie ?? "").trim(), niveau: f.niveau ?? null,
+      obligatoire: !!f.obligatoire, clinique: estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX", publiee: !!f.publiee,
+      statut_validation: f.statut_validation ?? null, image: f.image_couverture ?? null, modules: nbModules(f.id), assignations: nbAssign(f.id),
+      duree: f.duree_estimee_minutes ?? null, tags: Array.isArray(f.tags) ? f.tags.map(String) : [], copie: avecCopie.has(f.id),
+      en: en ? { id: en.id, titre: en.titre, publiee: !!en.publiee, ecarts: c?.ecarts.length ?? 0, fr_apres: !!c?.fr_modifiee_apres } : null,
+    }
+  })
 
   // Liste rangée par catégorie (ordre alphabétique ; « Sans catégorie » à la fin)
   const groupesCategorie = (() => {
@@ -240,61 +261,9 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
         </div>
       </div>
 
-      {vue === "cartes" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
-          {(formations ?? []).map((f: any) => {
-            const st = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
-            return (
-              <div key={f.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                <Link href={`/admin/formations/${f.id}`} style={{ display: "block", position: "relative", aspectRatio: "16 / 9", background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
-                  {f.image_couverture ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={f.image_couverture} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                  ) : (
-                    <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>📚</span>
-                  )}
-                  <span style={{ position: "absolute", top: "10px", left: "10px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></span>
-                  <span style={{ position: "absolute", top: "10px", right: "10px", padding: "2px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: f.publiee ? "#16a34a" : "rgba(17,24,39,0.75)", color: "#fff" }}>
-                    {f.publiee ? t("Publiée") : t("Brouillon")}
-                  </span>
-                  {f.statut_validation && f.statut_validation !== "brouillon" && !(f.publiee && f.statut_validation === "approuvee") && (
-                    <span style={{ position: "absolute", bottom: "10px", right: "10px", padding: "2px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: f.statut_validation === "approuvee" ? "#dcfce7" : f.statut_validation === "a_modifier" ? "#fee2e2" : "#fef3c7", color: f.statut_validation === "approuvee" ? "#166534" : f.statut_validation === "a_modifier" ? "#b91c1c" : "#92400e" }}>
-                      {f.statut_validation === "approuvee" ? t("Approuvée") : f.statut_validation === "a_modifier" ? t("Modifications demandées") : t("En validation")}
-                    </span>
-                  )}
-                </Link>
-                <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
-                    {f.categorie && <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: 600 }}>{f.categorie}</span>}
-                    <span style={{ padding: "1px 8px", borderRadius: "999px", background: st.bg, color: st.color, fontSize: "11px", fontWeight: 600 }}>{t(st.label)}</span>
-                    {f.obligatoire && <span style={{ fontSize: "10px", fontWeight: 800, color: "#dc2626", textTransform: "uppercase" }}>{t('Obligatoire LSST')}</span>}
-                  </div>
-                  <Link href={`/admin/formations/${f.id}`} style={{ fontWeight: 700, color: "#111827", fontSize: "15px", lineHeight: 1.35, textDecoration: "none" }}>{f.titre}</Link>
-                  {badgeEN(f) && <span style={{ alignSelf: "flex-start", marginLeft: "-8px" }}>{badgeEN(f)}</span>}
-                  {avecCopie.has(f.id) && <span style={{ alignSelf: "flex-start", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}
-                  {f.description && (
-                    <p style={{ margin: 0, fontSize: "13px", color: "#6b7280", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{f.description}</p>
-                  )}
-                  <div style={{ display: "flex", flexWrap: "wrap", columnGap: "12px", rowGap: "4px", fontSize: "12px", color: "#6b7280", marginTop: "auto", whiteSpace: "nowrap" }}>
-                    <span>📦 {nbModules(f.id)} module(s)</span>
-                    <span>👥 {nbAssign(f.id)} assignation(s)</span>
-                    {f.duree_estimee_minutes ? <span>⏱ {f.duree_estimee_minutes < 60 ? `${f.duree_estimee_minutes} min` : `${Math.round(f.duree_estimee_minutes / 6) / 10} h`}</span> : null}
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                    <Link href={`/admin/formations/${f.id}`} style={{ flex: 1, textAlign: "center", padding: "7px", borderRadius: "8px", background: "#f3f4f6", color: "#374151", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>{t('Gérer')}</Link>
-                    <Link href={`/admin/assigner?formations=${f.id}`} style={{ flex: 1, textAlign: "center", padding: "7px", borderRadius: "8px", background: "#eef2ff", color: "#4f46e5", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>{t('Assigner')}</Link>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-          {(!formations || formations.length === 0) && (
-            <p style={{ gridColumn: "1 / -1", padding: "48px", textAlign: "center", color: "#9ca3af", background: "#fff", borderRadius: "16px", border: "1px solid #e5e7eb" }}>{t('Aucune formation pour le moment.')}</p>
-          )}
-        </div>
-      )}
+      {vue === "cartes" && <VueCartes formations={cartes} />}
 
-      {/* Liste : formations rangées par catégorie, en sections repliables (la vue détaillée ne change pas) */}
+      {/* Liste : formations rangées par catégorie, en sections repliables (la vue détaillée a ses propres filtres : VueCartes) */}
       {vue === "liste" && (
         (!formations || formations.length === 0) ? (
           <div style={{ background: "#fff", borderRadius: "16px", border: "1px solid #e5e7eb", padding: "48px", textAlign: "center", color: "#9ca3af" }}>{t('Aucune formation pour le moment.')}</div>

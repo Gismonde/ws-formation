@@ -17,6 +17,7 @@ import PanneauValidation from './PanneauValidation'
 import { statutDe, validationActive, type FormationValidation } from '@/lib/validation-formation'
 import NouvelleVersion from './NouvelleVersion'
 import VersionsLangue from './VersionsLangue'
+import { concordances } from '@/lib/concordance-langues'
 import { CarteCopieTravail, BandeauCopie } from './CopieTravail'
 import { copieEnCours } from '@/lib/copie-travail'
 import { serviceClient } from '@/lib/permissions'
@@ -65,6 +66,9 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   // Les administrateurs publient sans validation obligatoire
   const estAdmin = acteurCourant?.role === 'super_admin' || acteurCourant?.role === 'admin'
   const langues = await chargerLanguesFormation(id, (formation as { version_de?: string | null }).version_de ?? null, formation.clinique ?? null)
+  // Concordance FR / EN, recalculée à chaque ouverture
+  const paireLangues = langues.francaise ? { fr: langues.francaise.id, en: id } : langues.anglaise ? { fr: id, en: langues.anglaise.id } : null
+  const concordance = paireLangues ? (await concordances(serviceClient(), [paireLangues])).get(paireLangues.fr) ?? null : null
   const approuvee = !avecValidation || statut === 'approuvee' || estAdmin
   // Copie de travail : cette fiche est-elle une copie, ou la formation a-t-elle une copie en cours ?
   const copieDe = (formation as { copie_de?: string | null }).copie_de ?? null
@@ -155,7 +159,7 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
               <div className="flex items-start gap-2">
                 {peutGererCetteFormation && formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerablesToutes(acteurCourant) : []} />
-                {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} />}
+                {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} ecartsLangue={langues.francaise && concordance ? concordance.ecarts.length : 0} />}
               </div>
             )}
           </div>
@@ -207,7 +211,7 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
         )}
 
         {estAdmin && peutGererCetteFormation && langues.ok && (
-          <VersionsLangue formationId={id} francaise={langues.francaise} anglaise={langues.anglaise} candidates={langues.candidates} />
+          <VersionsLangue formationId={id} francaise={langues.francaise} anglaise={langues.anglaise} candidates={langues.candidates} concordance={concordance} />
         )}
 
         {/* Actions principales */}
