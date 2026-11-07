@@ -31,7 +31,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { data: f } = await sb.from('formations').select('id, titre, publiee, clinique').eq('id', id).maybeSingle()
   if (!f) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
   if (!cliniquesContenuGerablesToutes(a).includes((f.clinique ?? 'LES_DEUX') as never)) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
-  if (f.publiee) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
+  // Formation publiée : seul le remplacement d'une illustration (url / texte alternatif d'un bloc image) est permis
+  const cosmetique = Array.isArray(c.modifs) && c.modifs.length > 0 && !c.blocs && !c.lecons && !c.reglages && !c.questions && !c.note_passage && !c.publier
+    && (c.modifs as { champs?: Record<string, unknown> }[]).every(m => m.champs && Object.keys(m.champs).every(k => k === 'url' || k === 'metadata'))
+  if (f.publiee && !cosmetique) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
 
   const { data: mods } = await sb.from('modules').select('id, titre, ordre').eq('formation_id', id).order('ordre')
   const modIds = (mods ?? []).map(m => m.id)
@@ -74,8 +77,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   for (const r of (Array.isArray(c.modifs) ? c.modifs : []) as { lecon: string; bloc: string; champs: Partial<Bloc> }[]) {
     const l = lecon(r.lecon)
     if (!l) return NextResponse.json({ error: `Leçon introuvable : ${r.lecon}`, journal }, { status: 400 })
-    const { data: b } = await sb.from('content_blocks').select('id').eq('lesson_id', l.id).eq('titre', r.bloc).maybeSingle()
+    const { data: b } = await sb.from('content_blocks').select('id, type').eq('lesson_id', l.id).eq('titre', r.bloc).maybeSingle()
     if (!b) return NextResponse.json({ error: `Bloc introuvable : ${r.bloc} (${r.lecon})`, journal }, { status: 400 })
+    if (f.publiee && b.type !== 'image') return NextResponse.json({ error: 'Formation publiée : seules les images peuvent être remplacées', journal }, { status: 409 })
     const maj: Record<string, unknown> = {}
     if (typeof r.champs.titre === 'string') maj.titre = txt(r.champs.titre, 300)
     if (typeof r.champs.contenu === 'string') maj.contenu = r.champs.contenu.slice(0, 20000)
