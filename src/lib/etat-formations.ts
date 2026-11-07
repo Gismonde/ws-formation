@@ -3,6 +3,7 @@
 // « certifié » = certificat valide et non expiré, « terminé » = tout le contenu fait et aucun questionnaire à réussir.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { chargerSuiviFormations, suiviDe, type SuiviFormationEmploye } from '@/lib/suivi-formations'
+import { chargerVersions } from '@/lib/langues-formation'
 
 export type StatutFormation = 'non_commence' | 'en_cours' | 'termine' | 'certifie'
 
@@ -57,7 +58,37 @@ export function certificatValide(c: CertificatEtat | null, aujourdhui = new Date
 const cle = (e: string, f: string) => `${e}:${f}`
 
 /** États pour toutes les paires (employé, formation) demandées, en un minimum de requêtes. */
+const RANG: Record<StatutFormation, number> = { non_commence: 0, en_cours: 1, termine: 2, certifie: 3 }
+
+/** Le meilleur des deux états (versions FR / EN d'une même formation). Fonction pure. */
+export function meilleurEtat(a: EtatFormation, b: EtatFormation): EtatFormation {
+  if (RANG[b.statut] !== RANG[a.statut]) return RANG[b.statut] > RANG[a.statut] ? b : a
+  return b.progression > a.progression ? b : a
+}
+
+/**
+ * États pour toutes les paires (employé, formation) demandées, en un minimum de requêtes.
+ * Une formation qui a une version dans une autre langue (FR / EN) compte comme faite si l'une
+ * ou l'autre version l'est : on renvoie le meilleur état de la famille.
+ */
 export async function chargerEtatsFormations(
+  sb: SupabaseClient,
+  employeIds: string[],
+  formationIds: string[],
+): Promise<(employeId: string, formationId: string) => EtatFormation> {
+  if (employeIds.length === 0 || formationIds.length === 0) return chargerEtatsBruts(sb, employeIds, formationIds)
+  const v = await chargerVersions(sb, formationIds)
+  const tous = Array.from(new Set(formationIds.flatMap(id => v.famille(id))))
+  const brut = await chargerEtatsBruts(sb, employeIds, tous)
+  return (employeId: string, formationId: string) => {
+    const fam = v.famille(formationId)
+    let e = brut(employeId, formationId)
+    for (const autre of fam) if (autre !== formationId) e = meilleurEtat(e, brut(employeId, autre))
+    return e
+  }
+}
+
+async function chargerEtatsBruts(
   sb: SupabaseClient,
   employeIds: string[],
   formationIds: string[],

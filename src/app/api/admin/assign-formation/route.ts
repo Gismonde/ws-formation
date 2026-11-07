@@ -8,6 +8,7 @@ import { getActeur, filtrerEmployes, peutVoirEmploye, peutVoirDepartement, peutV
 import { aAccesAdmin } from '@/lib/cliniques'
 import { envoyerCourriels, gabarit, origineDepuis, courrielsActifs } from '@/lib/courriels'
 import { comptesActives } from '@/lib/comptes-actives'
+import { chargerVersions, languesEmployes } from '@/lib/langues-formation'
 
 const serviceRole = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -85,11 +86,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ assigned: 0, skipped: 0, message: 'Aucun employé à assigner' })
     }
 
-    // Check existing assignments to avoid duplicates
+    // Versions FR / EN : chacun reçoit la version de sa langue de formation ; une version déjà assignée compte
+    const versions = await chargerVersions(serviceRole, [formationId])
+    const langues = await languesEmployes(serviceRole, employeIds)
     const { data: existing } = await serviceRole
       .from('assignations')
       .select('employe_id')
-      .eq('formation_id', formationId)
+      .in('formation_id', versions.famille(formationId))
       .in('employe_id', employeIds)
 
     const alreadyAssigned = new Set((existing ?? []).map((a: any) => a.employe_id))
@@ -99,9 +102,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ assigned: 0, skipped: employeIds.length, message: 'Déjà assignée à tous' })
     }
 
+    const versionDe = new Map(toAssign.map(empId => [empId, versions.versionPour(formationId, langues.get(empId) ?? 'fr')]))
     const rows = toAssign.map(empId => ({
       employe_id: empId,
-      formation_id: formationId,
+      formation_id: versionDe.get(empId)!,
       assigne_par: moi.id,
       date_assignation: new Date().toISOString(),
       ...(dateEcheance ? { date_echeance: dateEcheance } : {})
@@ -120,7 +124,7 @@ export async function POST(req: NextRequest) {
         acteur_id: moi.id,
         type_action: 'FORMATION_ASSIGNEE',
         description: 'Formation assignée à un employé',
-        formation_id: formationId,
+        formation_id: versionDe.get(empId)!,
         cible_employe_id: empId,
         ip_address: ip,
         user_agent: ua,
@@ -130,8 +134,8 @@ export async function POST(req: NextRequest) {
     // Courriel « Nouvelle formation disponible » (si l'envoi est configuré et non désactivé)
     let courriels = 0
     if (body.notifier !== false && courrielsActifs()) {
-      const [{ data: formation }, { data: dest }] = await Promise.all([
-        serviceRole.from('formations').select('titre, description').eq('id', formationId).single(),
+      const [{ data: formationsV }, { data: dest }] = await Promise.all([
+        serviceRole.from('formations').select('id, titre').in('id', Array.from(new Set(versionDe.values()))),
         serviceRole.from('employes').select('id, prenom, nom, email, clinique, actif, auth_user_id').in('id', toAssign),
       ])
       const origine = origineDepuis(req)
@@ -143,8 +147,8 @@ export async function POST(req: NextRequest) {
       const actives = await comptesActives(serviceRole, (dest ?? []).map((e: any) => e.auth_user_id))
       const envoi = await envoyerCourriels((dest ?? []).filter((e: any) => e.actif !== false && e.email && e.auth_user_id && actives.has(e.auth_user_id)).map((e: any) => composerNotification(cfg, 'inscription_cours_assignation', {
         a: e.email, origine, clinique: e.clinique, prenom: e.prenom, nom: e.nom,
-        vars: { activite: formation?.titre ?? 'Formation', date: echeance ?? '', echeance: echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.' },
-        lien: `${origine}/formations/${formationId}`,
+        vars: { activite: (formationsV ?? []).find((f: any) => f.id === versionDe.get(e.id))?.titre ?? 'Formation', date: echeance ?? '', echeance: echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez la suivre dès maintenant, à votre rythme.' },
+        lien: `${origine}/formations/${versionDe.get(e.id) ?? formationId}`,
       })).filter((c): c is Courriel => !!c))
       courriels = envoi.envoyes
     }

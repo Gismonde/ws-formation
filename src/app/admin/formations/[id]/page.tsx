@@ -16,6 +16,7 @@ import DupliquerFormation from './DupliquerFormation'
 import PanneauValidation from './PanneauValidation'
 import { statutDe, validationActive, type FormationValidation } from '@/lib/validation-formation'
 import NouvelleVersion from './NouvelleVersion'
+import VersionsLangue from './VersionsLangue'
 import { CarteCopieTravail, BandeauCopie } from './CopieTravail'
 import { copieEnCours } from '@/lib/copie-travail'
 import { serviceClient } from '@/lib/permissions'
@@ -63,6 +64,7 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   const peutGererCetteFormation = !!acteurCourant && peutModifierFormation(acteurCourant, formation as { clinique: string | null; creee_par?: string | null })
   // Les administrateurs publient sans validation obligatoire
   const estAdmin = acteurCourant?.role === 'super_admin' || acteurCourant?.role === 'admin'
+  const langues = await chargerLanguesFormation(id, (formation as { version_de?: string | null }).version_de ?? null, formation.clinique ?? null)
   const approuvee = !avecValidation || statut === 'approuvee' || estAdmin
   // Copie de travail : cette fiche est-elle une copie, ou la formation a-t-elle une copie en cours ?
   const copieDe = (formation as { copie_de?: string | null }).copie_de ?? null
@@ -202,6 +204,10 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
             validateur={nomDe(fv.validateur_id)} demandeur={nomDe(fv.validation_demandee_par)} demandeeLe={fv.validation_demandee_le ?? null}
             decisionLe={fv.validation_le ?? null} valideePar={nomDe(fv.validee_par)} commentaire={fv.validation_commentaire ?? null}
           />
+        )}
+
+        {estAdmin && peutGererCetteFormation && langues.ok && (
+          <VersionsLangue formationId={id} francaise={langues.francaise} anglaise={langues.anglaise} candidates={langues.candidates} />
         )}
 
         {/* Actions principales */}
@@ -396,4 +402,19 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
       </div>
     </div>
   )
+}
+
+/** Version française / anglaise de la formation et formations qui peuvent devenir sa version anglaise. */
+async function chargerLanguesFormation(id: string, versionDe: string | null, clinique: string | null) {
+  const sb = serviceClient()
+  const vide = { ok: false, francaise: null, anglaise: null, candidates: [] as { id: string; titre: string }[] }
+  const { data, error } = await sb.from('formations').select('id, titre, langue, version_de').eq('clinique', clinique ?? 'LES_DEUX').order('titre')
+  if (error) return vide
+  const fs = (data ?? []) as { id: string; titre: string; langue: string | null; version_de: string | null }[]
+  const parents = new Set(fs.map(f => f.version_de).filter(Boolean) as string[])
+  const francaise = versionDe ? fs.find(f => f.id === versionDe) ?? null : null
+  const anglaise = fs.find(f => f.version_de === id) ?? null
+  const candidates = versionDe ? [] : fs.filter(f => f.id !== id && !parents.has(f.id) && (!f.version_de || f.version_de === id) && f.id !== anglaise?.id)
+    .sort((a, b) => (a.langue === 'en' ? 0 : 1) - (b.langue === 'en' ? 0 : 1) || a.titre.localeCompare(b.titre))
+  return { ok: true, francaise: francaise && { id: francaise.id, titre: francaise.titre }, anglaise: anglaise && { id: anglaise.id, titre: anglaise.titre }, candidates: candidates.map(f => ({ id: f.id, titre: f.titre })) }
 }

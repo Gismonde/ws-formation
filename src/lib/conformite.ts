@@ -144,11 +144,13 @@ export type LigneRapportFormation = {
 /** Statistiques par formation (page Rapports) à partir des données de conformité. */
 export function rapportParFormation(
   donnees: EmployeConformite[],
-  formations: { id: string; titre: string; categorie: string | null; clinique: CliniqueContenu | null; obligatoire: boolean | null }[],
+  formations: { id: string; titre: string; categorie: string | null; clinique: CliniqueContenu | null; obligatoire: boolean | null; versions?: string[] }[],
 ): LigneRapportFormation[] {
   const toutes = donnees.flatMap(e => e.assignations)
   return formations.map(f => {
-    const a = toutes.filter(x => x.formation_id === f.id)
+    // Versions FR / EN d'une même formation : additionnées sur la ligne de la version française
+    const ids = f.versions ?? [f.id]
+    const a = toutes.filter(x => ids.includes(x.formation_id))
     const completes = a.filter(x => estComplete(x.statut)).length
     return {
       formation_id: f.id, titre: f.titre, categorie: f.categorie, clinique: f.clinique, obligatoire: f.obligatoire === true,
@@ -165,7 +167,19 @@ export function rapportParFormation(
 
 /** Formations publiées visibles par l'acteur (page Rapports). */
 export async function formationsDuRapport(sb: SupabaseClient, acteur: Acteur) {
+  type Ligne = { id: string; titre: string; categorie: string | null; clinique: CliniqueContenu | null; obligatoire: boolean | null; versions?: string[] }
+  const avecVersions = await sb.from('formations').select('id, titre, categorie, clinique, obligatoire, version_de')
+    .eq('publiee', true).in('clinique', cliniquesContenuVisibles(acteur)).order('titre')
+  if (!avecVersions.error) {
+    const lignes = (avecVersions.data ?? []) as (Ligne & { version_de: string | null })[]
+    const racines = new Set(lignes.map(f => f.id))
+    // Une version anglaise reliée est comptée sur la ligne de sa version française (si elle est publiée)
+    return lignes.filter(f => !f.version_de || !racines.has(f.version_de)).map(({ version_de: _v, ...f }) => {
+      void _v
+      return { ...f, versions: [f.id, ...lignes.filter(x => x.version_de === f.id).map(x => x.id)] }
+    }) as Ligne[]
+  }
   const { data } = await sb.from('formations').select('id, titre, categorie, clinique, obligatoire')
     .eq('publiee', true).in('clinique', cliniquesContenuVisibles(acteur)).order('titre')
-  return (data ?? []) as { id: string; titre: string; categorie: string | null; clinique: CliniqueContenu | null; obligatoire: boolean | null }[]
+  return (data ?? []) as Ligne[]
 }

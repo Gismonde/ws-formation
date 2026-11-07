@@ -66,7 +66,9 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     .order("created_at", { ascending: false })
   // Copies de travail : pas listées à part, signalées sur leur formation publiée
   const avecCopie = new Set((toutesAvecCopies ?? []).map(f => f.copie_de).filter(Boolean))
-  const toutes = (toutesAvecCopies ?? []).filter(f => !f.copie_de)
+  // Versions anglaises reliées : pas listées à part, signalées (badge EN) sur leur formation française
+  const anglaiseDe = new Map((toutesAvecCopies ?? []).filter(f => f.version_de && !f.copie_de).map(f => [f.version_de as string, f]))
+  const toutes = (toutesAvecCopies ?? []).filter(f => !f.copie_de && !f.version_de)
   const nbBrouillons = (toutes ?? []).filter(f => !f.publiee).length
   const nbPubliees = (toutes ?? []).length - nbBrouillons
   const formations = (toutes ?? []).filter(f => statut === null || (statut === "publiee") === !!f.publiee)
@@ -80,7 +82,11 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     .select("id, formation_id")
 
   const nbModules = (id: string) => modules?.filter((m: any) => m.formation_id === id).length ?? 0
-  const nbAssign = (id: string) => assignations?.filter((a: any) => a.formation_id === id).length ?? 0
+  const nbAssign = (id: string) => assignations?.filter((a: any) => a.formation_id === id || a.formation_id === anglaiseDe.get(id)?.id).length ?? 0
+  const badgeEN = (f: any) => {
+    const en = anglaiseDe.get(f.id)
+    return en ? <Link href={`/admin/formations/${en.id}`} title={en.titre} style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#075985", background: "#e0f2fe", padding: "1px 8px", borderRadius: "999px", textDecoration: "none" }}>FR · EN{en.publiee ? "" : " (" + t("brouillon") + ")"}</Link> : null
+  }
   const lien = (c: CliniqueContenu | null, v: "liste" | "cartes", st: "brouillon" | "publiee" | null = statut) => {
     const q = new URLSearchParams()
     if (c) q.set("clinique", c)
@@ -106,7 +112,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
               const style = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
               return (
                 <tr key={f.id} className="formations-row" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link>{avecCopie.has(f.id) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}</td>
+                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link>{badgeEN(f)}{avecCopie.has(f.id) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}</td>
                   <td style={{ padding: "14px 16px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></td>
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{
@@ -264,6 +270,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                     {f.obligatoire && <span style={{ fontSize: "10px", fontWeight: 800, color: "#dc2626", textTransform: "uppercase" }}>{t('Obligatoire LSST')}</span>}
                   </div>
                   <Link href={`/admin/formations/${f.id}`} style={{ fontWeight: 700, color: "#111827", fontSize: "15px", lineHeight: 1.35, textDecoration: "none" }}>{f.titre}</Link>
+                  {badgeEN(f) && <span style={{ alignSelf: "flex-start", marginLeft: "-8px" }}>{badgeEN(f)}</span>}
                   {avecCopie.has(f.id) && <span style={{ alignSelf: "flex-start", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}
                   {f.description && (
                     <p style={{ margin: 0, fontSize: "13px", color: "#6b7280", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{f.description}</p>

@@ -5,6 +5,7 @@ import { CliniqueLogos } from '@/components/CliniqueBadge'
 import { ROLE_LABEL, Role, cliniquesDe, CLINIQUE_INFO } from '@/lib/cliniques'
 import { i18n } from '@/lib/i18n/serveur'
 import ChoixPronoms from './ChoixPronoms'
+import ChoixLangueFormation from './ChoixLangueFormation'
 
 export default async function ProfilPage() {
   const supabase = await createClient()
@@ -66,6 +67,7 @@ export default async function ProfilPage() {
             ))}
           </div>
           <div style={{ marginTop: '16px' }}><ChoixPronoms initial={(employe as { pronoms?: string | null }).pronoms ?? null} /></div>
+          <div style={{ marginTop: '12px' }}><ChoixLangueFormation initial={(employe as { langue_formation?: string | null }).langue_formation === 'en' ? 'en' : 'fr'} /></div>
         </div>
       </div>
     </div>
