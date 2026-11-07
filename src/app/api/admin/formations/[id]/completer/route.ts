@@ -9,6 +9,7 @@ import { responsableAdmissible } from '@/lib/cliniques'
 //   note_passage: nombre — seuil du questionnaire final
 //   publier : true                         — publie la formation à la fin (première version notée si besoin)
 //   ajout_sur_publiee : true               — formation publiée : permet d'ajouter leçons, blocs et questions (rien d'autre)
+//   (formation publiée : « reglages » avec seulement image_couverture est aussi permis)
 // La « clinique affichée » de l'espace Admin ne limite pas cette route (seulement les droits réels).
 // Réservé aux administrateurs qui gèrent la clinique de la formation.
 import { NextResponse } from 'next/server'
@@ -39,7 +40,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // Ajouts seulement (nouvelles leçons, nouveaux blocs, nouvelles questions) sur une formation publiée, sans la retirer
   // aux employés : comme dans l'éditeur, les changements sont visibles tout de suite.
   const ajoutsSeulement = c.ajout_sur_publiee === true && !c.modifs && !c.reglages && !c.note_passage
-  if (f.publiee && !cosmetique && !ajoutsSeulement) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
+  // Changer seulement l'image de couverture est permis sur une formation publiée (comme remplacer une image)
+  const couvertureSeule = !!c.reglages && typeof c.reglages === 'object' && Object.keys(c.reglages).length > 0
+    && Object.keys(c.reglages).every(k => k === 'image_couverture') && !c.modifs && !c.blocs && !c.lecons && !c.questions && !c.note_passage && !c.publier
+  if (f.publiee && !cosmetique && !ajoutsSeulement && !couvertureSeule) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
 
   const { data: mods } = await sb.from('modules').select('id, titre, ordre').eq('formation_id', id).order('ordre')
   const modIds = (mods ?? []).map(m => m.id)
