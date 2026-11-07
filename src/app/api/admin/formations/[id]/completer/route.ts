@@ -8,6 +8,7 @@ import { responsableAdmissible } from '@/lib/cliniques'
 //   questions: [{ texte, reponses: [{ texte, est_correcte }] }] — ajoutées à la fin du questionnaire final (créé au besoin)
 //   note_passage: nombre — seuil du questionnaire final
 //   publier : true                         — publie la formation à la fin (première version notée si besoin)
+//   ajout_sur_publiee : true               — formation publiée : permet d'ajouter leçons, blocs et questions (rien d'autre)
 // La « clinique affichée » de l'espace Admin ne limite pas cette route (seulement les droits réels).
 // Réservé aux administrateurs qui gèrent la clinique de la formation.
 import { NextResponse } from 'next/server'
@@ -35,7 +36,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // Formation publiée : seul le remplacement d'une illustration (url / texte alternatif d'un bloc image) est permis
   const cosmetique = Array.isArray(c.modifs) && c.modifs.length > 0 && !c.blocs && !c.lecons && !c.reglages && !c.questions && !c.note_passage && !c.publier
     && (c.modifs as { champs?: Record<string, unknown> }[]).every(m => m.champs && Object.keys(m.champs).every(k => k === 'url' || k === 'metadata'))
-  if (f.publiee && !cosmetique) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
+  // Ajouts seulement (nouvelles leçons, nouveaux blocs, nouvelles questions) sur une formation publiée, sans la retirer
+  // aux employés : comme dans l'éditeur, les changements sont visibles tout de suite.
+  const ajoutsSeulement = c.ajout_sur_publiee === true && !c.modifs && !c.reglages && !c.note_passage
+  if (f.publiee && !cosmetique && !ajoutsSeulement) return NextResponse.json({ error: 'Formation publiée : repassez-la en brouillon d’abord' }, { status: 409 })
 
   const { data: mods } = await sb.from('modules').select('id, titre, ordre').eq('formation_id', id).order('ordre')
   const modIds = (mods ?? []).map(m => m.id)
