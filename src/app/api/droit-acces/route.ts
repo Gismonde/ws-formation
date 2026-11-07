@@ -90,7 +90,7 @@ export async function GET() {
         loi: 'Loi 25 - Loi modernisant des dispositions législatives en matière de protection des renseignements personnels (Québec)',
         articles: 'Art. 27 (accès), Art. 28 (portabilité)',
         plateforme: 'WS Formation',
-        rpp_contact: 'confidentialite@wssurgical.com',
+        rpp_contact: 'renseignementspersonnels@wssurgical.com',
       },
       profil: {
         id: employe.id,
@@ -176,18 +176,18 @@ export async function DELETE() {
         source: 'api/droit-acces',
         article: '28.1 Loi 25',
         action_requise: 'Le RPP doit traiter cette demande dans un délai de 30 jours',
-        rpp: 'confidentialite@wssurgical.com',
+        rpp: 'renseignementspersonnels@wssurgical.com',
       },
     })
 
     if (erreurJournal) {
       console.error('[droit-acces DELETE] Demande non enregistree', erreurJournal)
-      return NextResponse.json({ error: "La demande n'a pas pu être enregistrée. Écrivez directement au RPP : confidentialite@wssurgical.com" }, { status: 500 })
+      return NextResponse.json({ error: "La demande n'a pas pu être enregistrée. Écrivez directement au RPP : renseignementspersonnels@wssurgical.com" }, { status: 500 })
     }
 
     return NextResponse.json({
       message: "Demande d'effacement enregistrée. Le RPP vous contactera dans un délai de 30 jours.",
-      rpp: 'confidentialite@wssurgical.com',
+      rpp: 'renseignementspersonnels@wssurgical.com',
       article: 'Art. 28.1 Loi 25 Quebec',
     })
   } catch (err) {

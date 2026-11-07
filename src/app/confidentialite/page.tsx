@@ -33,7 +33,7 @@ export default async function ConfidentialitePage() {
         </p>
         <InfoBox>
           <strong>Titre :</strong> Responsable de la protection des renseignements personnels<br />
-          <strong>Courriel :</strong> <a href="mailto:confidentialite@wssurgical.com" style={{ color: '#6366f1' }}>confidentialite@wssurgical.com</a><br />
+          <strong>Courriel :</strong> <a href="mailto:renseignementspersonnels@wssurgical.com" style={{ color: '#6366f1' }}>renseignementspersonnels@wssurgical.com</a><br />
           <strong>Organisation :</strong> WS Formation / WS Surgical<br />
         </InfoBox>
         <p>
@@ -96,7 +96,7 @@ export default async function ConfidentialitePage() {
         </ul>
         <p style={{ marginTop: '12px' }}>
           Délai de réponse : <strong>30 jours</strong>, conformément à la Loi 25.<br />
-          Contact RPP : <a href="mailto:confidentialite@wssurgical.com" style={{ color: '#6366f1' }}>confidentialite@wssurgical.com</a>
+          Contact RPP : <a href="mailto:renseignementspersonnels@wssurgical.com" style={{ color: '#6366f1' }}>renseignementspersonnels@wssurgical.com</a>
         </p>
       </Section>
 
@@ -113,7 +113,7 @@ export default async function ConfidentialitePage() {
 
       <Section title="8. Contact et recours">
         <p>
-          RPP : <a href="mailto:confidentialite@wssurgical.com" style={{ color: '#6366f1' }}>confidentialite@wssurgical.com</a>
+          RPP : <a href="mailto:renseignementspersonnels@wssurgical.com" style={{ color: '#6366f1' }}>renseignementspersonnels@wssurgical.com</a>
         </p>
         <p>
           Commission d&apos;accès à l&apos;information du Québec (CAI) :<br />

@@ -56,8 +56,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/confidentialite" style={{ color: "#6b7280", textDecoration: "underline" }}>
                 {t("Politique de confidentialité")}
               </Link>
-              <a href="mailto:confidentialite@wssurgical.com" style={{ color: "#6b7280", textDecoration: "underline" }}>
-                {t("RPP")}: confidentialite@wssurgical.com
+              <a href="mailto:renseignementspersonnels@wssurgical.com" style={{ color: "#6b7280", textDecoration: "underline" }}>
+                {t("RPP")}: renseignementspersonnels@wssurgical.com
               </a>
             </span>
           </footer>
