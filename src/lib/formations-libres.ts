@@ -2,6 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Acteur } from '@/lib/permissions'
 import { peutGererContenu } from '@/lib/permissions'
+import { responsableAdmissible } from '@/lib/cliniques'
 import { chargerVersions, garderLaLangue, langueEmploye } from '@/lib/langues-formation'
 
 export type ModeAcces = 'aucun' | 'libre' | 'demande'
@@ -51,7 +52,7 @@ export async function formationsDisponibles(sb: SupabaseClient, employeId: strin
 /** Peut traiter les demandes d'accès : admin qui gère la clinique de la formation, ou responsable de la formation. */
 export function peutTraiterDemandes(a: Acteur | null, f: { clinique: string | null; responsable_id?: string | null }): boolean {
   if (!a) return false
-  if (f.responsable_id && f.responsable_id === a.id) return true
+  if (f.responsable_id && f.responsable_id === a.id && responsableAdmissible(a, f.clinique)) return true
   return (a.role === 'super_admin' || a.role === 'admin') && peutGererContenu(a, f.clinique)
 }
 

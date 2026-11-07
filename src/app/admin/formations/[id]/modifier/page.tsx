@@ -12,7 +12,7 @@ import { noterReglages } from '@/lib/actions/formations'
 import { ChampCliniqueFormation } from '@/components/ChampCliniqueFormation'
 import { ChampPrerequis } from '@/components/ChampPrerequis'
 import { ChampCategorie } from '@/components/ChampCategorie'
-import { cliniquesDe, type CliniqueContenu } from '@/lib/cliniques'
+import { responsableAdmissible, type CliniqueContenu } from '@/lib/cliniques'
 
 interface Formation {
   id: string
@@ -78,11 +78,7 @@ export default function ModifierFormationPage() {
       if (f) { setFormation(f); setInitiale(f) }
       // Responsables possibles : administrateurs et gestionnaires de la clinique de la formation (et la personne déjà choisie)
       const { data: liste } = await supabase.from('employes').select('id, prenom, nom, poste, role, clinique').or('actif.is.null,actif.eq.true').order('prenom')
-      const clFormation = cliniquesDe(f?.clinique ?? 'LES_DEUX')
-      setEmployes((liste ?? []).filter(e => e.id === f?.responsable_id || (
-        ['super_admin', 'admin', 'gestionnaire'].includes(e.role as string)
-        && (e.role === 'super_admin' || cliniquesDe(e.clinique as string | null).some(c => clFormation.includes(c)))
-      )))
+      setEmployes((liste ?? []).filter(e => e.id === f?.responsable_id || responsableAdmissible(e, f?.clinique)))
       setLoading(false)
     }
     loadData()

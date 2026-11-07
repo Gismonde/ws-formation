@@ -4,6 +4,7 @@ import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
 import { logAudit } from '@/lib/audit'
 import { inscrireVolontaire } from '@/lib/formations-libres'
+import { responsableAdmissible, adminConcerne } from '@/lib/cliniques'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,12 +42,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (courrielsActifs()) {
     let dest: { email: string | null; prenom: string | null }[] = []
     if (f.responsable_id) {
-      const { data } = await sb.from('employes').select('email, prenom, actif').eq('id', f.responsable_id).maybeSingle()
-      if (data && data.actif !== false) dest = [data]
+      const { data } = await sb.from('employes').select('email, prenom, actif, role, clinique').eq('id', f.responsable_id).maybeSingle()
+      if (data && data.actif !== false && responsableAdmissible(data, f.clinique)) dest = [data]
     }
     if (!dest.length) {
-      const { data } = await sb.from('employes').select('email, prenom, actif, clinique').eq('role', 'admin')
-      dest = (data ?? []).filter(e => e.actif !== false && (f.clinique === 'LES_DEUX' || e.clinique === f.clinique || e.clinique === 'LES_DEUX'))
+      const { data } = await sb.from('employes').select('email, prenom, actif, clinique, role').eq('role', 'admin')
+      dest = (data ?? []).filter(e => adminConcerne(e, f.clinique))
     }
     const origine = origineDepuis(req)
     const nom = `${moi.prenom ?? ''} ${moi.nom ?? ''}`.trim()

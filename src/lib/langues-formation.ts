@@ -171,3 +171,8 @@ export async function lierVersionAnglaise(sb: SupabaseClient, francaiseId: strin
   const { error: e2 } = await sb.from('formations').update({ version_de: francaiseId, langue: 'en' }).eq('id', anglaiseId)
   return e2 ? e2.message : null
 }
+
+/** Deux formations peuvent être deux versions d'une même formation seulement si elles sont de la même clinique. */
+export function versionsCompatibles(fr: { clinique?: string | null }, en: { clinique?: string | null }): boolean {
+  return (fr.clinique ?? 'LES_DEUX') === (en.clinique ?? 'LES_DEUX')
+}
