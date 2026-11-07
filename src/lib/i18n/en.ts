@@ -394,7 +394,7 @@ export const EN: Record<string, string> = {
   'Bienvenue sur WS Formation': 'Welcome to WS Formation',
   'Choisissez votre mot de passe pour activer votre compte.': 'Choose your password to activate your account.',
   '← Retour à l’accueil': '← Back to home',
-  'Cette politique est rédigée en français.': 'This privacy policy is published in French. For an English version, contact the privacy officer at confidentialite@wssurgical.com.',
+  'Cette politique est rédigée en français.': 'This privacy policy is published in French. For an English version, contact the privacy officer at renseignementspersonnels@wssurgical.com.',
   'Gestion des formations, suivi pédagogique, certificats, conformité à la Loi 25 (Québec).': 'Training management, learning follow-up, certificates, compliance with Quebec’s Law 25.',
   'Formation réussie : votre réussite est enregistrée.': 'Training passed: your success has been recorded.',
   'Journée de formation — {nom}': 'Training day — {nom}',
