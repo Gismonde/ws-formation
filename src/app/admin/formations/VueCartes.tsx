@@ -133,7 +133,7 @@ function Carte({ f }: { f: CarteFormation }) {
       <Link href={`/admin/formations/${f.id}`} className="relative block aspect-video" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
         {f.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={f.image} alt="" loading="lazy" className={'block h-full w-full object-cover ' + (f.publiee ? '' : 'opacity-75 grayscale-[35%]')} />
+          <img src={f.image} alt="" loading="lazy" className="block h-full w-full object-cover" />
         ) : <span className="absolute inset-0 flex items-center justify-center text-4xl">📚</span>}
         <span className="absolute left-2 top-2"><BadgeClinique c={f.clinique} /></span>
         <span className={'absolute right-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-bold text-white ' + (f.publiee ? 'bg-green-600' : 'bg-gray-900/75')}>{f.publiee ? t('Publiée') : t('Brouillon')}</span>
