@@ -18,7 +18,7 @@ export default async function EnveloppeEmploye({ children }: { children: React.R
             // eslint-disable-next-line @next/next/no-img-element
             <img src={CLINIQUE_INFO[c].logo} alt={CLINIQUE_INFO[c].nom} style={{ height: '26px', background: '#fff', borderRadius: '6px', padding: '2px 6px' }} />
           )}
-          <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span className="bandeau-titre" style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {c ? `${t('Espace {clinique}', { clinique: CLINIQUE_INFO[c].court })} — ${CLINIQUE_INFO[c].nom}` : 'WS Formation'}
           </span>
           <span style={{ marginLeft: 'auto' }}><ChoixLangue sombre /></span>

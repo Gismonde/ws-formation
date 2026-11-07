@@ -68,4 +68,22 @@ body {
 
 @media (max-width: 640px) {
   .grille-2-colonnes { grid-template-columns: 1fr !important; }
+  /* iPhone : un champ de moins de 16 px fait zoomer la page au toucher */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea { font-size: 16px !important; }
+  /* Liens du pied de page : zone de toucher plus confortable */
+  .pied-liens a { display: inline-block; padding: 8px 0; }
+  /* Bandeau des pages employé : le logo suffit, le titre prend trop de place */
+  .bandeau-titre { display: none; }
+}
+
+/* Politiques : aperçu PDF sur ordinateur, gros bouton sur téléphone */
+.pdf-bouton-mobile { display: none; }
+@media (max-width: 640px) {
+  .pdf-bouton-mobile { display: flex; }
+  .pdf-apercu { display: none; }
+}
+
+/* Écrans tactiles : boutons FR / EN assez grands pour le doigt */
+@media (pointer: coarse) {
+  .choix-langue-btn { min-height: 34px; min-width: 40px; }
 }

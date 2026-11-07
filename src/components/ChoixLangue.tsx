@@ -21,7 +21,7 @@ export function ChoixLangue({ sombre = false }: { sombre?: boolean }) {
   return (
     <div role="group" aria-label="Langue / Language" style={{ display: 'inline-flex', gap: '2px', borderRadius: '8px', padding: '2px', background: sombre ? 'rgba(255,255,255,0.1)' : '#f3f4f6', opacity: enCours ? 0.6 : 1 }}>
       {(['fr', 'en'] as const).map(l => (
-        <button key={l} type="button" onClick={() => choisir(l)} aria-pressed={l === actuelle} lang={l}
+        <button key={l} type="button" className="choix-langue-btn" onClick={() => choisir(l)} aria-pressed={l === actuelle} lang={l}
           title={l === 'fr' ? 'Français' : 'English'}
           style={{
             border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 700, cursor: l === actuelle ? 'default' : 'pointer',
