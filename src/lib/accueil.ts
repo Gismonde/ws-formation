@@ -3,7 +3,39 @@
 import type { Clinique } from '@/lib/cliniques'
 
 export type CarteAccueil = { titre: string; texte: string; image: string; lien: string }
-export type PhotoAccueil = { url: string; legende: string }
+export type PhotoAccueil = { url: string; legende: string; lieu?: string }
+
+/** Lieux connus de la visite virtuelle (suggestions dans l'éditeur). */
+export const LIEUX_SUGGERES = ['250', 'C-190', '8ᵉ étage']
+export const LIEU_AUTRES = 'Autres'
+
+/**
+ * Lieu d'une photo : celui choisi dans l'éditeur, sinon celui que nomme la légende
+ * (« … 250 », « … C-190 », « 8ᵉ étage »). Aucun lieu deviné autrement. Fonction pure.
+ */
+export function lieuDePhoto(p: PhotoAccueil): string {
+  const choisi = (p.lieu ?? '').trim()
+  if (choisi) return choisi
+  const l = p.legende ?? ''
+  if (/\bC-?\s?190\b/i.test(l)) return 'C-190'
+  if (/(^|[^\d])250(?!\d)/.test(l)) return '250'
+  if (/(^|[^\d])8\s*(ème|eme|ᵉ|e|è|th)\.?\s*(étage|etage|floor)/i.test(l)) return '8ᵉ étage'
+  return ''
+}
+
+/** Photos regroupées par lieu, dans l'ordre d'apparition ; les photos sans lieu à la fin. Fonction pure. */
+export function regrouperParLieu(photos: PhotoAccueil[]): { lieu: string; photos: PhotoAccueil[] }[] {
+  const groupes = new Map<string, PhotoAccueil[]>()
+  for (const p of photos) {
+    const l = lieuDePhoto(p) || LIEU_AUTRES
+    groupes.set(l, [...(groupes.get(l) ?? []), p])
+  }
+  const autres = groupes.get(LIEU_AUTRES)
+  groupes.delete(LIEU_AUTRES)
+  const res = Array.from(groupes.entries()).map(([lieu, ps]) => ({ lieu, photos: ps }))
+  if (autres) res.push({ lieu: LIEU_AUTRES, photos: autres })
+  return res
+}
 
 export type ContenuAccueil = {
   banniere: { titre: string; texte: string; image: string }
@@ -213,7 +245,10 @@ export function validerContenu(brut: unknown): { erreur: string } | { contenu: C
     visite: {
       titre: texte(b.visite?.titre, LIM.titre), texte: texte(b.visite?.texte, LIM.texte),
       photos: (Array.isArray(b.visite?.photos) ? b.visite.photos : []).slice(0, LIM.photos)
-        .map((p: Record<string, unknown>) => ({ url: lien(p?.url), legende: texte(p?.legende, LIM.legende) }))
+        .map((p: Record<string, unknown>) => {
+          const lieu = texte(p?.lieu, 60)
+          return { url: lien(p?.url), legende: texte(p?.legende, LIM.legende), ...(lieu ? { lieu } : {}) }
+        })
         .filter((p: PhotoAccueil) => p.url),
     },
     infos: texte(b.infos, LIM.infos),
