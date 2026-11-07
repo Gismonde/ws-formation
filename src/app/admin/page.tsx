@@ -8,6 +8,7 @@ import { chargerExpirations } from '@/lib/expirations'
 import { employesDansPortee, statistiquesPolitiques, peutSuivrePolitique, type Politique } from '@/lib/politiques'
 import { avancementJournees, CHAMPS_JOURNEE, type Journee } from '@/lib/journees'
 import { i18n } from '@/lib/i18n/serveur'
+import { demandesEnAttente } from '@/lib/formations-libres'
 
 const carte = 'bg-white rounded-2xl border border-gray-200 p-5'
 const MAX = 6
@@ -20,12 +21,13 @@ export default async function TableauDeBord() {
   const sb = serviceClient()
   const jour = (d: string | null) => (d ? new Date(d.length === 10 ? d + 'T12:00:00' : d).toLocaleDateString(loc, { dateStyle: 'medium' }) : '—')
 
-  const [conformite, expirations, { data: pols }, portee, { data: journeesBrutes }] = await Promise.all([
+  const [conformite, expirations, { data: pols }, portee, { data: journeesBrutes }, acces] = await Promise.all([
     chargerConformite(sb, acteur),
     chargerExpirations(sb, acteur, 60),
     sb.from('politiques').select('*').eq('actif', true),
     employesDansPortee(sb, acteur),
     sb.from('journees_formation').select(CHAMPS_JOURNEE).eq('modele', false).in('clinique', cliniquesContenuVisibles(acteur)).order('cree_le', { ascending: false }).limit(50),
+    demandesEnAttente(sb, acteur),
   ])
   const s = synthese(conformite)
 
@@ -64,6 +66,7 @@ export default async function TableauDeBord() {
     { v: aRenouveler.length, l: t('Certificats à renouveler (60 jours)'), href: '/admin/expirations', couleur: aRenouveler.length ? '#d97706' : '#16a34a' },
     { v: confirmationsManquantes, l: t('Confirmations de politiques en attente'), href: '/admin/politiques', couleur: confirmationsManquantes ? '#d97706' : '#16a34a' },
     { v: enCours.length, l: t('Journées de formation en cours'), href: '/admin/journees', couleur: '#0369a1' },
+    ...(acces.length ? [{ v: acces.length, l: t('Demandes d’accès en attente'), href: `/admin/formations/${acces[0].racine_id}?onglet=demandes`, couleur: '#d97706' }] : []),
     ...((aValider ?? []).length || demandes.length ? [{ v: (aValider ?? []).length, l: t('Formations à valider'), href: '/admin/formations/a-valider', couleur: (aValider ?? []).length ? '#7c3aed' : '#16a34a' }] : []),
   ]
 
@@ -88,6 +91,26 @@ export default async function TableauDeBord() {
           </Link>
         ))}
       </div>
+
+      {acces.length > 0 && (
+        <section className={carte + ' mb-4'}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-900">📩 {t('Demandes d’accès en attente')} <span className="text-sm font-normal text-gray-400">({acces.length})</span></h2>
+            <Link href="/admin/rapports" className="text-sm font-medium text-indigo-600 hover:underline">{t('Tout voir →')}</Link>
+          </div>
+          <ul className="divide-y divide-gray-100 text-sm">
+            {acces.slice(0, MAX).map(d => (
+              <li key={d.id} className="py-2 flex justify-between gap-3">
+                <Link href={`/admin/formations/${d.racine_id}?onglet=demandes`} className="min-w-0 hover:text-indigo-700">
+                  <span className="font-medium text-gray-900">{d.nom}</span>
+                  <span className="block text-xs text-gray-500 truncate">{d.titre}{d.langue === 'en' ? ' · EN' : ''}</span>
+                </Link>
+                <span className="text-xs text-amber-700 whitespace-nowrap">{t('Depuis le {date}', { date: jour(d.demandee_le) })}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {((aValider ?? []).length > 0 || demandes.length > 0) && (
         <div className="grid gap-4 lg:grid-cols-2 mb-4">

@@ -54,7 +54,7 @@ export default function DemandesAcces({ formationId, demandes, mode }: { formati
             <li key={d.id} className="px-5 py-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900">{d.nom}{d.poste && <span className="font-normal text-gray-500"> · {d.poste}</span>}</p>
+                  <p className="font-semibold text-gray-900">{d.nom}{d.poste && <span className="font-normal text-gray-500"> · {d.poste}</span>}{d.langue === 'en' && <span className="ml-2 text-[11px] font-semibold bg-sky-100 text-sky-800 rounded px-1.5 py-0.5" title={t('Demande faite sur la version anglaise')}>EN</span>}</p>
                   <p className="text-xs text-gray-500">{t('Demandée le {date}', { date: date(d.demandee_le) })}</p>
                   {d.message && <p className="text-sm text-gray-700 mt-1 bg-gray-50 rounded-lg px-3 py-2">« {d.message} »</p>}
                   {d.statut !== 'en_attente' && (

@@ -2877,4 +2877,6 @@ export const EN: Record<string, string> = {
   'Onglet de la visite. Vide : le lieu nommé dans la légende, sinon « Autres ».': 'Tour tab. Empty: the location named in the caption, otherwise “Other”.',
   'Onglet de la visite. Vide : le lieu nommé dans la légende, sinon « Autres ».': 'Tour tab. Empty: the location named in the caption, otherwise “Other”.',
   'Lire le document': 'Read the document',
+  'Demandes d’accès en attente': 'Pending access requests',
+  'Demande faite sur la version anglaise': 'Request made on the English version',
 }

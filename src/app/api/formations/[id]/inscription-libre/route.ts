@@ -5,6 +5,7 @@ import { getEspace } from '@/lib/espace'
 import { logAudit } from '@/lib/audit'
 import { inscrireVolontaire } from '@/lib/formations-libres'
 import { responsableAdmissible, adminConcerne } from '@/lib/cliniques'
+import { chargerVersions } from '@/lib/langues-formation'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -50,12 +51,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       dest = (data ?? []).filter(e => adminConcerne(e, f.clinique))
     }
     const origine = origineDepuis(req)
+    // Les demandes de la version anglaise se traitent depuis la version française
+    const racine = (await chargerVersions(sb, [id])).racine(id)
     const nom = `${moi.prenom ?? ''} ${moi.nom ?? ''}`.trim()
     await envoyerCourriels(dest.filter(d => d.email).map(d => {
       const { html, texte } = gabarit({
         origine, clinique: f.clinique, titre: 'Nouvelle demande d’accès à une formation',
         paragraphes: [`Bonjour ${d.prenom ?? ''},`.replace(' ,', ','), `${nom} demande l’accès à la formation « ${f.titre} ».`, ...(message ? [`Message : ${message}`] : []), 'Vous pouvez accepter ou refuser la demande dans l’onglet « Demandes d’accès » de la formation.'],
-        bouton: { libelle: 'Voir les demandes', lien: `${origine}/formations/${id}?onglet=demandes` },
+        bouton: { libelle: 'Voir les demandes', lien: `${origine}/formations/${racine}?onglet=demandes` },
       })
       return { a: d.email!, sujet: `Demande d’accès — ${f.titre}`, html, texte }
     }))

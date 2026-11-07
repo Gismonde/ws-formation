@@ -17,6 +17,8 @@ export type FormationDisponible = {
 export type DemandeAcces = {
   id: string; employe_id: string; statut: StatutDemande; message: string | null; demandee_le: string
   traitee_le: string | null; motif: string | null; nom: string; poste: string | null; traitee_par_nom: string | null
+  /** Version demandée (française ou anglaise) */
+  formation_id: string; langue: 'fr' | 'en'
 }
 
 /** Formations publiées ouvertes hors assignation dans l'espace ; [] tant que la migration n'est pas exécutée. */
@@ -56,11 +58,12 @@ export function peutTraiterDemandes(a: Acteur | null, f: { clinique: string | nu
   return (a.role === 'super_admin' || a.role === 'admin') && peutGererContenu(a, f.clinique)
 }
 
-/** Demandes d'accès d'une formation, les plus récentes d'abord. */
+/** Demandes d'accès d'une formation et de ses autres versions (FR / EN), les plus récentes d'abord. */
 export async function demandesDeFormation(sb: SupabaseClient, formationId: string): Promise<DemandeAcces[]> {
+  const versions = await chargerVersions(sb, [formationId])
   const { data, error } = await sb.from('demandes_acces_formation')
-    .select('id, employe_id, statut, message, demandee_le, traitee_le, motif, traitee_par')
-    .eq('formation_id', formationId).order('demandee_le', { ascending: false })
+    .select('id, formation_id, employe_id, statut, message, demandee_le, traitee_le, motif, traitee_par')
+    .in('formation_id', versions.famille(formationId)).order('demandee_le', { ascending: false })
   if (error || !data?.length) return []
   const ids = Array.from(new Set(data.flatMap(d => [d.employe_id, d.traitee_par]).filter(Boolean) as string[]))
   const { data: emps } = await sb.from('employes').select('id, prenom, nom, poste').in('id', ids)
@@ -70,7 +73,36 @@ export async function demandesDeFormation(sb: SupabaseClient, formationId: strin
     id: d.id, employe_id: d.employe_id, statut: d.statut as StatutDemande, message: d.message, demandee_le: d.demandee_le,
     traitee_le: d.traitee_le, motif: d.motif, nom: nom(d.employe_id) || '—', poste: (par.get(d.employe_id)?.poste as string) ?? null,
     traitee_par_nom: nom(d.traitee_par) || null,
+    formation_id: d.formation_id as string, langue: versions.langue(d.formation_id as string),
   }))
+}
+
+export type DemandeEnAttente = { id: string; formation_id: string; racine_id: string; titre: string; nom: string; demandee_le: string; langue: 'fr' | 'en' }
+
+/**
+ * Demandes d'accès en attente que l'acteur peut traiter (toutes formations, toutes versions),
+ * les plus anciennes d'abord. [] tant que la migration n'est pas exécutée.
+ */
+export async function demandesEnAttente(sb: SupabaseClient, a: Acteur | null): Promise<DemandeEnAttente[]> {
+  if (!a) return []
+  const { data, error } = await sb.from('demandes_acces_formation')
+    .select('id, formation_id, employe_id, demandee_le').eq('statut', 'en_attente').order('demandee_le')
+  if (error || !data?.length) return []
+  const fIds = Array.from(new Set(data.map(d => d.formation_id as string)))
+  const versions = await chargerVersions(sb, fIds)
+  const racines = Array.from(new Set(fIds.map(id => versions.racine(id))))
+  const [{ data: fs }, { data: emps }] = await Promise.all([
+    sb.from('formations').select('id, titre, clinique, responsable_id').in('id', Array.from(new Set([...fIds, ...racines]))),
+    sb.from('employes').select('id, prenom, nom').in('id', Array.from(new Set(data.map(d => d.employe_id as string)))),
+  ])
+  const parF = new Map((fs ?? []).map(f => [f.id as string, f]))
+  const parE = new Map((emps ?? []).map(e => [e.id as string, `${e.prenom ?? ''} ${e.nom ?? ''}`.trim()]))
+  return data.flatMap(d => {
+    const fid = d.formation_id as string
+    const f = parF.get(fid); const racine = versions.racine(fid); const fr = parF.get(racine) ?? f
+    if (!f || !fr || !(peutTraiterDemandes(a, f) || peutTraiterDemandes(a, fr))) return []
+    return [{ id: d.id as string, formation_id: fid, racine_id: racine, titre: fr.titre as string, nom: parE.get(d.employe_id as string) || '—', demandee_le: d.demandee_le as string, langue: versions.langue(fid) }]
+  })
 }
 
 /** Crée l'assignation volontaire (hors obligation), si elle n'existe pas déjà. */
