@@ -2927,4 +2927,7 @@ export const EN: Record<string, string> = {
   'La version française a été modifiée après la version anglaise (FR : {fr} · EN : {en}). Vérifiez que la traduction est à jour.': 'The French version was modified after the English version (FR: {fr} · EN: {en}). Check that the translation is up to date.',
   'Vérification automatique de la structure à chaque ouverture ; la qualité de la traduction n’est pas vérifiée.': 'The structure is checked automatically each time this page opens; translation quality is not checked.',
   'Modules · assignations · durée': 'Modules · assignments · duration',
+  'Rangement': 'Arrangement',
+  'Par catégorie': 'By category',
+  'Tout ensemble': 'All together',
 }

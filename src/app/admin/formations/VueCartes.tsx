@@ -1,7 +1,7 @@
 'use client'
 // Vue détaillée des formations : filtres (recherche, catégorie, mot-clé, versions FR/EN), sections repliables
 // par catégorie, publiées d'abord puis brouillons, cartes de hauteur uniforme.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useT } from '@/lib/i18n/client'
 import SectionRepliable from '@/components/SectionRepliable'
@@ -46,6 +46,10 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
   const [categorie, setCategorie] = useState('')
   const [motCle, setMotCle] = useState('')
   const [versions, setVersions] = useState<'' | 'fr_en' | 'fr' | 'ecart'>('')
+  // Rangement : par catégorie, ou tout ensemble (une seule grille, comme avant). Choix mémorisé dans ce navigateur.
+  const [rangement, setRangement] = useState<'categories' | 'ensemble'>('categories')
+  useEffect(() => { try { if (localStorage.getItem('ws_rangement_formations') === 'ensemble') setRangement('ensemble') } catch { /* stockage indisponible */ } }, [])
+  const choisirRangement = (r: 'categories' | 'ensemble') => { setRangement(r); try { localStorage.setItem('ws_rangement_formations', r) } catch { /* stockage indisponible */ } }
 
   const categories = useMemo(() => Array.from(new Set(formations.map(f => f.categorie))).sort((a, b) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, 'fr')), [formations])
   const motsCles = useMemo(() => Array.from(new Set(formations.flatMap(f => f.tags))).sort((a, b) => a.localeCompare(b, 'fr')), [formations])
@@ -90,11 +94,22 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
           <option value="ecart">⚠ {t('Écart FR/EN à vérifier')}</option>
         </select>
         {actifs && <button type="button" onClick={() => { setQ(''); setCategorie(''); setMotCle(''); setVersions('') }} className="text-sm text-indigo-700 hover:underline">{t('Effacer les filtres')}</button>}
-        <span className="ml-auto flex-none"><ToutReplier /></span>
+        <span className="ml-auto flex flex-none flex-wrap items-center gap-2">
+          <span role="group" aria-label={t('Rangement')} className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 text-xs font-semibold">
+            {([['categories', t('Par catégorie')], ['ensemble', t('Tout ensemble')]] as const).map(([v, l]) => (
+              <button key={v} type="button" aria-pressed={rangement === v} onClick={() => choisirRangement(v)} className={'rounded-md px-3 py-1.5 ' + (rangement === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50')}>{l}</button>
+            ))}
+          </span>
+          {rangement === 'categories' && <ToutReplier />}
+        </span>
       </div>
       {actifs && <p className="mb-3 text-sm text-gray-500">{t('{n} formation(s) correspondent', { n: filtrees.length })}</p>}
 
-      {groupes.length === 0 ? (
+      {filtrees.length > 0 && rangement === 'ensemble' ? (
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+          {filtrees.map(f => <Carte key={f.id} f={f} />)}
+        </div>
+      ) : groupes.length === 0 ? (
         <p className="rounded-2xl border border-gray-200 bg-white p-12 text-center text-gray-400">{formations.length ? t('Aucune formation ne correspond à ces filtres.') : t('Aucune formation pour le moment.')}</p>
       ) : groupes.map(g => (
         <SectionRepliable key={g.nom || '—'} couleur={g.nom ? couleurCategorie(g.nom) : '#9ca3af'} icone="📚" titre={g.nom || t('Sans catégorie')}
