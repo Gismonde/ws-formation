@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     const { data: ex } = await sb.from('formations').select('id, publiee, clinique').eq('id', remplacerId).maybeSingle()
     if (!ex) return NextResponse.json({ error: 'Formation introuvable' }, { status: 404 })
     if (ex.publiee) return NextResponse.json({ error: 'Formation publiée : remplacement refusé' }, { status: 409 })
-    if (!peutGererContenu(a, ex.clinique)) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
+    if (!(cliniquesContenuGerablesToutes(a) as string[]).includes(ex.clinique ?? 'LES_DEUX')) return NextResponse.json({ error: 'Hors de votre périmètre' }, { status: 403 })
     const [{ count: nbAss }, { count: nbProg }] = await Promise.all([
       sb.from('assignations').select('*', { count: 'exact', head: true }).eq('formation_id', remplacerId),
       sb.from('progressions').select('*', { count: 'exact', head: true }).eq('formation_id', remplacerId),
