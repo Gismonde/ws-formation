@@ -2,6 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Acteur } from '@/lib/permissions'
 import { peutGererContenu } from '@/lib/permissions'
+import { chargerVersions, garderLaLangue, langueEmploye } from '@/lib/langues-formation'
 
 export type ModeAcces = 'aucun' | 'libre' | 'demande'
 export type StatutDemande = 'en_attente' | 'acceptee' | 'refusee'
@@ -24,14 +25,19 @@ export async function formationsDisponibles(sb: SupabaseClient, employeId: strin
     .eq('publiee', true).in('acces_hors_assignation', ['libre', 'demande']).in('clinique', cliniques)
     .order('titre')
   if (error || !data?.length) return []
-  const ids = data.map(f => f.id as string)
+  // Versions FR / EN : seulement celle de la langue de formation de l'employé
+  const [versions, langue] = await Promise.all([chargerVersions(sb, data.map(f => f.id as string)), langueEmploye(sb, employeId)])
+  const visibles = garderLaLangue(data as { id: string }[], versions, langue) as typeof data
+  const ids = visibles.map(f => f.id as string)
+  const familles = Array.from(new Set(ids.flatMap(id => versions.famille(id))))
   const [{ data: ass }, { data: dem }] = await Promise.all([
-    sb.from('assignations').select('formation_id').eq('employe_id', employeId).in('formation_id', ids),
+    sb.from('assignations').select('formation_id').eq('employe_id', employeId).in('formation_id', familles),
     sb.from('demandes_acces_formation').select('formation_id, statut, motif').eq('employe_id', employeId).in('formation_id', ids),
   ])
-  const inscrits = new Set((ass ?? []).map(a => a.formation_id as string))
+  const possedees = new Set((ass ?? []).map(a => a.formation_id as string))
+  const inscrits = new Set(ids.filter(id => versions.dejaDansFamille(id, possedees)))
   const demandes = new Map((dem ?? []).map(d => [d.formation_id as string, d]))
-  return data.map(f => {
+  return visibles.map(f => {
     const d = demandes.get(f.id as string)
     return {
       id: f.id, titre: f.titre, description: f.description, categorie: f.categorie, niveau: f.niveau,
@@ -68,8 +74,9 @@ export async function demandesDeFormation(sb: SupabaseClient, formationId: strin
 
 /** Crée l'assignation volontaire (hors obligation), si elle n'existe pas déjà. */
 export async function inscrireVolontaire(sb: SupabaseClient, employeId: string, formationId: string, par: string): Promise<string | null> {
-  const { data: deja } = await sb.from('assignations').select('formation_id').eq('employe_id', employeId).eq('formation_id', formationId).maybeSingle()
-  if (deja) return null
+  const versions = await chargerVersions(sb, [formationId])
+  const { data: deja } = await sb.from('assignations').select('formation_id').eq('employe_id', employeId).in('formation_id', versions.famille(formationId)).limit(1)
+  if (deja?.length) return null
   const ligne = { employe_id: employeId, formation_id: formationId, assigne_par: par, date_assignation: new Date().toISOString(), volontaire: true }
   let { error } = await sb.from('assignations').insert(ligne)
   if (error && /volontaire/.test(error.message)) {

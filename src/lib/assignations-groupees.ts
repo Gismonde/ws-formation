@@ -6,6 +6,7 @@ import {
   employeConcerneParClinique, cliniquesAdministrees,
 } from '@/lib/permissions'
 import { cliniquesDe, type Clinique, type CliniqueEmploye } from '@/lib/cliniques'
+import { chargerVersions, languesEmployes } from '@/lib/langues-formation'
 import { estVise, estPourToute, peutGererPolitique, type Politique } from '@/lib/politiques'
 
 export type Cible =
@@ -63,10 +64,15 @@ export async function assignerFormations(
   sb: SupabaseClient, a: Acteur, formationIds: string[], employes: EmployeCible[], dateEcheance: string | null,
 ): Promise<{ resultats: ResultatFormation[]; nouvelles: Map<string, string[]> }> {
   const { data: formations } = await sb.from('formations').select('id, titre, clinique, publiee').in('id', formationIds)
+  // Versions FR / EN : chacun reçoit la version de sa langue de formation
+  const versions = await chargerVersions(sb, formationIds)
+  const familles = Array.from(new Set(formationIds.flatMap(id => versions.famille(id))))
+  const langues = await languesEmployes(sb, employes.map(e => e.id))
   const { data: existantes } = employes.length
-    ? await sb.from('assignations').select('employe_id, formation_id').in('formation_id', formationIds).in('employe_id', employes.map(e => e.id))
+    ? await sb.from('assignations').select('employe_id, formation_id').in('formation_id', familles).in('employe_id', employes.map(e => e.id))
     : { data: [] as { employe_id: string; formation_id: string }[] }
   const deja = new Set((existantes ?? []).map(x => `${x.employe_id}:${x.formation_id}`))
+  const dejaFamille = (e: string, id: string) => versions.famille(id).some(x => deja.has(`${e}:${x}`))
   const resultats: ResultatFormation[] = []
   const lignes: Record<string, unknown>[] = []
   const nouvelles = new Map<string, string[]>() // employé → formations nouvellement assignées
@@ -86,10 +92,11 @@ export async function assignerFormations(
     const r: ResultatFormation = { formation_id: id, titre: f.titre, creees: 0, deja: 0, autre_clinique: 0 }
     for (const e of employes) {
       if (e.id !== a.id && !employeConcerneParClinique(e.clinique ?? (e.role === 'super_admin' ? 'LES_DEUX' : null), f.clinique)) { r.autre_clinique++; continue }
-      if (deja.has(`${e.id}:${id}`)) { r.deja++; continue }
+      if (dejaFamille(e.id, id)) { r.deja++; continue }
+      const version = versions.versionPour(id, langues.get(e.id) ?? 'fr')
       r.creees++
-      lignes.push({ employe_id: e.id, formation_id: id, assigne_par: a.id, date_assignation: maintenant, ...(dateEcheance ? { date_echeance: dateEcheance } : {}) })
-      nouvelles.set(e.id, [...(nouvelles.get(e.id) ?? []), id])
+      lignes.push({ employe_id: e.id, formation_id: version, assigne_par: a.id, date_assignation: maintenant, ...(dateEcheance ? { date_echeance: dateEcheance } : {}) })
+      nouvelles.set(e.id, [...(nouvelles.get(e.id) ?? []), version])
     }
     resultats.push(r)
   }

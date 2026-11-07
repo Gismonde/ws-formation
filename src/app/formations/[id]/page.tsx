@@ -1,4 +1,5 @@
 import { leconAccessible } from '@/lib/verrou-lecons'
+import { chargerVersions } from '@/lib/langues-formation'
 import { redirect, notFound } from 'next/navigation'
 import { ListeObjectifs } from '@/components/Objectifs'
 import Link from 'next/link'
@@ -64,7 +65,16 @@ export default async function FormationDetailPage({ params, searchParams }: { pa
       .eq('employe_id', employe.id)
       .eq('formation_id', id)
       .maybeSingle()
-    if (!assignation) notFound()
+    if (!assignation) {
+      // Lien vers l'autre version linguistique (FR / EN) : on ouvre celle qui est assignée
+      const versions = await chargerVersions(serviceClient(), [id])
+      const autres = versions.famille(id).filter(x => x !== id)
+      if (autres.length) {
+        const { data: autre } = await serviceClient().from('assignations').select('formation_id').eq('employe_id', employe.id).in('formation_id', autres).limit(1)
+        if (autre?.length) redirect(`/formations/${autre[0].formation_id}`)
+      }
+      notFound()
+    }
   }
 
   const { data: formation } = apercu.actif

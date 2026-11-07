@@ -1,6 +1,7 @@
 // Statistiques d'une formation (page Admin → formation → Statistiques).
 // Portée de l'acteur : seuls les employés qu'il peut suivre sont comptés.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { chargerVersions } from '@/lib/langues-formation'
 import { type Acteur, idsEmployesDansPortee } from '@/lib/permissions'
 import { chargerConformite } from '@/lib/conformite'
 import { estComplete, type StatutFormation } from '@/lib/etat-formations'
@@ -49,12 +50,14 @@ export async function statistiquesFormation(sb: SupabaseClient, acteur: Acteur, 
   const portee = await idsEmployesDansPortee(acteur, sb)
 
   // Employés assignés (portée de l'acteur), avec leur état réel
-  const { data: assign } = await sb.from('assignations').select('*').eq('formation_id', formationId)
+  // Versions FR / EN : les employés des deux versions sont additionnés
+  const famille = (await chargerVersions(sb, [formationId])).famille(formationId)
+  const { data: assign } = await sb.from('assignations').select('*').in('formation_id', famille)
   // Inscriptions volontaires (formation disponible hors assignation) : comptées à part, hors conformité
   const volontaires = new Set((assign ?? []).filter(a => (a as { volontaire?: boolean }).volontaire === true).map(a => a.employe_id as string).filter(id => !portee || portee.includes(id))).size
   const assignesIds = Array.from(new Set((assign ?? []).map(a => a.employe_id as string))).filter(id => !portee || portee.includes(id))
   const conformite = assignesIds.length ? await chargerConformite(sb, acteur, { employe_ids: assignesIds }) : []
-  const employes: LigneEmployeStat[] = conformite.flatMap(e => e.assignations.filter(a => a.formation_id === formationId).map(a => ({
+  const employes: LigneEmployeStat[] = conformite.flatMap(e => e.assignations.filter(a => famille.includes(a.formation_id)).map(a => ({
     id: e.id, nom: `${e.prenom} ${e.nom}`.trim(), departement: e.departement || '—', statut: a.statut, progression: a.progression,
     date_assignation: a.date_assignation, date_echeance: a.date_echeance, en_retard: a.en_retard,
   }))).sort((x, y) => x.nom.localeCompare(y.nom, 'fr'))
@@ -86,7 +89,7 @@ export async function statistiquesFormation(sb: SupabaseClient, acteur: Acteur, 
   })
 
   // Délai moyen assignation → fin (certificat, sinon dernière leçon terminée)
-  const { data: certs } = ids.length ? await sb.from('certificats').select('employe_id, date_emission').eq('formation_id', formationId).in('employe_id', ids) : { data: [] }
+  const { data: certs } = ids.length ? await sb.from('certificats').select('employe_id, date_emission').in('formation_id', famille).in('employe_id', ids) : { data: [] }
   const delais: number[] = []
   for (const e of employes.filter(x => estComplete(x.statut) && x.date_assignation)) {
     const cert = (certs ?? []).find(c => c.employe_id === e.id)?.date_emission as string | undefined

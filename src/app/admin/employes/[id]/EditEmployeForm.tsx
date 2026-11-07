@@ -63,6 +63,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
   const [externe, setExterne] = useState(!!employe.externe)
   const [organisation, setOrganisation] = useState(employe.organisation ?? '')
   const [formulaires, setFormulaires] = useState((employe as { peut_creer_formulaires?: boolean }).peut_creer_formulaires === true)
+  const [langueFormation, setLangueFormation] = useState<'fr' | 'en'>((employe as { langue_formation?: string | null }).langue_formation === 'en' ? 'en' : 'fr')
   const [miseEnPage, setMiseEnPage] = useState((employe as { peut_mise_en_page_evenements?: boolean }).peut_mise_en_page_evenements === true)
   const miseEnPagePossible = droitMiseEnPage && droitMiseEnPagePossible(role, droits.peut_creer_evenements)
 
@@ -80,6 +81,7 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
           nom,
           poste: poste || null,
           externe, organisation,
+          langue_formation: langueFormation,
           ...(estGestionnaire ? {} : { departement_id: departementId || null, role, clinique: clinique || null }),
           ...(afficherAutorisationCreation && role === 'gestionnaire' ? droits : {}),
           ...(soiMeme ? {} : { actif }),
@@ -148,6 +150,14 @@ export default function EditEmployeForm({ employe, departements, modifiable, soi
       <div>
         <label className={labelCls}>{t('Poste')}</label>
         <ChoixPoste className={inputCls} valeur={poste} onChange={setPoste} familles={postes} />
+      </div>
+      <div>
+        <label className={labelCls} htmlFor="langue_formation">{t('Langue de formation')}</label>
+        <select id="langue_formation" className={inputCls} value={langueFormation} onChange={e => setLangueFormation(e.target.value === 'en' ? 'en' : 'fr')}>
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+        <p className="text-xs text-gray-400 mt-1">{t('Pour les formations offertes en français et en anglais. Changer la langue fait passer les formations pas encore commencées dans l’autre version.')}</p>
       </div>
       <ChampsAcces
         role={role} clinique={clinique} departementId={departementId}

@@ -1,4 +1,5 @@
 import { droitMiseEnPagePossible } from '@/lib/evenements-types'
+import { changerLangueEmploye } from '@/lib/langues-formation'
 import { valeursExterne } from '@/lib/membres-externes'
 import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
@@ -88,6 +89,18 @@ export async function PUT(request: Request) {
       })
     }
 
+    // Langue de formation : bascule aussi les assignations pas encore commencées vers l'autre version
+    let langue: { erreur?: string; basculees: number } | null = null
+    if ((body.langue_formation === 'fr' || body.langue_formation === 'en') && body.langue_formation !== ((cible as { langue_formation?: string }).langue_formation ?? 'fr')) {
+      langue = await changerLangueEmploye(sb, id, body.langue_formation)
+      if (langue.erreur) return NextResponse.json({ error: langue.erreur }, { status: 400 })
+      await logAudit({
+        acteur_id: acteur.id, type_action: 'EMPLOYE_MODIFIE', cible_employe_id: id,
+        description: `Langue de formation : ${body.langue_formation === 'en' ? 'anglais' : 'français'} (${langue.basculees} assignation(s) non commencée(s) basculée(s))`,
+        ...ipEtAgent(request),
+      })
+    }
+
     if (actif === false && cible.actif !== false && cible.auth_user_id) {
       await sb.auth.admin.signOut(cible.auth_user_id)
     }
@@ -104,7 +117,7 @@ export async function PUT(request: Request) {
       ...ipEtAgent(request),
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, basculees: langue?.basculees ?? 0 })
   } catch (err) {
     console.error('Update employee route error:', err)
     return NextResponse.json({ error: 'Erreur serveur interne' }, { status: 500 })

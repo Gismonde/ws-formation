@@ -49,6 +49,12 @@ export async function POST(req: Request) {
       let courriels = 0
       if (notifier && nouvelles.size) {
         const titres = new Map(resultats.map(r => [r.formation_id, r.titre]))
+        // Versions dans une autre langue (FR / EN) : leur propre titre
+        const autres = Array.from(new Set(Array.from(nouvelles.values()).flat())).filter(fid => !titres.has(fid))
+        if (autres.length) {
+          const { data: fx } = await sb.from('formations').select('id, titre').in('id', autres)
+          for (const f of fx ?? []) titres.set(f.id as string, f.titre as string)
+        }
         const echeance = dateEcheance ? new Date(dateEcheance + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'long' }) : null
         const cfg = await chargerNotifications(sb)
         // Compte pas encore activé : courriel retenu, envoyé automatiquement à l'activation
