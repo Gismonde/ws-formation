@@ -67,12 +67,12 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
     liste: filtrees.filter(f => f.categorie === nom).sort((a, b) => (a.publiee === b.publiee ? 0 : a.publiee ? -1 : 1) || a.titre.localeCompare(b.titre, 'fr')),
   })).filter(g => g.liste.length)
   const actifs = !!(q || categorie || motCle || versions)
-  const champ = 'rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm'
+  const champ = 'rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm !w-auto flex-none max-w-[230px]'
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
-        <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher : titre, description, mot-clé…')} aria-label={t('Rechercher une formation')} className={champ + ' min-w-[200px] flex-1'} />
+        <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher : titre, description, mot-clé…')} aria-label={t('Rechercher une formation')} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm min-w-[220px] flex-1" />
         <select value={categorie} onChange={e => setCategorie(e.target.value)} aria-label={t('Catégorie')} className={champ}>
           <option value="">{t('Toutes les catégories')}</option>
           {categories.map(c => <option key={c || '—'} value={c || '—'}>{c || t('Sans catégorie')}</option>)}
@@ -90,7 +90,7 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
           <option value="ecart">⚠ {t('Écart FR/EN à vérifier')}</option>
         </select>
         {actifs && <button type="button" onClick={() => { setQ(''); setCategorie(''); setMotCle(''); setVersions('') }} className="text-sm text-indigo-700 hover:underline">{t('Effacer les filtres')}</button>}
-        <span className="ml-auto"><ToutReplier /></span>
+        <span className="ml-auto flex-none"><ToutReplier /></span>
       </div>
       {actifs && <p className="mb-3 text-sm text-gray-500">{t('{n} formation(s) correspondent', { n: filtrees.length })}</p>}
 
@@ -134,15 +134,15 @@ function Carte({ f }: { f: CarteFormation }) {
           {f.obligatoire && <span className="text-[10px] font-extrabold uppercase text-red-600">{t('Obligatoire LSST')}</span>}
           <BadgeVersions en={f.en} t={t} />
         </div>
-        <Link href={`/admin/formations/${f.id}`} title={f.titre} className="line-clamp-2 min-h-[2.6rem] text-[15px] font-bold leading-snug text-gray-900 no-underline">{f.titre}</Link>
-        <p className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-snug text-gray-500">{f.description ?? ''}</p>
+        <Link href={`/admin/formations/${f.id}`} title={f.titre} className="line-clamp-2 h-[2.6em] overflow-hidden text-[15px] font-bold leading-[1.3em] text-gray-900 no-underline">{f.titre}</Link>
+        <p title={f.description ?? undefined} className="!m-0 line-clamp-2 h-[2.7em] overflow-hidden text-[13px] leading-[1.35em] text-gray-500">{f.description ?? ''}</p>
         {f.copie && <span className="self-start rounded-full bg-violet-100 px-2 py-px text-[11px] font-bold text-violet-700">✏️ {t('Copie de travail en cours')}</span>}
-        <div className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs text-gray-500">
-          <span className="truncate">📦 {f.modules} · 👥 {f.assignations}{f.duree ? ` · ⏱ ${f.duree < 60 ? `${f.duree} min` : `${Math.round(f.duree / 6) / 10} h`}` : ''}</span>
-          <span className="flex flex-shrink-0 gap-1">
-            <Link href={`/admin/formations/${f.id}`} className="rounded-md bg-gray-100 px-2.5 py-1 font-semibold text-gray-700 no-underline hover:bg-gray-200">{t('Gérer')}</Link>
-            <Link href={`/admin/assigner?formations=${f.id}`} className="rounded-md bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 no-underline hover:bg-indigo-100">{t('Assigner')}</Link>
-          </span>
+        <div className="mt-auto truncate pt-1 text-xs text-gray-500" title={t('Modules · assignations · durée')}>
+          📦 {f.modules} module(s) · 👥 {f.assignations}{f.duree ? ` · ⏱ ${f.duree < 60 ? `${f.duree} min` : `${Math.round(f.duree / 6) / 10} h`}` : ''}
+        </div>
+        <div className="flex gap-1.5 text-xs">
+          <Link href={`/admin/formations/${f.id}`} className="flex-1 rounded-md bg-gray-100 py-1.5 text-center font-semibold text-gray-700 no-underline hover:bg-gray-200">{t('Gérer')}</Link>
+          <Link href={`/admin/assigner?formations=${f.id}`} className="flex-1 rounded-md bg-indigo-50 py-1.5 text-center font-semibold text-indigo-700 no-underline hover:bg-indigo-100">{t('Assigner')}</Link>
         </div>
       </div>
     </div>
