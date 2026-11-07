@@ -2926,4 +2926,5 @@ export const EN: Record<string, string> = {
   'Structures identiques : leçons, blocs, images, nombre d’éléments et bonnes réponses.': 'Identical structures: lessons, blocks, images, number of items and correct answers.',
   'La version française a été modifiée après la version anglaise (FR : {fr} · EN : {en}). Vérifiez que la traduction est à jour.': 'The French version was modified after the English version (FR: {fr} · EN: {en}). Check that the translation is up to date.',
   'Vérification automatique de la structure à chaque ouverture ; la qualité de la traduction n’est pas vérifiée.': 'The structure is checked automatically each time this page opens; translation quality is not checked.',
+  'Modules · assignations · durée': 'Modules · assignments · duration',
 }
