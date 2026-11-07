@@ -1,13 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { PhotoAccueil } from '@/lib/accueil'
+import { regrouperParLieu, LIEU_AUTRES, type PhotoAccueil } from '@/lib/accueil'
 import { useT } from '@/lib/i18n/client'
 
 /** Galerie de la visite virtuelle, avec agrandissement (flèches du clavier et Échap). */
-export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
+export default function GalerieVisite({ photos: toutes }: { photos: PhotoAccueil[] }) {
   const [ouverte, setOuverte] = useState<number | null>(null)
+  const [onglet, setOnglet] = useState<string | null>(null)
   const { t } = useT()
+  // Onglets par lieu (250, C-190, 8ᵉ étage…) dès qu'il y a au moins deux lieux
+  const groupes = regrouperParLieu(toutes)
+  const avecOnglets = groupes.length > 1
+  const actif = avecOnglets ? (groupes.find(g => g.lieu === onglet) ?? groupes[0]) : null
+  const photos = actif ? actif.photos : toutes
+  const libelle = (lieu: string) => (lieu === LIEU_AUTRES ? t('Autres') : lieu === '8ᵉ étage' ? t('8ᵉ étage') : lieu)
 
   useEffect(() => {
     if (ouverte === null) return
@@ -22,7 +29,21 @@ export default function GalerieVisite({ photos }: { photos: PhotoAccueil[] }) {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+      {avecOnglets && (
+        <div role="tablist" aria-label={t('Lieux')} style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+          {groupes.map(g => {
+            const sel = g.lieu === actif!.lieu
+            return (
+              <button key={g.lieu} type="button" role="tab" aria-selected={sel} onClick={() => { setOnglet(g.lieu); setOuverte(null) }}
+                style={{ padding: '7px 14px', borderRadius: '999px', fontSize: '13px', fontWeight: sel ? 700 : 500, cursor: 'pointer', minHeight: '36px',
+                  border: '1px solid ' + (sel ? 'var(--accent-clinique, #4f46e5)' : '#e5e7eb'), background: sel ? 'var(--accent-clinique, #4f46e5)' : '#fff', color: sel ? '#fff' : '#374151' }}>
+                {libelle(g.lieu)} <span style={{ opacity: 0.75, fontWeight: 400 }}>({g.photos.length})</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <div role={avecOnglets ? 'tabpanel' : undefined} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
         {photos.map((p, i) => (
           <button key={p.url + i} type="button" onClick={() => setOuverte(i)} aria-label={p.legende || t('Photo {n}', { n: i + 1 })}
             style={{ position: 'relative', border: 'none', padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in', aspectRatio: '4 / 3', background: 'var(--accent-clinique-clair)' }}>

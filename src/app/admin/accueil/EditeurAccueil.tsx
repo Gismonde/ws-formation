@@ -5,7 +5,7 @@ import { useConfirmer } from '@/components/Confirmation'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { CLINIQUE_INFO, type Clinique } from '@/lib/cliniques'
-import type { ContenuAccueil, CarteAccueil, PhotoAccueil } from '@/lib/accueil'
+import { lieuDePhoto, LIEUX_SUGGERES, type ContenuAccueil, type CarteAccueil, type PhotoAccueil } from '@/lib/accueil'
 
 type Page = { clinique: Clinique; langue: 'fr' | 'en'; contenu: ContenuAccueil; defaut: ContenuAccueil; personnalisee: boolean; modifiee_le: string | null; disponible: boolean }
 
@@ -170,10 +170,13 @@ export default function EditeurAccueil({ pages }: { pages: Page[] }) {
             <div><label className={etiquette}>{t('Texte')}</label><input value={c.visite.texte} onChange={e => maj(x => ({ ...x, visite: { ...x.visite, texte: e.target.value } }))} className={champ} /></div>
           </div>
           <div className="space-y-3">
+            <datalist id="lieux-visite">{LIEUX_SUGGERES.map(l => <option key={l} value={l} />)}</datalist>
             {c.visite.photos.map((p, i) => (
               <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
                 <div className="flex gap-2">
                   <input value={p.legende} onChange={e => majPhoto(i, 'legende', e.target.value)} placeholder={t('Légende (ex. Salle d’opération)')} className={champ} maxLength={120} />
+                  <input value={p.lieu ?? ''} onChange={e => majPhoto(i, 'lieu', e.target.value)} list="lieux-visite" aria-label={t('Lieu (onglet)')}
+                    placeholder={lieuDePhoto({ ...p, lieu: '' }) || t('Lieu')} title={t('Onglet de la visite. Vide : le lieu nommé dans la légende, sinon « Autres ».')} className={champ} style={{ maxWidth: '130px' }} maxLength={60} />
                   <button type="button" onClick={() => maj(x => ({ ...x, visite: { ...x.visite, photos: deplacer(x.visite.photos, i, -1) } }))} className="px-2 text-gray-500" aria-label={t('Monter')}>↑</button>
                   <button type="button" onClick={() => maj(x => ({ ...x, visite: { ...x.visite, photos: deplacer(x.visite.photos, i, 1) } }))} className="px-2 text-gray-500" aria-label={t('Descendre')}>↓</button>
                   <button type="button" onClick={() => maj(x => ({ ...x, visite: { ...x.visite, photos: x.visite.photos.filter((_, j) => j !== i) } }))} className="px-2 text-red-600" aria-label={t('Supprimer')}>✕</button>

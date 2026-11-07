@@ -2870,4 +2870,10 @@ export const EN: Record<string, string> = {
   '✓ Langue enregistrée · {n} formation(s) pas encore commencée(s) passée(s) dans cette langue': '✓ Language saved · {n} training(s) not yet started switched to this language',
   '✓ Lien retiré': '✓ Link removed',
   '✓ Version anglaise reliée': '✓ English version linked',
+  '8ᵉ étage': '8th floor',
+  'Autres': 'Other',
+  'Lieu (onglet)': 'Location (tab)',
+  'Lieux': 'Locations',
+  'Onglet de la visite. Vide : le lieu nommé dans la légende, sinon « Autres ».': 'Tour tab. Empty: the location named in the caption, otherwise “Other”.',
+  'Onglet de la visite. Vide : le lieu nommé dans la légende, sinon « Autres ».': 'Tour tab. Empty: the location named in the caption, otherwise “Other”.',
 }
