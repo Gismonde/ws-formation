@@ -3,7 +3,7 @@
 // Avec « remplacer_id » : remplace le contenu d'une formation existante restée en brouillon,
 // jamais assignée ni commencée (même identifiant, aucun doublon).
 import { NextResponse } from 'next/server'
-import { getActeur, serviceClient, peutGererContenu } from '@/lib/permissions'
+import { getActeur, serviceClient, cliniquesContenuGerablesToutes } from '@/lib/permissions'
 import { estCliniqueContenu } from '@/lib/cliniques'
 import { logAudit } from '@/lib/audit'
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (!a || (a.role !== 'super_admin' && a.role !== 'admin')) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const c = await req.json().catch(() => null)
   if (!c || !txt(c.titre, 300)) return NextResponse.json({ error: 'Titre requis' }, { status: 400 })
-  if (!estCliniqueContenu(c.clinique) || !peutGererContenu(a, c.clinique)) return NextResponse.json({ error: 'Clinique invalide ou hors de votre périmètre' }, { status: 403 })
+  if (!estCliniqueContenu(c.clinique) || !(cliniquesContenuGerablesToutes(a) as string[]).includes(c.clinique)) return NextResponse.json({ error: 'Clinique invalide ou hors de votre périmètre' }, { status: 403 })
   const modules = (Array.isArray(c.modules) ? c.modules : []) as Module[]
   if (!modules.length) return NextResponse.json({ error: 'Au moins un module' }, { status: 400 })
   for (const m of modules) for (const l of m.lecons ?? []) for (const b of l.blocs ?? []) {
