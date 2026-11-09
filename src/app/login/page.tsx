@@ -2,7 +2,6 @@ import PrivacyBanner from './PrivacyBanner'
 import { i18n } from '@/lib/i18n/serveur'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import ChampsConnexion from './ChampsConnexion'
-import Symbole from './Symbole'
 
 export default async function LoginPage({
   searchParams,
@@ -36,7 +35,10 @@ export default async function LoginPage({
         <div className="carte-connexion">
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}><ChoixLangue /></div>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}><Symbole /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/ws-formation.webp" alt="WS Formation" width={82} height={120} style={{ height: '120px', width: 'auto' }} />
+            </div>
             <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: 800, color: '#1b1640', letterSpacing: '-0.01em' }}>{t('Connexion')}</h1>
             <p style={{ margin: 0, color: '#5b5675', fontSize: '16px' }}>{t('Accédez à votre espace de formation')}</p>
           </div>
