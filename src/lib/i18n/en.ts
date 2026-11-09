@@ -2980,4 +2980,6 @@ export const EN: Record<string, string> = {
   'Pas de courriel ? Vérifiez vos courriels indésirables ou demandez à votre gestionnaire.': 'No email? Check your junk folder or ask your manager.',
   'Ce lien a expiré ou a déjà été utilisé. Faites une nouvelle demande avec « Mot de passe oublié ? » sur la page de connexion.': 'This link has expired or has already been used. Make a new request with “Forgot your password?” on the sign-in page.',
   'Ce lien a déjà été utilisé : votre compte est activé. Connectez-vous avec votre courriel et votre mot de passe (ou « Mot de passe oublié ? » sur la page de connexion).': 'This link has already been used: your account is activated. Sign in with your email and password (or “Forgot your password?” on the sign-in page).',
+  '{n} demande(s) d’accès en attente': '{n} pending access request(s)',
+  '{n} formation(s) à valider': '{n} training(s) to review',
 }

@@ -1,3 +1,4 @@
+import { demandesEnAttente } from '@/lib/formations-libres'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -87,8 +88,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const aFormulaires = peutCreerFormulaires(employe) || (await formulairesRecus(serviceClient(), employe)).length > 0
   const visible = (l: EntreeNav) => (!l.adminOnly || isAdmin) && (!l.formulaires || aFormulaires) && (!l.createurs || peutCreerFormations(employe)) && (!l.superAdmin || employe.role === 'super_admin')
     && (!l.droits || l.droits.some(d => droits[d]))
+  // Pastilles de notification : demandes d'accès à traiter et formations à valider par la personne connectée
+  const sbNotif = serviceClient()
+  const [acces, { count: nbAValider }] = await Promise.all([
+    demandesEnAttente(sbNotif, employe).catch(() => []),
+    sbNotif.from('formations').select('id', { count: 'exact', head: true }).eq('validateur_id', employe.id).eq('statut_validation', 'en_validation'),
+  ])
+  const nbAcces = acces.length, nbVal = nbAValider ?? 0
+  const titreAcces = t('{n} demande(s) d’accès en attente', { n: nbAcces })
+  const titreVal = t('{n} formation(s) à valider', { n: nbVal })
+  const notif: Record<string, { compte: number; titre: string }> = {
+    '/admin': { compte: nbAcces + nbVal, titre: [nbAcces ? titreAcces : '', nbVal ? titreVal : ''].filter(Boolean).join(' · ') },
+    '/admin/formations': { compte: nbAcces, titre: titreAcces },
+    '/admin/formations/a-valider': { compte: nbVal, titre: titreVal },
+  }
   const groupes: GroupeMenu[] = adminNav
-    .map(g => ({ id: g.id, label: t(g.label), icon: g.icon, liens: g.liens.filter(visible).map(l => ({ href: l.href, label: t(l.label), icon: l.icon })) }))
+    .map(g => ({ id: g.id, label: t(g.label), icon: g.icon, liens: g.liens.filter(visible).map(l => ({ href: l.href, label: t(l.label), icon: l.icon, ...(notif[l.href] ?? {}) })) }))
     .filter(g => g.liens.length > 0)
 
   return (

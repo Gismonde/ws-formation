@@ -13,7 +13,7 @@ export type CarteFormation = {
   id: string; titre: string; description: string | null; categorie: string; niveau: string | null
   obligatoire: boolean; clinique: CliniqueContenu; publiee: boolean; statut_validation: string | null; validation_libelle?: string | null
   image: string | null; modules: number; assignations: number; duree: number | null; tags: string[]
-  copie: boolean; en: { id: string; titre: string; publiee: boolean; ecarts: number; fr_apres: boolean } | null
+  copie: boolean; demandes?: number; en: { id: string; titre: string; publiee: boolean; ecarts: number; fr_apres: boolean } | null
 }
 
 const NIVEAUX: Record<string, { bg: string; color: string; label: string }> = {
@@ -137,6 +137,9 @@ function Carte({ f }: { f: CarteFormation }) {
         ) : <span className="absolute inset-0 flex items-center justify-center text-4xl">📚</span>}
         <span className="absolute left-2 top-2"><BadgeClinique c={f.clinique} /></span>
         <span className={'absolute right-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-bold text-white ' + (f.publiee ? 'bg-green-600' : 'bg-gray-900/75')}>{f.publiee ? t('Publiée') : t('Brouillon')}</span>
+        {!!f.demandes && (
+          <span title={t('{n} demande(s) d’accès en attente', { n: f.demandes })} className="absolute bottom-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">🔔 {f.demandes}</span>
+        )}
         {val && (
           <span title={f.validation_libelle ?? undefined} className={'absolute bottom-2 right-2 max-w-[85%] truncate rounded-full px-2 py-0.5 text-[11px] font-bold ' + (val === 'approuvee' ? 'bg-green-100 text-green-800' : val === 'a_modifier' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800')}>
             {f.validation_libelle ?? (val === 'approuvee' ? t('Approuvée') : val === 'a_modifier' ? t('Modifications demandées') : t('En validation'))}

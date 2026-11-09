@@ -6,6 +6,7 @@ import { cookies } from "next/headers"
 import LienVue from "./LienVue"
 import VueCartes, { type CarteFormation } from "./VueCartes"
 import { concordances } from "@/lib/concordance-langues"
+import { demandesEnAttente } from "@/lib/formations-libres"
 import SectionRepliable from "@/components/SectionRepliable"
 import ToutReplier from "@/components/politiques/ToutReplier"
 import { couleurCategorie } from "@/lib/politiques-categories"
@@ -100,6 +101,11 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
       : v.statut === "a_modifier" ? (v.nom ? t("Modifications demandées par {nom}", { nom: v.nom }) : t("Modifications demandées"))
         : (v.nom ? t("En validation · {nom}", { nom: v.nom }) : t("En validation"))
 
+  // Demandes d'accès en attente, par formation (version française et anglaise réunies)
+  const nbDemandes = new Map<string, number>()
+  for (const d of await demandesEnAttente(adminSupabase, acteur).catch(() => [])) nbDemandes.set(d.racine_id, (nbDemandes.get(d.racine_id) ?? 0) + 1)
+  const badgeDemandes = (id: string) => { const n = nbDemandes.get(id); return n ? <Link href={`/admin/formations/${id}?onglet=demandes`} title={t("{n} demande(s) d’accès en attente", { n })} style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#fff", background: "#ef4444", padding: "1px 8px", borderRadius: "999px", textDecoration: "none" }}>🔔 {n}</Link> : null }
+
   // Concordance FR / EN de chaque formation qui a une version anglaise (pastille ⚠ en cas d'écart)
   const conc = await concordances(adminSupabase, Array.from(anglaiseDe.entries()).map(([fr, en]) => ({ fr, en: en.id as string })))
 
@@ -129,7 +135,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
       id: f.id, titre: f.titre, description: f.description ?? null, categorie: String(f.categorie ?? "").trim(), niveau: f.niveau ?? null,
       obligatoire: !!f.obligatoire, clinique: estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX", publiee: !!f.publiee,
       statut_validation: validation(f)?.statut ?? null, validation_libelle: validation(f) ? libelleValidation(validation(f)!) : null, image: f.image_couverture ?? null, modules: nbModules(f.id), assignations: nbAssign(f.id),
-      duree: f.duree_estimee_minutes ?? null, tags: Array.isArray(f.tags) ? f.tags.map(String) : [], copie: avecCopie.has(f.id),
+      duree: f.duree_estimee_minutes ?? null, tags: Array.isArray(f.tags) ? f.tags.map(String) : [], copie: avecCopie.has(f.id), demandes: nbDemandes.get(f.id) ?? 0,
       en: en ? { id: en.id, titre: en.titre, publiee: !!en.publiee, ecarts: c?.ecarts.length ?? 0, fr_apres: !!c?.fr_modifiee_apres } : null,
     }
   })
@@ -150,7 +156,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
               const style = niveauStyles[f.niveau] ?? { bg: "#f3f4f6", color: "#6b7280", label: f.niveau }
               return (
                 <tr key={f.id} className="formations-row" style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link>{badgeEN(f)}{avecCopie.has(f.id) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}</td>
+                  <td style={{ padding: "14px 20px", fontWeight: "500", color: "#111827" }}><Link href={`/admin/formations/${f.id}`} style={{ color: "inherit", textDecoration: "none" }}>{f.titre}</Link>{badgeDemandes(f.id)}{badgeEN(f)}{avecCopie.has(f.id) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, color: "#6d28d9", background: "#ede9fe", padding: "1px 8px", borderRadius: "999px" }}>✏️ {t("Copie de travail en cours")}</span>}</td>
                   <td style={{ padding: "14px 16px" }}><BadgeCliniqueContenu c={estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX"} /></td>
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{
