@@ -37,7 +37,7 @@ export default async function LoginPage({
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/ws-formation.webp" alt="WS Formation" width={82} height={120} className="logo-connexion" style={{ height: '120px', width: 'auto' }} />
+              <img src="/logos/ws-formation-v2.webp" alt="WS Formation" width={117} height={120} className="logo-connexion" style={{ height: '120px', width: 'auto' }} />
             </div>
             <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: 800, color: '#1b1640', letterSpacing: '-0.01em' }}>{t('Connexion')}</h1>
             <p style={{ margin: 0, color: '#5b5675', fontSize: '16px' }}>{t('Accédez à votre espace de formation')}</p>
