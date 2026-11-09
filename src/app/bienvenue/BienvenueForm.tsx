@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '@/lib/i18n/client'
+import { CHAMP_CONNEXION } from '@/components/StylesConnexion'
 import type { Traducteur } from '@/lib/i18n/base'
 
 const MIN = 10
@@ -15,7 +16,7 @@ function regle(pwd: string, t: Traducteur): string | null {
   return null
 }
 
-const input: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', boxSizing: 'border-box' }
+const input: React.CSSProperties = CHAMP_CONNEXION
 const label: React.CSSProperties = { display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }
 
 export default function BienvenueForm() {
@@ -42,7 +43,7 @@ export default function BienvenueForm() {
     if (!etatInvitation.valide) return (
       <div style={{ textAlign: 'center' }}>
         <p style={{ color: '#dc2626', fontSize: '14px' }}>{t(etatInvitation.error ?? 'Lien invalide.')}</p>
-        <a href="/login" style={{ display: 'inline-block', marginTop: '8px', color: '#1e40af', fontSize: '14px', fontWeight: 600 }}>{t('Aller à la connexion →')}</a>
+        <a href="/login" style={{ display: 'inline-block', marginTop: '8px', color: '#6d4fd8', fontSize: '14px', fontWeight: 600 }}>{t('Aller à la connexion →')}</a>
       </div>
     )
   } else if (!tokenHash) {
@@ -103,18 +104,17 @@ export default function BienvenueForm() {
       {etatInvitation?.email && <p style={{ textAlign: 'center', fontSize: '13px', color: '#374151', margin: '0 0 14px' }}>{t('Votre identifiant : {email}', { email: etatInvitation.email })}</p>}
       <div style={{ marginBottom: '14px' }}>
         <label style={label}>{t('Nouveau mot de passe')}</label>
-        <input type="password" style={input} value={mdp} onChange={e => setMdp(e.target.value)} autoComplete="new-password" required />
+        <input type="password" className="champ-connexion" style={input} value={mdp} onChange={e => setMdp(e.target.value)} autoComplete="new-password" required />
         <p style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0' }}>{t('Au moins {n} caractères, avec une majuscule, une minuscule et un chiffre.', { n: MIN })}</p>
       </div>
       <div style={{ marginBottom: '16px' }}>
         <label style={label}>{t('Confirmer le mot de passe')}</label>
-        <input type="password" style={input} value={conf} onChange={e => setConf(e.target.value)} autoComplete="new-password" required />
+        <input type="password" className="champ-connexion" style={input} value={conf} onChange={e => setConf(e.target.value)} autoComplete="new-password" required />
       </div>
       {erreur && (
         <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>{erreur}</div>
       )}
-      <button type="submit" disabled={enCours}
-        style={{ width: '100%', padding: '12px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', opacity: enCours ? 0.6 : 1 }}>
+      <button type="submit" disabled={enCours} className="bouton-connexion" style={{ opacity: enCours ? 0.6 : 1 }}>
         {enCours ? t('Enregistrement…') : type === 'recovery' && !invitation ? t('Enregistrer mon mot de passe') : t('Activer mon compte')}
       </button>
     </form>
