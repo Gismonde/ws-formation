@@ -1,6 +1,8 @@
 import PrivacyBanner from './PrivacyBanner'
 import { i18n } from '@/lib/i18n/serveur'
 import { ChoixLangue } from '@/components/ChoixLangue'
+import ChampsConnexion from './ChampsConnexion'
+import Symbole from './Symbole'
 
 export default async function LoginPage({
   searchParams,
@@ -17,125 +19,53 @@ export default async function LoginPage({
   return (
     <>
       <PrivacyBanner />
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f0f4ff',
-      fontFamily: 'sans-serif'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 'clamp(24px, 6vw, 40px)',
-        borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}><ChoixLangue /></div>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/wssc.png" alt="WSSC" style={{ height: '40px' }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/cmc.png" alt="CMC" style={{ height: '40px' }} />
+      <style>{`
+        .fond-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;
+          background: radial-gradient(ellipse at 10% 15%, #efe4fb 0%, transparent 55%), radial-gradient(ellipse at 90% 10%, #d6e6fd 0%, transparent 50%), radial-gradient(ellipse at 85% 90%, #f9dcee 0%, transparent 55%), radial-gradient(ellipse at 5% 95%, #dde9fd 0%, transparent 50%), linear-gradient(135deg, #f1e8fc 0%, #ece7fb 50%, #f6e6f4 100%); }
+        .fond-connexion::before, .fond-connexion::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.7); pointer-events: none; }
+        .fond-connexion::before { width: 1100px; height: 1100px; left: -620px; top: -560px; box-shadow: inset 0 0 120px rgba(255,255,255,0.35); }
+        .fond-connexion::after { width: 1000px; height: 1000px; right: -560px; bottom: -600px; box-shadow: inset 0 0 120px rgba(255,255,255,0.35); }
+        .carte-connexion { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: clamp(26px, 6vw, 44px); border-radius: 28px; box-sizing: border-box;
+          background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 24px 60px rgba(91, 61, 160, 0.16); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+        .champ-connexion:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18); }
+        .bouton-connexion { width: 100%; padding: 15px; border: none; border-radius: 999px; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer;
+          background: linear-gradient(90deg, #7c6cf2 0%, #a77ce8 50%, #e07ac8 100%); box-shadow: 0 10px 24px rgba(124, 92, 230, 0.28); transition: transform .15s, box-shadow .15s; }
+        .bouton-connexion:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(124, 92, 230, 0.34); }
+        .lien-connexion { color: #6d4fd8; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .lien-connexion:hover { text-decoration: underline; }
+      `}</style>
+      <div className="fond-connexion">
+        <div className="carte-connexion">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}><ChoixLangue /></div>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}><Symbole /></div>
+            <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: 800, color: '#1b1640', letterSpacing: '-0.01em' }}>{t('Connexion')}</h1>
+            <p style={{ margin: 0, color: '#5b5675', fontSize: '16px' }}>{t('Accédez à votre espace de formation')}</p>
           </div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#1e40af' }}>WS Formation</h1>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{t('Plateforme de formations en ligne')}</p>
+
+          <form method="POST" action="/api/auth/login">
+            <ChampsConnexion />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+              <a href="/mot-de-passe-oublie" className="lien-connexion">{t('Mot de passe oublié ?')}</a>
+            </div>
+
+            {searchParams?.bienvenue && !errorMsg && (
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '10px 12px', borderRadius: '12px', marginBottom: '16px', fontSize: '14px' }}>
+                {t('Votre mot de passe est enregistré. Connectez-vous pour accéder à votre portail.')}
+              </div>
+            )}
+
+            {errorMsg && (
+              <div role="alert" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 12px', borderRadius: '12px', marginBottom: '16px', fontSize: '14px' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            <button type="submit" className="bouton-connexion">{t('Se connecter')}</button>
+          </form>
         </div>
-
-        <form method="POST" action="/api/auth/login">
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
-              {t('Courriel')}
-            </label>
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '16px',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-              placeholder={t('votre@courriel.com')}
-            />
-          </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151' }}>
-              {t('Mot de passe')}
-            </label>
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '16px',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-              placeholder="••••••••"
-            />
-          </div>
-
-          {searchParams?.bienvenue && !errorMsg && (
-            <div style={{
-              backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d',
-              padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px'
-            }}>
-              {t('Votre mot de passe est enregistré. Connectez-vous pour accéder à votre portail.')}
-            </div>
-          )}
-
-          {errorMsg && (
-            <div style={{
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              padding: '10px 12px',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              fontSize: '14px'
-            }}>
-              {errorMsg}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#1e40af',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {t('Se connecter')}
-          </button>
-          <p style={{ textAlign: 'center', margin: '16px 0 0' }}>
-            <a href="/mot-de-passe-oublie" style={{ color: '#1e40af', fontSize: '14px', fontWeight: 600 }}>{t('Mot de passe oublié ?')}</a>
-          </p>
-        </form>
       </div>
-    </div>
     </>
   )
 }
