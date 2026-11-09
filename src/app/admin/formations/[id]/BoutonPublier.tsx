@@ -5,8 +5,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { togglePublierFormation } from '@/lib/actions/formations'
 
-export default function BoutonPublier({ formationId, publiee, enAttente, approuvee = true, ecartsLangue = 0 }: {
-  formationId: string; publiee: boolean; enAttente: number; approuvee?: boolean
+export default function BoutonPublier({ formationId, publiee, enAttente, approuvee = true, motif, ecartsLangue = 0 }: {
+  formationId: string; publiee: boolean; enAttente: number; approuvee?: boolean; motif?: string
   /** Version anglaise : nombre d'écarts de structure avec la version française (avertissement, sans blocage) */
   ecartsLangue?: number
 }) {
@@ -27,13 +27,13 @@ export default function BoutonPublier({ formationId, publiee, enAttente, approuv
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button onClick={basculer} disabled={envoi || (!publiee && !approuvee)} title={!publiee && !approuvee ? t('Approbation requise avant publication') : undefined}
+      <button onClick={basculer} disabled={envoi || (!publiee && !approuvee)} title={!publiee && !approuvee ? (motif ?? t('Approbation requise avant publication')) : undefined}
         className={'text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 ' + (publiee ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-green-600 text-white hover:bg-green-700')}>
         {envoi ? '…' : publiee ? t('Repasser en brouillon') : confirmer ? t('Publier quand même') : t('Publier')}
       </button>
       {confirmer && enAttente > 0 && <p className="text-xs text-amber-700 max-w-xs text-right">{t('Il reste {n} bloc(s) « à ajouter » : les employés les verront tels quels.', { n: enAttente })}</p>}
       {confirmer && ecartsLangue > 0 && <p className="text-xs text-amber-700 max-w-xs text-right">⚠ {t('Cette version anglaise ne concorde pas avec la version française ({n} écart(s)) : voyez « Concordance FR/EN » ci-dessous.', { n: ecartsLangue })}</p>}
-      {!publiee && !approuvee && <p className="text-xs text-amber-700 max-w-xs text-right">{t('Approbation requise avant publication')}</p>}
+      {!publiee && !approuvee && <p className="text-xs text-amber-700 max-w-xs text-right">{motif ?? t('Approbation requise avant publication')}</p>}
       {!publiee && approuvee && !confirmer && <p className="text-xs text-gray-400 max-w-xs text-right">{t('Les employés à qui elle est assignée la verront dans « Mes formations ».')}</p>}
       {erreur && <p className="text-xs text-red-600">{erreur}</p>}
     </div>

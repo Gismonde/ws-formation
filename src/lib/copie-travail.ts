@@ -64,7 +64,7 @@ export async function appliquerCopieTravail(acteur: Acteur, copieId: string, not
   const { data: copie } = await sb.from('formations').select('*').eq('id', copieId).maybeSingle()
   if (!copie?.copie_de) return { ok: false, erreur: 'Copie de travail introuvable', statut: 404 }
   if (!peutGererContenu(acteur, copie.clinique)) return { ok: false, erreur: 'Formation hors de votre périmètre', statut: 403 }
-  if (!publicationPermise(acteur, copie as FormationValidation)) return { ok: false, erreur: 'La copie doit d’abord être approuvée par un validateur.' }
+  if (!publicationPermise(acteur, copie as FormationValidation)) return { ok: false, erreur: 'La publication est faite par un administrateur, après validation.', statut: 403 }
   { const refus = await refusModification(acteur, copie.copie_de as string); if (refus) return { ok: false, erreur: refus, statut: 403 } }
   const texte = note.trim().slice(0, 1000)
   if (!texte) return { ok: false, erreur: 'Décrivez ce qui a changé dans cette version.' }

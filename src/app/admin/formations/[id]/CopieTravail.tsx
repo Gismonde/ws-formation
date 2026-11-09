@@ -57,7 +57,7 @@ export function CarteCopieTravail({ formationId, copie }: { formationId: string;
 }
 
 /** Sur la copie de travail */
-export function BandeauCopie({ copieId, original, approuvee }: { copieId: string; original: { id: string; titre: string; version: number | null }; approuvee: boolean }) {
+export function BandeauCopie({ copieId, original, approuvee, motif }: { copieId: string; original: { id: string; titre: string; version: number | null }; approuvee: boolean; motif?: string }) {
   const { t } = useT()
   const router = useRouter()
   const [dialogue, setDialogue] = useState<null | 'appliquer' | 'abandonner'>(null)
@@ -88,13 +88,13 @@ export function BandeauCopie({ copieId, original, approuvee }: { copieId: string
         <div className="flex gap-2">
           <button type="button" onClick={() => { setDialogue('abandonner'); setErreur(null) }} className="text-sm font-semibold px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-400">{t('Abandonner la copie')}</button>
           <button type="button" onClick={() => { setDialogue('appliquer'); setErreur(null) }} disabled={!approuvee}
-            title={approuvee ? undefined : t('La copie doit d’abord être approuvée par un validateur')}
+            title={approuvee ? undefined : (motif ?? t('La copie doit d’abord être approuvée par un validateur'))}
             className="text-sm font-semibold px-4 py-2 rounded-lg bg-white text-violet-700 hover:bg-violet-50 disabled:opacity-50 disabled:cursor-not-allowed">
             {t('Appliquer à la formation publiée')}
           </button>
         </div>
       </div>
-      {!approuvee && <p className="text-xs text-violet-100 mt-3">{t('Étapes : 1. modifiez la copie · 2. envoyez-la en validation (panneau ci-dessous) · 3. une fois approuvée, appliquez-la.')}</p>}
+      {!approuvee && <p className="text-xs text-violet-100 mt-3">{motif ?? t('Étapes : 1. modifiez la copie · 2. envoyez-la en validation (panneau ci-dessous) · 3. une fois approuvée, appliquez-la.')}</p>}
 
       {dialogue && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-gray-900" onClick={() => !envoi && setDialogue(null)}>

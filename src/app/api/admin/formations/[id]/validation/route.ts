@@ -88,9 +88,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await journal(approuve ? `Formation approuvée par ${nomActeur}` + (commentaire ? ` : ${commentaire}` : '') : `Modifications demandées par ${nomActeur} : ${commentaire}`, { decision: approuve ? 'approuvee' : 'a_modifier' })
+    const { data: dem } = approuve && f.validation_demandee_par ? await sb.from('employes').select('role').eq('id', f.validation_demandee_par).maybeSingle() : { data: null }
+    const demandeurAdmin = dem?.role === 'super_admin' || dem?.role === 'admin'
     await courriel(f.validation_demandee_par, approuve ? `Formation approuvée : ${f.titre}` : `Modifications demandées : ${f.titre}`,
       approuve
-        ? [`${nomActeur} a approuvé la formation « ${f.titre} ». Vous pouvez maintenant la publier puis l’assigner.`, ...(commentaire ? [`Commentaire : ${commentaire}`] : [])]
+        ? [`${nomActeur} a approuvé la formation « ${f.titre} ».` + (demandeurAdmin ? ' Vous pouvez maintenant la publier puis l’assigner.' : ' La validation finale et la publication sont faites par un administrateur.'), ...(commentaire ? [`Commentaire : ${commentaire}`] : [])]
         : [`${nomActeur} demande des modifications sur la formation « ${f.titre} » :`, commentaire, 'Une fois les modifications faites, renvoyez-la en validation.'],
       'Ouvrir la formation')
     return NextResponse.json({ ok: true })

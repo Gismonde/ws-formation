@@ -161,7 +161,7 @@ export default async function TableauDeBord() {
                   <li key={f.id} className="py-2 flex justify-between gap-3">
                     <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}{f.copie_de ? ' — ' + t('copie de travail') : ''}</Link>
                     <span className={'text-xs whitespace-nowrap ' + (f.statut_validation === 'approuvee' ? 'text-green-700' : f.statut_validation === 'a_modifier' ? 'text-red-600' : 'text-amber-700')}>
-                      {f.statut_validation === 'approuvee' ? t('Approuvée — à publier') : f.statut_validation === 'a_modifier' ? t('Modifications demandées') : t('En attente')}
+                      {f.statut_validation === 'approuvee' ? (estAdmin ? t('Approuvée — à publier') : t('Validée — publication par un administrateur')) : f.statut_validation === 'a_modifier' ? t('Modifications demandées') : t('En attente')}
                     </span>
                   </li>
                 ))}

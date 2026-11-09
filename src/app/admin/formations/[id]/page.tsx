@@ -69,7 +69,9 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   // Concordance FR / EN, recalculée à chaque ouverture
   const paireLangues = langues.francaise ? { fr: langues.francaise.id, en: id } : langues.anglaise ? { fr: id, en: langues.anglaise.id } : null
   const concordance = paireLangues ? (await concordances(serviceClient(), [paireLangues])).get(paireLangues.fr) ?? null : null
-  const approuvee = !avecValidation || statut === 'approuvee' || estAdmin
+  // Publication réservée aux administrateurs (validation finale) ; un gestionnaire voit pourquoi le bouton est bloqué
+  const approuvee = !avecValidation || estAdmin
+  const motifBlocage = statut === 'approuvee' ? t('Validée — la publication finale est faite par un administrateur.') : estAdmin ? undefined : t('Envoyez la formation en validation ; un administrateur la publiera ensuite.')
   // Copie de travail : cette fiche est-elle une copie, ou la formation a-t-elle une copie en cours ?
   const copieDe = (formation as { copie_de?: string | null }).copie_de ?? null
   const { data: originalBrut } = copieDe ? await serviceClient().from('formations').select('id, titre, version, publiee_le').eq('id', copieDe).maybeSingle() : { data: null }
@@ -157,9 +159,9 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
             </div>
             {peutCreer && !copieDe && (
               <div className="flex items-start gap-2">
-                {peutGererCetteFormation && formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} />}
+                {peutGererCetteFormation && formation.publiee && suivi.publiee_le && <NouvelleVersion formationId={id} version={suivi.version ?? 1} approuvee={approuvee} motif={motifBlocage} />}
                 <DupliquerFormation formationId={id} titre={formation.titre} clinique={(formation.clinique ?? 'LES_DEUX') as 'CMC' | 'WSSC' | 'LES_DEUX'} cliniques={acteurCourant ? cliniquesContenuGerablesToutes(acteurCourant) : []} />
-                {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} ecartsLangue={langues.francaise && concordance ? concordance.ecarts.length : 0} />}
+                {peutGererCetteFormation && <BoutonPublier formationId={id} publiee={!!formation.publiee} enAttente={enAttente} approuvee={approuvee} motif={motifBlocage} ecartsLangue={langues.francaise && concordance ? concordance.ecarts.length : 0} />}
               </div>
             )}
           </div>
@@ -196,7 +198,7 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
           </div>
         </div>
 
-        {copieDe && original && peutGererCetteFormation && <BandeauCopie copieId={id} original={original} approuvee={approuvee} />}
+        {copieDe && original && peutGererCetteFormation && <BandeauCopie copieId={id} original={original} approuvee={approuvee} motif={motifBlocage} />}
         {!copieDe && formation.publiee && peutGererCetteFormation && 'copie_de' in formation && (
           <CarteCopieTravail formationId={id} copie={copie ? { id: copie.id, statut: copie.statut_validation ?? 'brouillon' } : null} />
         )}

@@ -2959,4 +2959,9 @@ export const EN: Record<string, string> = {
   'Modifications demandées par {nom}': 'Changes requested by {nom}',
   'En validation · {nom}': 'In review · {nom}',
   'Validées — prêtes à publier': 'Validated — ready to publish',
+  'Validée — la publication finale est faite par un administrateur.': 'Validated — final publication is done by an administrator.',
+  'Envoyez la formation en validation ; un administrateur la publiera ensuite.': 'Send the training for review; an administrator will then publish it.',
+  'Validée — publication par un administrateur': 'Validated — to be published by an administrator',
+  'La publication est faite par un administrateur, après validation.': 'Publication is done by an administrator, after review.',
+  'Envoyez la formation en validation ; un administrateur la publiera ensuite.': 'Send the training for review; an administrator will then publish it.',
 }

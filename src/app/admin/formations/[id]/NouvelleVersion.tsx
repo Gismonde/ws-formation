@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { publierNouvelleVersion } from '@/lib/actions/formations'
 
-export default function NouvelleVersion({ formationId, version, approuvee = true }: { formationId: string; version: number; approuvee?: boolean }) {
+export default function NouvelleVersion({ formationId, version, approuvee = true, motif }: { formationId: string; version: number; approuvee?: boolean; motif?: string }) {
   const { t } = useT()
   const router = useRouter()
   const [ouvert, setOuvert] = useState(false)
@@ -24,7 +24,7 @@ export default function NouvelleVersion({ formationId, version, approuvee = true
 
   return (
     <>
-      <button type="button" onClick={() => setOuvert(true)} disabled={!approuvee} title={approuvee ? undefined : t('Envoyez d’abord les modifications en validation')} className="text-sm font-semibold px-4 py-2 rounded-lg bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed">
+      <button type="button" onClick={() => setOuvert(true)} disabled={!approuvee} title={approuvee ? undefined : (motif ?? t('Envoyez d’abord les modifications en validation'))} className="text-sm font-semibold px-4 py-2 rounded-lg bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed">
         {t('Nouvelle version (v{n})', { n: version + 1 })}
       </button>
       {ouvert && (

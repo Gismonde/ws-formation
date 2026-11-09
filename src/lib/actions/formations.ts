@@ -67,7 +67,7 @@ export async function updateFormation(
     const { data: f } = await serviceClient().from('formations').select('*').eq('id', formationId).single()
     if (f?.copie_de) return { success: false, error: 'Une copie de travail ne se publie pas : appliquez-la à la formation publiée.' }
     if (f && !f.publiee && !publicationPermise(acteur, f as FormationValidation)) {
-      return { success: false, error: 'Cette formation doit être approuvée par un validateur avant d’être publiée.' }
+      return { success: false, error: 'La publication est faite par un administrateur, après validation.' }
     }
   }
   const { data, error } = await supabase.from('formations').update(payload).eq('id', formationId).select().single()
@@ -108,7 +108,7 @@ export async function publierNouvelleVersion(formationId: string, note: string):
   if (!f.publiee_le) return { success: false, error: 'Publiez d’abord la formation.' }
   const texte = note.trim().slice(0, 1000)
   if (!texte) return { success: false, error: 'Décrivez ce qui a changé dans cette version.' }
-  if (!publicationPermise(acteur, f as FormationValidation)) return { success: false, error: 'Cette nouvelle version doit être approuvée par un validateur avant d’être publiée.' }
+  if (!publicationPermise(acteur, f as FormationValidation)) return { success: false, error: 'La publication est faite par un administrateur, après validation.' }
   const version = (Number(f.version) || 1) + 1
   const maintenant = new Date().toISOString()
   const { error } = await sb.from('formations').update({ version, version_le: maintenant, publiee: true }).eq('id', formationId)
