@@ -25,12 +25,15 @@ export default function SecuritePage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [obligatoire, setObligatoire] = useState(false)
+  // Mot de passe temporaire défini par un administrateur : à remplacer avant d'utiliser le portail
+  const [mdpAChanger, setMdpAChanger] = useState(false)
   const supabase = createClient()
   const { t, loc } = useT()
 
   useEffect(() => {
     chargerFacteurs()
     setObligatoire(new URLSearchParams(window.location.search).get('obligatoire') === '1')
+    supabase.auth.getUser().then(({ data }) => setMdpAChanger(data.user?.app_metadata?.mdp_temporaire === true))
   }, [])
 
   async function chargerFacteurs() {
@@ -128,6 +131,13 @@ export default function SecuritePage() {
         </p>
       </div>
 
+      {mdpAChanger && (
+        <div role="alert" style={{ padding: '14px 16px', borderRadius: '10px', marginBottom: '16px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', fontSize: '14px' }}>
+          🔑 {t('Votre mot de passe a été défini par un administrateur. Choisissez votre propre mot de passe pour continuer.')}
+        </div>
+      )}
+      {mdpAChanger && <ChangePasswordForm temporaire={mdpAChanger} apresSucces={() => { setMdpAChanger(false); window.location.href = '/dashboard' }} />}
+
       {obligatoire && (
         <div style={{ padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', backgroundColor: mfaActive ? '#f0fdf4' : '#fffbeb', border: mfaActive ? '1px solid #bbf7d0' : '1px solid #fde68a', color: mfaActive ? '#166534' : '#92400e', fontSize: '14px' }}>
           {mfaActive ? (
@@ -224,7 +234,7 @@ export default function SecuritePage() {
         ))}
       </div>
 
-      <ChangePasswordForm />
+      {!mdpAChanger && <ChangePasswordForm />}
 
       {step === 'enroll' && qrCode && (
         <div style={{

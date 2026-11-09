@@ -33,8 +33,10 @@ export type ResultatInvitation = {
  */
 export async function inviterEmploye(sb: SupabaseClient, params: {
   email: string; prenom: string; nom: string; clinique: string | null; origine: string; nouveau: boolean
+  /** Ne pas envoyer de courriel : seulement générer le lien (l'administrateur le transmet lui-même) */
+  sansCourriel?: boolean
 }): Promise<ResultatInvitation> {
-  const { email, prenom, nom, clinique, origine, nouveau } = params
+  const { email, prenom, nom, clinique, origine, nouveau, sansCourriel } = params
   const { data, error } = await sb.auth.admin.generateLink(nouveau
     ? { type: 'invite', email, options: { data: { prenom, nom } } }
     : { type: 'recovery', email })
@@ -49,6 +51,7 @@ export async function inviterEmploye(sb: SupabaseClient, params: {
     ? `${origine}/bienvenue?invitation=${encodeURIComponent(permanent)}`
     : `${origine}/bienvenue?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=${type}`
 
+  if (sansCourriel) return { authUserId: data.user?.id ?? null, courrielEnvoye: false, lien }
   const cfg = nouveau ? await chargerNotifications(sb) : null
   const perso = nouveau ? composerNotification(cfg, 'compte_cree_admin', { a: email, origine, clinique, prenom, nom, lien }) : null
   if (nouveau && !perso) {

@@ -38,7 +38,8 @@ const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px',
 }
 
-export default function ChangePasswordForm() {
+/** temporaire : mot de passe défini par un administrateur, remplacé côté serveur (lève l'obligation). */
+export default function ChangePasswordForm({ temporaire = false, apresSucces }: { temporaire?: boolean; apresSucces?: () => void } = {}) {
   const supabase = createClient()
   const { t } = useT()
   const [actuel, setActuel] = useState('')
@@ -58,6 +59,15 @@ export default function ChangePasswordForm() {
 
     setEnCours(true)
     try {
+      if (temporaire) {
+        const r = await fetch('/api/profil/mot-de-passe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actuel, nouveau }) })
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) { setMessage({ type: 'error', text: t(d.error ?? 'Erreur') }); return }
+        setMessage({ type: 'success', text: t('Mot de passe modifié avec succès.') })
+        setActuel(''); setNouveau(''); setConfirmation('')
+        apresSucces?.()
+        return
+      }
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.email) {
         setMessage({ type: 'error', text: t('Session expirée. Veuillez vous reconnecter.') })
