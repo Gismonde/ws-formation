@@ -11,7 +11,7 @@ import { CLINIQUE_INFO, type CliniqueContenu } from '@/lib/cliniques'
 
 export type CarteFormation = {
   id: string; titre: string; description: string | null; categorie: string; niveau: string | null
-  obligatoire: boolean; clinique: CliniqueContenu; publiee: boolean; statut_validation: string | null
+  obligatoire: boolean; clinique: CliniqueContenu; publiee: boolean; statut_validation: string | null; validation_libelle?: string | null
   image: string | null; modules: number; assignations: number; duree: number | null; tags: string[]
   copie: boolean; en: { id: string; titre: string; publiee: boolean; ecarts: number; fr_apres: boolean } | null
 }
@@ -127,7 +127,7 @@ export default function VueCartes({ formations }: { formations: CarteFormation[]
 function Carte({ f }: { f: CarteFormation }) {
   const { t } = useT()
   const niv = f.niveau ? NIVEAUX[f.niveau] : null
-  const val = f.statut_validation && f.statut_validation !== 'brouillon' && !(f.publiee && f.statut_validation === 'approuvee') ? f.statut_validation : null
+  const val = f.statut_validation
   return (
     <div className={'flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm ' + (f.publiee ? 'border-gray-200' : 'border-dashed border-gray-300')}>
       <Link href={`/admin/formations/${f.id}`} className="relative block aspect-video" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
@@ -138,8 +138,8 @@ function Carte({ f }: { f: CarteFormation }) {
         <span className="absolute left-2 top-2"><BadgeClinique c={f.clinique} /></span>
         <span className={'absolute right-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-bold text-white ' + (f.publiee ? 'bg-green-600' : 'bg-gray-900/75')}>{f.publiee ? t('Publiée') : t('Brouillon')}</span>
         {val && (
-          <span className={'absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-[11px] font-bold ' + (val === 'approuvee' ? 'bg-green-100 text-green-800' : val === 'a_modifier' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800')}>
-            {val === 'approuvee' ? t('Approuvée') : val === 'a_modifier' ? t('Modifications demandées') : t('En validation')}
+          <span title={f.validation_libelle ?? undefined} className={'absolute bottom-2 right-2 max-w-[85%] truncate rounded-full px-2 py-0.5 text-[11px] font-bold ' + (val === 'approuvee' ? 'bg-green-100 text-green-800' : val === 'a_modifier' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800')}>
+            {f.validation_libelle ?? (val === 'approuvee' ? t('Approuvée') : val === 'a_modifier' ? t('Modifications demandées') : t('En validation'))}
           </span>
         )}
       </Link>

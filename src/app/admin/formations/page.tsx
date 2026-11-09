@@ -83,6 +83,23 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     .from("assignations")
     .select("id, formation_id")
 
+  // Validation : statut de la formation, ou de sa copie de travail, avec le nom du validateur
+  const copieDe = new Map((toutesAvecCopies ?? []).filter(f => f.copie_de).map(f => [f.copie_de as string, f]))
+  const idsValidateurs = Array.from(new Set((toutesAvecCopies ?? []).flatMap(f => [f.validee_par, f.validateur_id]).filter(Boolean))) as string[]
+  const { data: valids } = idsValidateurs.length ? await adminSupabase.from("employes").select("id, prenom, nom").in("id", idsValidateurs) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }
+  const nomEmploye = new Map((valids ?? []).map(e => [e.id as string, `${e.prenom ?? ""} ${e.nom ?? ""}`.trim()]))
+  const validation = (f: any): { statut: string; nom: string | null } | null => {
+    const c = copieDe.get(f.id)
+    const src = c && c.statut_validation && c.statut_validation !== "brouillon" ? c : f
+    const st = src.statut_validation as string | null
+    if (!st || st === "brouillon" || (src === f && f.publiee && st === "approuvee")) return null
+    return { statut: st, nom: nomEmploye.get((st === "approuvee" ? src.validee_par : src.validateur_id) as string) || null }
+  }
+  const libelleValidation = (v: { statut: string; nom: string | null }) =>
+    v.statut === "approuvee" ? (v.nom ? t("Validée par {nom}", { nom: v.nom }) : t("Approuvée"))
+      : v.statut === "a_modifier" ? (v.nom ? t("Modifications demandées par {nom}", { nom: v.nom }) : t("Modifications demandées"))
+        : (v.nom ? t("En validation · {nom}", { nom: v.nom }) : t("En validation"))
+
   // Concordance FR / EN de chaque formation qui a une version anglaise (pastille ⚠ en cas d'écart)
   const conc = await concordances(adminSupabase, Array.from(anglaiseDe.entries()).map(([fr, en]) => ({ fr, en: en.id as string })))
 
@@ -111,7 +128,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
     return {
       id: f.id, titre: f.titre, description: f.description ?? null, categorie: String(f.categorie ?? "").trim(), niveau: f.niveau ?? null,
       obligatoire: !!f.obligatoire, clinique: estCliniqueContenu(f.clinique) ? f.clinique : "LES_DEUX", publiee: !!f.publiee,
-      statut_validation: f.statut_validation ?? null, image: f.image_couverture ?? null, modules: nbModules(f.id), assignations: nbAssign(f.id),
+      statut_validation: validation(f)?.statut ?? null, validation_libelle: validation(f) ? libelleValidation(validation(f)!) : null, image: f.image_couverture ?? null, modules: nbModules(f.id), assignations: nbAssign(f.id),
       duree: f.duree_estimee_minutes ?? null, tags: Array.isArray(f.tags) ? f.tags.map(String) : [], copie: avecCopie.has(f.id),
       en: en ? { id: en.id, titre: en.titre, publiee: !!en.publiee, ecarts: c?.ecarts.length ?? 0, fr_apres: !!c?.fr_modifiee_apres } : null,
     }
@@ -163,7 +180,7 @@ export default async function AdminFormationsPage({ searchParams }: { searchPara
                       fontSize: "12px",
                       fontWeight: "600",
                     }}>{f.publiee ? t("Publié") : t("Brouillon")}</span>
-                    {f.statut_validation && f.statut_validation !== "brouillon" && !(f.publiee && f.statut_validation === "approuvee") ? <div style={{ fontSize: "11px", marginTop: "3px", color: f.statut_validation === "approuvee" ? "#166534" : f.statut_validation === "a_modifier" ? "#b91c1c" : "#92400e" }}>{f.statut_validation === "approuvee" ? t("Approuvée") : f.statut_validation === "a_modifier" ? t("Modifications demandées") : t("En validation")}</div> : null}
+                    {(() => { const v = validation(f); return v ? <div style={{ fontSize: "11px", marginTop: "3px", color: v.statut === "approuvee" ? "#166534" : v.statut === "a_modifier" ? "#b91c1c" : "#92400e" }}>{libelleValidation(v)}</div> : null })()}
                     {f.publiee && f.version ? <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px", whiteSpace: "nowrap" }}>v{f.version}{f.version_le ? " · " + new Date(f.version_le).toLocaleDateString(loc, { dateStyle: "medium" }) : ""}</div> : null}
                   </td>
                   <td style={{ padding: "14px 20px", textAlign: "right", whiteSpace: "nowrap" }}>

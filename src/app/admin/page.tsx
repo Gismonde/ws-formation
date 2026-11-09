@@ -36,7 +36,17 @@ export default async function TableauDeBord() {
     sb.from('formations').select('id, titre, validation_demandee_le, copie_de').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
     sb.from('formations').select('id, titre, statut_validation, publiee, copie_de').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']),
   ])
-  const demandes = (mesDemandes ?? []).filter(f => !(f.statut_validation === 'approuvee' && f.publiee))
+  // Administrateurs : toutes les formations validées (par un gestionnaire ou un autre admin) qui attendent la publication finale
+  const estAdmin = acteur.role === 'super_admin' || acteur.role === 'admin'
+  const { data: approuveesBrutes } = estAdmin
+    ? await sb.from('formations').select('id, titre, publiee, copie_de, validee_par, validation_le').eq('statut_validation', 'approuvee').in('clinique', cliniquesContenuVisibles(acteur)).order('validation_le', { ascending: false })
+    : { data: [] as { id: string; titre: string; publiee: boolean; copie_de: string | null; validee_par: string | null; validation_le: string | null }[] }
+  const approuvees = (approuveesBrutes ?? []).filter(f => !f.publiee || f.copie_de)
+  const idsVal = Array.from(new Set(approuvees.map(f => f.validee_par).filter(Boolean))) as string[]
+  const { data: valideurs } = idsVal.length ? await sb.from('employes').select('id, prenom, nom').in('id', idsVal) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }
+  const nomValideur = new Map((valideurs ?? []).map(e => [e.id as string, `${e.prenom ?? ''} ${e.nom ?? ''}`.trim()]))
+  // Les approbations sont déjà dans « Validées — prêtes à publier » pour les administrateurs
+  const demandes = (mesDemandes ?? []).filter(f => !(f.statut_validation === 'approuvee' && (f.publiee || estAdmin)))
 
   // Formations en retard
   const retards = conformite.flatMap(e => e.assignations.filter(a => a.en_retard).map(a => ({ e, a })))
@@ -106,6 +116,22 @@ export default async function TableauDeBord() {
                   <span className="block text-xs text-gray-500 truncate">{d.titre}{d.langue === 'en' ? ' · EN' : ''}</span>
                 </Link>
                 <span className="text-xs text-amber-700 whitespace-nowrap">{t('Depuis le {date}', { date: jour(d.demandee_le) })}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {approuvees.length > 0 && (
+        <section className={carte + ' mb-4 border-green-200'}>
+          <Titre titre={t('Validées — prêtes à publier')} href="/admin/formations" n={approuvees.length} />
+          <ul className="divide-y divide-gray-100 text-sm">
+            {approuvees.slice(0, MAX).map(f => (
+              <li key={f.id} className="py-2 flex justify-between gap-3">
+                <Link href={`/admin/formations/${f.id}`} className="font-medium text-gray-900 truncate hover:text-indigo-700">{f.titre}{f.copie_de ? ' — ' + t('copie de travail') : ''}</Link>
+                <span className="text-xs text-green-700 whitespace-nowrap">
+                  {nomValideur.get(f.validee_par ?? '') ? t('Validée par {nom}', { nom: nomValideur.get(f.validee_par ?? '')! }) : t('Approuvée')}{f.validation_le ? ' · ' + jour(f.validation_le) : ''}
+                </span>
               </li>
             ))}
           </ul>

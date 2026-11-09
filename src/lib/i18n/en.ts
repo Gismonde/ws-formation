@@ -2955,4 +2955,8 @@ export const EN: Record<string, string> = {
   'Seul un administrateur peut copier le lien de ce compte. Utilisez « Renvoyer l’invitation ».': 'Only an administrator can copy this account’s link. Use “Resend invitation”.',
   'Seul un administrateur peut définir le mot de passe de ce compte.': 'Only an administrator can set this account’s password.',
   'Seul un administrateur peut copier le lien de ce compte. Utilisez « Renvoyer l’invitation ».': 'Only an administrator can copy this account’s link. Use “Resend invitation”.',
+  'Validée par {nom}': 'Validated by {nom}',
+  'Modifications demandées par {nom}': 'Changes requested by {nom}',
+  'En validation · {nom}': 'In review · {nom}',
+  'Validées — prêtes à publier': 'Validated — ready to publish',
 }
