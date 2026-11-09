@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { mdpTemporaire, CHEMINS_MDP_TEMPORAIRE } from '@/lib/mot-de-passe'
 
-const CHEMINS_SANS_2FA = ['/mfa-verify', '/login', '/bienvenue', '/confidentialite']
+const CHEMINS_SANS_2FA = ['/mfa-verify', '/login', '/bienvenue', '/mot-de-passe-oublie', '/confidentialite']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })

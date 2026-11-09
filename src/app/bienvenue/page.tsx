@@ -5,8 +5,9 @@ import { ChoixLangue } from '@/components/ChoixLangue'
 
 export const metadata = { title: 'Bienvenue — WS Formation' }
 
-export default async function BienvenuePage() {
+export default async function BienvenuePage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const { t } = await i18n()
+  const reinit = (await searchParams).type === 'recovery'
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4ff', fontFamily: 'sans-serif', padding: '16px' }}>
       <div style={{ backgroundColor: 'white', padding: 'clamp(22px, 6vw, 36px)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '420px' }}>
@@ -18,8 +19,8 @@ export default async function BienvenuePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logos/cmc.png" alt="CMC" style={{ height: '40px' }} />
           </div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '22px', color: '#1e40af' }}>{t('Bienvenue sur WS Formation')}</h1>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{t('Choisissez votre mot de passe pour activer votre compte.')}</p>
+          <h1 style={{ margin: '0 0 4px', fontSize: '22px', color: '#1e40af' }}>{reinit ? t('Choisissez votre nouveau mot de passe') : t('Bienvenue sur WS Formation')}</h1>
+          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{reinit ? t('Il remplacera votre mot de passe actuel.') : t('Choisissez votre mot de passe pour activer votre compte.')}</p>
         </div>
         <Suspense fallback={null}>
           <BienvenueForm />

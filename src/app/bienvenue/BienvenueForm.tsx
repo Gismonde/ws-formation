@@ -74,7 +74,9 @@ export default function BienvenueForm() {
         { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
       const { error: errVerif } = await sb.auth.verifyOtp({ token_hash: tokenHash!, type })
       if (errVerif) {
-        setErreur(t('Ce lien a expiré ou a déjà été utilisé. Demandez à votre gestionnaire de vous renvoyer l’invitation.'))
+        setErreur(type === 'recovery'
+          ? t('Ce lien a expiré ou a déjà été utilisé. Faites une nouvelle demande avec « Mot de passe oublié ? » sur la page de connexion.')
+          : t('Ce lien a expiré ou a déjà été utilisé. Demandez à votre gestionnaire de vous renvoyer l’invitation.'))
         return
       }
       const { error: errMaj } = await sb.auth.updateUser({ password: mdp })
@@ -113,7 +115,7 @@ export default function BienvenueForm() {
       )}
       <button type="submit" disabled={enCours}
         style={{ width: '100%', padding: '12px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', opacity: enCours ? 0.6 : 1 }}>
-        {enCours ? t('Enregistrement…') : t('Activer mon compte')}
+        {enCours ? t('Enregistrement…') : type === 'recovery' && !invitation ? t('Enregistrer mon mot de passe') : t('Activer mon compte')}
       </button>
     </form>
   )

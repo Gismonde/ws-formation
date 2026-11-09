@@ -125,6 +125,9 @@ export default async function LoginPage({
           >
             {t('Se connecter')}
           </button>
+          <p style={{ textAlign: 'center', margin: '16px 0 0' }}>
+            <a href="/mot-de-passe-oublie" style={{ color: '#1e40af', fontSize: '14px', fontWeight: 600 }}>{t('Mot de passe oublié ?')}</a>
+          </p>
         </form>
       </div>
     </div>
