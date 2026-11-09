@@ -20,11 +20,9 @@ export default async function LoginPage({
     <>
       <PrivacyBanner />
       <style>{`
-        .fond-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;
-          background: radial-gradient(ellipse at 10% 15%, #efe4fb 0%, transparent 55%), radial-gradient(ellipse at 90% 10%, #d6e6fd 0%, transparent 50%), radial-gradient(ellipse at 85% 90%, #f9dcee 0%, transparent 55%), radial-gradient(ellipse at 5% 95%, #dde9fd 0%, transparent 50%), linear-gradient(135deg, #f1e8fc 0%, #ece7fb 50%, #f6e6f4 100%); }
-        .fond-connexion::before, .fond-connexion::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.7); pointer-events: none; }
-        .fond-connexion::before { width: 1100px; height: 1100px; left: -620px; top: -560px; box-shadow: inset 0 0 120px rgba(255,255,255,0.35); }
-        .fond-connexion::after { width: 1000px; height: 1000px; right: -560px; bottom: -600px; box-shadow: inset 0 0 120px rgba(255,255,255,0.35); }
+        .fond-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif;
+          background: #e9dcfa url('/fonds/connexion.webp') center / cover no-repeat; }
+        @media (max-width: 700px) { .fond-connexion { background-image: url('/fonds/connexion-mobile.webp'); } }
         .carte-connexion { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: clamp(26px, 6vw, 44px); border-radius: 28px; box-sizing: border-box;
           background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 24px 60px rgba(91, 61, 160, 0.16); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
         .champ-connexion:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18); }
