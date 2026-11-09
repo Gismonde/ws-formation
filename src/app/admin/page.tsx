@@ -33,8 +33,8 @@ export default async function TableauDeBord() {
 
   // Validation des formations : à valider par moi, et mes demandes qui attendent une action
   const [{ data: aValider }, { data: mesDemandes }] = await Promise.all([
-    sb.from('formations').select('id, titre, validation_demandee_le, copie_de').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
-    sb.from('formations').select('id, titre, statut_validation, publiee, copie_de').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']),
+    sb.from('formations').select('id, titre, validation_demandee_le, copie_de').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').in('clinique', cliniquesContenuVisibles(acteur)).order('validation_demandee_le'),
+    sb.from('formations').select('id, titre, statut_validation, publiee, copie_de').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']).in('clinique', cliniquesContenuVisibles(acteur)),
   ])
   // Administrateurs : toutes les formations validées (par un gestionnaire ou un autre admin) qui attendent la publication finale
   const estAdmin = acteur.role === 'super_admin' || acteur.role === 'admin'

@@ -1,8 +1,8 @@
 // Accès aux formations hors assignation (« Formations disponibles ») : libre ou sur demande. Côté serveur.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Acteur } from '@/lib/permissions'
-import { peutGererContenu } from '@/lib/permissions'
-import { responsableAdmissible } from '@/lib/cliniques'
+import { peutGererContenu, cliniquesContenuVisibles } from '@/lib/permissions'
+import { responsableAdmissible, cliniquesDe } from '@/lib/cliniques'
 import { chargerVersions, garderLaLangue, langueEmploye } from '@/lib/langues-formation'
 
 export type ModeAcces = 'aucun' | 'libre' | 'demande'
@@ -93,14 +93,19 @@ export async function demandesEnAttente(sb: SupabaseClient, a: Acteur | null): P
   const racines = Array.from(new Set(fIds.map(id => versions.racine(id))))
   const [{ data: fs }, { data: emps }] = await Promise.all([
     sb.from('formations').select('id, titre, clinique, responsable_id').in('id', Array.from(new Set([...fIds, ...racines]))),
-    sb.from('employes').select('id, prenom, nom').in('id', Array.from(new Set(data.map(d => d.employe_id as string)))),
+    sb.from('employes').select('id, prenom, nom, clinique').in('id', Array.from(new Set(data.map(d => d.employe_id as string)))),
   ])
   const parF = new Map((fs ?? []).map(f => [f.id as string, f]))
   const parE = new Map((emps ?? []).map(e => [e.id as string, `${e.prenom ?? ''} ${e.nom ?? ''}`.trim()]))
+  // Espace affiché (CMC ou WSSC) : seulement les formations de cet espace, demandées par ses employés
+  const visibles = cliniquesContenuVisibles(a) as string[]
+  const cliniqueEmp = new Map((emps ?? []).map(e => [e.id as string, e.clinique as string | null]))
+  const dansLEspace = (fr: { clinique?: unknown }, empId: string) =>
+    visibles.includes(String(fr.clinique ?? 'LES_DEUX')) && (!a.vue || cliniquesDe(cliniqueEmp.get(empId) ?? null).includes(a.vue))
   return data.flatMap(d => {
     const fid = d.formation_id as string
     const f = parF.get(fid); const racine = versions.racine(fid); const fr = parF.get(racine) ?? f
-    if (!f || !fr || !(peutTraiterDemandes(a, f) || peutTraiterDemandes(a, fr))) return []
+    if (!f || !fr || !(peutTraiterDemandes(a, f) || peutTraiterDemandes(a, fr)) || !dansLEspace(fr, d.employe_id as string)) return []
     return [{ id: d.id as string, formation_id: fid, racine_id: racine, titre: fr.titre as string, nom: parE.get(d.employe_id as string) || '—', demandee_le: d.demandee_le as string, langue: versions.langue(fid) }]
   })
 }

@@ -1,7 +1,7 @@
 // Formations à valider (celles dont je suis le validateur) et suivi de mes demandes de validation.
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getActeur, serviceClient, peutValiderFormations, peutCreerFormations } from '@/lib/permissions'
+import { getActeur, serviceClient, peutValiderFormations, peutCreerFormations, cliniquesContenuVisibles } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
 import { statutDe, type FormationValidation, type StatutValidation } from '@/lib/validation-formation'
 
@@ -14,8 +14,8 @@ export default async function AValiderPage() {
   const { t, loc } = await i18n()
   const sb = serviceClient()
   const [{ data: aValider }, { data: mesDemandes }] = await Promise.all([
-    sb.from('formations').select('*').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').order('validation_demandee_le'),
-    sb.from('formations').select('*').eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']).order('validation_demandee_le', { ascending: false }).limit(50),
+    sb.from('formations').select('*').eq('validateur_id', acteur.id).eq('statut_validation', 'en_validation').in('clinique', cliniquesContenuVisibles(acteur)).order('validation_demandee_le'),
+    sb.from('formations').select('*').in('clinique', cliniquesContenuVisibles(acteur)).eq('validation_demandee_par', acteur.id).in('statut_validation', ['en_validation', 'a_modifier', 'approuvee']).order('validation_demandee_le', { ascending: false }).limit(50),
   ])
   const formations = [...(aValider ?? []), ...(mesDemandes ?? [])] as FormationValidation[]
   const ids = Array.from(new Set(formations.flatMap(f => [f.validateur_id, f.validation_demandee_par]).filter(Boolean))) as string[]
