@@ -2982,4 +2982,9 @@ export const EN: Record<string, string> = {
   'Ce lien a déjà été utilisé : votre compte est activé. Connectez-vous avec votre courriel et votre mot de passe (ou « Mot de passe oublié ? » sur la page de connexion).': 'This link has already been used: your account is activated. Sign in with your email and password (or “Forgot your password?” on the sign-in page).',
   '{n} demande(s) d’accès en attente': '{n} pending access request(s)',
   '{n} formation(s) à valider': '{n} training(s) to review',
+  'Connexion': 'Sign in',
+  'Accédez à votre espace de formation': 'Access your training space',
+  'Adresse courriel': 'Email address',
+  'Afficher le mot de passe': 'Show password',
+  'Masquer le mot de passe': 'Hide password',
 }
