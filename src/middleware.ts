@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { mdpTemporaire, CHEMINS_MDP_TEMPORAIRE } from '@/lib/mot-de-passe'
 
 const CHEMINS_SANS_2FA = ['/mfa-verify', '/login', '/bienvenue', '/confidentialite']
 
@@ -38,6 +39,16 @@ export async function middleware(request: NextRequest) {
       supabaseResponse.cookies.getAll().forEach(c => redirection.cookies.set(c))
       return redirection
     }
+  }
+
+  // Mot de passe défini par un administrateur : l'employé doit d'abord le remplacer
+  if (user && mdpTemporaire(user) && !CHEMINS_MDP_TEMPORAIRE.some(c => request.nextUrl.pathname === c || request.nextUrl.pathname.startsWith(c + '/'))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard/securite'
+    url.search = '?mdp=1'
+    const redirection = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(c => redirection.cookies.set(c))
+    return redirection
   }
 
   return supabaseResponse
