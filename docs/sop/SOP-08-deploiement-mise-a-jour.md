@@ -42,7 +42,7 @@ Complète cette checklist **avant tout déploiement en production** :
 
 ### Étape 1 — Vérifier l'état actuel de la production
 
-1. Ouvre la plateforme en production : **https://education.wssurgical.com**
+1. Ouvre la plateforme en production : **https://educplateform.wssurgical.com**
 2. Connecte-toi et vérifie que tout fonctionne normalement
 3. Note la version actuelle si disponible (numéro de commit ou date du dernier déploiement)
 4. Va sur Vercel : **https://vercel.com/gismondes-projects/ws-formation/deployments**
@@ -100,7 +100,7 @@ git push origin main
 Dès que le déploiement est marqué "Ready" :
 
 1. **Test de connexion**
-   - Ouvre https://education.wssurgical.com/login
+   - Ouvre https://educplateform.wssurgical.com/login
    - Connecte-toi avec un compte de test
    - Vérifie que la session s'établit correctement
 
