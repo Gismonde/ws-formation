@@ -9,6 +9,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
+  // Mot de passe temporaire pas encore remplacé : pas d'accès
+  if (user?.app_metadata?.mdp_temporaire === true) return NextResponse.json({ error: 'Choisissez d’abord votre mot de passe (Mon compte › Sécurité).' }, { status: 403 })
   if (!user) return NextResponse.redirect(new URL('/login', _req.url))
   const { data: sop } = await sb.from('sop').select('id, fichier_url').eq('id', id).maybeSingle()
   if (!sop?.fichier_url) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })

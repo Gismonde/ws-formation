@@ -7,6 +7,7 @@ import { headers } from "next/headers"
 import EditEmployeForm from "./EditEmployeForm"
 import SuiviFormationsEmploye from "./SuiviFormationsEmploye"
 import RenvoyerInvitation from "./RenvoyerInvitation"
+import { peutTransmettreAcces } from "@/lib/mot-de-passe"
 import DeuxFacteurs from "./DeuxFacteurs"
 import { chargerPostes, parFamille } from "@/lib/postes"
 import ListePreuvesAdmin from "./ListePreuvesAdmin"
@@ -107,7 +108,7 @@ export default async function FicheEmployePage({ params, searchParams }: {
           afficherAutorisationCreation={acteur.role === "super_admin" || acteur.role === "admin"}
           postes={parFamille(await chargerPostes(serviceClient()))}
         />
-        {modifiable && employe.actif !== false && <RenvoyerInvitation employeId={id} email={employe.email} />}
+        {modifiable && employe.actif !== false && <RenvoyerInvitation employeId={id} email={employe.email} transmettre={peutTransmettreAcces(acteur.role, employe.role, modifiable)} />}
         {acteur.role === "super_admin" && <DeuxFacteurs employeId={id} nom={`${employe.prenom} ${employe.nom}`} />}
       </>
     )

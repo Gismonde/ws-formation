@@ -1,7 +1,7 @@
 // Mot de passe défini par un administrateur et lien d'invitation copié.
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
-import { regleMotDePasse, mdpTemporaire, CHEMINS_MDP_TEMPORAIRE } from '@/lib/mot-de-passe'
+import { regleMotDePasse, mdpTemporaire, CHEMINS_MDP_TEMPORAIRE, peutTransmettreAcces } from '@/lib/mot-de-passe'
 
 const lire = (p: string) => readFileSync(p, 'utf8')
 
@@ -38,5 +38,22 @@ describe('mot de passe défini par un administrateur', () => {
   it('« Copier le lien » génère le lien sans envoyer de courriel', () => {
     expect(lire('src/app/api/admin/renvoyer-invitation/route.ts')).toMatch(/sansCourriel: copier === true/)
     expect(lire('src/lib/invitations.ts')).toMatch(/if \(sansCourriel\) return/)
+  })
+
+  it('seuls les administrateurs transmettent un accès, et un admin de clinique jamais à un autre administrateur', () => {
+    expect(peutTransmettreAcces('super_admin', 'admin', true)).toBe(true)
+    expect(peutTransmettreAcces('admin', 'employe', true)).toBe(true)
+    expect(peutTransmettreAcces('admin', 'gestionnaire', true)).toBe(true)
+    expect(peutTransmettreAcces('admin', 'admin', true)).toBe(false)
+    expect(peutTransmettreAcces('admin', 'super_admin', true)).toBe(false)
+    expect(peutTransmettreAcces('gestionnaire', 'employe', true)).toBe(false)
+    expect(peutTransmettreAcces('super_admin', 'employe', false)).toBe(false)
+    expect(lire('src/app/api/admin/definir-mot-de-passe/route.ts')).toMatch(/peutTransmettreAcces\(acteur\.role, emp\.role, true\)/)
+    expect(lire('src/app/api/admin/renvoyer-invitation/route.ts')).toMatch(/copier === true && !peutTransmettreAcces/)
+  })
+  it('un mot de passe temporaire ne donne accès à aucune API tant qu’il n’est pas remplacé', () => {
+    expect(lire('src/lib/permissions.ts')).toMatch(/app_metadata\?\.mdp_temporaire === true\) return null/)
+    for (const f of ['src/app/api/upload-preuve/route.ts', 'src/app/api/sop/[id]/fichier/route.ts', 'src/app/api/import-pptx/route.ts']) expect(lire(f)).toMatch(/mdp_temporaire === true/)
+    expect(lire('src/app/api/auth/invitation/route.ts')).toMatch(/mdp_temporaire: false/)
   })
 })
