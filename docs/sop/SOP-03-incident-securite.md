@@ -56,7 +56,7 @@ Contacte ton gestionnaire **dans les 30 minutes** suivant la découverte de l'in
 
 Si tu as encore accès à ton compte :
 
-1. Va sur **[education.wssurgical.com](https://education.wssurgical.com)**
+1. Va sur **[educplateform.wssurgical.com](https://educplateform.wssurgical.com)**
 2. Connecte-toi à ton compte
 3. Clique sur ton nom → **"Mon profil"**
 4. Clique sur **"Changer mon mot de passe"**
@@ -72,7 +72,7 @@ Si tu n'as **plus accès** à ton compte, va directement à l'Étape 4.
 
 ### Étape 4 — Si tu ne peux plus te connecter
 
-1. Va sur la page de connexion : **[education.wssurgical.com/login](https://education.wssurgical.com/login)**
+1. Va sur la page de connexion : **[educplateform.wssurgical.com/login](https://educplateform.wssurgical.com/login)**
 2. Clique sur **"Mot de passe oublié"**
 3. Entre ton adresse courriel professionnelle
 4. Consulte ta boîte courriel — un lien de réinitialisation sera envoyé

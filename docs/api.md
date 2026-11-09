@@ -1,7 +1,7 @@
 # API Routes — WS Formation
 
 Mise a jour : 2026-05-30
-Base URL : `https://education.wssurgical.com`
+Base URL : `https://educplateform.wssurgical.com`
 
 ---
 
