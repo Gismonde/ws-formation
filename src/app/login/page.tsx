@@ -35,7 +35,12 @@ export default async function LoginPage({
       }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}><ChoixLangue /></div>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏥</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/wssc.png" alt="WSSC" style={{ height: '40px' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/cmc.png" alt="CMC" style={{ height: '40px' }} />
+          </div>
           <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#1e40af' }}>WS Formation</h1>
           <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{t('Plateforme de formations en ligne')}</p>
         </div>
