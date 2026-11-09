@@ -12,7 +12,7 @@ import { MenuAdmin, type GroupeMenu } from '@/components/MenuAdmin'
 import { DEUX_FACTEURS_ADMIN_OBLIGATOIRE } from '@/lib/securite'
 import { peutCreerFormulaires } from '@/lib/formulaires'
 import { formulairesRecus } from '@/lib/formulaires-serveur'
-import { serviceClient } from '@/lib/permissions'
+import { serviceClient, cliniquesContenuVisibles } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
 
 type Droit = 'suivi' | 'formations' | 'validation' | 'evenements'
@@ -92,7 +92,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const sbNotif = serviceClient()
   const [acces, { count: nbAValider }] = await Promise.all([
     demandesEnAttente(sbNotif, employe).catch(() => []),
-    sbNotif.from('formations').select('id', { count: 'exact', head: true }).eq('validateur_id', employe.id).eq('statut_validation', 'en_validation'),
+    sbNotif.from('formations').select('id', { count: 'exact', head: true }).eq('validateur_id', employe.id).eq('statut_validation', 'en_validation').in('clinique', cliniquesContenuVisibles(employe)),
   ])
   const nbAcces = acces.length, nbVal = nbAValider ?? 0
   const titreAcces = t('{n} demande(s) d’accès en attente', { n: nbAcces })
