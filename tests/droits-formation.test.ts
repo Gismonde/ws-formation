@@ -24,4 +24,10 @@ describe('publicationPermise', () => {
     expect(publicationPermise({ role: 'admin' }, brouillon)).toBe(true)
     expect(publicationPermise({ role: 'gestionnaire' }, brouillon)).toBe(false)
   })
+  it('gestionnaire : ne publie jamais, même une formation approuvée (validation finale par un administrateur)', () => {
+    const approuvee = { statut_validation: 'approuvee' } as never
+    expect(publicationPermise({ role: 'gestionnaire' }, approuvee)).toBe(false)
+    expect(publicationPermise({ role: 'super_admin' }, approuvee)).toBe(true)
+    expect(publicationPermise({ role: 'admin' }, approuvee)).toBe(true)
+  })
 })

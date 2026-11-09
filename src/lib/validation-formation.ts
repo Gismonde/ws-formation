@@ -1,7 +1,8 @@
 // Validation des formations avant publication.
 //   brouillon → (envoyer en validation) → en_validation → approuvee ou a_modifier
 //   Toute modification du contenu ou des réglages remet une formation approuvée en brouillon.
-//   Publication (initiale ou nouvelle version) et assignation : seulement une formation approuvée / publiée.
+//   Publication (initiale ou nouvelle version) : réservée aux administrateurs (validation finale).
+//   Un gestionnaire peut valider, mais ne publie jamais lui-même.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { serviceClient, peutValiderFormations, type Acteur } from '@/lib/permissions'
 import { cliniquesDe } from '@/lib/cliniques'
@@ -41,9 +42,10 @@ export function validationActive(f: object): boolean {
   return 'statut_validation' in f
 }
 
-/** Publication par cet acteur : les administrateurs publient sans validation ; les autres, une fois approuvée. */
+/** Publication par cet acteur : seuls les administrateurs publient (validation finale par la responsable de l'agrément).
+ *  Sans le circuit de validation (migration non exécutée), l'ancien comportement s'applique. */
 export function publicationPermise(a: { role: string } | null, f: FormationValidation): boolean {
-  return (!!a && (a.role === 'super_admin' || a.role === 'admin')) || peutEtrePubliee(f)
+  return (!!a && (a.role === 'super_admin' || a.role === 'admin')) || !validationActive(f)
 }
 
 /** Peut-on publier (première publication ou nouvelle version) ? */
