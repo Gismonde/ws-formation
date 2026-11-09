@@ -2,7 +2,6 @@ import PrivacyBanner from './PrivacyBanner'
 import { i18n } from '@/lib/i18n/serveur'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import ChampsConnexion from './ChampsConnexion'
-import Symbole from './Symbole'
 
 export default async function LoginPage({
   searchParams,
@@ -22,7 +21,7 @@ export default async function LoginPage({
       <style>{`
         .fond-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif;
           background: #e9dcfa url('/fonds/connexion.webp') center / cover no-repeat; }
-        @media (max-width: 700px) { .fond-connexion { background-image: url('/fonds/connexion-mobile.webp'); } }
+        @media (max-width: 700px) { .fond-connexion { background-image: url('/fonds/connexion-mobile.webp'); } .logo-connexion { height: 72px !important; } }
         .carte-connexion { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: clamp(26px, 6vw, 44px); border-radius: 28px; box-sizing: border-box;
           background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 24px 60px rgba(91, 61, 160, 0.16); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
         .champ-connexion:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18); }
@@ -36,7 +35,10 @@ export default async function LoginPage({
         <div className="carte-connexion">
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}><ChoixLangue /></div>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}><Symbole /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/ws-formation.webp" alt="WS Formation" width={82} height={120} className="logo-connexion" style={{ height: '120px', width: 'auto' }} />
+            </div>
             <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: 800, color: '#1b1640', letterSpacing: '-0.01em' }}>{t('Connexion')}</h1>
             <p style={{ margin: 0, color: '#5b5675', fontSize: '16px' }}>{t('Accédez à votre espace de formation')}</p>
           </div>
