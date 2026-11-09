@@ -15,7 +15,7 @@ export function mdpTemporaire(user: { app_metadata?: Record<string, unknown> | n
 }
 
 /** Pages accessibles tant que le mot de passe temporaire n'est pas remplacé. */
-export const CHEMINS_MDP_TEMPORAIRE = ['/dashboard/securite', '/login', '/bienvenue', '/confidentialite', '/mfa-verify']
+export const CHEMINS_MDP_TEMPORAIRE = ['/dashboard/securite', '/login', '/bienvenue', '/mot-de-passe-oublie', '/confidentialite', '/mfa-verify']
 
 /**
  * Qui peut transmettre lui-même un accès (copier le lien d'invitation, définir un mot de passe) ?

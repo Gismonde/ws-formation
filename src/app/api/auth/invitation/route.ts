@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const raison = !inv ? 'invalide' : inv.utilise_le ? 'utilise' : inv.annule_le ? 'remplace' : !emp || emp.actif === false ? 'inactif' : null
   const messages: Record<string, string> = {
     invalide: 'Lien invalide. Demandez à votre gestionnaire de vous renvoyer l’invitation.',
-    utilise: 'Ce lien a déjà été utilisé : votre compte est activé. Connectez-vous avec votre courriel et votre mot de passe (ou « Mot de passe oublié »).',
+    utilise: 'Ce lien a déjà été utilisé : votre compte est activé. Connectez-vous avec votre courriel et votre mot de passe (ou « Mot de passe oublié ? » sur la page de connexion).',
     remplace: 'Une invitation plus récente vous a été envoyée : utilisez le lien du dernier courriel reçu.',
     inactif: 'Ce compte n’est pas actif. Contactez votre gestionnaire.',
   }
