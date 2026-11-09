@@ -14,7 +14,8 @@ function genererMotDePasse(): string {
   return car.join('')
 }
 
-export default function RenvoyerInvitation({ employeId, email }: { employeId: string; email: string }) {
+/** transmettre : l'acteur peut copier le lien et définir un mot de passe (administrateurs seulement). */
+export default function RenvoyerInvitation({ employeId, email, transmettre = false }: { employeId: string; email: string; transmettre?: boolean }) {
   const { t } = useT()
   const confirmer = useConfirmer()
   const [etat, setEtat] = useState<'repos' | 'envoi' | 'ok' | 'lien' | 'erreur'>('repos')
@@ -68,12 +69,12 @@ export default function RenvoyerInvitation({ employeId, email }: { employeId: st
         <button type="button" onClick={() => demanderLien(false)} disabled={etat === 'envoi'} className={bouton}>
           {etat === 'envoi' ? t('Envoi…') : t('📧 Renvoyer l’invitation')}
         </button>
-        <button type="button" onClick={() => demanderLien(true)} disabled={etat === 'envoi'} className={bouton}>
+        {transmettre && <button type="button" onClick={() => demanderLien(true)} disabled={etat === 'envoi'} className={bouton}>
           {t('🔗 Copier le lien d’invitation')}
-        </button>
-        <button type="button" onClick={() => { setOuvert(!ouvert); setMdpEtat('repos') }} className={bouton} aria-expanded={ouvert}>
+        </button>}
+        {transmettre && <button type="button" onClick={() => { setOuvert(!ouvert); setMdpEtat('repos') }} className={bouton} aria-expanded={ouvert}>
           {t('🔑 Définir un mot de passe')}
-        </button>
+        </button>}
       </div>
       {etat === 'ok' && <p className="text-sm text-green-700 mt-3">{t('Courriel envoyé à')}{' '}{email}.</p>}
       {etat === 'erreur' && <p className="text-sm text-red-600 mt-3">{msg}</p>}
@@ -89,7 +90,7 @@ export default function RenvoyerInvitation({ employeId, email }: { employeId: st
           </div>
         </div>
       )}
-      {ouvert && (
+      {transmettre && ouvert && (
         <div className="mt-4 border-t border-gray-100 pt-4">
           {mdpEtat === 'ok' ? (
             <div className="text-sm">

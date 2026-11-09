@@ -4,6 +4,7 @@ import { getActeur, serviceClient, peutGererEmploye, ipEtAgent } from '@/lib/per
 import { aAccesAdmin } from '@/lib/cliniques'
 import { inviterEmploye } from '@/lib/invitations'
 import { origineDepuis } from '@/lib/courriels'
+import { peutTransmettreAcces } from '@/lib/mot-de-passe'
 
 /**
  * Renvoie un lien pour que l'employé (re)crée son mot de passe.
@@ -19,6 +20,8 @@ export async function POST(request: Request) {
   const { data: emp } = await sb.from('employes').select('*').eq('id', employeId).single()
   if (!emp || !peutGererEmploye(acteur, emp)) return NextResponse.json({ error: 'Employé introuvable' }, { status: 404 })
   if (emp.actif === false) return NextResponse.json({ error: 'Cet employé est archivé' }, { status: 400 })
+  // Copier le lien = pouvoir ouvrir le compte soi-même : réservé aux administrateurs
+  if (copier === true && !peutTransmettreAcces(acteur.role, emp.role, true)) return NextResponse.json({ error: 'Seul un administrateur peut copier le lien de ce compte. Utilisez « Renvoyer l’invitation ».' }, { status: 403 })
 
   const inv = await inviterEmploye(sb, {
     email: emp.email, prenom: emp.prenom, nom: emp.nom, clinique: emp.clinique,

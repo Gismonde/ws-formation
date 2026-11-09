@@ -2952,4 +2952,7 @@ export const EN: Record<string, string> = {
   'Lien copié. Transmettez-le à l’employé (Teams, texto…). Il est personnel : un nouveau lien remplace les précédents.': 'Link copied. Send it to the employee (Teams, text message…). It is personal: a new link replaces previous ones.',
   'Transmettez ce lien personnel à l’employé :': 'Send this personal link to the employee:',
   'Communiquez-le à l’employé de vive voix ou par un canal sécurisé ; il ne sera plus affiché.': 'Give it to the employee in person or through a secure channel; it will not be shown again.',
+  'Seul un administrateur peut copier le lien de ce compte. Utilisez « Renvoyer l’invitation ».': 'Only an administrator can copy this account’s link. Use “Resend invitation”.',
+  'Seul un administrateur peut définir le mot de passe de ce compte.': 'Only an administrator can set this account’s password.',
+  'Seul un administrateur peut copier le lien de ce compte. Utilisez « Renvoyer l’invitation ».': 'Only an administrator can copy this account’s link. Use “Resend invitation”.',
 }

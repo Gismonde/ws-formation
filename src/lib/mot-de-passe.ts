@@ -16,3 +16,18 @@ export function mdpTemporaire(user: { app_metadata?: Record<string, unknown> | n
 
 /** Pages accessibles tant que le mot de passe temporaire n'est pas remplacé. */
 export const CHEMINS_MDP_TEMPORAIRE = ['/dashboard/securite', '/login', '/bienvenue', '/confidentialite', '/mfa-verify']
+
+/**
+ * Qui peut transmettre lui-même un accès (copier le lien d'invitation, définir un mot de passe) ?
+ * Ces actions permettent d'ouvrir le compte de quelqu'un d'autre : réservées aux administrateurs.
+ * - administrateur global : tout employé qu'il peut gérer (sauf lui-même) ;
+ * - administrateur de clinique : employés et gestionnaires de son périmètre, pas les autres administrateurs ;
+ * - gestionnaires : jamais (ils peuvent seulement renvoyer l'invitation par courriel à l'employé).
+ * peutGerer = résultat de peutGererEmploye (périmètre, pas soi-même).
+ */
+export function peutTransmettreAcces(acteurRole: string | null | undefined, cibleRole: string | null | undefined, peutGerer: boolean): boolean {
+  if (!peutGerer) return false
+  if (acteurRole === 'super_admin') return true
+  if (acteurRole === 'admin') return cibleRole === 'employe' || cibleRole === 'gestionnaire'
+  return false
+}

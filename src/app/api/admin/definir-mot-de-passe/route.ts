@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { logAudit } from '@/lib/audit'
 import { getActeur, serviceClient, peutGererEmploye, ipEtAgent } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
-import { regleMotDePasse } from '@/lib/mot-de-passe'
+import { regleMotDePasse, peutTransmettreAcces } from '@/lib/mot-de-passe'
 
 export async function POST(request: Request) {
   const acteur = await getActeur()
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   const sb = serviceClient()
   const { data: emp } = await sb.from('employes').select('*').eq('id', String(c.employeId ?? '')).maybeSingle()
   if (!emp || !peutGererEmploye(acteur, emp)) return NextResponse.json({ error: 'Employé introuvable' }, { status: 404 })
+  if (emp.id !== acteur.id && !peutTransmettreAcces(acteur.role, emp.role, true)) return NextResponse.json({ error: 'Seul un administrateur peut définir le mot de passe de ce compte.' }, { status: 403 })
   if (emp.id === acteur.id) return NextResponse.json({ error: 'Changez votre propre mot de passe depuis Mon compte › Sécurité.' }, { status: 400 })
   if (emp.actif === false) return NextResponse.json({ error: 'Cet employé est archivé' }, { status: 400 })
   if (!emp.auth_user_id) return NextResponse.json({ error: 'Cet employé n’a pas de compte de connexion' }, { status: 400 })

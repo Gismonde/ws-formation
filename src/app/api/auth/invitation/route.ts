@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   const mdp = String(c.motDePasse ?? '')
   const r = regle(mdp)
   if (r) return NextResponse.json({ error: r }, { status: 400 })
-  const { error } = await sb.auth.admin.updateUserById(inv!.auth_user_id, { password: mdp, email_confirm: true })
+  const { error } = await sb.auth.admin.updateUserById(inv!.auth_user_id, { password: mdp, email_confirm: true, app_metadata: { mdp_temporaire: false } })
   if (error) return NextResponse.json({ error: /weak|pwned|leaked/i.test(error.message) ? 'Ce mot de passe est trop courant. Choisissez-en un autre.' : `Impossible d’enregistrer le mot de passe : ${error.message}` }, { status: 400 })
   // Consommé une seule fois (garde contre deux envois simultanés)
   await sb.from('invitations_employes').update({ utilise_le: new Date().toISOString() }).eq('id', inv!.id).is('utilise_le', null)

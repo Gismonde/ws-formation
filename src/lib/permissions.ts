@@ -78,6 +78,8 @@ async function lireActeur(): Promise<Acteur | null> {
   // Double authentification activée mais code pas encore saisi : pas d'accès
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return null
+  // Mot de passe défini par un administrateur et pas encore remplacé : aucun accès (ni pages ni API)
+  if (user.app_metadata?.mdp_temporaire === true) return null
 
   const { data, error } = await serviceClient()
     .from('employes')

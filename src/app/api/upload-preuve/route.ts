@@ -5,6 +5,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // Mot de passe temporaire pas encore remplacé : pas d'accès
+  if (user?.app_metadata?.mdp_temporaire === true) return NextResponse.json({ error: 'Choisissez d’abord votre mot de passe (Mon compte › Sécurité).' }, { status: 403 })
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   const serviceClient = createServiceClient(

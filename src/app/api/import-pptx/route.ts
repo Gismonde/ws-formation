@@ -73,6 +73,8 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    // Mot de passe temporaire pas encore remplacé : pas d'accès
+    if (user?.app_metadata?.mdp_temporaire === true) return NextResponse.json({ error: 'Choisissez d’abord votre mot de passe (Mon compte › Sécurité).' }, { status: 403 })
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     if (!await getCreateurFormations()) return NextResponse.json({ error: 'Non autorisé : création de formations non permise' }, { status: 403 })
 
