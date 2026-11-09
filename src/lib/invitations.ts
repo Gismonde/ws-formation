@@ -86,7 +86,7 @@ export async function inviterEmploye(sb: SupabaseClient, params: {
         ? 'Ce lien est personnel et expire rapidement. Si vous n’êtes pas à l’origine de cette demande, ignorez ce courriel : votre mot de passe actuel reste valide.'
         : 'Ce lien est personnel et expire rapidement. Si vous n’êtes pas à l’origine de cette demande, ignorez ce courriel.',
   })
-  const envoi = await envoyerCourriels([{ a: email, sujet: perso ? perso.sujet : nouveau ? 'Activez votre accès au portail de formation' : oubli ? 'Réinitialisation de votre mot de passe — WS Formation' : 'Votre lien d’accès au portail de formation', html, texte }])
+  const envoi = await envoyerCourriels([{ prioritaire: oubli === true, a: email, sujet: perso ? perso.sujet : nouveau ? 'Activez votre accès au portail de formation' : oubli ? 'Réinitialisation de votre mot de passe — WS Formation' : 'Votre lien d’accès au portail de formation', html, texte }])
   const courrielEnvoye = envoi.envoyes === 1
 
   return {

@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import BienvenueForm from './BienvenueForm'
 import { i18n } from '@/lib/i18n/serveur'
 import { ChoixLangue } from '@/components/ChoixLangue'
+import StylesConnexion, { EnteteConnexion } from '@/components/StylesConnexion'
 
 export const metadata = { title: 'Bienvenue — WS Formation' }
 
@@ -9,23 +10,18 @@ export default async function BienvenuePage({ searchParams }: { searchParams: Pr
   const { t } = await i18n()
   const reinit = (await searchParams).type === 'recovery'
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4ff', fontFamily: 'sans-serif', padding: '16px' }}>
-      <div style={{ backgroundColor: 'white', padding: 'clamp(22px, 6vw, 36px)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '420px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChoixLangue /></div>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/wssc.png" alt="WSSC" style={{ height: '40px' }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/cmc.png" alt="CMC" style={{ height: '40px' }} />
-          </div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '22px', color: '#1e40af' }}>{reinit ? t('Choisissez votre nouveau mot de passe') : t('Bienvenue sur WS Formation')}</h1>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>{reinit ? t('Il remplacera votre mot de passe actuel.') : t('Choisissez votre mot de passe pour activer votre compte.')}</p>
+    <>
+      <StylesConnexion />
+      <div className="fond-connexion">
+        <div className="carte-connexion">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}><ChoixLangue /></div>
+          <EnteteConnexion titre={reinit ? t('Choisissez votre nouveau mot de passe') : t('Bienvenue sur WS Formation')}
+            sousTitre={reinit ? t('Il remplacera votre mot de passe actuel.') : t('Choisissez votre mot de passe pour activer votre compte.')} />
+          <Suspense fallback={null}>
+            <BienvenueForm />
+          </Suspense>
         </div>
-        <Suspense fallback={null}>
-          <BienvenueForm />
-        </Suspense>
       </div>
-    </div>
+    </>
   )
 }

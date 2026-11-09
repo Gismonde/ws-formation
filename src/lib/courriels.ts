@@ -10,7 +10,8 @@
 import { rendreCourriel } from '@/lib/notifications-catalogue'
 import nodemailer from 'nodemailer'
 
-export type Courriel = { a: string; sujet: string; html: string; texte: string }
+/** prioritaire : marqué « haute importance » (ex. réinitialisation du mot de passe) */
+export type Courriel = { a: string; sujet: string; html: string; texte: string; prioritaire?: boolean }
 type Resultat = { envoyes: number; erreur?: string }
 
 function fournisseur(): 'smtp' | 'mailgun' | 'resend' | null {
@@ -46,7 +47,7 @@ async function envoyerSmtp(courriels: Courriel[]): Promise<Resultat> {
     for (let i = 0; i < courriels.length; i += 5) {
       await Promise.all(courriels.slice(i, i + 5).map(async c => {
         try {
-          await transport.sendMail({ from: process.env.COURRIEL_EXPEDITEUR, to: c.a, subject: c.sujet, html: c.html, text: c.texte })
+          await transport.sendMail({ from: process.env.COURRIEL_EXPEDITEUR, to: c.a, subject: c.sujet, html: c.html, text: c.texte, ...(c.prioritaire ? { priority: 'high' as const } : {}) })
           envoyes++
         } catch (e: any) {
           console.error('[Courriels] SMTP a refusé l’envoi', e?.responseCode, e?.message)
@@ -72,6 +73,7 @@ async function envoyerMailgun(courriels: Courriel[]): Promise<Resultat> {
   for (let i = 0; i < courriels.length; i += 5) {
     await Promise.all(courriels.slice(i, i + 5).map(async c => {
       const corps = new URLSearchParams({ from: process.env.COURRIEL_EXPEDITEUR!, to: c.a, subject: c.sujet, html: c.html, text: c.texte })
+      if (c.prioritaire) { corps.set('h:X-Priority', '1'); corps.set('h:Importance', 'high') }
       try {
         const res = await fetch(`${hote}/v3/${encodeURIComponent(domaine)}/messages`, {
           method: 'POST', headers: { Authorization: auth, 'Content-Type': 'application/x-www-form-urlencoded' }, body: corps,
