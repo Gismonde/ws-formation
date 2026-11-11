@@ -6,7 +6,7 @@ import { useT } from '@/lib/i18n/client'
 import { ROLE_LABEL } from '@/lib/cliniques'
 import type { LigneImport, ErreurImport } from '@/lib/import-employes'
 
-type Resultat = { numero: number; email: string; ok: boolean; erreur?: string; employeId?: string; lien?: string | null; courrielEnvoye?: boolean }
+type Resultat = { numero: number; email: string; ok: boolean; erreur?: string; employeId?: string; lien?: string | null; courrielEnvoye?: boolean; invitationDifferee?: boolean }
 
 export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: boolean }) {
   const { t } = useT()
@@ -16,6 +16,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
   const [erreur, setErreur] = useState<string | null>(null)
   const [envoi, setEnvoi] = useState<null | 'apercu' | 'creer'>(null)
   const [resultats, setResultats] = useState<Resultat[] | null>(null)
+  const [envoyerInvitations, setEnvoyerInvitations] = useState(true)
 
   const libelleErreur = (e: ErreurImport) => ({
     prenom_manquant: t('Prénom manquant'),
@@ -46,6 +47,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
     setEnvoi(action); setErreur(null)
     const fd = new FormData()
     fd.append('fichier', fichier); fd.append('action', action)
+    if (!envoyerInvitations) fd.append('invitations', 'plus_tard')
     const r = await fetch('/api/admin/employes/importer', { method: 'POST', body: fd }).catch(() => null)
     const d = r ? await r.json().catch(() => ({})) : {}
     setEnvoi(null)
@@ -71,6 +73,7 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
     return (
       <div className={carte}>
         <p className="font-semibold text-green-800">{t('{n} employé(s) créé(s).', { n: ok.length })}</p>
+        {ok.some(r => r.invitationDifferee) && <p className="text-sm text-gray-600 mt-1">{t('Aucune invitation n’a été envoyée. Envoyez-les plus tard avec « Renvoyer l’invitation » sur la fiche de chaque employé.')}</p>}
         {resultats.some(r => !r.ok) && (
           <ul className="mt-3 text-sm text-red-700 list-disc pl-5">
             {resultats.filter(r => !r.ok).map(r => <li key={r.numero}>{t('Ligne {n}', { n: r.numero })} — {r.email} : {r.erreur}</li>)}
@@ -140,8 +143,12 @@ export default function ImportEmployes({ estGestionnaire }: { estGestionnaire: b
               </tbody>
             </table>
           </div>
-          <button type="button" disabled={valides.length === 0 || envoi !== null} onClick={() => envoyer('creer')} className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
-            {envoi === 'creer' ? t('Création en cours…') : t('Créer {n} employé(s) et envoyer les invitations', { n: valides.length })}
+          <label className="flex items-center gap-2 mt-4 text-sm text-gray-700">
+            <input type="checkbox" checked={envoyerInvitations} onChange={e => setEnvoyerInvitations(e.target.checked)} />
+            {t('Envoyer les invitations par courriel maintenant')}
+          </label>
+          <button type="button" disabled={valides.length === 0 || envoi !== null} onClick={() => envoyer('creer')} className="mt-3 text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white disabled:opacity-50">
+            {envoi === 'creer' ? t('Création en cours…') : envoyerInvitations ? t('Créer {n} employé(s) et envoyer les invitations', { n: valides.length }) : t('Créer {n} employé(s) sans envoyer d’invitation', { n: valides.length })}
           </button>
         </div>
       )}
