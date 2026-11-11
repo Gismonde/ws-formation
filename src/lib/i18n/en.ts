@@ -2987,4 +2987,8 @@ export const EN: Record<string, string> = {
   'Adresse courriel': 'Email address',
   'Afficher le mot de passe': 'Show password',
   'Masquer le mot de passe': 'Hide password',
+  'Aucune invitation n’a été envoyée. Envoyez-les plus tard avec « Renvoyer l’invitation » sur la fiche de chaque employé.': 'No invitations were sent. Send them later with “Resend invitation” on each employee’s record.',
+  'Envoyer les invitations par courriel maintenant': 'Send the email invitations now',
+  'Créer {n} employé(s) sans envoyer d’invitation': 'Create {n} employee(s) without sending invitations',
+  'Aucune invitation n’a été envoyée. Envoyez-les plus tard avec « Renvoyer l’invitation » sur la fiche de chaque employé.': 'No invitations were sent. Send them later with “Resend invitation” on each employee’s record.',
 }

@@ -52,6 +52,8 @@ export async function POST(req: Request) {
   const form = await req.formData().catch(() => null)
   const fichier = form?.get('fichier')
   const action = form?.get('action') === 'creer' ? 'creer' : 'apercu'
+  // Invitations : envoyées tout de suite (par défaut) ou plus tard depuis la fiche de chaque employé
+  const envoyerInvitations = form?.get('invitations') !== 'plus_tard'
   if (!(fichier instanceof File) || !/\.(xlsx|csv|txt)$/i.test(fichier.name)) {
     return NextResponse.json({ error: 'format' }, { status: 400 })
   }
@@ -82,13 +84,13 @@ export async function POST(req: Request) {
 
   // Création : uniquement les lignes valides, une à une
   const origine = origineDepuis(req)
-  const resultats: { numero: number; email: string; ok: boolean; erreur?: string; employeId?: string; lien?: string | null; courrielEnvoye?: boolean }[] = []
+  const resultats: { numero: number; email: string; ok: boolean; erreur?: string; employeId?: string; lien?: string | null; courrielEnvoye?: boolean; invitationDifferee?: boolean }[] = []
   for (const l of lignes as LigneImport[]) {
     if (l.erreurs.length) continue
     const attribution = await validerAttribution(acteur, { role: l.role, clinique: l.clinique, departement_id: l.departement_id }, sb)
     if ('erreur' in attribution) { resultats.push({ numero: l.numero, email: l.email, ok: false, erreur: attribution.erreur }); continue }
     const { role, clinique, departement_id } = attribution.valeurs
-    const inv = await inviterEmploye(sb, { email: l.email, prenom: l.prenom, nom: l.nom, clinique, origine, nouveau: true })
+    const inv = await inviterEmploye(sb, { email: l.email, prenom: l.prenom, nom: l.nom, clinique, origine, nouveau: true, sansCourriel: !envoyerInvitations })
     if (!inv.authUserId) {
       resultats.push({ numero: l.numero, email: l.email, ok: false, erreur: /already|registered|exists/i.test(inv.erreur ?? '') ? 'Un compte existe déjà avec ce courriel.' : (inv.erreur ?? 'Création du compte impossible') })
       continue
@@ -106,10 +108,10 @@ export async function POST(req: Request) {
     await logAudit({
       acteur_id: acteur.id, type_action: 'EMPLOYE_CREE', cible_employe_id: emp.id,
       description: `Nouvel employé importé (${fichier.name}) : ${l.prenom} ${l.nom} (${l.email}) — ${ROLE_LABEL[role]}${clinique ? ', ' + clinique : ''}`,
-      metadata: { role, clinique, departement_id, invitation_envoyee: inv.courrielEnvoye, import: fichier.name },
+      metadata: { role, clinique, departement_id, invitation_envoyee: inv.courrielEnvoye, invitation_differee: !envoyerInvitations, import: fichier.name },
       ...ipEtAgent(req),
     })
-    resultats.push({ numero: l.numero, email: l.email, ok: true, employeId: emp.id, lien: inv.courrielEnvoye ? null : inv.lien, courrielEnvoye: inv.courrielEnvoye })
+    resultats.push({ numero: l.numero, email: l.email, ok: true, employeId: emp.id, lien: inv.courrielEnvoye || !envoyerInvitations ? null : inv.lien, courrielEnvoye: inv.courrielEnvoye, invitationDifferee: !envoyerInvitations })
   }
   return NextResponse.json({ resultats, ignorees: lignes.filter(l => l.erreurs.length).length })
 }
