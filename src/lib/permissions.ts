@@ -142,7 +142,7 @@ export function peutCreerFormations(a: Acteur | null): boolean {
 const estAdmin = (a: { role: string }) => a.role === 'super_admin' || a.role === 'admin'
 
 /** Gestionnaire qui a le droit de suivre les employés de son département. */
-function gestionnaireSuivi(a: Acteur): boolean {
+export function gestionnaireSuivi(a: Acteur): boolean {
   return a.role === 'gestionnaire' && a.peut_suivre_employes === true
 }
 

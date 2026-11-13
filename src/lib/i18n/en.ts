@@ -3010,4 +3010,8 @@ export const EN: Record<string, string> = {
   'Journée programmée le {date} pour {n} employé(s). Rien n’est assigné ni envoyé avant ce jour : le matin même, les formations et les politiques seront assignées et le courriel envoyé.': 'Training day scheduled for {date} for {n} employee(s). Nothing is assigned or sent before that day: on the morning itself, the trainings and policies will be assigned and the email sent.',
   'Retirer de la liste (les assignations restent)': 'Remove from the list (assignments remain)',
   'Mot de passe choisi, pas encore connecté': 'Password set, not signed in yet',
+  'Désassigner « {formation} » de {employe} ? La formation disparaîtra de ses formations, sans courriel. Sa progression et ses certificats sont conservés : si vous la lui réassignez, il reprendra où il en était.': 'Unassign “{formation}” from {employe}? The training will disappear from their trainings, with no email. Their progress and certificates are kept: if you assign it again, they’ll pick up where they left off.',
+  'Désassigner': 'Unassign',
+  'Formation désassignée': 'Training unassigned',
+  'Désassigner « {formation} » de {employe} ? La formation disparaîtra de ses formations, sans courriel. Sa progression et ses certificats sont conservés : si vous la lui réassignez, il reprendra où il en était.': 'Unassign “{formation}” from {employe}? The training will disappear from their trainings, with no email. Their progress and certificates are kept: if you assign it again, they’ll pick up where they left off.',
 }

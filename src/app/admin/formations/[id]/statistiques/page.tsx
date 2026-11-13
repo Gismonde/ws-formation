@@ -6,6 +6,8 @@ import { statistiquesFormation } from '@/lib/statistiques-formation'
 import { LIBELLE_STATUT } from '@/lib/etat-formations'
 import { QUESTIONS_SONDAGE } from '@/lib/sondages'
 import { i18n } from '@/lib/i18n/serveur'
+import DesassignerFormation from '@/components/DesassignerFormation'
+import { gestionnaireSuivi } from '@/lib/permissions'
 
 // Statistiques d'une formation : avancement, entonnoir des leçons, questionnaire (questions difficiles), départements, satisfaction.
 export default async function StatistiquesFormationPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +20,8 @@ export default async function StatistiquesFormationPage({ params }: { params: Pr
   const { data: f } = await sb.from('formations').select('id, titre, clinique').eq('id', id).maybeSingle()
   if (!f || !peutVoirContenu(acteur, f.clinique)) notFound()
   const s = await statistiquesFormation(sb, acteur, id)
+  // Désassigner : administrateurs, gestionnaires qui suivent leurs employés (contrôle détaillé côté serveur)
+  const peutDesassigner = acteur.role === 'super_admin' || acteur.role === 'admin' || gestionnaireSuivi(acteur)
   const jour = (d: string | null) => (d ? new Date(d.length === 10 ? d + 'T12:00:00' : d).toLocaleDateString(loc, { dateStyle: 'medium' }) : '—')
 
   const Tuile = ({ v, l, c = 'text-gray-900', sous }: { v: string | number; l: string; c?: string; sous?: string }) => (
@@ -149,7 +153,7 @@ export default async function StatistiquesFormationPage({ params }: { params: Pr
               <table className="w-full text-sm">
                 <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-100">
                   <th className="py-2 pr-3">{t('Employé')}</th><th className="py-2 pr-3">{t('Département')}</th><th className="py-2 pr-3">{t('Statut')}</th>
-                  <th className="py-2 pr-3">{t('Progression')}</th><th className="py-2 pr-3">{t('Assignée le')}</th><th className="py-2">{t('Échéance')}</th>
+                  <th className="py-2 pr-3">{t('Progression')}</th><th className="py-2 pr-3">{t('Assignée le')}</th><th className="py-2 pr-3">{t('Échéance')}</th>{peutDesassigner && <th className="py-2" />}
                 </tr></thead>
                 <tbody>
                   {s.employes.map(e => (
@@ -159,7 +163,8 @@ export default async function StatistiquesFormationPage({ params }: { params: Pr
                       <td className="py-2 pr-3"><span className={'text-xs font-semibold px-2 py-0.5 rounded-full ' + COULEUR_STATUT[e.statut]}>{t(LIBELLE_STATUT[e.statut])}</span></td>
                       <td className="py-2 pr-3 text-gray-600">{e.progression} %</td>
                       <td className="py-2 pr-3 text-gray-600">{jour(e.date_assignation)}</td>
-                      <td className={'py-2 ' + (e.en_retard ? 'text-red-600 font-semibold' : 'text-gray-600')}>{jour(e.date_echeance)}{e.en_retard ? ' · ' + t('en retard') : ''}</td>
+                      <td className={'py-2 pr-3 ' + (e.en_retard ? 'text-red-600 font-semibold' : 'text-gray-600')}>{jour(e.date_echeance)}{e.en_retard ? ' · ' + t('en retard') : ''}</td>
+                      {peutDesassigner && <td className="py-2 text-right">{e.id !== acteur.id && <DesassignerFormation employeId={e.id} formationId={e.formation_id} nomEmploye={e.nom} titreFormation={f.titre} />}</td>}
                     </tr>
                   ))}
                 </tbody>

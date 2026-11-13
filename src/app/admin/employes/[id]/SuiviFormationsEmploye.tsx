@@ -4,6 +4,7 @@ import { chargerSuiviFormations, suiviDe } from '@/lib/suivi-formations'
 import { chargerEtatQuestionnaire, EtatQuestionnaire } from '@/lib/questionnaire-serveur'
 import { getActeur, peutGererEmploye } from '@/lib/permissions'
 import ReinitialiserTentatives from './ReinitialiserTentatives'
+import DesassignerFormation from '@/components/DesassignerFormation'
 
 const dateEn = (loc: string) => (iso: string | null) =>
   iso ? new Date(iso).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' }) : null
@@ -22,7 +23,7 @@ export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: Su
     formationIds.map(async fid => [fid, await chargerEtatQuestionnaire(sb, employeId, fid)] as const)))
   const [acteur, { data: cible }] = await Promise.all([
     getActeur(),
-    sb.from('employes').select('id, role, clinique, departement_id').eq('id', employeId).single(),
+    sb.from('employes').select('id, prenom, nom, role, clinique, departement_id').eq('id', employeId).single(),
   ])
   const peutGerer = !!acteur && !!cible && peutGererEmploye(acteur, cible)
 
@@ -72,6 +73,7 @@ export default async function SuiviFormationsEmploye({ sb, employeId }: { sb: Su
                       </>
                     )
                   })()}
+                  {peutGerer && <DesassignerFormation employeId={employeId} formationId={f.id} nomEmploye={[cible?.prenom, cible?.nom].filter(Boolean).join(' ')} titreFormation={f.titre} />}
                 </summary>
                 {s && (
                   <table className="w-full text-sm border-t border-gray-100">
