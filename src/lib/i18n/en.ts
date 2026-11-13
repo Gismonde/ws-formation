@@ -3014,4 +3014,7 @@ export const EN: Record<string, string> = {
   'Désassigner': 'Unassign',
   'Formation désassignée': 'Training unassigned',
   'Désassigner « {formation} » de {employe} ? La formation disparaîtra de ses formations, sans courriel. Sa progression et ses certificats sont conservés : si vous la lui réassignez, il reprendra où il en était.': 'Unassign “{formation}” from {employe}? The training will disappear from their trainings, with no email. Their progress and certificates are kept: if you assign it again, they’ll pick up where they left off.',
+  'Cette formation n’est assignée à aucun employé que vous suivez.': 'This training isn’t assigned to any employee you follow.',
+  'Employés assignés': 'Assigned employees',
+  'Désassigner retire la formation de ses formations, sans courriel. La progression et les certificats sont conservés.': 'Unassigning removes the training from the employee’s trainings, with no email. Progress and certificates are kept.',
 }

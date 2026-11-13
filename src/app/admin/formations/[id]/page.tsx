@@ -24,6 +24,8 @@ import { serviceClient } from '@/lib/permissions'
 import { historiqueFormation } from '@/lib/historique-formation'
 import { demandesDeFormation, peutTraiterDemandes } from '@/lib/formations-libres'
 import DemandesAcces from '@/components/formations/DemandesAcces'
+import AssignesFormation from './AssignesFormation'
+import { gestionnaireSuivi } from '@/lib/permissions'
 
 type ModuleAvecLecons = Module & { lecons: { id: string; titre: string; ordre: number; blocs: { id: string }[] }[] }
 
@@ -97,7 +99,15 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   const avecAcces = fa.acces_hors_assignation !== undefined
   const traiteDemandes = avecAcces && peutTraiterDemandes(acteurCourant, fa)
   const demandes = traiteDemandes ? await demandesDeFormation(serviceClient(), id) : []
-  const voirDemandes = traiteDemandes && onglet === 'demandes'
+  // Employés assignés : administrateurs et gestionnaires qui suivent leurs employés
+  const voitAssignes = !!acteurCourant && (acteurCourant.role === 'super_admin' || acteurCourant.role === 'admin' || gestionnaireSuivi(acteurCourant))
+  const voirAssignes = voitAssignes && onglet === 'assignes'
+  const voirDemandes = traiteDemandes && onglet === 'demandes' && !voirAssignes
+  // Nombre d'employés actifs assignés (administrateurs) ; pas de pastille si le compte est impossible
+  const compteAssignes = voitAssignes && acteurCourant && acteurCourant.role !== 'gestionnaire'
+    ? await serviceClient().from('assignations').select('id, employes!inner(actif)', { count: 'exact', head: true }).eq('formation_id', id).eq('employes.actif', true)
+    : null
+  const nbAssignes = compteAssignes && !compteAssignes.error ? compteAssignes.count ?? 0 : null
   const nbAttente = demandes.filter(d => d.statut === 'en_attente').length
 
   const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
@@ -294,15 +304,20 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
 
         {peutCreer && enAttente > 0 && <BrancherLibrairie formationId={id} enAttente={enAttente} />}
 
-        {traiteDemandes && (
+        {(traiteDemandes || voitAssignes) && (
           <div className="flex gap-1 border-b border-gray-200 mb-4" role="tablist">
-            <Link href={`/admin/formations/${id}`} role="tab" aria-selected={!voirDemandes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${!voirDemandes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>{t('Contenu')}</Link>
-            <Link href={`/admin/formations/${id}?onglet=demandes`} role="tab" aria-selected={voirDemandes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${voirDemandes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+            <Link href={`/admin/formations/${id}`} role="tab" aria-selected={!voirDemandes && !voirAssignes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${!voirDemandes && !voirAssignes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>{t('Contenu')}</Link>
+            {voitAssignes && (
+              <Link href={`/admin/formations/${id}?onglet=assignes`} role="tab" aria-selected={voirAssignes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${voirAssignes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+                👥 {t('Employés assignés')}{nbAssignes !== null && <span className="ml-1 text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-0.5">{nbAssignes}</span>}
+              </Link>
+            )}
+            {traiteDemandes && <Link href={`/admin/formations/${id}?onglet=demandes`} role="tab" aria-selected={voirDemandes} className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${voirDemandes ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
               📩 {t('Demandes d’accès')}{nbAttente > 0 && <span className="ml-1 text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">{nbAttente}</span>}
-            </Link>
+            </Link>}
           </div>
         )}
-        {voirDemandes ? <DemandesAcces formationId={id} demandes={demandes} mode={fa.acces_hors_assignation ?? 'aucun'} /> : (<>
+        {voirAssignes && acteurCourant ? <AssignesFormation acteur={acteurCourant} formationId={id} titre={formation.titre} /> : voirDemandes ? <DemandesAcces formationId={id} demandes={demandes} mode={fa.acces_hors_assignation ?? 'aucun'} /> : (<>
         {/* Structure du cours */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
