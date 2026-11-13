@@ -1,3 +1,4 @@
+import { FUSEAU } from '@/lib/fuseau'
 // Portail employé : Événements (formations en présentiel, 5 à 7 et activités, événements de la clinique).
 // Bannière « en vedette » (choisie par l'admin, sinon le prochain événement), filtres par type,
 // les deux prochaines semaines, cartes ; vues Cartes / Calendrier / Mes inscriptions.
@@ -44,8 +45,8 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
   // Bannière : l'événement mis en vedette par l'admin, sinon le prochain
   const vedette = aVenirTous.find(x => x.ev.en_vedette) ?? aVenirTous.find(x => x.prochaine) ?? aVenirTous[0] ?? null
 
-  const jourCourt = (d: string) => new Date(d).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })
-  const heure = (d: string) => new Date(d).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
+  const jourCourt = (d: string) => new Date(d).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: FUSEAU })
+  const heure = (d: string) => new Date(d).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU })
   const prochaineSeance = (x: X) => x.seances.filter(s => !s.annulee).sort((a, b) => a.debut.localeCompare(b.debut)).find(s => seanceOuverte(s)) ?? null
   const lien = (p: Record<string, string | undefined>) => '/dashboard/evenements?' + new URLSearchParams(Object.entries({ ...sp, ...p }).filter(([, v]) => v) as [string, string][]).toString()
 
@@ -89,7 +90,7 @@ export default async function MesEvenementsPage({ searchParams }: { searchParams
           <span aria-hidden className="drop-shadow-lg">{emojiEvenement(x.ev)}</span>
           <div className="absolute left-3.5 top-3.5 rounded-2xl bg-white px-3 py-1.5 text-center shadow-md">
             {d ? (<>
-              <small className="block text-[11px] font-extrabold uppercase tracking-wider text-red-600">{d.toLocaleDateString(loc, { month: 'short' }).replace('.', '')}</small>
+              <small className="block text-[11px] font-extrabold uppercase tracking-wider text-red-600">{d.toLocaleDateString(loc, { month: 'short', timeZone: FUSEAU }).replace('.', '')}</small>
               <b className="block text-2xl font-extrabold leading-tight">{d.getDate()}</b>
             </>) : (<>
               <small className="block text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">{t('Bientôt')}</small>

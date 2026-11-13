@@ -1,3 +1,4 @@
+import { FUSEAU } from '@/lib/fuseau'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -18,8 +19,8 @@ export default async function EvenementEmployePage({ params }: { params: Promise
   if (!x) notFound()
   const { ev, seances, mienne } = x
   const ma = mienne ? seances.find(s => s.id === mienne.seance_id) ?? null : null
-  const fmt = (d: string) => new Date(d).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const h = (d: string) => new Date(d).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
+  const fmt = (d: string) => new Date(d).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: FUSEAU })
+  const h = (d: string) => new Date(d).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU })
 
   return (
     <div style={{ maxWidth: '760px', margin: '0 auto', padding: '24px 16px' }}>
