@@ -22,6 +22,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
   { id: 'accueil', label: 'Tableau de bord', icon: 'dashboard', liens: [{ href: '/admin', label: 'Tableau de bord', icon: 'dashboard' }] },
   { id: 'employes', label: 'Employés', icon: 'people', liens: [
     { href: '/admin/employes', label: 'Employés', icon: 'people', droits: ['suivi'] },
+    { href: '/admin/employes/acces', label: 'Accès des employés', icon: 'how_to_reg', droits: ['suivi'] },
     { href: '/admin/departements', label: 'Départements', icon: 'apartment', adminOnly: true },
     { href: '/admin/postes', label: 'Postes', icon: 'badge', adminOnly: true },
     { href: '/admin/employes/suppressions', label: 'Suppressions', icon: 'delete_forever', superAdmin: true },
