@@ -29,6 +29,6 @@ export async function envoyerFormationsRetenues(sb: SupabaseClient, authUserId: 
     },
     lien: aFaire.length === 1 ? `${origine}/formations/${aFaire[0].formation_id}` : `${origine}/dashboard`,
   })
-  const r = c ? await envoyerCourriels([c as Courriel]) : { envoyes: 0 }
+  const r = c ? await envoyerCourriels([c as Courriel], { avantActivation: true }) : { envoyes: 0 }
   return r.envoyes
 }
