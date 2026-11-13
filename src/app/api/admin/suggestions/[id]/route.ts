@@ -1,7 +1,7 @@
 // Traitement d'une suggestion : statut et réponse visible par l'employé.
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { peutTraiterSuggestion, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
+import { peutTraiterSuggestion, peutAssignerA, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,9 +16,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   let nouvelAssigne: { prenom: string | null; email: string | null } | null = null
   if (b.assigne_a !== undefined) {
     if (b.assigne_a) {
-      // La personne assignée doit elle-même pouvoir traiter cette suggestion
+      // Administrateur global : n'importe quel administrateur actif ; administrateur de clinique : ceux qui peuvent la traiter
       const { data: p } = await sb.from('employes').select('id, prenom, email, role, clinique, actif').eq('id', b.assigne_a).maybeSingle()
-      if (!p || p.actif === false || !peutTraiterSuggestion(p, s as Suggestion)) return NextResponse.json({ error: 'Cette personne ne peut pas traiter cette suggestion' }, { status: 400 })
+      if (!p || !peutAssignerA(acteur, p, s as Suggestion)) return NextResponse.json({ error: 'Cette personne ne peut pas traiter cette suggestion' }, { status: 400 })
       if (p.id !== acteur.id && p.id !== s.assigne_a) nouvelAssigne = p
     }
     maj.assigne_a = b.assigne_a || null
