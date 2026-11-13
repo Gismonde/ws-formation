@@ -1,3 +1,4 @@
+import { journeeOuverte } from '@/lib/journees'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -41,8 +42,9 @@ export default async function AccueilPage() {
   const { contenu, disponible } = await chargerAccueil(sb, espace.actif, langue)
   const info = CLINIQUE_INFO[espace.actif]
   // Journées de formation en cours pour cet employé
-  const { data: journees } = await sb.from('journees_formation').select('id, nom, raison, date_journee, date_echeance')
-    .eq('modele', false).contains('employe_ids', [acteur.id]).order('cree_le', { ascending: false }).limit(3)
+  const { data: toutesJournees } = await sb.from('journees_formation').select('*')
+    .eq('modele', false).contains('employe_ids', [acteur.id]).order('cree_le', { ascending: false }).limit(20)
+  const journees = (toutesJournees ?? []).filter(journeeOuverte).slice(0, 3) as { id: string; nom: string; raison: string; date_journee: string | null; date_echeance: string | null }[]
   const { banniere, cartes, visite, infos } = contenu
   // Badges obtenus (aperçu) et avancement des parcours
   const { data: moi } = await sb.from('employes').select('id, clinique, role, departement_id, poste').eq('id', acteur.id).single()

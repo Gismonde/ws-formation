@@ -1,12 +1,13 @@
 // Journées de formation. POST : enregistre un modèle (modele: true) ou lance une journée pour des employés :
-// assigne les formations et les politiques, enregistre la journée et prévient chaque employé par un seul courriel.
+// enregistre la journée ; si elle est d'aujourd'hui ou sans date, l'ouvre tout de suite (assignations + un courriel par employé),
+// sinon elle s'ouvrira le matin du jour prévu (voir lib/journees-ouverture).
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent, cliniquesContenuVisibles } from '@/lib/permissions'
 import { peutPublierPolitiques } from '@/lib/politiques'
-import { employesDeLaCible, assignerFormations, assignerPolitiques } from '@/lib/assignations-groupees'
-import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
-import { comptesActives } from '@/lib/comptes-actives'
-import { lireJournee, peutGererJournees, contenuJournee, CHAMPS_JOURNEE } from '@/lib/journees'
+import { employesDeLaCible } from '@/lib/assignations-groupees'
+import { origineDepuis } from '@/lib/courriels'
+import { lireJournee, peutGererJournees, CHAMPS_JOURNEE, type Journee } from '@/lib/journees'
+import { estProgrammee, ouvrirJournee } from '@/lib/journees-ouverture'
 import { logAudit } from '@/lib/audit'
 
 const tableAbsente = (m: string) => /journees_formation/.test(m)
@@ -35,65 +36,33 @@ export async function POST(req: Request) {
   if (erreur) return NextResponse.json({ error: erreur }, { status: 403 })
   if (employes.length === 0) return NextResponse.json({ error: 'Aucun employé actif dans votre périmètre parmi ceux choisis.' }, { status: 400 })
 
-  // La journée est enregistrée d'abord (si la table manque, rien n'est assigné)
-  const { data: journee, error: errJ } = await sb.from('journees_formation')
-    .insert({ ...j, employe_ids: employes.map(e => e.id), cree_par: acteur.id }).select(CHAMPS_JOURNEE).single()
-  if (errJ) return NextResponse.json({ error: tableAbsente(errJ.message) ? 'Exécutez d’abord supabase/migrations/journees_formation.sql dans Supabase.' : errJ.message }, { status: 500 })
+  // Journée datée dans le futur : enregistrée seulement ; elle s'ouvre le matin du jour prévu (tâche quotidienne)
+  const programmee = estProgrammee(j.date_journee)
+  const notifier = corps.notifier !== false
+  const ligne = { ...j, employe_ids: employes.map(e => e.id), cree_par: acteur.id }
+  let res = await sb.from('journees_formation').insert({ ...ligne, ouverte_le: programmee ? null : new Date().toISOString(), notifier }).select('*').single()
+  let colonnes = true
+  if (res.error && /ouverte_le|notifier/.test(res.error.message)) {
+    // Migration journees_ouverture.sql pas encore exécutée : ouverture immédiate, comme avant
+    colonnes = false
+    res = await sb.from('journees_formation').insert(ligne).select('*').single()
+  }
+  if (res.error) return NextResponse.json({ error: tableAbsente(res.error.message) ? 'Exécutez d’abord supabase/migrations/journees_formation.sql dans Supabase.' : res.error.message }, { status: 500 })
+  const journee = res.data as Journee
+
+  if (programmee && colonnes) {
+    await logAudit({
+      acteur_id: acteur.id, type_action: 'PARAMETRE_MODIFIE',
+      description: `Journée de formation « ${j.nom} » programmée le ${j.date_journee} pour ${employes.length} employé(s) : rien n’est assigné ni envoyé avant ce jour`,
+      metadata: { journee_id: journee.id, employes: employes.map(e => e.id), date_journee: j.date_journee }, ...meta,
+    })
+    return NextResponse.json({ journee, employes: employes.length, programmee: true, formations: [], politiques: [], courriels: 0 })
+  }
 
   try {
-    const formations = j.formation_ids.length ? await assignerFormations(sb, acteur, j.formation_ids, employes, j.date_echeance) : null
-    const politiques = j.politique_ids.length ? await assignerPolitiques(sb, acteur, j.politique_ids, { type: 'employes', ids: employes.map(e => e.id) }, employes) : null
-    if (politiques?.migrationRequise) {
-      return NextResponse.json({ error: 'Exécutez d’abord supabase/migrations/politiques_employes.sql dans Supabase.' }, { status: 503 })
-    }
-
-    await logAudit({
-      acteur_id: acteur.id, type_action: 'FORMATION_ASSIGNEE',
-      description: `Journée de formation « ${j.nom} » lancée pour ${employes.length} employé(s) : ${j.formation_ids.length} formation(s), ${j.politique_ids.length} politique(s), ${j.librairie_ids.length} élément(s) à visionner`,
-      metadata: { journee_id: journee.id, raison: j.raison, employes: employes.map(e => e.id) }, ...meta,
-    })
-
-    // Un seul courriel par employé, qui présente toute la journée
-    let courriels = 0
-    if (corps.notifier !== false && courrielsActifs()) {
-      const origine = origineDepuis(req)
-      const c = await contenuJournee(sb, j)
-      const echeance = j.date_echeance ? new Date(j.date_echeance + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'long' }) : null
-      const jour = j.date_journee ? new Date(j.date_journee + 'T12:00:00').toLocaleDateString('fr-CA', { dateStyle: 'long' }) : null
-      const lignes = [
-        ...c.formations.map(f => `• Formation : ${f.titre}`),
-        ...c.politiques.map(p => `• Politique à lire et confirmer : ${p.titre}`),
-        ...c.librairie.map(l => `• À visionner : ${l.titre}`),
-      ]
-      // Compte pas encore activé : courriel retenu (ses formations lui sont envoyées à l'activation)
-      const { data: auths } = await sb.from('employes').select('id, auth_user_id').in('id', employes.map(e => e.id))
-      const authDe = new Map((auths ?? []).map(x => [x.id as string, x.auth_user_id as string | null]))
-      const actives = await comptesActives(sb, Array.from(authDe.values()))
-      const envoi = await envoyerCourriels(employes.filter(e => e.email && authDe.get(e.id) && actives.has(authDe.get(e.id)!)).map(e => {
-        const { html, texte } = gabarit({
-          origine, clinique: e.clinique,
-          titre: `Journée de formation — ${j.nom}`,
-          paragraphes: [
-            `Bonjour ${e.prenom ?? ''},`.replace(' ,', ','),
-            `Une journée de formation (${j.raison})${jour ? ` est prévue le ${jour}` : ' vous a été attribuée'}. Voici ce que vous aurez à compléter dans votre portail :`,
-            ...lignes,
-            ...(j.note ? [j.note] : []),
-            echeance ? `À compléter avant le ${echeance}.` : 'Vous pouvez commencer dès maintenant.',
-          ],
-          bouton: { libelle: 'Voir ma journée de formation', lien: `${origine}/dashboard/journees/${journee.id}` },
-        })
-        return { a: e.email!, sujet: `Journée de formation — ${j.nom}`, html, texte }
-      }))
-      courriels = envoi.envoyes
-    }
-
-    return NextResponse.json({
-      journee,
-      employes: employes.length,
-      formations: formations?.resultats ?? [],
-      politiques: politiques?.resultats ?? [],
-      courriels,
-    })
+    const r = await ouvrirJournee(sb, acteur, journee, origineDepuis(req), { notifier, meta })
+    if ('erreur' in r) return NextResponse.json({ error: r.erreur }, { status: r.statut })
+    return NextResponse.json({ journee, ...r })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Erreur serveur' }, { status: 500 })
   }

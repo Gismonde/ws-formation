@@ -3003,4 +3003,10 @@ export const EN: Record<string, string> = {
   'Dernière connexion : {date}': 'Last sign-in: {date}',
   'Qui a créé son accès au portail, qui a reçu le courriel d’activation sans l’avoir encore utilisé, et qui ne l’a jamais reçu. Employés actifs seulement. Pour envoyer ou renvoyer le courriel, ouvrez la fiche de l’employé : « Renvoyer l’invitation ».': 'Who has set up their portal access, who received the activation email but hasn’t used it yet, and who never received it. Active employees only. To send or resend the email, open the employee’s record: “Resend invitation”.',
   'Dernière connexion : {date}': 'Last sign-in: {date}',
+  'Journée programmée le {date} pour {n} employé(s). Rien n’est assigné ni envoyé avant ce jour : le matin même, les formations et les politiques seront assignées et le courriel envoyé.': 'Training day scheduled for {date} for {n} employee(s). Nothing is assigned or sent before that day: on the morning itself, the trainings and policies will be assigned and the email sent.',
+  'Prévue le {date}, sera ouverte le matin même': 'Scheduled for {date}, opens that morning',
+  'Ouverte le {date}': 'Opened on {date}',
+  'Annuler la journée (rien n’a encore été assigné ni envoyé)': 'Cancel the day (nothing has been assigned or sent yet)',
+  'Journée programmée le {date} pour {n} employé(s). Rien n’est assigné ni envoyé avant ce jour : le matin même, les formations et les politiques seront assignées et le courriel envoyé.': 'Training day scheduled for {date} for {n} employee(s). Nothing is assigned or sent before that day: on the morning itself, the trainings and policies will be assigned and the email sent.',
+  'Retirer de la liste (les assignations restent)': 'Remove from the list (assignments remain)',
 }

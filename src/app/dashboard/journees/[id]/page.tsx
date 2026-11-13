@@ -1,8 +1,9 @@
+import { journeeOuverte } from '@/lib/journees'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
-import { contenuJournee, CHAMPS_JOURNEE, type Journee } from '@/lib/journees'
+import { contenuJournee, type Journee } from '@/lib/journees'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import { i18n } from '@/lib/i18n/serveur'
 
@@ -13,9 +14,10 @@ export default async function MaJourneePage({ params }: { params: Promise<{ id: 
   if (!acteur) redirect('/login')
   const { t, loc } = await i18n()
   const sb = serviceClient()
-  const { data } = await sb.from('journees_formation').select(CHAMPS_JOURNEE).eq('id', id).eq('modele', false).maybeSingle()
+  const { data } = await sb.from('journees_formation').select('*').eq('id', id).eq('modele', false).maybeSingle()
   const j = data as Journee | null
-  if (!j || !j.employe_ids.includes(acteur.id)) notFound()
+  // Journée programmée : invisible pour l'employé avant son jour
+  if (!j || !j.employe_ids.includes(acteur.id) || !journeeOuverte(j)) notFound()
 
   const c = await contenuJournee(sb, j)
   const formations = c.formations.filter(f => f.publiee)

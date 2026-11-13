@@ -1,5 +1,6 @@
 // Prérequis bloquants : une formation ne s'ouvre que lorsque ses prérequis (formations.prerequis_ids)
 // sont terminés ou certifiés. Côté serveur uniquement.
+import { journeeOuverte } from '@/lib/journees'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { chargerEtatsFormations, estComplete, LIBELLE_STATUT, type StatutFormation } from '@/lib/etat-formations'
 
@@ -47,10 +48,10 @@ export async function prerequisManquants(sb: SupabaseClient, employeId: string, 
 
 /** Formations placées avant celle-ci dans les journées à ordre imposé lancées pour l'employé */
 export async function precedentesDansParcours(sb: SupabaseClient, employeId: string, formationId: string): Promise<string[]> {
-  const { data, error } = await sb.from('journees_formation').select('formation_ids')
+  const { data, error } = await sb.from('journees_formation').select('*')
     .eq('modele', false).eq('ordre_impose', true).contains('employe_ids', [employeId]).contains('formation_ids', [formationId])
   if (error) return [] // colonne pas encore créée : pas d'ordre imposé
-  return (data ?? []).flatMap(j => {
+  return (data ?? []).filter(journeeOuverte).flatMap(j => {
     const liste = (j.formation_ids ?? []) as string[]
     return liste.slice(0, liste.indexOf(formationId))
   })

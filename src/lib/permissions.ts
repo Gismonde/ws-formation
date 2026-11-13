@@ -92,13 +92,21 @@ async function lireActeur(): Promise<Acteur | null> {
     throw new Error('Base de données momentanément indisponible')
   }
 
-  if (!data || data.actif === false || !estRole(data.role)) return null
-  const clinique = estCliniqueEmploye(data.clinique) ? data.clinique : null
+  const base = acteurDepuisEmploye(data)
+  if (!base) return null
   let vue: Clinique | null = null
   try {
     const choix = (await cookies()).get(VUE_ADMIN_COOKIE)?.value
-    if (vuesAdminPossibles(clinique, data.role).includes(choix as Clinique)) vue = choix as Clinique
+    if (vuesAdminPossibles(base.clinique, base.role).includes(choix as Clinique)) vue = choix as Clinique
   } catch { /* hors requête (tâche planifiée) : pas de vue */ }
+  return { ...base, vue }
+}
+
+/** Acteur construit à partir de la fiche employé (sans vue de clinique). Sert aussi aux tâches planifiées. null si archivé ou rôle inconnu. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function acteurDepuisEmploye(data: any): Acteur | null {
+  if (!data || data.actif === false || !estRole(data.role)) return null
+  const clinique = estCliniqueEmploye(data.clinique) ? data.clinique : null
   return {
     id: data.id,
     auth_user_id: data.auth_user_id,
@@ -116,7 +124,7 @@ async function lireActeur(): Promise<Acteur | null> {
     peut_assigner_externes: data.peut_assigner_externes === true,
     peut_creer_formulaires: data.peut_creer_formulaires === true,
     peut_mise_en_page_evenements: data.peut_mise_en_page_evenements === true,
-    vue,
+    vue: null,
   }
 }
 

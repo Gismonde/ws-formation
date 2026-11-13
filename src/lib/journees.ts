@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Acteur } from '@/lib/permissions'
 import type { CliniqueContenu } from '@/lib/cliniques'
+import { FUSEAU } from '@/lib/fuseau'
 
 const CLINIQUES_CONTENU: CliniqueContenu[] = ['CMC', 'WSSC', 'LES_DEUX']
 
@@ -27,6 +28,10 @@ export type Journee = {
   badge_icone: string
   cree_par: string | null
   cree_le: string
+  /** Journée lancée : moment où le contenu a été assigné. null = programmée, en attente de son jour */
+  ouverte_le?: string | null
+  /** Prévenir les employés par courriel à l'ouverture */
+  notifier?: boolean
 }
 
 export const CHAMPS_JOURNEE = 'id, modele, nom, raison, clinique, formation_ids, politique_ids, librairie_ids, employe_ids, date_journee, date_echeance, note, ordre_impose, badge_icone, cree_par, cree_le'
@@ -40,7 +45,7 @@ const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
 /** Icônes proposées pour le badge de fin de parcours */
 export const BADGES_JOURNEE = ['🏅', '🎖️', '🏆', '⭐', '🩺', '💉', '🧼', '🛡️', '🤝', '🎓', '🚑', '❤️']
 
-export type DonneesJournee = Omit<Journee, 'id' | 'cree_par' | 'cree_le'>
+export type DonneesJournee = Omit<Journee, 'id' | 'cree_par' | 'cree_le' | 'ouverte_le' | 'notifier'>
 
 /** Valide le formulaire. Un modèle n'a pas d'employés ; une journée lancée en a au moins un. */
 export function lireJournee(b: Record<string, unknown>, cliniquesPermises: CliniqueContenu[]): { erreur: string } | { valeurs: DonneesJournee } {
@@ -114,4 +119,25 @@ export async function avancementJournees(sb: SupabaseClient, journees: Pick<Jour
     }))
   }
   return res
+}
+
+// --- Ouverture des journées programmées (voir lib/journees-ouverture) ---
+
+/** Date du jour à Montréal (AAAA-MM-JJ). */
+export const aujourdhui = (maintenant = new Date()) => maintenant.toLocaleDateString('en-CA', { timeZone: FUSEAU })
+
+/** La journée attend-elle son jour pour s'ouvrir ? */
+export const estProgrammee = (dateJournee: string | null | undefined, maintenant = new Date()) => !!dateJournee && dateJournee > aujourdhui(maintenant)
+
+/**
+ * Journée visible par l'employé ? Une journée lancée avant cette fonctionnalité (colonne ouverte_le absente
+ * ou non renseignée par la migration) reste visible.
+ */
+export const journeeOuverte = (j: { modele?: boolean; ouverte_le?: string | null }) => !j.modele && j.ouverte_le !== null
+
+/** Libellé de l'état d'une journée lancée, côté administration. */
+export function etatJournee(j: { date_journee: string | null; ouverte_le?: string | null }): { programmee: boolean; date: string | null } {
+  if (j.ouverte_le === null) return { programmee: true, date: j.date_journee }
+  // Date d'ouverture (jour à Montréal) ; journée lancée avant cette fonctionnalité : inconnue
+  return { programmee: false, date: j.ouverte_le ? aujourdhui(new Date(j.ouverte_le)) : null }
 }
