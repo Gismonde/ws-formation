@@ -16,6 +16,15 @@ export function ajouterAFile(a: Omit<ActionSuivi, 'le'>) {
 }
 export const horsLigne = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
+/** Action de suivi envoyée tout de suite par une route stable. null = réseau ou serveur injoignable. */
+export async function envoyerSuivi<T = string>(type: ActionSuivi['type'], id: string): Promise<{ ok: true; data?: T } | { ok: false; erreur: string; manquants?: string[] } | null> {
+  try {
+    const r = await fetch('/api/suivi/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, id }) })
+    if (r.status >= 500) return null
+    return await r.json()
+  } catch { return null }
+}
+
 /** Envoie la file ; garde ce qui n'a pas pu partir. */
 export async function viderFile(): Promise<number> {
   const l = lireFile()

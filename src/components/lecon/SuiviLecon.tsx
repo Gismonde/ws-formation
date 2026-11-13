@@ -7,8 +7,8 @@ import Link from 'next/link'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { enregistrerVideoVue, attesterLecture, terminerLecon, type EtatSuivi } from '@/lib/actions/suivi'
-import { ajouterAFile, horsLigne } from '@/lib/file-suivi'
+import type { EtatSuivi } from '@/lib/actions/suivi'
+import { ajouterAFile, horsLigne, envoyerSuivi, viderFile } from '@/lib/file-suivi'
 import { useT } from '@/lib/i18n/client'
 import LecteurVideo, { type ControleVideo } from '@/components/video/LecteurVideo'
 import BlocInteractif from '@/components/lecon/BlocInteractif'
@@ -31,7 +31,8 @@ export function FournisseurSuivi({ etat, suiviActif, children }: { etat: EtatSui
     if (!suiviActif) return
     // Hors ligne : gardé sur l'appareil et envoyé au retour du réseau
     if (horsLigne()) ajouterAFile({ type: 'video', id: blocId })
-    else enregistrerVideoVue(blocId).catch(() => ajouterAFile({ type: 'video', id: blocId }))
+    // Route stable : fonctionne même si la page a été ouverte avant une mise en ligne ; sinon gardé et renvoyé
+    else envoyerSuivi('video', blocId).then(r => { if (!r) { ajouterAFile({ type: 'video', id: blocId }); setTimeout(() => { viderFile() }, 5000) } })
   }, [suiviActif])
   return <ContexteSuivi.Provider value={{ videosVues, marquerVue, suiviActif }}>{children}</ContexteSuivi.Provider>
 }
@@ -231,17 +232,19 @@ export function FinDeLecon({ lessonId, attestationRequise, texteAttestation, vid
       setTermineeLe(new Date().toISOString()); setHorsLigneEnvoi(true); setEnCours(false)
     }
     if (horsLigne()) { enAttente(); return }
-    try {
+    // Vidéos ou exercices gardés en attente : envoyés d'abord (la leçon en dépend)
+    await viderFile()
     if (attestationRequise && !attestationLe) {
-      const r = await attesterLecture(lessonId)
+      const r = await envoyerSuivi('attestation', lessonId)
+      if (!r) { enAttente(); return }
       if (!r.ok) { setErreur(r.erreur); setEnCours(false); return }
       setAttestationLe(r.data ?? new Date().toISOString())
     }
-    const r = await terminerLecon(lessonId)
+    const r = await envoyerSuivi('terminer', lessonId)
+    if (!r) { enAttente(); return }
     setEnCours(false)
     if (r.ok) { setTermineeLe(r.data ?? new Date().toISOString()); if (ensuite) routeur.push(ensuite); else routeur.refresh() }
     else setErreur(r.manquants?.length ? t('Il reste : {liste}', { liste: r.manquants.join(' · ') }) : r.erreur)
-    } catch { enAttente() }
   }
 
   return (
