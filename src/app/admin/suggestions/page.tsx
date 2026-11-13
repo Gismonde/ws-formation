@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { estAdministrateur } from '@/lib/cliniques'
-import { peutTraiterSuggestion, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
+import { peutTraiterSuggestion, peutAssignerA, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
 import TraiterSuggestion from './TraiterSuggestion'
 import { i18n } from '@/lib/i18n/serveur'
 
@@ -74,7 +74,7 @@ export default async function SuggestionsAdminPage({ searchParams }: { searchPar
                     </p>
                     <TraiterSuggestion id={s.id} statut={s.statut} reponse={s.reponse} anonyme={s.anonyme} moi={acteur.id}
                       assigneA={colonneAssignation ? (s.assigne_a ?? null) : undefined}
-                      admins={admins.filter(a => peutTraiterSuggestion(a, s)).map(a => ({ id: a.id, nom: a.libelle }))} />
+                      admins={admins.filter(a => peutAssignerA(acteur, a, s)).map(a => ({ id: a.id, nom: a.libelle }))} />
                   </li>
                 )
               })}

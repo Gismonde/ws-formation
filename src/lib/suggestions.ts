@@ -51,9 +51,19 @@ export function lireSuggestion(b: Record<string, unknown>): { erreur: string } |
   return { valeurs: { type, formation_id, sujet: type === 'commentaire' ? null : sujet, message, anonyme: b.anonyme === true } }
 }
 
-/** Qui peut voir / traiter une suggestion : idées plateforme → administrateur global ; le reste → administrateurs de la clinique */
-export function peutTraiterSuggestion(a: Pick<Acteur, 'role' | 'clinique'>, s: Pick<Suggestion, 'type' | 'clinique'>): boolean {
+/** Qui peut voir / traiter une suggestion : idées plateforme → administrateur global ; le reste → administrateurs de la clinique.
+ *  Un administrateur à qui la suggestion est assignée la voit et la traite toujours, quel que soit son type ou sa clinique. */
+/** À qui l'acteur peut assigner la suggestion : l'administrateur global, à n'importe quel administrateur actif ;
+ *  un administrateur de clinique, à ceux qui peuvent déjà la traiter. */
+export function peutAssignerA(acteur: Pick<Acteur, 'role'>, cible: Pick<Acteur, 'role' | 'clinique'> & { id?: string; actif?: boolean | null }, s: Pick<Suggestion, 'type' | 'clinique'>): boolean {
+  if (cible.actif === false || (cible.role !== 'admin' && cible.role !== 'super_admin')) return false
+  if (acteur.role === 'super_admin') return true
+  return peutTraiterSuggestion(cible, s)
+}
+
+export function peutTraiterSuggestion(a: Pick<Acteur, 'role' | 'clinique'> & { id?: string }, s: Pick<Suggestion, 'type' | 'clinique'> & { assigne_a?: string | null }): boolean {
   if (a.role === 'super_admin') return true
+  if (a.role === 'admin' && a.id && s.assigne_a === a.id) return true
   if (a.role !== 'admin' || s.type === 'plateforme') return false
   const miennes = cliniquesDe(a.clinique)
   const siennes = cliniquesDe(s.clinique ?? 'LES_DEUX')
