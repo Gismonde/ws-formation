@@ -30,7 +30,7 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
 
   const authIds = liste.map(e => e.auth_user_id).filter((x): x is string => !!x)
   const [connexions, logs, liens, journal] = await Promise.all([
-    dernieresConnexions(sb), logsInvitations(sb, liste.map(e => e.id)), liensUtilises(sb, authIds), connexionsDuJournal(sb, liste.map(e => e.id)),
+    dernieresConnexions(sb, authIds), logsInvitations(sb, liste.map(e => e.id)), liensUtilises(sb, authIds), connexionsDuJournal(sb, liste.map(e => e.id)),
   ])
   const parEmploye = new Map<string, LogInvitation[]>()
   for (const l of logs) if (l.cible_employe_id) parEmploye.set(l.cible_employe_id, [...(parEmploye.get(l.cible_employe_id) ?? []), l])
@@ -104,8 +104,8 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
                           : acces.etat === 'invite' ? t('Invité le {date}, pas encore activé', { date: date(acces.date) })
                           : t('Jamais invité')}
                       </span>
-                      {acces.etat === 'active' && acces.derniereConnexion && (
-                        <div className="text-xs text-gray-400 mt-1">{t('Dernière connexion : {date}', { date: date(acces.derniereConnexion) })}</div>
+                      {acces.etat === 'active' && (
+                        <div className="text-xs text-gray-400 mt-1">{acces.derniereConnexion ? t('Dernière connexion : {date}', { date: date(acces.derniereConnexion) }) : t('Mot de passe choisi, pas encore connecté')}</div>
                       )}
                     </td>
                   </tr>

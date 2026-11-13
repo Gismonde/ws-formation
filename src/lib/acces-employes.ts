@@ -33,25 +33,36 @@ export type Acces = { etat: EtatAcces; date: string | null; derniereConnexion: s
 export function etatAcces(p: { derniereConnexion: string | null; logs: LogInvitation[]; lienUtiliseLe?: string | null; connexionsJournal?: { premiere: string; derniere: string } | null }): Acces {
   const tri = (a: string, b: string) => a.localeCompare(b)
   const derniere = [p.derniereConnexion, p.connexionsJournal?.derniere].filter((d): d is string => !!d).sort(tri).pop() ?? null
-  if (derniere) {
-    const activations = p.logs.filter(estActivation).map(l => l.created_at)
-    const premiere = [p.lienUtiliseLe, p.connexionsJournal?.premiere, ...activations].filter((d): d is string => !!d).sort(tri)[0]
-    return { etat: 'active', date: premiere ?? derniere, derniereConnexion: derniere }
-  }
+  const activations = p.logs.filter(estActivation).map(l => l.created_at)
+  const premiere = [p.lienUtiliseLe, p.connexionsJournal?.premiere, ...activations].filter((d): d is string => !!d).sort(tri)[0]
+  // Activé dès que le mot de passe est choisi depuis le lien, même sans connexion depuis
+  if (derniere || premiere) return { etat: 'active', date: premiere ?? derniere, derniereConnexion: derniere }
   const envois = p.logs.filter(courrielParti).map(l => l.created_at).sort(tri)
   return envois.length
     ? { etat: 'invite', date: envois[envois.length - 1], derniereConnexion: null }
     : { etat: 'jamais', date: null, derniereConnexion: null }
 }
 
-/** Dernière connexion de chaque compte de connexion (auth_user_id → date ou null). */
-export async function dernieresConnexions(sb: SupabaseClient): Promise<Map<string, string | null>> {
+/**
+ * Dernière connexion de chaque compte de connexion (auth_user_id → date ou null).
+ * La liste des comptes est paginée par Supabase (la taille de page peut être plafonnée) : on lit
+ * jusqu'à une page vide, puis on complète un à un les comptes demandés qui manqueraient encore.
+ */
+export async function dernieresConnexions(sb: SupabaseClient, authIds: string[] = []): Promise<Map<string, string | null>> {
   const m = new Map<string, string | null>()
-  for (let page = 1; page <= 50; page++) {
+  for (let page = 1; page <= 200; page++) {
     const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 })
     if (error || !data?.users?.length) break
+    const avant = m.size
     for (const u of data.users) m.set(u.id, u.last_sign_in_at ?? null)
-    if (data.users.length < 1000) break
+    if (m.size === avant) break
+  }
+  const manquants = authIds.filter(id => !m.has(id))
+  for (let i = 0; i < manquants.length; i += 10) {
+    await Promise.all(manquants.slice(i, i + 10).map(async id => {
+      const { data } = await sb.auth.admin.getUserById(id).catch(() => ({ data: null }))
+      if (data?.user) m.set(id, data.user.last_sign_in_at ?? null)
+    }))
   }
   return m
 }

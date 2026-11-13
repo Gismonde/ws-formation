@@ -3009,4 +3009,5 @@ export const EN: Record<string, string> = {
   'Annuler la journée (rien n’a encore été assigné ni envoyé)': 'Cancel the day (nothing has been assigned or sent yet)',
   'Journée programmée le {date} pour {n} employé(s). Rien n’est assigné ni envoyé avant ce jour : le matin même, les formations et les politiques seront assignées et le courriel envoyé.': 'Training day scheduled for {date} for {n} employee(s). Nothing is assigned or sent before that day: on the morning itself, the trainings and policies will be assigned and the email sent.',
   'Retirer de la liste (les assignations restent)': 'Remove from the list (assignments remain)',
+  'Mot de passe choisi, pas encore connecté': 'Password set, not signed in yet',
 }

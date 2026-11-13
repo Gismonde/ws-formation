@@ -43,4 +43,11 @@ describe('accès des employés', () => {
     const r = etatAcces({ derniereConnexion: '2026-11-11T14:46:38Z', logs: [], connexionsJournal: { premiere: '2026-05-29T21:02:29Z', derniere: '2026-11-13T15:00:00Z' } })
     expect(r).toEqual({ etat: 'active', date: '2026-05-29T21:02:29Z', derniereConnexion: '2026-11-13T15:00:00Z' })
   })
+  it('mot de passe choisi mais jamais connecté : activé, à la date d’activation', () => {
+    const r = etatAcces({ derniereConnexion: null, logs: [
+      log('INVITATION_ENVOYEE', 'Lien d\'accès au portail envoyé par courriel pour A B', null, '2026-11-13T19:39:22Z'),
+      log('INVITATION_ENVOYEE', 'Compte activé : mot de passe choisi depuis le lien d’invitation', null, '2026-11-13T22:31:03Z'),
+    ] })
+    expect(r).toEqual({ etat: 'active', date: '2026-11-13T22:31:03Z', derniereConnexion: null })
+  })
 })
