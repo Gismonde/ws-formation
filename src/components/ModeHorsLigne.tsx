@@ -1,6 +1,7 @@
 'use client'
 // Mode hors ligne : enregistre le service worker, signale la perte de réseau et envoie le suivi en attente au retour.
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { lireFile, viderFile } from '@/lib/file-suivi'
 
@@ -9,6 +10,15 @@ export default function ModeHorsLigne({ utilisateur }: { utilisateur: string | n
   const [enLigne, setEnLigne] = useState(true)
   const [attente, setAttente] = useState(0)
   const [envoyees, setEnvoyees] = useState(0)
+  const chemin = usePathname()
+
+  // En ligne avec des actions en attente (ex. envoi raté pendant une mise en ligne) : renvoi à chaque page et toutes les 30 s
+  useEffect(() => {
+    const essai = async () => { if (navigator.onLine && lireFile().length) { const n = await viderFile(); if (n) setEnvoyees(n); setAttente(lireFile().length) } }
+    essai()
+    const x = setInterval(essai, 30_000)
+    return () => clearInterval(x)
+  }, [chemin])
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) return
