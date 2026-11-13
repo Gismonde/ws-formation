@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
-import { lireSuggestion, empreinteAuteur, MAX_PAR_SEMAINE } from '@/lib/suggestions'
+import { lireSuggestion, empreinteAuteur, MAX_PAR_SEMAINE, sansLimiteSuggestions } from '@/lib/suggestions'
 
 export async function POST(req: Request) {
   const acteur = await getActeur()
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const depuis = new Date(Date.now() - 7 * 86_400_000).toISOString()
   const { count, error: eC } = await sb.from('suggestions').select('id', { count: 'exact', head: true }).eq('empreinte', empreinte).gte('created_at', depuis)
   if (eC) return NextResponse.json({ error: 'Les suggestions ne sont pas encore activées.' }, { status: 503 })
-  if ((count ?? 0) >= MAX_PAR_SEMAINE) return NextResponse.json({ error: `Vous avez déjà envoyé ${MAX_PAR_SEMAINE} suggestions cette semaine. Merci ! Vous pourrez en envoyer d’autres bientôt.` }, { status: 429 })
+  if ((count ?? 0) >= MAX_PAR_SEMAINE && !sansLimiteSuggestions(acteur)) return NextResponse.json({ error: `Vous avez déjà envoyé ${MAX_PAR_SEMAINE} suggestions cette semaine. Merci ! Vous pourrez en envoyer d’autres bientôt.` }, { status: 429 })
   const { error } = await sb.from('suggestions').insert({
     ...v.valeurs, empreinte, employe_id: v.valeurs.anonyme ? null : acteur.id,
     // L'espace d'où elle est envoyée (CMC ou WSSC) : seuls les admins de cette clinique la reçoivent

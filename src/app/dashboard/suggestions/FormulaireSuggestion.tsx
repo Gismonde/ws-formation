@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { TYPES_SUGGESTION, LONGUEUR_MAX, MAX_PAR_SEMAINE, type TypeSuggestion } from '@/lib/suggestions'
 
-export default function FormulaireSuggestion({ formations, restantes }: { formations: { id: string; titre: string }[]; restantes: number }) {
+export default function FormulaireSuggestion({ formations, restantes }: { formations: { id: string; titre: string }[]; restantes: number | null }) {
   const { t } = useT()
   const router = useRouter()
   const [type, setType] = useState<TypeSuggestion>('formation')
@@ -28,7 +28,8 @@ export default function FormulaireSuggestion({ formations, restantes }: { format
   }
 
   const champ = { width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 12px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' } as const
-  const desactive = restantes <= 0
+  // restantes null : pas de limite hebdomadaire
+  const desactive = restantes !== null && restantes <= 0
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '16px' }}>
@@ -73,7 +74,7 @@ export default function FormulaireSuggestion({ formations, restantes }: { format
           style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: 'var(--accent-clinique, #4f46e5)', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: envoi || desactive || message.trim().length < 5 ? 0.5 : 1 }}>
           {envoi ? t('Envoi…') : t('Envoyer')}
         </button>
-        <span style={{ fontSize: '12px', color: '#6b7280' }}>{desactive ? t('Limite de {n} suggestions par semaine atteinte. Merci !', { n: MAX_PAR_SEMAINE }) : t('{n} suggestion(s) possible(s) cette semaine', { n: restantes })}</span>
+        {restantes !== null && <span style={{ fontSize: '12px', color: '#6b7280' }}>{desactive ? t('Limite de {n} suggestions par semaine atteinte. Merci !', { n: MAX_PAR_SEMAINE }) : t('{n} suggestion(s) possible(s) cette semaine', { n: restantes })}</span>}
       </div>
       {retour && <p style={{ marginTop: '12px', fontSize: '13px', padding: '8px 12px', borderRadius: '8px', background: retour.ok ? '#f0fdf4' : '#fef2f2', color: retour.ok ? '#166534' : '#b91c1c' }}>{retour.texte}</p>}
     </div>

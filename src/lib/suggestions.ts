@@ -20,6 +20,9 @@ export const STATUTS_SUGGESTION = [
 export type StatutSuggestion = (typeof STATUTS_SUGGESTION)[number]['id']
 
 export const MAX_PAR_SEMAINE = 3
+/** Personnes sans limite hebdomadaire de suggestions (demande de Gismonde, 13 nov. 2026 : Farah Malik). */
+export const SUGGESTIONS_SANS_LIMITE = ['malik.farah@wssurgical.com']
+export const sansLimiteSuggestions = (a: { email?: string | null }) => !!a.email && SUGGESTIONS_SANS_LIMITE.includes(a.email.trim().toLowerCase())
 export const LONGUEUR_MAX = 1000
 
 export type Suggestion = {
