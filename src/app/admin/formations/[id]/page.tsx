@@ -104,10 +104,19 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   const voirAssignes = voitAssignes && onglet === 'assignes'
   const voirDemandes = traiteDemandes && onglet === 'demandes' && !voirAssignes
   // Nombre d'employés actifs assignés (administrateurs) ; pas de pastille si le compte est impossible
-  const compteAssignes = voitAssignes && acteurCourant && acteurCourant.role !== 'gestionnaire'
-    ? await serviceClient().from('assignations').select('id, employes!inner(actif)', { count: 'exact', head: true }).eq('formation_id', id).eq('employes.actif', true)
-    : null
-  const nbAssignes = compteAssignes && !compteAssignes.error ? compteAssignes.count ?? 0 : null
+  let nbAssignes: number | null = null
+  if (voitAssignes && acteurCourant && acteurCourant.role !== 'gestionnaire') {
+    const sbA = serviceClient()
+    const { data: lignesA, error: errA } = await sbA.from('assignations').select('employe_id').eq('formation_id', id)
+    const idsA = Array.from(new Set((lignesA ?? []).map(l => l.employe_id as string)))
+    if (!errA) {
+      nbAssignes = 0
+      for (let i = 0; i < idsA.length; i += 200) {
+        const { count } = await sbA.from('employes').select('id', { count: 'exact', head: true }).in('id', idsA.slice(i, i + 200)).eq('actif', true)
+        nbAssignes += count ?? 0
+      }
+    }
+  }
   const nbAttente = demandes.filter(d => d.statut === 'en_attente').length
 
   const niveauStyles: Record<string, { bg: string; color: string; label: string }> = {
