@@ -25,15 +25,18 @@ export const estActivation = (l: LogInvitation) => l.type_action === 'INVITATION
 export type Acces = { etat: EtatAcces; date: string | null; derniereConnexion: string | null }
 
 /**
- * - activé : date d'activation (premier lien utilisé ou journal), sinon date de la dernière connexion ;
+ * - activé : la plus ancienne trace parmi le premier lien utilisé, « Compte activé » et la première connexion
+ *   inscrite au journal ; à défaut, la dernière connexion du compte ;
  * - invité : date du dernier courriel envoyé.
+ * La dernière connexion est la plus récente entre le compte de connexion et le journal.
  */
-export function etatAcces(p: { derniereConnexion: string | null; logs: LogInvitation[]; lienUtiliseLe?: string | null }): Acces {
+export function etatAcces(p: { derniereConnexion: string | null; logs: LogInvitation[]; lienUtiliseLe?: string | null; connexionsJournal?: { premiere: string; derniere: string } | null }): Acces {
   const tri = (a: string, b: string) => a.localeCompare(b)
-  if (p.derniereConnexion) {
+  const derniere = [p.derniereConnexion, p.connexionsJournal?.derniere].filter((d): d is string => !!d).sort(tri).pop() ?? null
+  if (derniere) {
     const activations = p.logs.filter(estActivation).map(l => l.created_at)
-    const premiere = [p.lienUtiliseLe, ...activations].filter((d): d is string => !!d).sort(tri)[0]
-    return { etat: 'active', date: premiere ?? p.derniereConnexion, derniereConnexion: p.derniereConnexion }
+    const premiere = [p.lienUtiliseLe, p.connexionsJournal?.premiere, ...activations].filter((d): d is string => !!d).sort(tri)[0]
+    return { etat: 'active', date: premiere ?? derniere, derniereConnexion: derniere }
   }
   const envois = p.logs.filter(courrielParti).map(l => l.created_at).sort(tri)
   return envois.length
@@ -78,6 +81,26 @@ export async function liensUtilises(sb: SupabaseClient, authIds: string[]): Prom
     for (const r of (data ?? []) as { auth_user_id: string; utilise_le: string }[]) {
       const d = m.get(r.auth_user_id)
       if (!d || r.utilise_le < d) m.set(r.auth_user_id, r.utilise_le)
+    }
+  }
+  return m
+}
+
+/** Première et dernière connexion inscrites au journal d'audit, par employé. */
+export async function connexionsDuJournal(sb: SupabaseClient, employeIds: string[]): Promise<Map<string, { premiere: string; derniere: string }>> {
+  const m = new Map<string, { premiere: string; derniere: string }>()
+  for (let i = 0; i < employeIds.length; i += 100) {
+    const lot = employeIds.slice(i, i + 100)
+    for (let debut = 0; debut < 50_000; debut += 1000) {
+      const { data, error } = await sb.from('audit_logs').select('acteur_id, created_at')
+        .eq('type_action', 'CONNEXION').in('acteur_id', lot).order('created_at').range(debut, debut + 999)
+      if (error || !data?.length) break
+      for (const r of data as { acteur_id: string; created_at: string }[]) {
+        const x = m.get(r.acteur_id)
+        if (!x) m.set(r.acteur_id, { premiere: r.created_at, derniere: r.created_at })
+        else x.derniere = r.created_at
+      }
+      if (data.length < 1000) break
     }
   }
   return m
