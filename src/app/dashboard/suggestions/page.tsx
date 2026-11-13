@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { empreinteAuteur, MAX_PAR_SEMAINE, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
+import { empreinteAuteur, MAX_PAR_SEMAINE, sansLimiteSuggestions, STATUTS_SUGGESTION, TYPES_SUGGESTION, type Suggestion } from '@/lib/suggestions'
 import FormulaireSuggestion from './FormulaireSuggestion'
 import { getEspace } from '@/lib/espace'
 import { i18n } from '@/lib/i18n/serveur'
@@ -31,7 +31,7 @@ export default async function SuggestionsPage() {
         <p style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: '12px', padding: '12px 16px', fontSize: '14px' }}>{t('Les suggestions seront bientôt disponibles.')}</p>
       ) : (
         <>
-          <FormulaireSuggestion formations={formations} restantes={restantes} />
+          <FormulaireSuggestion formations={formations} restantes={sansLimiteSuggestions(acteur) ? null : restantes} />
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: '0 0 10px' }}>{t('Mes suggestions')}</h2>
           {(miennes ?? []).length === 0 ? <p style={{ fontSize: '14px', color: '#9ca3af' }}>{t('Aucune suggestion pour le moment.')}</p> : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '10px' }}>
