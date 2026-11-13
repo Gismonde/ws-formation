@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     type_action: 'INVITATION_ENVOYEE',
     description: `Lien d'accès au portail ${inv.courrielEnvoye ? 'envoyé par courriel' : copier === true ? 'copié par un administrateur' : 'généré'} pour ${emp.prenom} ${emp.nom}`,
     cible_employe_id: emp.id,
+    metadata: { courriel: inv.courrielEnvoye, copie: copier === true },
     ...ipEtAgent(request),
   })
 
