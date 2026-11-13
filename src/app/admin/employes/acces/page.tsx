@@ -5,7 +5,7 @@ import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
 import { FUSEAU } from '@/lib/fuseau'
-import { etatAcces, dernieresConnexions, logsInvitations, liensUtilises, type EtatAcces, type LogInvitation } from '@/lib/acces-employes'
+import { etatAcces, dernieresConnexions, logsInvitations, liensUtilises, connexionsDuJournal, type EtatAcces, type LogInvitation } from '@/lib/acces-employes'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,8 +29,8 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
   const liste = (employes ?? []) as unknown as { id: string; prenom: string | null; nom: string | null; email: string | null; poste: string | null; role: string; clinique: string | null; auth_user_id: string | null; departements: { nom: string } | null }[]
 
   const authIds = liste.map(e => e.auth_user_id).filter((x): x is string => !!x)
-  const [connexions, logs, liens] = await Promise.all([
-    dernieresConnexions(sb), logsInvitations(sb, liste.map(e => e.id)), liensUtilises(sb, authIds),
+  const [connexions, logs, liens, journal] = await Promise.all([
+    dernieresConnexions(sb), logsInvitations(sb, liste.map(e => e.id)), liensUtilises(sb, authIds), connexionsDuJournal(sb, liste.map(e => e.id)),
   ])
   const parEmploye = new Map<string, LogInvitation[]>()
   for (const l of logs) if (l.cible_employe_id) parEmploye.set(l.cible_employe_id, [...(parEmploye.get(l.cible_employe_id) ?? []), l])
@@ -41,6 +41,7 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
       derniereConnexion: e.auth_user_id ? connexions.get(e.auth_user_id) ?? null : null,
       logs: parEmploye.get(e.id) ?? [],
       lienUtiliseLe: e.auth_user_id ? liens.get(e.auth_user_id) ?? null : null,
+      connexionsJournal: journal.get(e.id) ?? null,
     }),
   }))
   const compte = (x: EtatAcces) => lignes.filter(l => l.acces.etat === x).length

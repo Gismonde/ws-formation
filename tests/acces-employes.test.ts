@@ -39,4 +39,8 @@ describe('accès des employés', () => {
     expect(r.etat).toBe('active')
     expect(r.date).toBe('2026-10-01T12:00:00Z')
   })
+  it('compte ancien sans lien d’invitation : date de la première connexion du journal', () => {
+    const r = etatAcces({ derniereConnexion: '2026-11-11T14:46:38Z', logs: [], connexionsJournal: { premiere: '2026-05-29T21:02:29Z', derniere: '2026-11-13T15:00:00Z' } })
+    expect(r).toEqual({ etat: 'active', date: '2026-05-29T21:02:29Z', derniereConnexion: '2026-11-13T15:00:00Z' })
+  })
 })
