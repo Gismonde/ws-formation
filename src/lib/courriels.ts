@@ -9,6 +9,10 @@
 
 import { rendreCourriel } from '@/lib/notifications-catalogue'
 import nodemailer from 'nodemailer'
+import { createClient } from '@supabase/supabase-js'
+import { adressesNonActivees } from '@/lib/comptes-actives'
+
+const clientService = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
 
 export type Courriel = { a: string; sujet: string; html: string; texte: string }
 type Resultat = { envoyes: number; erreur?: string }
@@ -25,10 +29,26 @@ export function courrielsActifs(): boolean {
   return fournisseur() !== null
 }
 
-/** Envoie un ou plusieurs courriels. Renvoie le nombre envoyés. */
-export async function envoyerCourriels(courriels: Courriel[]): Promise<Resultat> {
+/**
+ * Envoie un ou plusieurs courriels. Renvoie le nombre envoyés.
+ * Les employés dont le compte n'est pas encore activé ne reçoivent rien (WSSC et CMC), sauf les courriels
+ * marqués avantActivation : invitation, lien d'accès, réinitialisation du mot de passe.
+ */
+export async function envoyerCourriels(courriels: Courriel[], options: { avantActivation?: boolean } = {}): Promise<Resultat> {
   const f = fournisseur()
   if (!f || courriels.length === 0) return { envoyes: 0, erreur: f ? undefined : 'non_configure' }
+  if (!options.avantActivation) {
+    try {
+      const non = await adressesNonActivees(clientService(), courriels.map(c => c.a))
+      if (non.size) {
+        console.info('[Courriels] retenus, comptes pas encore activés :', non.size)
+        courriels = courriels.filter(c => !non.has(c.a.trim().toLowerCase()))
+        if (courriels.length === 0) return { envoyes: 0 }
+      }
+    } catch (e) {
+      console.error('[Courriels] vérification des comptes activés impossible', e instanceof Error ? e.message : e)
+    }
+  }
   if (f === 'smtp') return envoyerSmtp(courriels)
   return f === 'mailgun' ? envoyerMailgun(courriels) : envoyerResend(courriels)
 }
