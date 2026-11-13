@@ -1,4 +1,5 @@
 'use client'
+import { FUSEAU } from '@/lib/fuseau'
 // Actions sur un événement : publier, modifier, annuler ; séances (ajout, modification, annulation) ; inscrits et présences.
 import { useState } from 'react'
 import Link from 'next/link'
@@ -31,7 +32,7 @@ export default function GestionEvenement({ evenement, seances, inscriptions }: {
     for (const i of inscriptions) if (i.present) r[i.seance_id] = [...(r[i.seance_id] ?? []), i.employe_id]
     return r
   })
-  const quand = (s: SeanceVue) => `${new Date(s.debut).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · ${new Date(s.debut).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })} – ${new Date(s.fin).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`
+  const quand = (s: SeanceVue) => `${new Date(s.debut).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: FUSEAU })} · ${new Date(s.debut).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU })} – ${new Date(s.fin).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU })}`
 
   async function agir(corps: Record<string, unknown>, succes: (d: Record<string, unknown>) => string) {
     setEnvoi(true); setMsg(null)

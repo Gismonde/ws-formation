@@ -1,3 +1,4 @@
+import { FUSEAU } from '@/lib/fuseau'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient, peutCreerEvenements } from '@/lib/permissions'
@@ -24,7 +25,7 @@ export default async function EvenementsAdminPage({ searchParams }: { searchPara
     : [{ data: [] }, { data: [] }]
   const seances = (ss ?? []) as Seance[]
   const inscriptions = (ins ?? []) as Inscription[]
-  const date = (d: string) => new Date(d).toLocaleDateString(loc, { dateStyle: 'medium' })
+  const date = (d: string) => new Date(d).toLocaleDateString(loc, { dateStyle: 'medium', timeZone: FUSEAU })
   const STATUT: Record<string, [string, string]> = { brouillon: [t('Brouillon'), 'bg-gray-100 text-gray-700'], publie: [t('Publié'), 'bg-green-100 text-green-800'], annule: [t('Annulé'), 'bg-red-100 text-red-700'] }
 
   return (

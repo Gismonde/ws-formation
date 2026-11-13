@@ -1,4 +1,5 @@
 'use client'
+import { FUSEAU } from '@/lib/fuseau'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
@@ -58,7 +59,7 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances, p
               {maSeance.statut === 'inscrit' && <a href={`/api/evenements/${evenementId}/calendrier?seance=${maSeance.id}`} style={{ ...bouton(false), textDecoration: 'none' }}>📅 {t('Ajouter à mon calendrier')}</a>}
               {maSeance.peutAnnuler
                 ? <button type="button" disabled={!!envoi} onClick={annuler} style={bouton(false)}>{t('Me désinscrire')}</button>
-                : <span style={{ fontSize: '12px', color: '#6b7280' }}>{t('Désinscription possible jusqu’au {date}. Contactez le responsable pour toute question.', { date: new Date(maSeance.limite).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' }) })}</span>}
+                : <span style={{ fontSize: '12px', color: '#6b7280' }}>{t('Désinscription possible jusqu’au {date}. Contactez le responsable pour toute question.', { date: new Date(maSeance.limite).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short', timeZone: FUSEAU }) })}</span>}
             </div>
           )}
         </div>
