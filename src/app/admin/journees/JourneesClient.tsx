@@ -4,7 +4,7 @@ import { useT } from '@/lib/i18n/client'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CLINIQUE_CONTENU_LABEL, type CliniqueContenu } from '@/lib/cliniques'
-import { BADGES_JOURNEE, type Journee } from '@/lib/journees'
+import { BADGES_JOURNEE, etatJournee, type Journee } from '@/lib/journees'
 
 type Option = { id: string; titre: string; detail: string }
 export type Suivi = { employe_id: string; nom: string; faits: number; total: number }
@@ -90,6 +90,10 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
     setEnvoi(false)
     if (!r.ok) { setMessage({ ok: false, texte: d.error ?? t('Erreur') }); return }
     if (modele) { setMessage({ ok: true, texte: t('Modèle « {nom} » enregistré.', { nom: d.journee.nom }) }); setEnEdition(null) }
+    else if (d.programmee) {
+      setMessage({ ok: true, texte: t('Journée programmée le {date} pour {n} employé(s). Rien n’est assigné ni envoyé avant ce jour : le matin même, les formations et les politiques seront assignées et le courriel envoyé.', { date: jour(d.journee.date_journee) ?? '', n: d.employes }) })
+      setF(x => ({ ...x, employe_ids: [], date_journee: '', date_echeance: '' }))
+    }
     else {
       const nf = (d.formations as { creees: number }[]).reduce((s, x) => s + x.creees, 0)
       const np = (d.politiques as { ajoutes: number }[]).reduce((s, x) => s + x.ajoutes, 0)
@@ -266,7 +270,14 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
                   <FragmentLigne key={j.id} ouverte={ouverte === j.id}>
                     <tr className="border-t border-gray-100 cursor-pointer hover:bg-gray-50" onClick={() => setOuverte(ouverte === j.id ? null : j.id)}>
                       <td className="px-4 py-2.5"><div className="font-medium text-gray-900">{j.nom}</div><div className="text-xs text-gray-500">{j.raison}</div></td>
-                      <td className="px-3 py-2.5 text-gray-600">{jour(j.date_journee) ?? '—'}</td>
+                      <td className="px-3 py-2.5 text-gray-600">
+                        {jour(j.date_journee) ?? '—'}
+                        {(() => {
+                          const e = etatJournee(j)
+                          if (e.programmee) return <div className="mt-1"><span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{t('Prévue le {date}, sera ouverte le matin même', { date: jour(e.date) ?? '' })}</span></div>
+                          return e.date ? <div className="text-xs text-gray-400 mt-1">{t('Ouverte le {date}', { date: jour(e.date) ?? '' })}</div> : null
+                        })()}
+                      </td>
                       <td className="px-3 py-2.5 text-gray-600">{jour(j.date_echeance) ?? '—'}</td>
                       <td className="px-3 py-2.5 text-gray-600">{j.employe_ids.length}</td>
                       <td className="px-3 py-2.5"><span className={'text-xs font-semibold px-2 py-1 rounded-full ' + (finis === s.length && s.length ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700')}>{finis}/{s.length}</span></td>
@@ -277,7 +288,7 @@ export default function JourneesClient({ migration, raisons, cliniques, journees
                         <ul className="grid gap-1 md:grid-cols-2 text-sm">
                           {s.map(x => <li key={x.employe_id} className="flex justify-between gap-3"><span>{x.nom}</span><span className="text-gray-500">{x.faits}/{x.total} {x.total ? '' : '(visionnement seulement)'}</span></li>)}
                         </ul>
-                        <div className="mt-3 flex justify-end"><button onClick={() => supprimer(j)} className="text-xs text-red-600">Retirer de la liste (les assignations restent)</button></div>
+                        <div className="mt-3 flex justify-end"><button onClick={() => supprimer(j)} className="text-xs text-red-600">{etatJournee(j).programmee ? t('Annuler la journée (rien n’a encore été assigné ni envoyé)') : t('Retirer de la liste (les assignations restent)')}</button></div>
                       </td></tr>
                     )}
                   </FragmentLigne>

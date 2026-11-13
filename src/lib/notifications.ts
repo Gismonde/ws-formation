@@ -2,6 +2,7 @@
 // nouvelles formations assignées, échéances proches ou dépassées, politiques à lire, événements,
 // journées de formation, certificats à renouveler, réponses aux suggestions.
 // « Lu / non lu » : date de dernière ouverture de la cloche, gardée sur l'appareil.
+import { journeeOuverte } from '@/lib/journees'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import { politiquesDeLEmploye } from '@/lib/politiques'
@@ -81,9 +82,10 @@ export async function notificationsEmploye(sb: SupabaseClient, e: EmployeNotif, 
   } catch { /* table absente */ }
 
   // Journées de formation lancées récemment
-  const { data: journees } = await sb.from('journees_formation').select('id, nom, cree_le').eq('modele', false).contains('employe_ids', [e.id])
-  for (const j of journees ?? []) {
-    if (recent(j.cree_le as string, 30)) n.push({ id: `journee:${j.id}`, icone: '🗓️', titre: 'Journée de formation : {titre}', vars: { titre: j.nom as string }, lien: `/dashboard/journees/${j.id}`, le: j.cree_le as string })
+  const { data: journees } = await sb.from('journees_formation').select('*').eq('modele', false).contains('employe_ids', [e.id])
+  for (const j of (journees ?? []).filter(journeeOuverte)) {
+    const le = (j.ouverte_le ?? j.cree_le) as string
+    if (recent(le, 30)) n.push({ id: `journee:${j.id}`, icone: '🗓️', titre: 'Journée de formation : {titre}', vars: { titre: j.nom as string }, lien: `/dashboard/journees/${j.id}`, le })
   }
 
   // Réponses aux suggestions

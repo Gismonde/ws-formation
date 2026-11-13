@@ -20,7 +20,7 @@ export default async function JourneesPage() {
     politiquesPermises ? sb.from('politiques').select('*').eq('actif', true).order('titre') : Promise.resolve({ data: [] as Politique[] }),
     sb.from('librairie').select('id, titre, type, categorie').eq('archive', false).in('clinique', visibles).order('titre'),
     filtrerEmployes(sb.from('employes').select('id, prenom, nom, role, clinique, departements(nom)').or('actif.is.null,actif.eq.true').order('nom'), acteur),
-    sb.from('journees_formation').select(CHAMPS_JOURNEE).in('clinique', visibles).order('cree_le', { ascending: false }).limit(200),
+    sb.from('journees_formation').select('*').in('clinique', visibles).order('cree_le', { ascending: false }).limit(200),
   ])
   const migration = !!error && /journees_formation/.test(error.message)
   const liste = (journees ?? []) as Journee[]

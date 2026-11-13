@@ -7,6 +7,7 @@ import { serviceClient } from '@/lib/permissions'
 import { origineDepuis } from '@/lib/courriels'
 import { executerRappels } from '@/lib/rappels'
 import { tachesEvenements } from '@/lib/evenements-courriels'
+import { ouvrirJourneesDues } from '@/lib/journees-ouverture'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -22,9 +23,12 @@ function autorise(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!autorise(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   const sb = serviceClient()
+  // Journées de formation programmées pour aujourd'hui : ouvertes avant les rappels
+  const journees = await ouvrirJourneesDues(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
+  console.log('[Journées]', JSON.stringify(journees))
   const resultat = await executerRappels(sb, origineDepuis(req))
   const evenements = await tachesEvenements(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
   console.log('[Événements]', JSON.stringify(evenements))
   console.log('[Rappels]', JSON.stringify(resultat))
-  return NextResponse.json({ ...resultat, evenements })
+  return NextResponse.json({ ...resultat, evenements, journees })
 }

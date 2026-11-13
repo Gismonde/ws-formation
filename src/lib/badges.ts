@@ -3,6 +3,7 @@
 //   - Paliers : 1, 5, 10 et 25 formations terminées
 //   - Excellence : 100 % à un questionnaire du premier coup ; toutes ses politiques confirmées
 //   - Conformité à jour : aucune formation en retard ni certificat expiré
+import { journeeOuverte } from '@/lib/journees'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import { avancementJournees } from '@/lib/journees'
@@ -143,7 +144,8 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, config
   const terminees = formationIds.filter(f => estComplete(etat(e.id, f).statut)).length
 
   // 1. Parcours (journées de formation lancées pour l'employé)
-  const { data: journees } = await sb.from('journees_formation').select('*').eq('modele', false).contains('employe_ids', [e.id]).order('cree_le')
+  const { data: lancees } = await sb.from('journees_formation').select('*').eq('modele', false).contains('employe_ids', [e.id]).order('cree_le')
+  const journees = (lancees ?? []).filter(journeeOuverte)
   if (journees?.length) {
     const av = await avancementJournees(sb, journees as never)
     for (const j of journees as { id: string; nom: string; badge_icone?: string | null; employe_ids: string[] }[]) {
