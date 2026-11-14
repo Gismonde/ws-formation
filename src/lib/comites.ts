@@ -12,6 +12,8 @@ export const messageMigration = (m: string) => /comites/.test(m) ? 'Exécutez d�
 export type MembreComite = { employe_id: string | null; nom: string; poste: string; role: string }
 export type Comite = {
   id: string; clinique: string; nom: string; icone: string; couleur: string
+  /** Image de couverture (adresse https:// ou chemin /…), vide si aucune */
+  image?: string
   presentation: string; description: string; activites: string; utilite: string; contact: string
   membres: MembreComite[]; ordre: number; publie: boolean; modifie_le?: string
 }
@@ -41,6 +43,8 @@ export function initiales(nom: string): string {
 }
 
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
+/** Image : adresse https:// ou chemin /… seulement */
+export const imageValide = (v: unknown) => { const s = texte(v, 1000); return /^(https:\/\/|\/)/.test(s) ? s : '' }
 
 /** Valide ce qu'envoie le formulaire d'administration. */
 export function lireComite(c: Record<string, unknown>): { valeurs: DonneesComite } | { erreur: string } {
@@ -51,7 +55,7 @@ export function lireComite(c: Record<string, unknown>): { valeurs: DonneesComite
     nom: texte(m?.nom, 120), poste: texte(m?.poste, 150), role: texte(m?.role, 150),
   })).filter(m => m.employe_id || m.nom)
   return { valeurs: {
-    nom, icone: texte(c.icone, 8) || '🤝', couleur: COULEURS_COMITE[String(c.couleur)] ? String(c.couleur) : 'violet',
+    nom, icone: texte(c.icone, 8) || '🤝', image: imageValide(c.image), couleur: COULEURS_COMITE[String(c.couleur)] ? String(c.couleur) : 'violet',
     presentation: texte(c.presentation, 300), description: texte(c.description, 5000), activites: texte(c.activites, 5000),
     utilite: texte(c.utilite, 5000), contact: texte(c.contact, 500), membres,
     ordre: Number.isFinite(Number(c.ordre)) ? Math.round(Number(c.ordre)) : 0, publie: c.publie === true,
@@ -103,11 +107,10 @@ export const imageBanniere = (image: string, langue: string) => (langue === 'en'
 
 /** Valide la bannière envoyée par le formulaire (image : adresse https:// ou chemin /…). */
 export function lireBanniere(c: Record<string, unknown>): BanniereComites {
-  const image = texte(c.image, 1000)
   return {
     titre: texte(c.titre, 120) || BANNIERE_COMITES_DEFAUT.titre,
     texte: texte(c.texte, 300),
-    image: /^(https:\/\/|\/)/.test(image) ? image : '',
+    image: imageValide(c.image),
   }
 }
 
@@ -115,4 +118,20 @@ export async function chargerBanniereComites(sb: SupabaseClient): Promise<Bannie
   const { data, error } = await sb.from('reglages').select('valeur').eq('cle', CLE_BANNIERE_COMITES).maybeSingle()
   if (error) return { ...BANNIERE_COMITES_DEFAUT, reglagesAbsents: /reglages/.test(error.message) }
   return data?.valeur ? lireBanniere(data.valeur as Record<string, unknown>) : BANNIERE_COMITES_DEFAUT
+}
+
+/** Découpe un texte en paragraphes et listes (lignes commençant par « • », « - » ou « * »). */
+export function blocsTexte(t: string): ({ type: 'paragraphe'; texte: string } | { type: 'liste'; items: string[] })[] {
+  const res: ({ type: 'paragraphe'; texte: string } | { type: 'liste'; items: string[] })[] = []
+  for (const ligne of t.split(/\r?\n/)) {
+    const l = ligne.trim()
+    if (!l) continue
+    const puce = /^[•\-*]\s*/.exec(l)
+    if (puce) {
+      const item = l.slice(puce[0].length)
+      const dernier = res[res.length - 1]
+      if (dernier?.type === 'liste') dernier.items.push(item); else res.push({ type: 'liste', items: [item] })
+    } else res.push({ type: 'paragraphe', texte: l })
+  }
+  return res
 }

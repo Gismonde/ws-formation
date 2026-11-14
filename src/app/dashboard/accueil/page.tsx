@@ -133,7 +133,7 @@ export default async function AccueilPage() {
 
       {/* Bannière des comités (espace WSSC), sous les cartes : image à gauche, comités et bouton à droite */}
       {comites.length > 0 && banniereComites && (
-        <Link href="/dashboard/comites" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'center', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px', textDecoration: 'none', background: '#0b2a5b', maxWidth: '900px' }}>
+        <Link href="/dashboard/comites" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'center', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px', textDecoration: 'none', background: '#0b2a5b', maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
           {banniereComites.image ? (
             // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
             // eslint-disable-next-line @next/next/no-img-element
@@ -145,7 +145,7 @@ export default async function AccueilPage() {
             {banniereComites.texte && <span style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.92 }}>{t(banniereComites.texte)}</span>}
             <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {comites.map(c => (
-                <span key={c.id} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.icone} {c.nom}</span>
+                <span key={c.id} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.nom}</span>
               ))}
             </span>
             <span style={{ alignSelf: 'flex-start', fontSize: '13px', fontWeight: 700, padding: '8px 14px', borderRadius: '9px', background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b', whiteSpace: 'nowrap' }}>{t('Découvrir vos comités')} →</span>

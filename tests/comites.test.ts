@@ -38,3 +38,14 @@ describe('bannière des comités', () => {
     expect(lireBanniere({ image: 'https://exemple.com/a.png' }).image).toBe('https://exemple.com/a.png')
   })
 })
+
+import { blocsTexte } from '@/lib/comites'
+describe('mise en forme des textes de comité', () => {
+  it('paragraphes et listes à puces', () => {
+    expect(blocsTexte('Intro.\n\n• Un;\n• Deux;\nFin.')).toEqual([
+      { type: 'paragraphe', texte: 'Intro.' },
+      { type: 'liste', items: ['Un;', 'Deux;'] },
+      { type: 'paragraphe', texte: 'Fin.' },
+    ])
+  })
+})

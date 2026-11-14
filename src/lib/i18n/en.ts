@@ -3078,4 +3078,7 @@ export const EN: Record<string, string> = {
   'Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. L’image est affichée en entier (format paysage conseillé) ; avec une image, le titre n’est pas répété par-dessus.': 'Shown at the top of the WSSC employees’ home page as soon as a committee is published. The image is shown in full (landscape recommended); with an image, the title isn’t repeated over it.',
   'Image d’origine': 'Original image',
   'Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. L’image est affichée en entier (format paysage conseillé) ; avec une image, le titre n’est pas répété par-dessus.': 'Shown at the top of the WSSC employees’ home page as soon as a committee is published. The image is shown in full (landscape recommended); with an image, the title isn’t repeated over it.',
+  'Découvrir': 'Discover',
+  'Comité': 'Committee',
+  'Exécutez d’abord la dernière partie de supabase/migrations/comites.sql (colonne image).': 'First run the last part of supabase/migrations/comites.sql (image column).',
 }

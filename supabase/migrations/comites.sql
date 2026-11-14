@@ -31,3 +31,6 @@ CREATE TABLE IF NOT EXISTS public.reglages (
   modifie_le timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.reglages ENABLE ROW LEVEL SECURITY;
+
+-- Image de couverture d'un comité (adresse https:// ou chemin /…)
+ALTER TABLE public.comites ADD COLUMN IF NOT EXISTS image text NOT NULL DEFAULT '';

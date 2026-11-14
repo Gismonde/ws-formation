@@ -32,7 +32,7 @@ export default async function ComitesAdminPage() {
 
       {banniere && (banniere.reglagesAbsents
         ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-6">{t('Bannière de la page d’accueil :')} {t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>
-        : <BanniereComitesForm banniere={{ titre: banniere.titre, texte: banniere.texte, image: banniere.image }} noms={comites.map(c => `${c.icone} ${c.nom}`)} />)}
+        : <BanniereComitesForm banniere={{ titre: banniere.titre, texte: banniere.texte, image: banniere.image }} noms={comites.map(c => c.nom)} />)}
 
       {migration ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>
@@ -46,7 +46,10 @@ export default async function ComitesAdminPage() {
             const k = couleurDe(c.couleur)
             return (
               <Link key={c.id} href={`/admin/comites/${c.id}`} className="flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                <span className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0" style={{ background: k.fond }}>{c.icone}</span>
+                {c.image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={c.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  : <span className="w-12 h-12 rounded-lg shrink-0" style={{ background: `linear-gradient(135deg, ${k.bord}, ${k.texte})` }} />}
                 <span className="flex-1 min-w-0">
                   <span className="block font-semibold text-gray-900">{c.nom}</span>
                   <span className="block text-xs text-gray-500 truncate">{c.presentation || t('Pas encore de présentation')}</span>

@@ -1,6 +1,6 @@
 'use client'
 // Formulaire d'un comité : textes, membres (employés de la plateforme ou personnes saisies), publication.
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useT } from '@/lib/i18n/client'
@@ -8,7 +8,6 @@ import { useConfirmer } from '@/components/Confirmation'
 import { COULEURS_COMITE, couleurDe, type Comite, type MembreComite } from '@/lib/comites'
 
 type EmployeChoix = { id: string; nom: string; poste: string }
-const ICONES = ['🤝', '🛡️', '🔒', '🩺', '🌱', '💬', '⚖️', '🎉', '📚', '🧯', '♻️', '❤️']
 
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
 
@@ -17,7 +16,7 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
   const router = useRouter()
   const confirmer = useConfirmer()
   const [f, setF] = useState({
-    nom: comite?.nom ?? '', icone: comite?.icone ?? '🤝', couleur: comite?.couleur ?? 'violet',
+    nom: comite?.nom ?? '', icone: comite?.icone ?? '🤝', image: comite?.image ?? '', couleur: comite?.couleur ?? 'violet',
     presentation: comite?.presentation ?? '', description: comite?.description ?? '', activites: comite?.activites ?? '',
     utilite: comite?.utilite ?? '', contact: comite?.contact ?? '', ordre: comite?.ordre ?? 0, publie: comite?.publie ?? false,
   })
@@ -32,6 +31,16 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
     const c = [...l]; [c[i], c[j]] = [c[j], c[i]]; return c
   })
   const k = couleurDe(f.couleur)
+  const entree = useRef<HTMLInputElement>(null)
+  const [televersement, setTeleversement] = useState(false)
+  async function televerser(fichier: File) {
+    setTeleversement(true); setMessage(null)
+    const fd = new FormData(); fd.append('file', fichier)
+    const r = await fetch('/api/upload-lesson-image', { method: 'POST', body: fd })
+    const d = await r.json().catch(() => ({}))
+    setTeleversement(false)
+    if (r.ok && d.url) maj('image', d.url); else setMessage({ ok: false, texte: d.error ?? t('Envoi impossible') })
+  }
 
   async function enregistrer(publie = f.publie) {
     setEnvoi(true); setMessage(null)
@@ -69,7 +78,6 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
     <div className="space-y-6">
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0" style={{ background: k.fond }}>{f.icone}</span>
           <label className="flex-1">
             <span className="block text-sm font-semibold text-gray-800">{t('Nom du comité')}</span>
             <input className={champ} value={f.nom} onChange={e => maj('nom', e.target.value)} placeholder={t('Comité de santé et sécurité au travail')} />
@@ -77,11 +85,18 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
         </div>
         <div className="flex flex-wrap gap-6">
           <div>
-            <span className="block text-sm font-semibold text-gray-800 mb-1">{t('Icône')}</span>
-            <div className="flex flex-wrap gap-1">
-              {ICONES.map(i => (
-                <button key={i} type="button" onClick={() => maj('icone', i)} className={'w-9 h-9 rounded-lg text-lg border ' + (f.icone === i ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:bg-gray-50')}>{i}</button>
-              ))}
+            <span className="block text-sm font-semibold text-gray-800 mb-1">{t('Image de couverture')}</span>
+            <div className="flex items-center gap-3">
+              {f.image
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={f.image} alt="" className="w-20 h-20 rounded-lg object-cover border border-gray-200" />
+                : <span className="w-20 h-20 rounded-lg" style={{ background: `linear-gradient(135deg, ${k.bord}, ${k.texte})` }} />}
+              <div className="flex flex-col gap-1 items-start">
+                <button type="button" onClick={() => entree.current?.click()} disabled={televersement} className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-indigo-600 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">{televersement ? t('Envoi…') : t('⬆ Téléverser une image')}</button>
+                {f.image && <button type="button" onClick={() => maj('image', '')} className="text-xs text-red-600 hover:underline">{t('Retirer l’image')}</button>}
+                <span className="text-xs text-gray-500">{t('JPG, PNG ou WebP — 10 Mo max')}</span>
+              </div>
+              <input ref={entree} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const fi = e.target.files?.[0]; if (fi) televerser(fi); e.target.value = '' }} />
             </div>
           </div>
           <div>
