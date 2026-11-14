@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
+import { chargerComites, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
 import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
@@ -19,6 +20,8 @@ export default async function AccueilPage() {
   const espace = await getEspace(acteur)
   const sb = serviceClient()
   const { t, langue } = await i18n()
+  // Comités (espace WSSC) : carte d'accès ; brouillons visibles par les administrateurs seulement
+  const { comites } = espace.actif === CLINIQUE_COMITES ? await chargerComites(sb, { brouillons: peutGererComites(acteur) }) : { comites: [] }
 
   // Formations à faire (dans l'espace actif)
   const { data: assignations } = await sb.from('assignations').select('formation_id').eq('employe_id', acteur.id)
@@ -89,6 +92,17 @@ export default async function AccueilPage() {
             </Link>
           ))}
         </section>
+      )}
+
+      {comites.length > 0 && (
+        <Link href="/dashboard/comites" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '14px 18px', borderRadius: '14px', background: '#fff', border: '1px solid #e5e7eb', textDecoration: 'none', color: '#111827', marginBottom: '24px' }}>
+          <span style={{ fontSize: '22px' }} aria-hidden>🤝</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontWeight: 700, fontSize: '15px' }}>{t('Apprenez à connaître vos comités')}</span>
+            <span style={{ display: 'block', fontSize: '13px', color: '#6b7280' }}>{comites.map(c => c.nom).join(' · ')}</span>
+          </span>
+          <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--accent-clinique)' }}>{t('Voir')} →</span>
+        </Link>
       )}
 
       {badges.length > 0 && (

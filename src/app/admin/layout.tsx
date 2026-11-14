@@ -48,6 +48,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
   ] },
   { id: 'administration', label: 'Administration', icon: 'settings', liens: [
     { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
+    { href: '/admin/comites', label: 'Comités', icon: 'diversity_3', adminOnly: true },
     { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
     { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
   ] },
