@@ -249,7 +249,7 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, config
   const mesCliniques = cliniquesDe(e.clinique ?? 'LES_DEUX')
   // Membre d'un comité (comités publiés) : un badge par comité, pour valoriser l'engagement
   {
-    const { data: comites, error } = await sb.from('comites').select('id, nom, modifie_le').eq('publie', true).contains('membres', [{ employe_id: e.id }])
+    const { data: comites, error } = await sb.from('comites').select('id, nom, modifie_le').eq('publie', true).filter('membres', 'cs', JSON.stringify([{ employe_id: e.id }]))
     if (!error) {
       if (comites?.length) for (const c of comites) badges.push({ id: 'comite:' + c.id, famille: 'participation', icone: '🤝', titre: 'Membre — {nom}', vars: { nom: c.nom as string }, description: 'Vous siégez au {nom}', obtenu: true })
       else if (mesCliniques.includes('WSSC' as never)) badges.push({ id: 'comite', famille: 'participation', icone: '🤝', titre: 'Membre d’un comité', description: 'Siéger à un comité de la clinique', obtenu: false })
