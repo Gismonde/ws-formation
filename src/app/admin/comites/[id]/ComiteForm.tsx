@@ -125,8 +125,8 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
         {zone('activites', t('Ce qu’il fait'), t('Ses activités : réunions, inspections, analyses… Une ligne par point si vous voulez une liste.'))}
         {zone('utilite', t('À quoi il sert'), t('Son utilité pour les employés et la clinique.'))}
         <label className="block">
-          <span className="block text-sm font-semibold text-gray-800">{t('Joindre le comité (facultatif)')}</span>
-          <span className="block text-xs text-gray-500 mb-1">{t('Un courriel ou une personne-ressource.')}</span>
+          <span className="block text-sm font-semibold text-gray-800">{t('Vous voulez participer ? (facultatif)')}</span>
+          <span className="block text-xs text-gray-500 mb-1">{t('La personne à contacter pour participer au comité, avec son courriel si vous le souhaitez.')}</span>
           <input className={champ} value={f.contact} onChange={e => maj('contact', e.target.value)} />
         </label>
       </section>

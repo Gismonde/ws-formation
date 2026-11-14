@@ -65,7 +65,7 @@ export default async function ComitePage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        {(c.membres.length > 0 || c.contact) && (
+        {c.membres.length > 0 && (
           <section className="bg-white rounded-2xl border border-gray-200 p-6" style={{ borderTop: `4px solid ${k.bord}` }}>
             {c.membres.length > 0 && <>
               <h2 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: k.texte }}>{t('Qui est dedans')}</h2>
@@ -82,7 +82,14 @@ export default async function ComitePage({ params }: { params: Promise<{ id: str
                 ))}
               </div>
             </>}
-            {c.contact && <p className={'text-sm text-gray-700 ' + (c.membres.length ? 'mt-5 pt-4 border-t border-gray-100' : '')}><span className="font-semibold">{t('Joindre le comité :')}</span> {c.contact}</p>}
+          </section>
+        )}
+        {c.contact && (
+          <section className="rounded-2xl p-6 flex flex-wrap items-center gap-4 text-white" style={{ background: `linear-gradient(135deg, ${k.texte}, ${k.bord})` }}>
+            <div className="flex-1 min-w-[240px]">
+              <h2 className="text-lg font-bold">{t('Vous voulez participer ?')}</h2>
+              <p className="text-[15px] mt-1 opacity-95 whitespace-pre-line">{c.contact}</p>
+            </div>
           </section>
         )}
       </div>

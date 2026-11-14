@@ -3081,4 +3081,9 @@ export const EN: Record<string, string> = {
   'Découvrir': 'Discover',
   'Comité': 'Committee',
   'Exécutez d’abord la dernière partie de supabase/migrations/comites.sql (colonne image).': 'First run the last part of supabase/migrations/comites.sql (image column).',
+  'Vous voulez participer ?': 'Want to get involved?',
+  'Vous voulez participer ? (facultatif)': 'Want to get involved? (optional)',
+  'La personne à contacter pour participer au comité, avec son courriel si vous le souhaitez.': 'The person to contact to join the committee, with their email if you like.',
+  'Vous voulez participer ?': 'Want to get involved?',
+  'Vous voulez participer ? (facultatif)': 'Want to get involved? (optional)',
 }
