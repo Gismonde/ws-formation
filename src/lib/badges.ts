@@ -68,6 +68,7 @@ export const BADGES_INTEGRES: { cle: string; icone: string; titre: string; descr
   { cle: 'voix', icone: '💬', titre: 'Voix de l’équipe', description: '{n} sondages de satisfaction remplis', seuils: [3] },
   { cle: 'externe', icone: '📎', titre: 'Formation externe', description: 'Une preuve de formation externe validée (congrès, cours…)' },
   { cle: 'regulier', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée {n} mois de suite', seuils: [3] },
+  { cle: 'passerelle', icone: '📰', titre: 'Lecteur de La Passerelle', description: 'Au moins {n} édition(s) du journal La Passerelle lue(s) (WSSC)', seuils: [1] },
 ]
 
 /** Seuils en vigueur pour un badge intégré */
@@ -245,6 +246,15 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, config
 
   // 7. Badges créés par les cliniques : terminer toutes les formations choisies
   const mesCliniques = cliniquesDe(e.clinique ?? 'LES_DEUX')
+  // Lecteur de La Passerelle (journal du WSSC) : éditions ouvertes depuis le portail
+  if (mesCliniques.includes('WSSC' as never)) {
+    const { count, error } = await sb.from('passerelle_lectures').select('edition_id', { count: 'exact', head: true }).eq('employe_id', e.id)
+    if (!error) {
+      const nbLues = count ?? 0
+      const minLues = seuilsDe(config, 'passerelle')[0] ?? 1
+      badges.push({ id: 'passerelle', famille: 'participation', icone: '📰', titre: 'Lecteur de La Passerelle', description: minLues === 1 ? 'Une édition du journal La Passerelle lue' : '{n} éditions du journal La Passerelle lues', vars: { n: minLues }, obtenu: nbLues >= minLues, progression: { fait: Math.min(nbLues, minLues), total: minLues } })
+    }
+  }
   const persoActifs = config.perso.filter(p => p.actif && (p.clinique === 'LES_DEUX' || mesCliniques.includes(p.clinique as never)) && p.formation_ids.length)
   if (persoActifs.length) {
     const ids = Array.from(new Set(persoActifs.flatMap(p => p.formation_ids)))

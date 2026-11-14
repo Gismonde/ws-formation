@@ -37,6 +37,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
     { href: '/admin/assigner', label: 'Assigner en groupe', icon: 'assignment_ind', droits: ['suivi'] },
     { href: '/admin/politiques', label: 'Politiques', icon: 'policy', droits: ['suivi'] },
     { href: '/admin/formulaires', label: 'Formulaires', icon: 'assignment', formulaires: true },
+    { href: '/admin/passerelle', label: 'La Passerelle', icon: 'newspaper', adminOnly: true },
     { href: '/admin/sop', label: 'SOP', icon: 'description', adminOnly: true },
   ] },
   { id: 'suivi', label: 'Suivi & conformité', icon: 'verified', liens: [

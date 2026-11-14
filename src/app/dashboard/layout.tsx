@@ -32,8 +32,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
-  // Formulaires : espace WSSC seulement
-  const masques = espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']
+  // Formulaires et La Passerelle : espace WSSC seulement
+  const masques = espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires', '/dashboard/passerelle']
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)

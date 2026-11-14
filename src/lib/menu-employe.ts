@@ -1,4 +1,4 @@
-// Menu du portail employé : 7 entrées (Formulaires : WSSC seulement). Les comités s'ouvrent depuis la page d'accueil., chacune avec ses onglets en haut de la page.
+// Menu du portail employé : 8 entrées (Formulaires et La Passerelle : WSSC seulement). Les comités s'ouvrent depuis la page d'accueil., chacune avec ses onglets en haut de la page.
 export type OngletEmploye = { href: string; label: string; emoji: string }
 export type GroupeEmploye = { id: string; label: string; emoji: string; onglets: OngletEmploye[] }
 
@@ -20,6 +20,7 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
     { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
   ] },
   { id: 'formulaires', label: 'Formulaires', emoji: '📝', onglets: [{ href: '/dashboard/formulaires', label: 'Formulaires', emoji: '📝' }] },
+  { id: 'passerelle', label: 'La Passerelle', emoji: '📰', onglets: [{ href: '/dashboard/passerelle', label: 'La Passerelle', emoji: '📰' }] },
   { id: 'compte', label: 'Mon compte', emoji: '👤', onglets: [
     { href: '/dashboard/profil', label: 'Profil', emoji: '👤' },
     { href: '/dashboard/securite', label: 'Sécurité', emoji: '🔐' },
