@@ -1,3 +1,4 @@
+import { verifierCourrielsDus } from '@/lib/courriels-information-dus'
 import { demandesEnAttente } from '@/lib/formations-libres'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -50,12 +51,15 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
   { id: 'administration', label: 'Administration', icon: 'settings', liens: [
     { href: '/admin/accueil', label: "Page d'accueil", icon: 'home', adminOnly: true },
     { href: '/admin/comites', label: 'Comités', icon: 'diversity_3', adminOnly: true },
+    { href: '/admin/courriels-information', label: 'Courriel d’information', icon: 'campaign', adminOnly: true },
     { href: '/admin/audit', label: 'Audit logs', icon: 'manage_search', adminOnly: true },
     { href: '/admin/parametres', label: 'Paramètres', icon: 'settings', adminOnly: true },
   ] },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Courriels d'information programmés : envoyés dès que l'heure est passée
+  verifierCourrielsDus()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

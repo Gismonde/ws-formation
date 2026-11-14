@@ -145,6 +145,7 @@ export default function EditionForm({ edition, apercuCouverture }: { edition: Ed
           ? <button type="button" disabled={envoi} onClick={() => enregistrer(false)} className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{t('Repasser en brouillon')}</button>
           : <button type="button" disabled={envoi} onClick={() => enregistrer(true)} className="text-sm font-semibold px-4 py-2 rounded-lg border border-green-600 text-green-700 hover:bg-green-50">{t('Publier pour les employés du WSSC')}</button>)}
         {edition && <Link href="/dashboard/passerelle" className="text-sm text-indigo-700 hover:underline">{t('Voir comme un employé')} →</Link>}
+        {edition && f.publie && <Link href={`/admin/courriels-information?passerelle=${edition.id}`} className="text-sm font-semibold px-4 py-2 rounded-lg border border-indigo-600 text-indigo-700 hover:bg-indigo-50">{t('Annoncer par courriel')}</Link>}
         <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (f.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{f.publie ? t('Publiée') : t('Brouillon')}</span>
         {edition && <button type="button" onClick={supprimer} className="ml-auto text-sm text-red-600 hover:underline">{t('Retirer l’édition')}</button>}
       </div>

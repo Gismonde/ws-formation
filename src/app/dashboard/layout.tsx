@@ -1,3 +1,4 @@
+import { verifierCourrielsDus } from '@/lib/courriels-information-dus'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -17,6 +18,8 @@ import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/l
 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Courriels d'information programmés : envoyés dès que l'heure est passée
+  verifierCourrielsDus()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
