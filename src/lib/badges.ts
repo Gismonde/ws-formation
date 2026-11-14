@@ -68,6 +68,7 @@ export const BADGES_INTEGRES: { cle: string; icone: string; titre: string; descr
   { cle: 'voix', icone: '💬', titre: 'Voix de l’équipe', description: '{n} sondages de satisfaction remplis', seuils: [3] },
   { cle: 'externe', icone: '📎', titre: 'Formation externe', description: 'Une preuve de formation externe validée (congrès, cours…)' },
   { cle: 'regulier', icone: '🔥', titre: 'Régulier', description: 'Au moins une formation terminée {n} mois de suite', seuils: [3] },
+  { cle: 'comite', icone: '🤝', titre: 'Membre d’un comité', description: 'Un badge par comité publié dont l’employé est membre (WSSC)', multiples: true },
   { cle: 'passerelle', icone: '📰', titre: 'Lecteur de La Passerelle', description: 'Au moins {n} édition(s) du journal La Passerelle lue(s) (WSSC)', seuils: [1] },
 ]
 
@@ -246,6 +247,14 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, config
 
   // 7. Badges créés par les cliniques : terminer toutes les formations choisies
   const mesCliniques = cliniquesDe(e.clinique ?? 'LES_DEUX')
+  // Membre d'un comité (comités publiés) : un badge par comité, pour valoriser l'engagement
+  {
+    const { data: comites, error } = await sb.from('comites').select('id, nom, modifie_le').eq('publie', true).contains('membres', [{ employe_id: e.id }])
+    if (!error) {
+      if (comites?.length) for (const c of comites) badges.push({ id: 'comite:' + c.id, famille: 'participation', icone: '🤝', titre: 'Membre — {nom}', vars: { nom: c.nom as string }, description: 'Vous siégez au {nom}', obtenu: true })
+      else if (mesCliniques.includes('WSSC' as never)) badges.push({ id: 'comite', famille: 'participation', icone: '🤝', titre: 'Membre d’un comité', description: 'Siéger à un comité de la clinique', obtenu: false })
+    }
+  }
   // Lecteur de La Passerelle (journal du WSSC) : éditions ouvertes depuis le portail
   if (mesCliniques.includes('WSSC' as never)) {
     const { count, error } = await sb.from('passerelle_lectures').select('edition_id', { count: 'exact', head: true }).eq('employe_id', e.id)

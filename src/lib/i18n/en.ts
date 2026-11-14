@@ -3149,4 +3149,9 @@ export const EN: Record<string, string> = {
   'Retirer l’édition {n} de La Passerelle ? Elle disparaît pour tout le monde. Cette action est définitive.': 'Remove issue {n} from La Passerelle? It disappears for everyone. This can’t be undone.',
   'Une ligne par article, avec la page après une barre : « Santé et sécurité au travail | 6 ».': 'One line per article, with the page after a bar: “Occupational health and safety | 6”.',
   'On veut vous lire !': 'We want to read you!',
+  'Membre — {nom}': 'Member — {nom}',
+  'Vous siégez au {nom}': 'You sit on the {nom}',
+  'Membre d’un comité': 'Committee member',
+  'Siéger à un comité de la clinique': 'Sit on a clinic committee',
+  'Un badge par comité publié dont l’employé est membre (WSSC)': 'One badge per published committee the employee sits on (WSSC)',
 }
