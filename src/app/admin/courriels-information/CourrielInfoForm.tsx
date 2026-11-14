@@ -8,7 +8,8 @@ import { useConfirmer } from '@/components/Confirmation'
 type Choix = { id: string; nom: string }
 type EmployeChoix = Choix & { poste: string }
 type Mode = 'cliniques' | 'departements' | 'postes' | 'employes'
-type Initial = { objet: string; contenu: string; bouton_libelle: string; bouton_lien: string; cible: { type: 'cliniques'; cliniques: ('WSSC' | 'CMC')[] } } | null
+import type { CibleInfo } from '@/lib/courriels-information'
+export type Initial = { id?: string; objet: string; contenu: string; bouton_libelle: string; bouton_lien: string; cible: CibleInfo } | null
 
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
 
@@ -16,11 +17,13 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
   const { t } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
-  const [mode, setMode] = useState<Mode>('cliniques')
-  const [selCliniques, setSelCliniques] = useState<('WSSC' | 'CMC')[]>(initial?.cible.cliniques ?? (cliniques.length === 1 ? cliniques : []))
-  const [selDeps, setSelDeps] = useState<string[]>([])
-  const [selPostes, setSelPostes] = useState<string[]>([])
-  const [selEmps, setSelEmps] = useState<string[]>([])
+  const c0 = initial?.cible
+  const [mode, setMode] = useState<Mode>(c0?.type ?? 'cliniques')
+  const [selCliniques, setSelCliniques] = useState<('WSSC' | 'CMC')[]>(c0?.type === 'cliniques' ? c0.cliniques : (cliniques.length === 1 ? cliniques : []))
+  const [selDeps, setSelDeps] = useState<string[]>(c0?.type === 'departements' ? c0.ids : [])
+  const [selPostes, setSelPostes] = useState<string[]>(c0?.type === 'postes' ? c0.postes : [])
+  const [selEmps, setSelEmps] = useState<string[]>(c0?.type === 'employes' ? c0.ids : [])
+  const idBrouillon = initial?.id ?? null
   const [recherche, setRecherche] = useState('')
   const [objet, setObjet] = useState(initial?.objet ?? '')
   const [contenu, setContenu] = useState(initial?.contenu ?? '')
@@ -53,7 +56,7 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
       : { type: 'employes', ids: selEmps }
   ), [mode, selCliniques, selDeps, selPostes, selEmps])
   const corps = (action: string) => JSON.stringify({
-    action, objet, contenu, bouton_libelle: bouton.libelle, bouton_lien: bouton.lien, cible,
+    action, id: idBrouillon, objet, contenu, bouton_libelle: bouton.libelle, bouton_lien: bouton.lien, cible,
     envoi_prevu: programmer && quand ? new Date(quand).toISOString() : null,
   })
   const appeler = async (action: string) => {
@@ -79,6 +82,7 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
       if (!ok) return
       const d = await appeler('envoyer')
       setMessage({ ok: true, texte: d.programme ? t('Courriel programmé. Il partira à l’heure prévue.') : t('Courriel envoyé : {n} sur {total} destinataire(s).', { n: d.envoyes, total: d.destinataires }) })
+      if (idBrouillon) router.push('/admin/courriels-information')
       router.refresh()
     })
   }
@@ -157,6 +161,12 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
         {programmer && <p className="text-xs text-gray-500">{t('Le courriel part à l’heure prévue, dès que quelqu’un utilise la plateforme (en général dans les minutes qui suivent) et au plus tard le lendemain matin.')}</p>}
         {message && <div className={'rounded-lg px-4 py-3 text-sm ' + (message.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700')}>{message.texte}</div>}
         <div className="flex flex-wrap gap-3">
+          <button type="button" disabled={occupe} onClick={() => action(async () => {
+            const d = await appeler('brouillon')
+            setMessage({ ok: true, texte: t('Brouillon enregistré. Rien n’a été envoyé.') })
+            if (!idBrouillon) router.push(`/admin/courriels-information?brouillon=${d.brouillon}`)
+            router.refresh()
+          })} className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">{idBrouillon ? t('Enregistrer le brouillon') : t('Enregistrer en brouillon')}</button>
           <button type="button" disabled={occupe} onClick={() => action(async () => setApercu((await appeler('apercu')).html))} className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">{t('Aperçu')}</button>
           <button type="button" disabled={occupe} onClick={() => action(async () => { const d = await appeler('test'); setMessage({ ok: true, texte: t('Test envoyé à {a}.', { a: d.a }) }) })} className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">{t('M’envoyer un test')}</button>
           <button type="button" disabled={occupe || (programmer && !quand)} onClick={envoyer} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">{programmer ? t('Programmer l’envoi') : t('Envoyer maintenant')}</button>
@@ -174,15 +184,18 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
 }
 
 /** Annuler un envoi programmé (historique) */
-export function AnnulerEnvoi({ id }: { id: string }) {
+export function AnnulerEnvoi({ id, brouillon = false }: { id: string; brouillon?: boolean }) {
   const { t } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
   return (
     <button type="button" className="text-xs text-red-600 hover:underline" onClick={async () => {
-      if (!(await confirmer({ message: t('Annuler cet envoi programmé ? Le courriel ne partira pas.'), bouton: t('Annuler l’envoi') }))) return
+      if (!(await confirmer(brouillon
+        ? { message: t('Supprimer ce brouillon ? Il ne pourra pas être récupéré.'), bouton: t('Supprimer') }
+        : { message: t('Annuler cet envoi programmé ? Le courriel ne partira pas.'), bouton: t('Annuler l’envoi') }))) return
       await fetch(`/api/admin/courriels-information/${id}`, { method: 'DELETE' })
+      if (brouillon) router.push('/admin/courriels-information')
       router.refresh()
-    }}>{t('Annuler l’envoi')}</button>
+    }}>{brouillon ? t('Supprimer') : t('Annuler l’envoi')}</button>
   )
 }

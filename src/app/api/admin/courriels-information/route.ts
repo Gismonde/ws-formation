@@ -16,11 +16,26 @@ export async function POST(req: Request) {
   // La clinique affichée dans l'admin ne restreint pas les destinataires : seul le périmètre de l'administrateur compte
   const acteur = { ...acteurVue!, vue: null }
   const corps = await req.json().catch(() => ({}))
-  const v = lireCourrielInfo(corps)
+  const action = String(corps.action ?? '')
+  const v = lireCourrielInfo(corps, { brouillon: action === 'brouillon' })
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   const sb = serviceClient()
   const origine = origineDepuis(req)
-  const action = String(corps.action ?? '')
+  // Brouillon existant (enregistré, modifié puis envoyé) : on met à jour la même ligne
+  const idBrouillon = typeof corps.id === 'string' && /^[0-9a-f-]{36}$/i.test(corps.id) ? corps.id : null
+  if (idBrouillon) {
+    const { data: b } = await sb.from('courriels_information').select('statut').eq('id', idBrouillon).maybeSingle()
+    if (!b || b.statut !== 'brouillon') return NextResponse.json({ error: 'Ce brouillon n’existe plus (déjà envoyé ou supprimé).' }, { status: 409 })
+  }
+
+  if (action === 'brouillon') {
+    const ligne = { ...v.valeurs, statut: 'brouillon', cree_par: acteur.id }
+    const { data, error } = idBrouillon
+      ? await sb.from('courriels_information').update(ligne).eq('id', idBrouillon).select('id').single()
+      : await sb.from('courriels_information').insert(ligne).select('id').single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ brouillon: data.id })
+  }
 
   if (action === 'compter') {
     const liste = await destinataires(sb, acteur, v.valeurs.cible)
@@ -39,7 +54,10 @@ export async function POST(req: Request) {
   if (action !== 'envoyer') return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })
 
   const programme = new Date(v.valeurs.envoi_prevu).getTime() > Date.now() + 60_000
-  const { data, error } = await sb.from('courriels_information').insert({ ...v.valeurs, statut: programme ? 'programme' : 'envoi', cree_par: acteur.id }).select('*').single()
+  const ligne = { ...v.valeurs, statut: programme ? 'programme' : 'envoi', cree_par: acteur.id }
+  const { data, error } = idBrouillon
+    ? await sb.from('courriels_information').update(ligne).eq('id', idBrouillon).eq('statut', 'brouillon').select('*').single()
+    : await sb.from('courriels_information').insert(ligne).select('*').single()
   if (error) return NextResponse.json({ error: /courriels_information/.test(error.message) ? 'Exécutez d’abord supabase/migrations/courriels_information.sql dans Supabase.' : error.message }, { status: 500 })
   if (programme) {
     await logAudit({ acteur_id: acteur.id, type_action: 'PARAMETRE_MODIFIE', description: `Courriel d’information « ${v.valeurs.objet} » programmé`, metadata: { courriel_information_id: data.id, envoi_prevu: v.valeurs.envoi_prevu }, ...ipEtAgent(req) })

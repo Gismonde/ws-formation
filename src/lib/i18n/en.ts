@@ -3201,4 +3201,9 @@ export const EN: Record<string, string> = {
   'Lien du bouton : /dashboard/passerelle ou https://…': 'Button link: /dashboard/passerelle or https://…',
   'Programmer l’envoi du {date} à {n} destinataire(s) ?': 'Schedule sending on {date} to {n} recipient(s)?',
   '« Bonjour Prénom, » est ajouté automatiquement. Une ligne qui commence par « • » ou « - » devient une puce ; **texte** s’affiche en gras.': '“Bonjour First name,” is added automatically. A line starting with “•” or “-” becomes a bullet; **text** shows in bold.',
+  'Modifier / envoyer': 'Edit / send',
+  'Enregistrer le brouillon': 'Save draft',
+  'Brouillon enregistré. Rien n’a été envoyé.': 'Draft saved. Nothing was sent.',
+  'Supprimer ce brouillon ? Il ne pourra pas être récupéré.': 'Delete this draft? It can’t be recovered.',
+  'Supprimer ce brouillon ? Il ne pourra pas être récupéré.': 'Delete this draft? It can’t be recovered.',
 }

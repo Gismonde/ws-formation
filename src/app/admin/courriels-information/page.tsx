@@ -4,11 +4,13 @@ import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
 import { FUSEAU } from '@/lib/fuseau'
 import { cliniquesPermises, libelleCible, peutEnvoyerInformation, type CourrielInfo } from '@/lib/courriels-information'
 import { CLINIQUE_PASSERELLE, type Edition } from '@/lib/passerelle'
-import CourrielInfoForm, { AnnulerEnvoi } from './CourrielInfoForm'
+import CourrielInfoForm, { AnnulerEnvoi, type Initial } from './CourrielInfoForm'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
 const STATUTS: Record<string, { libelle: string; classe: string }> = {
+  brouillon: { libelle: 'Brouillon', classe: 'bg-gray-100 text-gray-600' },
   programme: { libelle: 'Programmé', classe: 'bg-blue-50 text-blue-700' },
   envoi: { libelle: 'En cours d’envoi', classe: 'bg-amber-50 text-amber-700' },
   envoye: { libelle: 'Envoyé', classe: 'bg-green-50 text-green-700' },
@@ -17,12 +19,12 @@ const STATUTS: Record<string, { libelle: string; classe: string }> = {
 }
 
 // Administration → Courriel d'information : envoyer (ou programmer) un courriel à tous les employés ou à certains.
-export default async function CourrielInformationPage({ searchParams }: { searchParams: Promise<{ passerelle?: string }> }) {
+export default async function CourrielInformationPage({ searchParams }: { searchParams: Promise<{ passerelle?: string; brouillon?: string }> }) {
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutEnvoyerInformation(acteur)) redirect('/admin')
-  const { passerelle } = await searchParams
+  const { passerelle, brouillon } = await searchParams
   const sb = serviceClient()
   const sansVue = { ...acteur, vue: null }
   const [{ data: deps }, { data: postes }, { data: emps }, historique] = await Promise.all([
@@ -45,8 +47,13 @@ export default async function CourrielInformationPage({ searchParams }: { search
   }
 
   // Annonce d'une édition de La Passerelle : courriel pré-rempli
-  let initial: { objet: string; contenu: string; bouton_libelle: string; bouton_lien: string; cible: { type: 'cliniques'; cliniques: ('WSSC' | 'CMC')[] } } | null = null
-  if (passerelle) {
+  let initial: Initial = null
+  // Brouillon à reprendre
+  if (brouillon) {
+    const b = lignes.find(l => l.id === brouillon && l.statut === 'brouillon')
+    if (b) initial = { id: b.id, objet: b.objet, contenu: b.contenu, bouton_libelle: b.bouton_libelle, bouton_lien: b.bouton_lien, cible: b.cible }
+  }
+  if (passerelle && !initial) {
     const { data } = await sb.from('passerelle_editions').select('*').eq('id', passerelle).eq('clinique', CLINIQUE_PASSERELLE).maybeSingle()
     const e = data as Edition | null
     if (e) {
@@ -71,21 +78,36 @@ export default async function CourrielInformationPage({ searchParams }: { search
       ) : (
         <>
           <CourrielInfoForm
+            key={initial && 'id' in initial ? initial.id : 'nouveau'}
             initial={initial}
             cliniques={cliniquesPermises(acteur)}
             departements={(deps ?? []).map(d => ({ id: d.id as string, nom: d.nom as string }))}
             postes={Array.from(new Set((postes ?? []).map(p => p.nom as string)))}
             employes={(emps ?? []).map(e => ({ id: e.id as string, nom: [e.prenom, e.nom].filter(Boolean).join(' '), poste: (e.poste as string | null) ?? '' }))}
           />
+          {lignes.some(l => l.statut === 'brouillon') && (
+            <>
+              <h2 className="text-lg font-bold text-gray-900 mt-10 mb-3">{t('Brouillons')}</h2>
+              <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                {lignes.filter(l => l.statut === 'brouillon').map(l => (
+                  <div key={l.id} className={'flex flex-wrap items-center gap-3 px-4 py-3 ' + (initial && 'id' in initial && initial.id === l.id ? 'bg-indigo-50' : '')}>
+                    <span className="flex-1 min-w-[200px]"><span className="font-medium text-gray-900">{l.objet}</span><span className="block text-xs text-gray-400">{t('Par')} {auteurs.get(l.cree_par ?? '') ?? '—'} · {date(l.cree_le)}</span></span>
+                    <Link href={`/admin/courriels-information?brouillon=${l.id}`} className="text-sm font-semibold text-indigo-700 hover:underline">{t('Modifier / envoyer')}</Link>
+                    <AnnulerEnvoi id={l.id} brouillon />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <h2 className="text-lg font-bold text-gray-900 mt-10 mb-3">{t('Historique des envois')}</h2>
-          {lignes.length === 0 ? <p className="text-sm text-gray-400">{t('Aucun envoi pour l’instant.')}</p> : (
+          {lignes.filter(l => l.statut !== 'brouillon').length === 0 ? <p className="text-sm text-gray-400">{t('Aucun envoi pour l’instant.')}</p> : (
             <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
               <table className="w-full text-sm min-w-[760px]">
                 <thead><tr className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
                   <th className="px-4 py-2.5">{t('Objet')}</th><th className="px-3 py-2.5">{t('Destinataires')}</th><th className="px-3 py-2.5">{t('Date')}</th><th className="px-3 py-2.5">{t('Statut')}</th><th className="px-3 py-2.5" />
                 </tr></thead>
                 <tbody>
-                  {lignes.map(l => (
+                  {lignes.filter(l => l.statut !== 'brouillon').map(l => (
                     <tr key={l.id} className="border-t border-gray-100 align-top">
                       <td className="px-4 py-2.5"><span className="font-medium text-gray-900">{l.objet}</span><span className="block text-xs text-gray-400">{t('Par')} {auteurs.get(l.cree_par ?? '') ?? '—'}</span></td>
                       <td className="px-3 py-2.5 text-gray-600">{t(libelleCible(l.cible, noms))}

@@ -19,7 +19,7 @@ export type CibleInfo =
 
 export type CourrielInfo = {
   id: string; objet: string; contenu: string; bouton_libelle: string; bouton_lien: string; cible: CibleInfo
-  statut: 'programme' | 'envoi' | 'envoye' | 'annule' | 'erreur'; envoi_prevu: string; envoye_le: string | null
+  statut: 'brouillon' | 'programme' | 'envoi' | 'envoye' | 'annule' | 'erreur'; envoi_prevu: string; envoye_le: string | null
   nb_destinataires: number | null; nb_envoyes: number | null; nb_non_actives: number | null; erreur: string | null; cree_par: string | null; cree_le: string
 }
 
@@ -29,12 +29,13 @@ const UUID = /^[0-9a-f-]{36}$/i
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 
 /** Valide le formulaire. Lien du bouton : https://… ou page de la plateforme (/…). */
-export function lireCourrielInfo(c: Record<string, unknown>): { valeurs: Omit<CourrielInfo, 'id' | 'statut' | 'envoye_le' | 'nb_destinataires' | 'nb_envoyes' | 'nb_non_actives' | 'erreur' | 'cree_par' | 'cree_le'> } | { erreur: string } {
+export function lireCourrielInfo(c: Record<string, unknown>, options: { brouillon?: boolean } = {}): { valeurs: Omit<CourrielInfo, 'id' | 'statut' | 'envoye_le' | 'nb_destinataires' | 'nb_envoyes' | 'nb_non_actives' | 'erreur' | 'cree_par' | 'cree_le'> } | { erreur: string } {
   const objet = texte(c.objet, 200)
   const contenu = texte(c.contenu, 10000)
   if (!objet) return { erreur: 'L’objet est requis.' }
   if (!contenu) return { erreur: 'Le message est vide.' }
-  const cible = lireCible(c.cible)
+  // Brouillon : les destinataires peuvent rester à choisir
+  const cible = lireCible(c.cible) ?? (options.brouillon ? { type: 'cliniques' as const, cliniques: [] } : null)
   if (!cible) return { erreur: 'Choisissez les destinataires.' }
   const libelle = texte(c.bouton_libelle, 60)
   const lien = texte(c.bouton_lien, 500)
