@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { chargerComites, peutGererComites, CLINIQUE_COMITES, type Comite } from '@/lib/comites'
+import { cliniquesDe } from '@/lib/cliniques'
 import ComiteForm from './ComiteForm'
 
 export const dynamic = 'force-dynamic'
@@ -22,8 +23,10 @@ export default async function ComiteAdminPage({ params }: { params: Promise<{ id
     if (!comite) notFound()
   }
   // Employés du WSSC proposés comme membres
-  const { data: emps } = await sb.from('employes').select('id, prenom, nom, poste').eq('actif', true).in('clinique', [CLINIQUE_COMITES, 'LES_DEUX']).order('nom')
-  const employes = (emps ?? []).map(e => ({ id: e.id as string, nom: [e.prenom, e.nom].filter(Boolean).join(' '), poste: (e.poste as string | null) ?? '' }))
+  // (administrateurs globaux compris, quelle que soit leur clinique)
+  const { data: emps } = await sb.from('employes').select('id, prenom, nom, poste, clinique, role').eq('actif', true).order('nom')
+  const employes = (emps ?? []).filter(e => e.role === 'super_admin' || cliniquesDe(e.clinique as string | null).includes(CLINIQUE_COMITES))
+    .map(e => ({ id: e.id as string, nom: [e.prenom, e.nom].filter(Boolean).join(' '), poste: (e.poste as string | null) ?? '' }))
 
   return (
     <div className="max-w-4xl">
