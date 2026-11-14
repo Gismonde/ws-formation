@@ -22,3 +22,12 @@ CREATE TABLE IF NOT EXISTS public.comites (
 CREATE INDEX IF NOT EXISTS comites_clinique_ordre_idx ON public.comites (clinique, ordre);
 -- Accès uniquement par le serveur (clé de service) : aucune politique pour les clients
 ALTER TABLE public.comites ENABLE ROW LEVEL SECURITY;
+
+-- Réglages simples de la plateforme (clé → valeur JSON). Ex. « banniere_comites » : bannière de la page d'accueil.
+CREATE TABLE IF NOT EXISTS public.reglages (
+  cle text PRIMARY KEY,
+  valeur jsonb NOT NULL DEFAULT '{}'::jsonb,
+  modifie_par uuid REFERENCES public.employes(id) ON DELETE SET NULL,
+  modifie_le timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.reglages ENABLE ROW LEVEL SECURITY;

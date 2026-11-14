@@ -29,3 +29,11 @@ describe('comités', () => {
     expect(peutGererComites({ role: 'gestionnaire', clinique: 'WSSC' })).toBe(false)
   })
 })
+
+import { lireBanniere } from '@/lib/comites'
+describe('bannière des comités', () => {
+  it('titre par défaut, image limitée aux adresses https:// ou /…', () => {
+    expect(lireBanniere({ titre: ' ', texte: ' Bonjour ', image: 'javascript:alert(1)' })).toEqual({ titre: 'Apprenez à connaître vos comités', texte: 'Bonjour', image: '' })
+    expect(lireBanniere({ image: 'https://exemple.com/a.png' }).image).toBe('https://exemple.com/a.png')
+  })
+})

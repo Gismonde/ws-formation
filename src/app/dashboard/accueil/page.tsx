@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
-import { chargerComites, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
+import { chargerComites, chargerBanniereComites, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
 import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
@@ -22,6 +22,7 @@ export default async function AccueilPage() {
   const { t, langue } = await i18n()
   // Comités (espace WSSC) : carte d'accès ; brouillons visibles par les administrateurs seulement
   const { comites } = espace.actif === CLINIQUE_COMITES ? await chargerComites(sb, { brouillons: peutGererComites(acteur) }) : { comites: [] }
+  const banniereComites = comites.length ? await chargerBanniereComites(sb) : null
 
   // Formations à faire (dans l'espace actif)
   const { data: assignations } = await sb.from('assignations').select('formation_id').eq('employe_id', acteur.id)
@@ -78,6 +79,25 @@ export default async function AccueilPage() {
         )}
       </section>
 
+      {/* Bannière des comités (espace WSSC) : image et textes modifiables dans Administration → Comités */}
+      {comites.length > 0 && banniereComites && (
+        <Link href="/dashboard/comites" style={{ display: 'block', position: 'relative', borderRadius: '18px', overflow: 'hidden', marginBottom: '24px', textDecoration: 'none', minHeight: '210px',
+          background: banniereComites.image ? `#0f172a url("${banniereComites.image}") center / cover no-repeat` : 'var(--accent-clinique)' }}>
+          {banniereComites.image && <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.6) 55%, rgba(15,23,42,0.15) 100%)' }} />}
+          <span style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '10px', padding: '28px 28px 24px', maxWidth: '640px', color: '#fff' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.85 }}>🤝 {t('Vos comités')}</span>
+            <span style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
+            {banniereComites.texte && <span style={{ fontSize: '15px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
+            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+              {comites.map(c => (
+                <span key={c.id} style={{ fontSize: '13px', fontWeight: 600, padding: '5px 12px', borderRadius: '99px', background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.3)' }}>{c.icone} {c.nom}</span>
+              ))}
+            </span>
+            <span style={{ alignSelf: 'flex-start', marginTop: '8px', fontSize: '14px', fontWeight: 700, padding: '10px 18px', borderRadius: '10px', background: '#fff', color: banniereComites.image ? '#0f172a' : 'var(--accent-clinique)' }}>{t('Découvrir vos comités')} →</span>
+          </span>
+        </Link>
+      )}
+
       {(journees ?? []).length > 0 && (
         <section style={{ display: 'grid', gap: '10px', marginBottom: '24px' }}>
           {(journees ?? []).map(j => (
@@ -92,17 +112,6 @@ export default async function AccueilPage() {
             </Link>
           ))}
         </section>
-      )}
-
-      {comites.length > 0 && (
-        <Link href="/dashboard/comites" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '14px 18px', borderRadius: '14px', background: '#fff', border: '1px solid #e5e7eb', textDecoration: 'none', color: '#111827', marginBottom: '24px' }}>
-          <span style={{ fontSize: '22px' }} aria-hidden>🤝</span>
-          <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontWeight: 700, fontSize: '15px' }}>{t('Apprenez à connaître vos comités')}</span>
-            <span style={{ display: 'block', fontSize: '13px', color: '#6b7280' }}>{comites.map(c => c.nom).join(' · ')}</span>
-          </span>
-          <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--accent-clinique)' }}>{t('Voir')} →</span>
-        </Link>
       )}
 
       {badges.length > 0 && (

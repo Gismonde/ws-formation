@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { chargerComites, couleurDe, peutGererComites } from '@/lib/comites'
+import { chargerComites, chargerBanniereComites, couleurDe, peutGererComites } from '@/lib/comites'
+import BanniereComitesForm from './BanniereComitesForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,9 @@ export default async function ComitesAdminPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (!peutGererComites(acteur)) redirect('/admin')
-  const { comites, migration } = await chargerComites(serviceClient(), { brouillons: true })
+  const sb = serviceClient()
+  const { comites, migration } = await chargerComites(sb, { brouillons: true })
+  const banniere = migration ? null : await chargerBanniereComites(sb)
 
   return (
     <div className="max-w-5xl">
@@ -26,6 +29,10 @@ export default async function ComitesAdminPage() {
           {!migration && <Link href="/admin/comites/nouveau" className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ {t('Nouveau comité')}</Link>}
         </div>
       </div>
+
+      {banniere && (banniere.reglagesAbsents
+        ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-6">{t('Bannière de la page d’accueil :')} {t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>
+        : <BanniereComitesForm banniere={{ titre: banniere.titre, texte: banniere.texte, image: banniere.image }} noms={comites.map(c => `${c.icone} ${c.nom}`)} />)}
 
       {migration ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>

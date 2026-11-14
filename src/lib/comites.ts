@@ -88,3 +88,28 @@ export async function aDesComites(sb: SupabaseClient, brouillons: boolean): Prom
   const { count, error } = await q
   return !error && (count ?? 0) > 0
 }
+
+/** Bannière « comités » de la page d'accueil (espace WSSC), modifiable dans Administration → Comités. */
+export type BanniereComites = { titre: string; texte: string; image: string }
+export const BANNIERE_COMITES_DEFAUT: BanniereComites = {
+  titre: 'Apprenez à connaître vos comités',
+  texte: 'Les comités du WSSC : ce qu’ils font, à quoi ils servent et qui en fait partie.',
+  image: '',
+}
+export const CLE_BANNIERE_COMITES = 'banniere_comites'
+
+/** Valide la bannière envoyée par le formulaire (image : adresse https:// ou chemin /…). */
+export function lireBanniere(c: Record<string, unknown>): BanniereComites {
+  const image = texte(c.image, 1000)
+  return {
+    titre: texte(c.titre, 120) || BANNIERE_COMITES_DEFAUT.titre,
+    texte: texte(c.texte, 300),
+    image: /^(https:\/\/|\/)/.test(image) ? image : '',
+  }
+}
+
+export async function chargerBanniereComites(sb: SupabaseClient): Promise<BanniereComites & { reglagesAbsents?: boolean }> {
+  const { data, error } = await sb.from('reglages').select('valeur').eq('cle', CLE_BANNIERE_COMITES).maybeSingle()
+  if (error) return { ...BANNIERE_COMITES_DEFAUT, reglagesAbsents: /reglages/.test(error.message) }
+  return data?.valeur ? lireBanniere(data.valeur as Record<string, unknown>) : BANNIERE_COMITES_DEFAUT
+}
