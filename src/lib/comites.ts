@@ -97,6 +97,9 @@ export const BANNIERE_COMITES_DEFAUT: BanniereComites = {
   image: '/comites/banniere.webp',
 }
 export const CLE_BANNIERE_COMITES = 'banniere_comites'
+/** Version anglaise de l'image d'origine (portail en anglais) */
+export const IMAGE_BANNIERE_EN = '/comites/banniere-en.webp'
+export const imageBanniere = (image: string, langue: string) => (langue === 'en' && image === BANNIERE_COMITES_DEFAUT.image ? IMAGE_BANNIERE_EN : image)
 
 /** Valide la bannière envoyée par le formulaire (image : adresse https:// ou chemin /…). */
 export function lireBanniere(c: Record<string, unknown>): BanniereComites {

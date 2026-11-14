@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
-import { chargerComites, chargerBanniereComites, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
+import { chargerComites, chargerBanniereComites, imageBanniere, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
 import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
@@ -79,19 +79,7 @@ export default async function AccueilPage() {
         )}
       </section>
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '16px 22px', color: '#fff' }}>
-            <span style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {banniereComites.texte && <span style={{ fontSize: '14px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
-              <span style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {comites.map(c => (
-                  <span key={c.id} style={{ fontSize: '13px', fontWeight: 600, padding: '5px 12px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.icone} {c.nom}</span>
-                ))}
-              </span>
-            </span>
-            <span style={{ fontSize: '14px', fontWeight: 700, padding: '10px 18px', borderRadius: '10px', background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b', whiteSpace: 'nowrap' }}>{t('Découvrir vos comités')} →</span>
-          </span>
-        </Link>
-      )}
+      {/* Bannière des comités (espace WSSC) : image et textes modifiables dans Administration → Comités */}
 
       {(journees ?? []).length > 0 && (
         <section style={{ display: 'grid', gap: '10px', marginBottom: '24px' }}>
@@ -149,12 +137,12 @@ export default async function AccueilPage() {
           {banniereComites.image ? (
             // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={banniereComites.image} alt={banniereComites.titre} style={{ display: 'block', width: '100%', height: 'auto' }} />
+            <img src={imageBanniere(banniereComites.image, langue)} alt={t(banniereComites.titre)} style={{ display: 'block', width: '100%', height: 'auto' }} />
           ) : (
-            <span style={{ display: 'block', padding: '20px 22px', color: '#fff', fontSize: '22px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
+            <span style={{ display: 'block', padding: '20px 22px', color: '#fff', fontSize: '22px', fontWeight: 800, lineHeight: 1.2 }}>{t(banniereComites.titre)}</span>
           )}
           <span style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px', color: '#fff' }}>
-            {banniereComites.texte && <span style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
+            {banniereComites.texte && <span style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.92 }}>{t(banniereComites.texte)}</span>}
             <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {comites.map(c => (
                 <span key={c.id} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.icone} {c.nom}</span>
