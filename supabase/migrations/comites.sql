@@ -34,3 +34,6 @@ ALTER TABLE public.reglages ENABLE ROW LEVEL SECURITY;
 
 -- Image de couverture d'un comité (adresse https:// ou chemin /…)
 ALTER TABLE public.comites ADD COLUMN IF NOT EXISTS image text NOT NULL DEFAULT '';
+
+-- Encadré « Vous voulez déclarer un incident ? » (texte, avec un lien vers la section Formulaires)
+ALTER TABLE public.comites ADD COLUMN IF NOT EXISTS incident text NOT NULL DEFAULT '';

@@ -84,6 +84,16 @@ export default async function ComitePage({ params }: { params: Promise<{ id: str
             </>}
           </section>
         )}
+        {c.incident && (
+          <section className="rounded-2xl p-6 flex flex-wrap items-center gap-4 bg-white border-2" style={{ borderColor: k.bord }}>
+            <div className="flex-1 min-w-[240px]">
+              <h2 className="text-lg font-bold" style={{ color: k.texte }}>{t('Vous voulez déclarer un incident ?')}</h2>
+              <p className="text-[15px] mt-1 text-gray-700 whitespace-pre-line">{c.incident}</p>
+            </div>
+            <Link href="/dashboard/formulaires" className="text-sm font-semibold px-5 py-2.5 rounded-lg text-white whitespace-nowrap" style={{ background: k.bord }}>{t('Aller aux formulaires')} →</Link>
+          </section>
+        )}
+
         {c.contact && (
           <section className="rounded-2xl p-6 flex flex-wrap items-center gap-4 text-white" style={{ background: `linear-gradient(135deg, ${k.texte}, ${k.bord})` }}>
             <div className="flex-1 min-w-[240px]">

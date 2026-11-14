@@ -3086,4 +3086,12 @@ export const EN: Record<string, string> = {
   'La personne à contacter pour participer au comité, avec son courriel si vous le souhaitez.': 'The person to contact to join the committee, with their email if you like.',
   'Vous voulez participer ?': 'Want to get involved?',
   'Vous voulez participer ? (facultatif)': 'Want to get involved? (optional)',
+  'Vous voulez déclarer un incident ?': 'Need to report an incident?',
+  'Aller aux formulaires': 'Go to forms',
+  'Vous voulez déclarer un incident ? (facultatif)': 'Need to report an incident? (optional)',
+  'Affiché avec un bouton « Aller aux formulaires ».': 'Shown with a “Go to forms” button.',
+  'Exécutez d’abord les dernières lignes de supabase/migrations/comites.sql (colonnes image et incident).': 'First run the last lines of supabase/migrations/comites.sql (image and incident columns).',
+  'Vous voulez déclarer un incident ?': 'Need to report an incident?',
+  'Vous voulez déclarer un incident ? (facultatif)': 'Need to report an incident? (optional)',
+  'Affiché avec un bouton « Aller aux formulaires ».': 'Shown with a “Go to forms” button.',
 }

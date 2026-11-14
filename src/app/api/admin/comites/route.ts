@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const v = lireComite(await req.json().catch(() => ({})))
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   const { data, error } = await serviceClient().from('comites').insert({ ...v.valeurs, clinique: CLINIQUE_COMITES, cree_par: acteur!.id }).select('*').single()
-  if (error) return NextResponse.json({ error: /image/.test(error.message) ? 'Exécutez d’abord la dernière partie de supabase/migrations/comites.sql (colonne image).' : messageMigration(error.message) }, { status: 500 })
+  if (error) return NextResponse.json({ error: /image|incident/.test(error.message) ? 'Exécutez d’abord les dernières lignes de supabase/migrations/comites.sql (colonnes image et incident).' : messageMigration(error.message) }, { status: 500 })
   await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `Comité créé : ${data.nom}${data.publie ? ' (publié)' : ' (brouillon)'}`, metadata: { comite_id: data.id }, ...ipEtAgent(req) })
   return NextResponse.json({ comite: data })
 }

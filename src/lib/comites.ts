@@ -14,6 +14,8 @@ export type Comite = {
   id: string; clinique: string; nom: string; icone: string; couleur: string
   /** Image de couverture (adresse https:// ou chemin /…), vide si aucune */
   image?: string
+  /** Encadré « Vous voulez déclarer un incident ? » (lien vers la section Formulaires), vide si aucun */
+  incident?: string
   presentation: string; description: string; activites: string; utilite: string; contact: string
   membres: MembreComite[]; ordre: number; publie: boolean; modifie_le?: string
 }
@@ -57,7 +59,7 @@ export function lireComite(c: Record<string, unknown>): { valeurs: DonneesComite
   return { valeurs: {
     nom, icone: texte(c.icone, 8) || '🤝', image: imageValide(c.image), couleur: COULEURS_COMITE[String(c.couleur)] ? String(c.couleur) : 'violet',
     presentation: texte(c.presentation, 300), description: texte(c.description, 5000), activites: texte(c.activites, 5000),
-    utilite: texte(c.utilite, 5000), contact: texte(c.contact, 500), membres,
+    utilite: texte(c.utilite, 5000), contact: texte(c.contact, 500), incident: texte(c.incident, 1000), membres,
     ordre: Number.isFinite(Number(c.ordre)) ? Math.round(Number(c.ordre)) : 0, publie: c.publie === true,
   } }
 }

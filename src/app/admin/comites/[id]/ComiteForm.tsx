@@ -18,7 +18,7 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
   const [f, setF] = useState({
     nom: comite?.nom ?? '', icone: comite?.icone ?? '🤝', image: comite?.image ?? '', couleur: comite?.couleur ?? 'violet',
     presentation: comite?.presentation ?? '', description: comite?.description ?? '', activites: comite?.activites ?? '',
-    utilite: comite?.utilite ?? '', contact: comite?.contact ?? '', ordre: comite?.ordre ?? 0, publie: comite?.publie ?? false,
+    utilite: comite?.utilite ?? '', contact: comite?.contact ?? '', incident: comite?.incident ?? '', ordre: comite?.ordre ?? 0, publie: comite?.publie ?? false,
   })
   const [membres, setMembres] = useState<MembreComite[]>(comite?.membres ?? [])
   const [envoi, setEnvoi] = useState(false)
@@ -128,6 +128,11 @@ export default function ComiteForm({ comite, employes }: { comite: Comite | null
           <span className="block text-sm font-semibold text-gray-800">{t('Vous voulez participer ? (facultatif)')}</span>
           <span className="block text-xs text-gray-500 mb-1">{t('La personne à contacter pour participer au comité, avec son courriel si vous le souhaitez.')}</span>
           <input className={champ} value={f.contact} onChange={e => maj('contact', e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="block text-sm font-semibold text-gray-800">{t('Vous voulez déclarer un incident ? (facultatif)')}</span>
+          <span className="block text-xs text-gray-500 mb-1">{t('Affiché avec un bouton « Aller aux formulaires ».')}</span>
+          <textarea className={champ} rows={2} value={f.incident} onChange={e => maj('incident', e.target.value)} />
         </label>
       </section>
 
