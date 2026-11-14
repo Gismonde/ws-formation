@@ -79,16 +79,6 @@ export default async function AccueilPage() {
         )}
       </section>
 
-      {/* Bannière des comités (espace WSSC) : image et textes modifiables dans Administration → Comités */}
-      {comites.length > 0 && banniereComites && (
-        <Link href="/dashboard/comites" style={{ display: 'block', borderRadius: '18px', overflow: 'hidden', marginBottom: '24px', textDecoration: 'none', background: '#0b2a5b', boxShadow: '0 4px 14px rgba(11,42,91,0.18)' }}>
-          {banniereComites.image ? (
-            // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={banniereComites.image} alt={banniereComites.titre} style={{ display: 'block', width: '100%', height: 'auto' }} />
-          ) : (
-            <span style={{ display: 'block', padding: '26px 28px 4px', color: '#fff', fontSize: '26px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
-          )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '16px 22px', color: '#fff' }}>
             <span style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {banniereComites.texte && <span style={{ fontSize: '14px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
@@ -151,6 +141,28 @@ export default async function AccueilPage() {
               : <Link key={i} href={c.lien} style={style}>{corps}</Link>
           })}
         </section>
+      )}
+
+      {/* Bannière des comités (espace WSSC), sous les cartes : image à gauche, comités et bouton à droite */}
+      {comites.length > 0 && banniereComites && (
+        <Link href="/dashboard/comites" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'center', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px', textDecoration: 'none', background: '#0b2a5b', maxWidth: '900px' }}>
+          {banniereComites.image ? (
+            // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={banniereComites.image} alt={banniereComites.titre} style={{ display: 'block', width: '100%', height: 'auto' }} />
+          ) : (
+            <span style={{ display: 'block', padding: '20px 22px', color: '#fff', fontSize: '22px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
+          )}
+          <span style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px', color: '#fff' }}>
+            {banniereComites.texte && <span style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
+            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {comites.map(c => (
+                <span key={c.id} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.icone} {c.nom}</span>
+              ))}
+            </span>
+            <span style={{ alignSelf: 'flex-start', fontSize: '13px', fontWeight: 700, padding: '8px 14px', borderRadius: '9px', background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b', whiteSpace: 'nowrap' }}>{t('Découvrir vos comités')} →</span>
+          </span>
+        </Link>
       )}
 
       {/* Visite virtuelle */}
