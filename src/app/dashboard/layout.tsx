@@ -7,7 +7,6 @@ import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 import { nombreEvenementsAInscrire } from '@/lib/evenements'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { getEspace } from '@/lib/espace'
-import { aDesComites, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
 import { ChoixEspace } from '@/components/ChoixEspace'
 import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
@@ -33,9 +32,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
-  // Comités et Formulaires : espace WSSC seulement ; Comités seulement s'il y en a de visibles (brouillons : administrateurs)
-  const avecComites = espace.actif === CLINIQUE_COMITES && !!employe && await aDesComites(serviceClient(), peutGererComites(employe))
-  const masques = [...(espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']), ...(avecComites ? [] : ['/dashboard/comites'])]
+  // Formulaires : espace WSSC seulement
+  const masques = espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)
