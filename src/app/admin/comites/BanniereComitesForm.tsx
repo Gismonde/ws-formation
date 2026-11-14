@@ -7,7 +7,7 @@ import type { BanniereComites } from '@/lib/comites'
 
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
 
-export default function BanniereComitesForm({ banniere, noms }: { banniere: BanniereComites; noms: string[] }) {
+export default function BanniereComitesForm({ banniere }: { banniere: BanniereComites }) {
   const { t } = useT()
   const router = useRouter()
   const entree = useRef<HTMLInputElement>(null)
@@ -49,7 +49,6 @@ export default function BanniereComitesForm({ banniere, noms }: { banniere: Bann
         <div className="flex flex-wrap items-center gap-3 px-5 py-4 text-white">
           <div className="flex-1 min-w-[260px] flex flex-col gap-2">
             {b.texte && <span className="text-sm opacity-90">{b.texte}</span>}
-            <span className="flex flex-wrap gap-2">{noms.map(n => <span key={n} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{n}</span>)}</span>
           </div>
           <span className="text-sm font-bold px-4 py-2 rounded-lg whitespace-nowrap" style={{ background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b' }}>{t('Découvrir vos comités')} →</span>
         </div>

@@ -32,7 +32,7 @@ export default async function ComitesAdminPage() {
 
       {banniere && (banniere.reglagesAbsents
         ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-6">{t('Bannière de la page d’accueil :')} {t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>
-        : <BanniereComitesForm banniere={{ titre: banniere.titre, texte: banniere.texte, image: banniere.image }} noms={comites.map(c => c.nom)} />)}
+        : <BanniereComitesForm banniere={{ titre: banniere.titre, texte: banniere.texte, image: banniere.image }} />)}
 
       {migration ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t('Exécutez d’abord')} <code>supabase/migrations/comites.sql</code> {t('dans Supabase.')}</div>
