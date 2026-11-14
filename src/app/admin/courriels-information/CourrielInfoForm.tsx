@@ -176,7 +176,7 @@ export default function CourrielInfoForm({ initial, cliniques, departements, pos
       {apercu && (
         <section className="bg-white border border-gray-200 rounded-xl p-3">
           <div className="flex justify-between items-center px-2 pb-2"><span className="text-sm font-semibold text-gray-800">{t('Aperçu')}</span><button type="button" onClick={() => setApercu(null)} className="text-xs text-gray-500">✕</button></div>
-          <iframe title={t('Aperçu')} srcDoc={apercu} className="w-full rounded-lg border border-gray-100" style={{ height: 640 }} sandbox="" />
+          <iframe title={t('Aperçu')} srcDoc={apercu} className="w-full rounded-lg border border-gray-100" style={{ height: 640 }} sandbox="allow-same-origin" />
         </section>
       )}
     </div>
