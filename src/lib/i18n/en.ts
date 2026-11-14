@@ -3075,4 +3075,7 @@ export const EN: Record<string, string> = {
   'Bannière de la page d’accueil :': 'Home page banner:',
   'Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. Image conseillée : format paysage, au moins 1600 × 500 pixels.': 'Shown at the top of the WSSC employees’ home page as soon as a committee is published. Recommended image: landscape, at least 1600 × 500 pixels.',
   'Bannière de la page d’accueil :': 'Home page banner:',
+  'Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. L’image est affichée en entier (format paysage conseillé) ; avec une image, le titre n’est pas répété par-dessus.': 'Shown at the top of the WSSC employees’ home page as soon as a committee is published. The image is shown in full (landscape recommended); with an image, the title isn’t repeated over it.',
+  'Image d’origine': 'Original image',
+  'Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. L’image est affichée en entier (format paysage conseillé) ; avec une image, le titre n’est pas répété par-dessus.': 'Shown at the top of the WSSC employees’ home page as soon as a committee is published. The image is shown in full (landscape recommended); with an image, the title isn’t repeated over it.',
 }

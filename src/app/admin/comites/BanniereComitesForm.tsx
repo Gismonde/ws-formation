@@ -38,17 +38,20 @@ export default function BanniereComitesForm({ banniere, noms }: { banniere: Bann
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
       <h2 className="text-base font-semibold text-gray-900">{t('Bannière de la page d’accueil')}</h2>
-      <p className="text-xs text-gray-500 mb-4">{t('Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. Image conseillée : format paysage, au moins 1600 × 500 pixels.')}</p>
+      <p className="text-xs text-gray-500 mb-4">{t('Affichée en haut de la page d’accueil des employés du WSSC dès qu’un comité est publié. L’image est affichée en entier (format paysage conseillé) ; avec une image, le titre n’est pas répété par-dessus.')}</p>
 
-      {/* Aperçu */}
-      <div className="relative rounded-2xl overflow-hidden mb-4" style={{ minHeight: 190, background: b.image ? `#0f172a url("${b.image}") center / cover no-repeat` : '#4f46e5' }}>
-        {b.image && <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.6) 55%, rgba(15,23,42,0.15) 100%)' }} />}
-        <div className="relative p-6 text-white max-w-xl flex flex-col gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">🤝 {t('Vos comités')}</span>
-          <span className="text-2xl font-extrabold leading-tight">{b.titre || t('Apprenez à connaître vos comités')}</span>
-          {b.texte && <span className="text-sm opacity-90">{b.texte}</span>}
-          <span className="flex flex-wrap gap-2 mt-1">{noms.map(n => <span key={n} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.3)' }}>{n}</span>)}</span>
-          <span className="self-start mt-2 text-sm font-bold px-4 py-2 rounded-lg bg-white text-gray-900">{t('Découvrir vos comités')} →</span>
+      {/* Aperçu (identique à la page d'accueil) */}
+      <div className="rounded-2xl overflow-hidden mb-4" style={{ background: '#0b2a5b' }}>
+        {b.image
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={b.image} alt={b.titre} className="block w-full h-auto" />
+          : <div className="px-6 pt-6 pb-1 text-white text-2xl font-extrabold">{b.titre || t('Apprenez à connaître vos comités')}</div>}
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 text-white">
+          <div className="flex-1 min-w-[260px] flex flex-col gap-2">
+            {b.texte && <span className="text-sm opacity-90">{b.texte}</span>}
+            <span className="flex flex-wrap gap-2">{noms.map(n => <span key={n} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{n}</span>)}</span>
+          </div>
+          <span className="text-sm font-bold px-4 py-2 rounded-lg whitespace-nowrap" style={{ background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b' }}>{t('Découvrir vos comités')} →</span>
         </div>
       </div>
 
@@ -60,6 +63,7 @@ export default function BanniereComitesForm({ banniere, noms }: { banniere: Bann
               {televersement ? t('Envoi…') : t('⬆ Téléverser une image')}
             </button>
             {b.image && <button type="button" onClick={() => setB(x => ({ ...x, image: '' }))} className="text-sm text-red-600 hover:underline">{t('Retirer l’image')}</button>}
+            {b.image !== '/comites/banniere.webp' && <button type="button" onClick={() => setB(x => ({ ...x, image: '/comites/banniere.webp' }))} className="text-sm text-indigo-700 hover:underline">{t('Image d’origine')}</button>}
             <span className="text-xs text-gray-500">{t('JPG, PNG ou WebP — 10 Mo max')}</span>
           </div>
           <input ref={entree} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) televerser(f); e.target.value = '' }} />

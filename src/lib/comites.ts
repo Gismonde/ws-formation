@@ -94,7 +94,7 @@ export type BanniereComites = { titre: string; texte: string; image: string }
 export const BANNIERE_COMITES_DEFAUT: BanniereComites = {
   titre: 'Apprenez à connaître vos comités',
   texte: 'Les comités du WSSC : ce qu’ils font, à quoi ils servent et qui en fait partie.',
-  image: '',
+  image: '/comites/banniere.webp',
 }
 export const CLE_BANNIERE_COMITES = 'banniere_comites'
 

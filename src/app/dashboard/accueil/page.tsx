@@ -81,19 +81,24 @@ export default async function AccueilPage() {
 
       {/* Bannière des comités (espace WSSC) : image et textes modifiables dans Administration → Comités */}
       {comites.length > 0 && banniereComites && (
-        <Link href="/dashboard/comites" style={{ display: 'block', position: 'relative', borderRadius: '18px', overflow: 'hidden', marginBottom: '24px', textDecoration: 'none', minHeight: '210px',
-          background: banniereComites.image ? `#0f172a url("${banniereComites.image}") center / cover no-repeat` : 'var(--accent-clinique)' }}>
-          {banniereComites.image && <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.6) 55%, rgba(15,23,42,0.15) 100%)' }} />}
-          <span style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '10px', padding: '28px 28px 24px', maxWidth: '640px', color: '#fff' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.85 }}>🤝 {t('Vos comités')}</span>
-            <span style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
-            {banniereComites.texte && <span style={{ fontSize: '15px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
-            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-              {comites.map(c => (
-                <span key={c.id} style={{ fontSize: '13px', fontWeight: 600, padding: '5px 12px', borderRadius: '99px', background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.3)' }}>{c.icone} {c.nom}</span>
-              ))}
+        <Link href="/dashboard/comites" style={{ display: 'block', borderRadius: '18px', overflow: 'hidden', marginBottom: '24px', textDecoration: 'none', background: '#0b2a5b', boxShadow: '0 4px 14px rgba(11,42,91,0.18)' }}>
+          {banniereComites.image ? (
+            // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={banniereComites.image} alt={banniereComites.titre} style={{ display: 'block', width: '100%', height: 'auto' }} />
+          ) : (
+            <span style={{ display: 'block', padding: '26px 28px 4px', color: '#fff', fontSize: '26px', fontWeight: 800, lineHeight: 1.2 }}>{banniereComites.titre}</span>
+          )}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '16px 22px', color: '#fff' }}>
+            <span style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {banniereComites.texte && <span style={{ fontSize: '14px', lineHeight: 1.5, opacity: 0.92 }}>{banniereComites.texte}</span>}
+              <span style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {comites.map(c => (
+                  <span key={c.id} style={{ fontSize: '13px', fontWeight: 600, padding: '5px 12px', borderRadius: '99px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(232,190,100,0.55)' }}>{c.icone} {c.nom}</span>
+                ))}
+              </span>
             </span>
-            <span style={{ alignSelf: 'flex-start', marginTop: '8px', fontSize: '14px', fontWeight: 700, padding: '10px 18px', borderRadius: '10px', background: '#fff', color: banniereComites.image ? '#0f172a' : 'var(--accent-clinique)' }}>{t('Découvrir vos comités')} →</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, padding: '10px 18px', borderRadius: '10px', background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b', whiteSpace: 'nowrap' }}>{t('Découvrir vos comités')} →</span>
           </span>
         </Link>
       )}
