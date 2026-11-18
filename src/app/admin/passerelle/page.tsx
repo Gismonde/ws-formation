@@ -26,7 +26,6 @@ export default async function PasserelleAdminPage() {
     .map(e => ({ id: e.id as string, prenom: e.prenom as string | null, nom: e.nom as string | null, poste: e.poste as string | null, email: e.email as string | null }))
   const comite = (comites ?? [])[0] as { nom: string; membres: MembreComite[] } | undefined
   const membresComite = comite ? (comite.membres ?? []).map(m => m.employe_id).filter((x): x is string => !!x && candidats.some(c => c.id === x)) : []
-  const nonInscrits = comite ? (comite.membres ?? []).filter(m => !m.employe_id).map(m => m.nom) : []
 
   return (
     <div className="max-w-4xl">
@@ -37,7 +36,7 @@ export default async function PasserelleAdminPage() {
         </div>
         <Link href="/dashboard/passerelle/gestion" className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">{t('Gérer La Passerelle')} →</Link>
       </div>
-      <DestinatairesForm employes={candidats} choisis={equipe} comite={comite ? { nom: comite.nom, ids: membresComite, nonInscrits } : null} />
+      <DestinatairesForm employes={candidats} choisis={equipe} comite={comite ? { nom: comite.nom, ids: membresComite } : null} />
     </div>
   )
 }

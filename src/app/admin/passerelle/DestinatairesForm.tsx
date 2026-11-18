@@ -7,7 +7,7 @@ type Employe = { id: string; prenom: string | null; nom: string | null; poste: s
 const nomDe = (e: Employe) => [e.prenom, e.nom].filter(Boolean).join(' ') || e.email || '—'
 const sansAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-export default function DestinatairesForm({ employes, choisis, comite }: { employes: Employe[]; choisis: string[]; comite: { nom: string; ids: string[]; nonInscrits: string[] } | null }) {
+export default function DestinatairesForm({ employes, choisis, comite }: { employes: Employe[]; choisis: string[]; comite: { nom: string; ids: string[] } | null }) {
   const { t } = useT()
   const [ids, setIds] = useState<string[]>(choisis)
   const [q, setQ] = useState('')
@@ -43,7 +43,6 @@ export default function DestinatairesForm({ employes, choisis, comite }: { emplo
           + {t('Ajouter les membres du comité « {nom} »', { nom: comite.nom })}
         </button>
       )}
-      {comite && comite.nonInscrits.length > 0 && <p className="text-xs text-amber-700 mb-3">{t('Sans compte sur la plateforme, donc impossibles à ajouter : {noms}', { noms: comite.nonInscrits.join(', ') })}</p>}
       <div className="relative max-w-md">
         <input className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder={t('Ajouter une personne : tapez un nom…')} value={q} onChange={e => setQ(e.target.value)} />
         {resultats.length > 0 && (
