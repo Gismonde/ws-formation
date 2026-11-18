@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { estExterne } from '@/lib/membres-externes'
 import { redirect } from 'next/navigation'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -15,6 +16,7 @@ export default async function PropositionsPage({ searchParams }: { searchParams:
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const sb = serviceClient()
   if (!peutVoirPropositions(acteur, await chargerDestinataires(sb))) redirect('/dashboard/passerelle')
   const { statut } = await searchParams

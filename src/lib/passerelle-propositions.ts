@@ -78,7 +78,7 @@ export function peutVoirPropositions(a: { id: string; role: string; clinique: st
 }
 
 /** Peut proposer : les employés du WSSC (et les administrateurs de La Passerelle). */
-export function peutProposer(a: { role: string; clinique: string | null } | null): boolean {
-  if (!a) return false
+export function peutProposer(a: { role: string; clinique: string | null; externe?: boolean | null } | null): boolean {
+  if (!a || a.externe === true) return false
   return peutGererPasserelle(a) || cliniquesDe(a.clinique).includes(CLINIQUE_PASSERELLE)
 }

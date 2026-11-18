@@ -1,4 +1,5 @@
 // Ouvre (ou télécharge, ?telecharger=1) une édition de La Passerelle : adresse temporaire signée vers le PDF privé.
+import { estExterne } from '@/lib/membres-externes'
 // La lecture est notée pour le badge « Lecteur de La Passerelle ».
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -10,6 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) return NextResponse.redirect(new URL('/login', req.url))
+  if (estExterne(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const admin = peutGererPasserelle(acteur)
   if (!admin && !cliniquesDe(acteur.clinique).includes(CLINIQUE_PASSERELLE)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const sb = serviceClient()

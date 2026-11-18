@@ -1,4 +1,5 @@
 import { journeeOuverte } from '@/lib/journees'
+import { estExterne } from '@/lib/membres-externes'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -21,7 +22,7 @@ export default async function AccueilPage() {
   const sb = serviceClient()
   const { t, langue } = await i18n()
   // Comités (espace WSSC) : carte d'accès ; brouillons visibles par les administrateurs seulement
-  const { comites } = espace.actif === CLINIQUE_COMITES ? await chargerComites(sb, { brouillons: peutGererComites(acteur) }) : { comites: [] }
+  const { comites } = espace.actif === CLINIQUE_COMITES && !estExterne(acteur) ? await chargerComites(sb, { brouillons: peutGererComites(acteur) }) : { comites: [] }
   const banniereComites = comites.length ? await chargerBanniereComites(sb) : null
 
   // Formations à faire (dans l'espace actif)

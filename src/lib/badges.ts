@@ -252,11 +252,11 @@ export async function badgesEmploye(sb: SupabaseClient, e: EmployeBadges, config
     const { data: comites, error } = await sb.from('comites').select('id, nom, modifie_le').eq('publie', true).filter('membres', 'cs', JSON.stringify([{ employe_id: e.id }]))
     if (!error) {
       if (comites?.length) for (const c of comites) badges.push({ id: 'comite:' + c.id, famille: 'participation', icone: '🤝', titre: 'Membre — {nom}', vars: { nom: c.nom as string }, description: 'Vous siégez au {nom}', obtenu: true })
-      else if (mesCliniques.includes('WSSC' as never)) badges.push({ id: 'comite', famille: 'participation', icone: '🤝', titre: 'Membre d’un comité', description: 'Siéger à un comité de la clinique', obtenu: false })
+      else if (mesCliniques.includes('WSSC' as never) && !(e as { externe?: boolean | null }).externe) badges.push({ id: 'comite', famille: 'participation', icone: '🤝', titre: 'Membre d’un comité', description: 'Siéger à un comité de la clinique', obtenu: false })
     }
   }
   // Lecteur de La Passerelle (journal du WSSC) : éditions ouvertes depuis le portail
-  if (mesCliniques.includes('WSSC' as never)) {
+  if (mesCliniques.includes('WSSC' as never) && !(e as { externe?: boolean | null }).externe) {
     const { count, error } = await sb.from('passerelle_lectures').select('edition_id', { count: 'exact', head: true }).eq('employe_id', e.id)
     if (!error) {
       const nbLues = count ?? 0

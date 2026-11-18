@@ -35,12 +35,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { t } = await i18n()
   // Membre externe : formations seulement (événements, politiques, SOP, formulaires masqués)
   const externe = estExterne(employe)
-  const masques = externe ? SECTIONS_RESERVEES_EMPLOYES : espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']
+  // Formulaires et La Passerelle : espace WSSC seulement
+  const masques = externe ? SECTIONS_RESERVEES_EMPLOYES : espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires', '/dashboard/passerelle']
   const politiquesEnAttente = employe && !externe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const evenementsAInscrire = employe && !externe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
-  // Formulaires et La Passerelle : espace WSSC seulement
-  const masques = espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires', '/dashboard/passerelle']
   // Gestionnaire sans droit : portail employé seulement (pas de lien vers l'admin)
   const isAdmin = !!employe && aAccesAdmin(employe)
   // Logo, nom et couleurs de l'espace actif (CMC ou WSSC)

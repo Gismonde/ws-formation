@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
@@ -15,6 +16,7 @@ export default async function PasserellePage() {
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const espace = await getEspace(acteur)
   if (espace.actif !== CLINIQUE_PASSERELLE) redirect('/dashboard/accueil')
   const sb = serviceClient()
