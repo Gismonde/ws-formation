@@ -8,11 +8,11 @@ const supabaseNavigateur = () => createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export async function envoyerMedia(fichier: File, genre: GenreMedia): Promise<string> {
+export async function envoyerMedia(fichier: File, genre: GenreMedia, route = '/api/formations/medias'): Promise<string> {
   const regle = REGLES_MEDIAS[genre]
   if (!regle.types.includes(fichier.type)) throw new Error(`Format non accepté (${regle.libelle})`)
   if (fichier.size > regle.tailleMaxMo * 1024 * 1024) throw new Error(`Fichier trop volumineux (${regle.libelle})`)
-  const res = await fetch('/api/formations/medias', {
+  const res = await fetch(route, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ genre, type: fichier.type, taille: fichier.size }),

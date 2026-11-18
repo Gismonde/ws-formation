@@ -20,9 +20,9 @@ describe('Propositions de La Passerelle', () => {
     expect(ok).toEqual({ valeurs: { sujet: 'Fête', message: 'Photos', fichiers: [{ ref: ref('a.jpg'), nom: 'a.jpg', type: 'image/jpeg', taille: 10 }] } })
   })
   it('les personnes choisies voient les propositions, quel que soit leur rôle', () => {
-    expect(peutVoirPropositions({ id: E, role: 'employe', clinique: 'WSSC' }, [E])).toBe(true)
-    expect(peutVoirPropositions({ id: 'autre', role: 'employe', clinique: 'WSSC' }, [E])).toBe(false)
-    expect(peutVoirPropositions({ id: 'autre', role: 'super_admin', clinique: null }, [])).toBe(true)
+    expect(peutVoirPropositions({ id: E, role: 'employe' }, [E])).toBe(true)
+    expect(peutVoirPropositions({ id: 'autre', role: 'employe' }, [E])).toBe(false)
+    expect(peutVoirPropositions({ id: 'autre', role: 'super_admin' }, [])).toBe(true)
   })
   it('seuls les employés du WSSC proposent', () => {
     expect(peutProposer({ role: 'employe', clinique: 'WSSC' })).toBe(true)

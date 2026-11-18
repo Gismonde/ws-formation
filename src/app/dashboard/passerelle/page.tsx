@@ -5,8 +5,8 @@ import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 import Link from 'next/link'
-import { chargerAppel, chargerEditions, couleurEdition, peutGererPasserelle, CLINIQUE_PASSERELLE, type Edition } from '@/lib/passerelle'
-import { chargerDestinataires, peutVoirPropositions, type FichierProposition } from '@/lib/passerelle-propositions'
+import { chargerAppel, chargerEditions, chargerEquipe, couleurEdition, peutGererPasserelle, CLINIQUE_PASSERELLE, type Edition } from '@/lib/passerelle'
+import { type FichierProposition } from '@/lib/passerelle-propositions'
 import PropositionForm, { type MaProposition } from './PropositionForm'
 
 export const dynamic = 'force-dynamic'
@@ -20,15 +20,14 @@ export default async function PasserellePage() {
   const espace = await getEspace(acteur)
   if (espace.actif !== CLINIQUE_PASSERELLE) redirect('/dashboard/accueil')
   const sb = serviceClient()
-  const admin = peutGererPasserelle(acteur)
-  const [{ editions }, appel, { data: lues }, destinataires, { data: miennes }] = await Promise.all([
+  const admin = peutGererPasserelle(acteur, await chargerEquipe(sb))
+  const [{ editions }, appel, { data: lues }, { data: miennes }] = await Promise.all([
     chargerEditions(sb, admin), chargerAppel(sb),
     sb.from('passerelle_lectures').select('edition_id').eq('employe_id', acteur.id),
-    chargerDestinataires(sb),
     sb.from('passerelle_propositions').select('id, sujet, statut, cree_le, fichiers').eq('employe_id', acteur.id).order('cree_le', { ascending: false }).limit(10),
   ])
   const mesPropositions: MaProposition[] = (miennes ?? []).map(p => ({ id: p.id, sujet: p.sujet, statut: p.statut, cree_le: p.cree_le, nbFichiers: ((p.fichiers ?? []) as FichierProposition[]).length }))
-  const recoit = peutVoirPropositions(acteur, destinataires)
+  const recoit = admin
   const { count: nouvelles } = recoit ? await sb.from('passerelle_propositions').select('id', { count: 'exact', head: true }).eq('statut', 'nouvelle') : { count: 0 }
   const dejaLues = new Set((lues ?? []).map(l => l.edition_id as string))
   const urls = await signerUrlsMedias(editions.map(e => e.couverture))
@@ -51,6 +50,11 @@ export default async function PasserellePage() {
           <Link href="/dashboard/passerelle/propositions" className="inline-flex items-center gap-2 mt-4 text-sm font-semibold px-4 py-2 rounded-xl border border-[#D4537E] text-[#72243E] bg-white hover:bg-[#FBEAF0]">
             📥 {t('Propositions reçues')}
             {(nouvelles ?? 0) > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ background: '#D4537E' }}>{t('{n} nouvelle(s)', { n: nouvelles ?? 0 })}</span>}
+          </Link>
+        )}
+        {admin && (
+          <Link href="/dashboard/passerelle/gestion" className="inline-flex items-center gap-2 mt-4 ml-2 text-sm font-semibold px-4 py-2 rounded-xl border border-[#185FA5] text-[#0C447C] bg-white hover:bg-[#E6F1FB]">
+            ⚙ {t('Gérer La Passerelle')}
           </Link>
         )}
       </header>

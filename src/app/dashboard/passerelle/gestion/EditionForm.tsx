@@ -9,6 +9,7 @@ import { useConfirmer } from '@/components/Confirmation'
 import { envoyerMedia } from '@/lib/medias-client'
 import { COULEURS_EDITION, couleurEdition, infosCouverture, type Edition } from '@/lib/passerelle'
 
+const ROUTE_MEDIAS = '/api/passerelle/medias'
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
 
 /** Page 1 du PDF en image (WebP) et son texte, dans le navigateur. */
@@ -31,7 +32,7 @@ async function lirePremierePage(fichier: File): Promise<{ image: File; texte: st
   return { image: new File([blob], 'couverture.webp', { type: 'image/webp' }), texte }
 }
 
-export default function EditionForm({ edition, apercuCouverture }: { edition: Edition | null; apercuCouverture: string | null }) {
+export default function EditionForm({ edition, apercuCouverture, peutAnnoncer }: { edition: Edition | null; apercuCouverture: string | null; peutAnnoncer: boolean }) {
   const { t } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
@@ -57,9 +58,9 @@ export default function EditionForm({ edition, apercuCouverture }: { edition: Ed
       const infos = infosCouverture(texte)
       setApercu(URL.createObjectURL(image))
       setDepot(t('Envoi du PDF…'))
-      const pdf = await envoyerMedia(fichier, 'fichier')
+      const pdf = await envoyerMedia(fichier, 'fichier', ROUTE_MEDIAS)
       setDepot(t('Envoi de la couverture…'))
-      const couverture = await envoyerMedia(image, 'image')
+      const couverture = await envoyerMedia(image, 'image', ROUTE_MEDIAS)
       setF(x => ({
         ...x, pdf, couverture,
         numero: x.numero || (infos.numero ? String(infos.numero) : ''), volume: infos.volume ? String(infos.volume) : x.volume,
@@ -82,8 +83,8 @@ export default function EditionForm({ edition, apercuCouverture }: { edition: Ed
     setEnvoi(false)
     if (!r.ok) { setMessage({ ok: false, texte: d.error ?? t('Erreur') }); return }
     setF(x => ({ ...x, publie }))
-    if (!edition) { router.push(`/admin/passerelle/${d.edition.id}`); return }
-    setMessage({ ok: true, texte: publie ? t('Enregistrée. L’édition est visible par les employés du WSSC.') : t('Enregistrée. L’édition est en brouillon : seuls les administrateurs la voient.') })
+    if (!edition) { router.push(`/dashboard/passerelle/gestion/${d.edition.id}`); return }
+    setMessage({ ok: true, texte: publie ? t('Enregistrée. L’édition est visible par les employés du WSSC.') : t('Enregistrée. L’édition est en brouillon : seule l’équipe de La Passerelle la voit.') })
     router.refresh()
   }
 
@@ -92,7 +93,7 @@ export default function EditionForm({ edition, apercuCouverture }: { edition: Ed
     if (!(await confirmer({ message: t('Retirer l’édition {n} de La Passerelle ? Elle disparaît pour tout le monde. Cette action est définitive.', { n: edition.numero }), bouton: t('Retirer') }))) return
     const r = await fetch(`/api/admin/passerelle/${edition.id}`, { method: 'DELETE' })
     if (!r.ok) { const d = await r.json().catch(() => ({})); setMessage({ ok: false, texte: d.error ?? t('Erreur') }); return }
-    router.push('/admin/passerelle'); router.refresh()
+    router.push('/dashboard/passerelle/gestion'); router.refresh()
   }
 
   return (
@@ -145,7 +146,7 @@ export default function EditionForm({ edition, apercuCouverture }: { edition: Ed
           ? <button type="button" disabled={envoi} onClick={() => enregistrer(false)} className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{t('Repasser en brouillon')}</button>
           : <button type="button" disabled={envoi} onClick={() => enregistrer(true)} className="text-sm font-semibold px-4 py-2 rounded-lg border border-green-600 text-green-700 hover:bg-green-50">{t('Publier pour les employés du WSSC')}</button>)}
         {edition && <Link href="/dashboard/passerelle" className="text-sm text-indigo-700 hover:underline">{t('Voir comme un employé')} →</Link>}
-        {edition && f.publie && <Link href={`/admin/courriels-information?passerelle=${edition.id}`} className="text-sm font-semibold px-4 py-2 rounded-lg border border-indigo-600 text-indigo-700 hover:bg-indigo-50">{t('Annoncer par courriel')}</Link>}
+        {edition && f.publie && peutAnnoncer && <Link href={`/admin/courriels-information?passerelle=${edition.id}`} className="text-sm font-semibold px-4 py-2 rounded-lg border border-indigo-600 text-indigo-700 hover:bg-indigo-50">{t('Annoncer par courriel')}</Link>}
         <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (f.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{f.publie ? t('Publiée') : t('Brouillon')}</span>
         {edition && <button type="button" onClick={supprimer} className="ml-auto text-sm text-red-600 hover:underline">{t('Retirer l’édition')}</button>}
       </div>

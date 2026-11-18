@@ -4,21 +4,22 @@ import { redirect } from 'next/navigation'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { FUSEAU } from '@/lib/fuseau'
-import { chargerDestinataires, estStatut, peutVoirPropositions, STATUTS_PROPOSITION, type Proposition, type StatutProposition } from '@/lib/passerelle-propositions'
+import { gerePasserelle } from '@/lib/passerelle'
+import { estStatut, STATUTS_PROPOSITION, type Proposition, type StatutProposition } from '@/lib/passerelle-propositions'
 import CarteProposition from './CarteProposition'
 
 export const dynamic = 'force-dynamic'
 
 const ONGLETS: Record<StatutProposition, string> = { nouvelle: 'Nouvelles', retenue: 'Retenues', classee: 'Classées' }
 
-// La Passerelle → Propositions reçues : réservé aux personnes choisies par un administrateur (et aux administrateurs).
+// La Passerelle → Propositions reçues : réservé à l'équipe de La Passerelle et à l'administrateur global.
 export default async function PropositionsPage({ searchParams }: { searchParams: Promise<{ statut?: string }> }) {
   const { t, loc } = await i18n()
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
   if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const sb = serviceClient()
-  if (!peutVoirPropositions(acteur, await chargerDestinataires(sb))) redirect('/dashboard/passerelle')
+  if (!(await gerePasserelle(sb, acteur))) redirect('/dashboard/passerelle')
   const { statut } = await searchParams
   const filtre: StatutProposition = estStatut(statut) ? statut : 'nouvelle'
 

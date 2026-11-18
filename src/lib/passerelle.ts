@@ -1,9 +1,8 @@
 // « La Passerelle » : le journal de la clinique (portail employé, espace WSSC).
-//  - Les administrateurs déposent chaque édition en PDF (espace privé) ; la couverture est la page 1.
-//  - Une édition en brouillon n'est visible que par les administrateurs.
+//  - L'équipe de La Passerelle (employés choisis par l'administrateur global) dépose chaque édition en PDF (espace privé) ; la couverture est la page 1.
+//  - Une édition en brouillon n'est visible que par l'équipe et l'administrateur global.
 //  - Ouvrir une édition est noté (badge « Lecteur de La Passerelle »).
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { estAdministrateur, cliniquesDe } from '@/lib/cliniques'
 
 export const CLINIQUE_PASSERELLE = 'WSSC'
 export const CLE_APPEL_PASSERELLE = 'passerelle_appel'
@@ -32,10 +31,33 @@ export const APPEL_DEFAUT = {
 }
 export type AppelPasserelle = typeof APPEL_DEFAUT
 
-/** Administrateurs qui voient le WSSC : déposent les éditions et voient les brouillons. */
-export function peutGererPasserelle(a: { role: string; clinique: string | null } | null): boolean {
-  if (!a || !estAdministrateur(a.role)) return false
-  return a.role === 'super_admin' || cliniquesDe(a.clinique).includes(CLINIQUE_PASSERELLE)
+/** Équipe de La Passerelle : employés choisis par l'administrateur global (quel que soit leur rôle). */
+export const CLE_EQUIPE_PASSERELLE = 'passerelle_destinataires'
+
+export async function chargerEquipe(sb: SupabaseClient): Promise<string[]> {
+  const { data, error } = await sb.from('reglages').select('valeur').eq('cle', CLE_EQUIPE_PASSERELLE).maybeSingle()
+  if (error || !data?.valeur) return []
+  const ids = (data.valeur as { employes?: unknown }).employes
+  return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : []
+}
+
+/**
+ * Gère La Passerelle (éditions, brouillons, encadré, propositions reçues) :
+ * l'administrateur global, et les employés choisis pour l'équipe de La Passerelle.
+ */
+export function peutGererPasserelle(a: { id: string; role: string; externe?: boolean | null } | null, equipe: string[]): boolean {
+  if (!a || a.externe === true) return false
+  return a.role === 'super_admin' || equipe.includes(a.id)
+}
+
+/** Choisir l'équipe de La Passerelle : administrateur global seulement. */
+export const peutChoisirEquipePasserelle = (a: { role: string } | null) => a?.role === 'super_admin'
+
+/** Raccourci serveur : charge l'équipe et vérifie. */
+export async function gerePasserelle(sb: SupabaseClient, a: { id: string; role: string; externe?: boolean | null } | null): Promise<boolean> {
+  if (!a) return false
+  if (a.role === 'super_admin') return a.externe !== true
+  return peutGererPasserelle(a, await chargerEquipe(sb))
 }
 
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
@@ -66,7 +88,7 @@ export function lireEdition(c: Record<string, unknown>): { valeurs: Omit<Edition
   } }
 }
 
-/** Éditions, de la plus récente à la plus ancienne (brouillons : administrateurs). */
+/** Éditions, de la plus récente à la plus ancienne (brouillons : équipe de La Passerelle). */
 export async function chargerEditions(sb: SupabaseClient, brouillons: boolean): Promise<{ editions: Edition[]; migration?: boolean }> {
   let q = sb.from('passerelle_editions').select('*').eq('clinique', CLINIQUE_PASSERELLE).order('date_parution', { ascending: false }).order('numero', { ascending: false })
   if (!brouillons) q = q.eq('publie', true)

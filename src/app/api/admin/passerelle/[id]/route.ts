@@ -2,12 +2,12 @@
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
-import { lireEdition, peutGererPasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
+import { lireEdition, gerePasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
-  if (!peutGererPasserelle(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!(await gerePasserelle(serviceClient(), acteur))) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const v = lireEdition(await req.json().catch(() => ({})))
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   const { data, error } = await serviceClient().from('passerelle_editions').update({ ...v.valeurs, modifie_le: new Date().toISOString() })
@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
-  if (!peutGererPasserelle(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!(await gerePasserelle(serviceClient(), acteur))) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const { data, error } = await serviceClient().from('passerelle_editions').delete().eq('id', id).eq('clinique', CLINIQUE_PASSERELLE).select('numero')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data?.length) return NextResponse.json({ error: 'Édition introuvable' }, { status: 404 })

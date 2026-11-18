@@ -1,14 +1,12 @@
 // « La Passerelle » : propositions des employés (idées d'articles, photos).
 //  - Tout employé du WSSC peut proposer une idée, avec des fichiers PDF, JPEG ou PNG (espace privé).
-//  - Un administrateur choisit les personnes qui reçoivent les propositions, quel que soit leur rôle.
-//  - Ces personnes (et les administrateurs de La Passerelle) voient les propositions reçues ;
-//    seules les personnes choisies reçoivent un courriel à chaque nouvelle proposition.
+//  - L'équipe de La Passerelle (employés choisis par l'administrateur global, quel que soit leur rôle)
+//    voit les propositions reçues et reçoit un courriel à chaque nouvelle proposition.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { PREFIXE_MEDIA } from '@/lib/medias'
-import { peutGererPasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
+import { peutGererPasserelle, chargerEquipe, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
 import { cliniquesDe } from '@/lib/cliniques'
 
-export const CLE_DESTINATAIRES_PROPOSITIONS = 'passerelle_destinataires'
 export const DOSSIER_PROPOSITIONS = 'passerelle-propositions'
 export const FICHIERS_PROPOSITION = {
   types: { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' } as Record<string, string>,
@@ -63,22 +61,14 @@ export function lireProposition(c: Record<string, unknown>, employeId: string): 
   return { valeurs: { sujet, message, fichiers } }
 }
 
-/** Employés choisis pour recevoir les propositions. */
-export async function chargerDestinataires(sb: SupabaseClient): Promise<string[]> {
-  const { data, error } = await sb.from('reglages').select('valeur').eq('cle', CLE_DESTINATAIRES_PROPOSITIONS).maybeSingle()
-  if (error || !data?.valeur) return []
-  const ids = (data.valeur as { employes?: unknown }).employes
-  return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : []
-}
+/** Équipe de La Passerelle : reçoit les propositions (et un courriel à chaque nouvelle). */
+export const chargerDestinataires = chargerEquipe
 
-/** Voit les propositions reçues : les personnes choisies et les administrateurs de La Passerelle. */
-export function peutVoirPropositions(a: { id: string; role: string; clinique: string | null } | null, destinataires: string[]): boolean {
-  if (!a) return false
-  return destinataires.includes(a.id) || peutGererPasserelle(a)
-}
+/** Voit les propositions reçues : l'équipe de La Passerelle et l'administrateur global. */
+export const peutVoirPropositions = peutGererPasserelle
 
-/** Peut proposer : les employés du WSSC (et les administrateurs de La Passerelle). */
+/** Peut proposer : les employés du WSSC (et l'administrateur global). */
 export function peutProposer(a: { role: string; clinique: string | null; externe?: boolean | null } | null): boolean {
   if (!a || a.externe === true) return false
-  return peutGererPasserelle(a) || cliniquesDe(a.clinique).includes(CLINIQUE_PASSERELLE)
+  return a.role === 'super_admin' || cliniquesDe(a.clinique).includes(CLINIQUE_PASSERELLE)
 }

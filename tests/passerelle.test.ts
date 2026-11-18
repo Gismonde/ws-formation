@@ -20,9 +20,11 @@ describe('La Passerelle', () => {
     expect('valeurs' in r && r.valeurs).toMatchObject({ numero: 4, volume: 1, couleur: 'orange', publie: false })
   })
 
-  it('gérée par les administrateurs qui voient le WSSC', () => {
-    expect(peutGererPasserelle({ role: 'admin', clinique: 'WSSC' })).toBe(true)
-    expect(peutGererPasserelle({ role: 'admin', clinique: 'CMC' })).toBe(false)
-    expect(peutGererPasserelle({ role: 'employe', clinique: 'WSSC' })).toBe(false)
+  it('gérée par l’administrateur global et l’équipe choisie (quel que soit le rôle)', () => {
+    expect(peutGererPasserelle({ id: 'g', role: 'super_admin' }, [])).toBe(true)
+    expect(peutGererPasserelle({ id: 'a', role: 'admin' }, [])).toBe(false)
+    expect(peutGererPasserelle({ id: 'e', role: 'employe' }, ['e'])).toBe(true)
+    expect(peutGererPasserelle({ id: 'e', role: 'employe' }, ['x'])).toBe(false)
+    expect(peutGererPasserelle({ id: 'e', role: 'employe', externe: true }, ['e'])).toBe(false)
   })
 })

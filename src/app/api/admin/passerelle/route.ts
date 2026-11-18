@@ -2,11 +2,11 @@
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
-import { lireEdition, peutGererPasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
+import { lireEdition, gerePasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
 
 export async function POST(req: Request) {
   const acteur = await getActeur()
-  if (!peutGererPasserelle(acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!(await gerePasserelle(serviceClient(), acteur))) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const v = lireEdition(await req.json().catch(() => ({})))
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   const { data, error } = await serviceClient().from('passerelle_editions').insert({ ...v.valeurs, clinique: CLINIQUE_PASSERELLE, cree_par: acteur!.id }).select('*').single()

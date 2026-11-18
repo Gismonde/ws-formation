@@ -1,13 +1,14 @@
 // PATCH { statut?, note? } : suivi d'une proposition par les personnes qui les reçoivent.
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
-import { chargerDestinataires, estStatut, peutVoirPropositions } from '@/lib/passerelle-propositions'
+import { estStatut } from '@/lib/passerelle-propositions'
+import { gerePasserelle } from '@/lib/passerelle'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const acteur = await getActeur()
   const sb = serviceClient()
-  if (!peutVoirPropositions(acteur, await chargerDestinataires(sb))) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!await gerePasserelle(sb, acteur)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const c = await req.json().catch(() => ({})) as { statut?: unknown; note?: unknown }
   const maj: Record<string, unknown> = { traite_par: acteur!.id, traite_le: new Date().toISOString() }
   if (c.statut !== undefined) { if (!estStatut(c.statut)) return NextResponse.json({ error: 'Statut inconnu' }, { status: 400 }); maj.statut = c.statut }
