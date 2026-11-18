@@ -17,3 +17,12 @@ export function valeursExterne(
   const org = typeof demande.organisation === 'string' ? demande.organisation.trim().slice(0, 120) : ''
   return { externe, organisation: externe && org ? org : null }
 }
+
+/**
+ * Sections réservées aux employés de la clinique : un membre externe n'y a pas accès
+ * (menu masqué, pages redirigées, jamais visé par un événement ou une politique, aucun courriel).
+ * Il garde : Accueil, Formations, Réussites et Mon compte.
+ */
+export const SECTIONS_RESERVEES_EMPLOYES = ['/dashboard/evenements', '/dashboard/politiques', '/dashboard/sop', '/dashboard/formulaires', '/dashboard/passerelle', '/dashboard/comites']
+
+export const estExterne = (e: { externe?: boolean | null } | null | undefined): boolean => e?.externe === true

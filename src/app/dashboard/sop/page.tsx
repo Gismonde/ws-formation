@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import { createClient } from '@/lib/supabase/server'
 import { getEspace } from '@/lib/espace'
 import { i18n } from '@/lib/i18n/serveur'
@@ -29,11 +30,12 @@ export default async function SOPPage() {
 
   const { data: employe } = await supabase
     .from('employes')
-    .select('id, role, clinique')
+    .select('id, role, clinique, externe')
     .eq('auth_user_id', user.id)
     .single()
 
   if (!employe) redirect('/login')
+  if (estExterne(employe)) redirect('/dashboard') // réservé aux employés de la clinique
   const espace = await getEspace(employe)
 
   // Le RLS filtre les SOPs selon le rôle et la clinique ; on n'affiche que celles de l'espace actif

@@ -1,4 +1,5 @@
 import { FUSEAU } from '@/lib/fuseau'
+import { estExterne } from '@/lib/membres-externes'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
@@ -14,6 +15,7 @@ export default async function EvenementEmployePage({ params }: { params: Promise
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const { t, loc } = await i18n()
   const x = (await evenementsDeLEmploye(serviceClient(), acteur)).find(e => e.ev.id === id)
   if (!x) notFound()

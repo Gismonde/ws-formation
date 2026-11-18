@@ -53,3 +53,18 @@ describe('appel robuste', () => {
     expect(r2.success).toBe(false)
   })
 })
+
+describe('Membres externes : formations seulement', () => {
+  it('ne sont jamais visés par une politique ou un événement, même « pour toute la clinique »', async () => {
+    const { estVise } = await import('@/lib/politiques')
+    const { SECTIONS_RESERVEES_EMPLOYES, estExterne } = await import('@/lib/membres-externes')
+    const pourTous = { clinique: 'CMC' as const, departements: [] as string[], employes: [] as string[], roles: [] as string[], postes: [] as string[] }
+    const e = { id: 'x', clinique: 'CMC', role: 'employe', departement_id: 'd', poste: null }
+    expect(estVise(pourTous, e)).toBe(true)
+    expect(estVise(pourTous, { ...e, externe: true })).toBe(false)
+    expect(estVise({ ...pourTous, employes: ['x'] }, { ...e, externe: true })).toBe(false)
+    expect(estExterne({ externe: true })).toBe(true)
+    expect(estExterne(null)).toBe(false)
+    expect(SECTIONS_RESERVEES_EMPLOYES).toEqual(expect.arrayContaining(['/dashboard/evenements', '/dashboard/politiques', '/dashboard/sop', '/dashboard/formulaires']))
+  })
+})

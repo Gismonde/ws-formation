@@ -67,6 +67,7 @@ export type EmployeVise = {
   departement_id: string | null
   poste?: string | null
   actif?: boolean | null
+  externe?: boolean | null
 }
 
 const intersecte = (x: Clinique[], y: Clinique[]) => x.some(c => y.includes(c))
@@ -91,8 +92,10 @@ const normPoste = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, 
  */
 export function estVise(
   p: CiblePolitique,
-  e: { id?: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null },
+  e: { id?: string; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null; externe?: boolean | null },
 ): boolean {
+  // Les membres externes ne sont jamais visés par une politique ou un événement (réservés aux employés)
+  if (e.externe === true) return false
   if (!intersecte(cliniquesDe(p.clinique), cliniquesEmploye(e))) return false
   if (estPourToute(p)) return true
   const depts = p.departements ?? []
@@ -223,7 +226,7 @@ export type StatPolitique = {
 /** Employés actifs dans la portée de l'acteur (base des statistiques). */
 export async function employesDansPortee(sb: SupabaseClient, a: Acteur): Promise<EmployeVise[]> {
   const { data } = await filtrerEmployes(
-    sb.from('employes').select('id, prenom, nom, email, role, clinique, departement_id, poste, actif').or('actif.is.null,actif.eq.true'),
+    sb.from('employes').select('id, prenom, nom, email, role, clinique, departement_id, poste, actif, externe').or('actif.is.null,actif.eq.true'),
     a,
   )
   return (data ?? []) as EmployeVise[]

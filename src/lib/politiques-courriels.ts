@@ -15,7 +15,7 @@ export async function avertirPolitique(sb: SupabaseClient, p: Politique, origine
   if (!courrielsActifs()) return { envoyes: 0, erreur: 'non_configure' as string | undefined }
   let liste = destinataires
   if (!liste) {
-    const { data } = await sb.from('employes').select('id, prenom, nom, email, role, clinique, departement_id, poste, actif')
+    const { data } = await sb.from('employes').select('id, prenom, nom, email, role, clinique, departement_id, poste, actif, externe')
       .or('actif.is.null,actif.eq.true')
     liste = ((data ?? []) as EmployeVise[]).filter(e => estVise(p, e))
   }
