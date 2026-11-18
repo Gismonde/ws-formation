@@ -8,8 +8,9 @@ import { joursRestants, palierRappelCertificat } from '@/lib/expirations'
 import { palierRelanceEcheance, estEnRetard } from '@/lib/echeances'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
 import { cliniquesDe, adminConcerne } from '@/lib/cliniques'
+import { rappelsJournees } from '@/lib/rappels-journees'
 
-export type TypeRappel = 'certificat_expiration' | 'formation_echeance' | 'politique_revision'
+export type TypeRappel = 'certificat_expiration' | 'formation_echeance' | 'politique_revision' | 'journee_echeance'
 
 export type BilanRappels = {
   type: TypeRappel
@@ -19,7 +20,7 @@ export type BilanRappels = {
   erreur?: string
 }
 
-type Envoi = { courriel: Courriel; reference: string; palier: string; employe_id: string }
+export type Envoi = { courriel: Courriel; reference: string; palier: string; employe_id: string }
 
 /** La table de suivi existe-t-elle ? (migration exécutée) */
 export async function suiviRappelsDisponible(sb: SupabaseClient): Promise<boolean> {
@@ -38,7 +39,7 @@ async function dejaEnvoyes(sb: SupabaseClient, type: TypeRappel, references: str
 }
 
 /** Envoie les rappels pas encore envoyés, puis les inscrit dans rappels_envoyes. */
-async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, envois: Envoi[]): Promise<BilanRappels> {
+export async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, envois: Envoi[]): Promise<BilanRappels> {
   const bilan: BilanRappels = { type, candidats: envois.length, envoyes: 0, ignores: 0 }
   if (envois.length === 0) return bilan
   const deja = await dejaEnvoyes(sb, type, Array.from(new Set(envois.map(e => e.reference))))
@@ -59,12 +60,12 @@ async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, envois: E
   return bilan
 }
 
-const dateLongue = (iso: string) =>
+export const dateLongue = (iso: string) =>
   new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('fr-CA', { dateStyle: 'long' })
 
 type EmployeRappel = { id: string; prenom: string | null; nom?: string | null; email: string | null; clinique: string | null; actif: boolean | null; departement_id?: string | null }
 
-async function employesActifs(sb: SupabaseClient, ids: string[]): Promise<Map<string, EmployeRappel>> {
+export async function employesActifs(sb: SupabaseClient, ids: string[]): Promise<Map<string, EmployeRappel>> {
   const carte = new Map<string, EmployeRappel>()
   for (let i = 0; i < ids.length; i += 200) {
     const { data } = await sb.from('employes').select('id, prenom, nom, email, clinique, actif, departement_id').in('id', ids.slice(i, i + 200))
@@ -262,5 +263,6 @@ export async function executerRappels(sb: SupabaseClient, origine: string): Prom
   bilans.push(await rappelsCertificats(sb, origine))
   bilans.push(await rappelsEcheances(sb, origine))
   bilans.push(await rappelsRevisionPolitiques(sb, origine))
+  bilans.push(await rappelsJournees(sb, origine).catch(e => ({ type: 'journee_echeance' as const, candidats: 0, envoyes: 0, ignores: 0, erreur: String(e) })))
   return { actif: true, bilans }
 }
