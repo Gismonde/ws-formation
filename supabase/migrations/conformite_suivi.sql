@@ -60,3 +60,7 @@ CREATE TABLE IF NOT EXISTS public.pages_accueil (
 ALTER TABLE public.pages_accueil ENABLE ROW LEVEL SECURITY;
 
 COMMIT;
+
+-- Rappels des journées de formation (politiques à confirmer avant l'échéance de la journée)
+ALTER TABLE public.rappels_envoyes DROP CONSTRAINT IF EXISTS rappels_envoyes_type_check;
+ALTER TABLE public.rappels_envoyes ADD CONSTRAINT rappels_envoyes_type_check CHECK (type IN ('certificat_expiration', 'formation_echeance', 'journee_echeance'));
