@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
 import { THEME_CLINIQUE, THEME_NEUTRE } from '@/lib/cliniques'
@@ -8,6 +9,7 @@ import RemplirFormulaire from '@/components/formulaires/RemplirFormulaire'
 export default async function RemplirFormulairePage({ params }: { params: Promise<{ id: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const sb = serviceClient()
   const { data } = await sb.from('formulaires').select('*').eq('id', (await params).id).maybeSingle()
   const f = data as Formulaire | null

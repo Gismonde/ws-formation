@@ -1,4 +1,5 @@
 import { FUSEAU } from '@/lib/fuseau'
+import { estExterne } from '@/lib/membres-externes'
 // Portail employé : Événements (formations en présentiel, 5 à 7 et activités, événements de la clinique).
 // Bannière « en vedette » (choisie par l'admin, sinon le prochain événement), filtres par type,
 // les deux prochaines semaines, cartes ; vues Cartes / Calendrier / Mes inscriptions.
@@ -19,6 +20,7 @@ type X = Liste[number]
 export default async function MesEvenementsPage({ searchParams }: { searchParams: Promise<{ type?: string; vue?: string; mois?: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const { t, loc } = await i18n()
   const sp = await searchParams
   const sb = serviceClient()

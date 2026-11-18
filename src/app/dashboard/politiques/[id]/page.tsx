@@ -1,4 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { politiquesDeLEmploye, texteConfirmationPolitique } from '@/lib/politiques'
 import { i18n } from '@/lib/i18n/serveur'
@@ -9,6 +10,7 @@ export default async function PolitiquePage({ params }: { params: Promise<{ id: 
   const { id } = await params
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const { t, loc, langue } = await i18n()
 
   const p = (await politiquesDeLEmploye(serviceClient(), acteur)).find(x => x.id === id)

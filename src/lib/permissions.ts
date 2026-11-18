@@ -40,6 +40,8 @@ export type Acteur = {
   /** Administrateur autorisé par l'administrateur global à créer des formulaires */
   peut_creer_formulaires?: boolean
   peut_mise_en_page_evenements?: boolean
+  /** Membre externe : formations seulement (pas d'événements, politiques, SOP, formulaires) */
+  externe?: boolean
   /**
    * Vue choisie dans l'espace Admin par une personne rattachée aux deux cliniques (ou l'admin global) :
    * CMC ou WSSC, null = les deux. Ne fait que RÉDUIRE la portée, jamais l'élargir.
@@ -124,6 +126,7 @@ export function acteurDepuisEmploye(data: any): Acteur | null {
     peut_assigner_externes: data.peut_assigner_externes === true,
     peut_creer_formulaires: data.peut_creer_formulaires === true,
     peut_mise_en_page_evenements: data.peut_mise_en_page_evenements === true,
+    externe: data.externe === true,
     vue: null,
   }
 }

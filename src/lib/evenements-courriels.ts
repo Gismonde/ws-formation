@@ -4,7 +4,7 @@ import { courrielsActifs, envoyerCourriels, gabarit, type Courriel } from '@/lib
 import { chargerNotifications, composerNotification, modeleEnVigueur, type ConfigNotifications } from '@/lib/notifications-courriel'
 import { estInvite, placesRestantes, seanceOuverte, typeEvenement, emojiEvenement, type Evenement, type Seance, type Inscription } from '@/lib/evenements'
 
-type Personne = { id: string; prenom: string | null; nom?: string | null; email: string | null; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null; actif?: boolean | null }
+type Personne = { id: string; prenom: string | null; nom?: string | null; email: string | null; clinique: string | null; role?: string | null; departement_id: string | null; poste?: string | null; actif?: boolean | null; externe?: boolean | null }
 
 const quand = (s: Pick<Seance, 'debut' | 'fin'>) => {
   const d = new Date(s.debut), f = new Date(s.fin)
@@ -43,7 +43,7 @@ async function envoyer(liste: (Courriel | null)[]) {
 
 /** Employés actifs invités à l'événement. */
 export async function invitesDe(sb: SupabaseClient, ev: Evenement): Promise<Personne[]> {
-  const { data } = await sb.from('employes').select('id, prenom, nom, email, clinique, role, departement_id, poste, actif').or('actif.is.null,actif.eq.true')
+  const { data } = await sb.from('employes').select('id, prenom, nom, email, clinique, role, departement_id, poste, actif, externe').or('actif.is.null,actif.eq.true')
   return ((data ?? []) as Personne[]).filter(e => estInvite(ev, e))
 }
 

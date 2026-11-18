@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { politiquesDeLEmploye, categoriesPolitiques } from '@/lib/politiques'
@@ -11,6 +12,7 @@ import { i18n } from '@/lib/i18n/serveur'
 export default async function MesPolitiquesPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const espace = await getEspace(acteur)
   const { t, loc } = await i18n()
   const politiques = await politiquesDeLEmploye(serviceClient(), acteur, espace.actif)

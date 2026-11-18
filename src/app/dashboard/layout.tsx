@@ -8,6 +8,7 @@ import { nombrePolitiquesEnAttente } from '@/lib/politiques'
 import { nombreEvenementsAInscrire } from '@/lib/evenements'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { getEspace } from '@/lib/espace'
+import { estExterne, SECTIONS_RESERVEES_EMPLOYES } from '@/lib/membres-externes'
 import { ChoixEspace } from '@/components/ChoixEspace'
 import { TiroirMenu } from '@/components/TiroirMenu'
 import { ChoixLangue } from '@/components/ChoixLangue'
@@ -32,8 +33,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const espace = await getEspace(employe)
   const { t } = await i18n()
-  const politiquesEnAttente = employe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
-  const evenementsAInscrire = employe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
+  // Membre externe : formations seulement (événements, politiques, SOP, formulaires masqués)
+  const externe = estExterne(employe)
+  const masques = externe ? SECTIONS_RESERVEES_EMPLOYES : espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']
+  const politiquesEnAttente = employe && !externe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
+  const evenementsAInscrire = employe && !externe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }
   // Formulaires et La Passerelle : espace WSSC seulement
   const masques = espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires', '/dashboard/passerelle']
