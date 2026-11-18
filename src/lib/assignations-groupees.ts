@@ -121,6 +121,8 @@ export function nouveauCiblage(
 ): { clinique: CliniqueEmploye; departements: string[]; employes: string[]; ajoutes: EmployeCible[]; deja: number; autre_clinique: number; elargie: boolean } {
   const depts = p.departements ?? []
   const emps = p.employes ?? []
+  // Membres externes : jamais visés par une politique (réservée aux employés de la clinique)
+  employes = employes.filter(e => !(e as { externe?: boolean | null }).externe)
   const deja = employes.filter(e => estVise(p, e))
   const pasEncore = employes.filter(e => !estVise(p, e))
 

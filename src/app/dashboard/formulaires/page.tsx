@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
@@ -8,6 +9,7 @@ import { formulairePourEmploye, numeroReponse, STATUTS, type Formulaire, type St
 export default async function MesFormulairesPage() {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const espace = await getEspace(acteur)
   const { t, loc } = await i18n()
   const sb = serviceClient()

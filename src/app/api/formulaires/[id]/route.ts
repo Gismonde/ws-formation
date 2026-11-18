@@ -1,4 +1,5 @@
 // Envoi d'un formulaire par un employé.
+import { estExterne } from '@/lib/membres-externes'
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
@@ -9,6 +10,7 @@ import { avertirReception } from '@/lib/formulaires-serveur'
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const a = await getActeur()
   if (!a) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+  if (estExterne(a)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const sb = serviceClient()
   const { data } = await sb.from('formulaires').select('*').eq('id', (await params).id).maybeSingle()
   const f = data as Formulaire | null

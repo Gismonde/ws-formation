@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
+import { estExterne } from '@/lib/membres-externes'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { i18n } from '@/lib/i18n/serveur'
@@ -10,6 +11,7 @@ import BoutonImprimer from '@/components/formulaires/BoutonImprimer'
 export default async function MonEnvoiPage({ params }: { params: Promise<{ id: string }> }) {
   const acteur = await getActeur()
   if (!acteur) redirect('/login')
+  if (estExterne(acteur)) redirect('/dashboard') // réservé aux employés de la clinique
   const { t, loc } = await i18n()
   const { data: r } = await serviceClient().from('formulaire_reponses').select('*').eq('id', (await params).id).maybeSingle()
   if (!r || r.employe_id !== acteur.id) notFound()
