@@ -116,3 +116,19 @@ export async function connexionsDuJournal(sb: SupabaseClient, employeIds: string
   }
   return m
 }
+
+/** État d'accès de plusieurs employés (page « Accès des employés » et relance des invités). */
+export async function etatsAcces(sb: SupabaseClient, employes: { id: string; auth_user_id: string | null }[]): Promise<Map<string, Acces>> {
+  const authIds = employes.map(e => e.auth_user_id).filter((x): x is string => !!x)
+  const [connexions, logs, liens, journal] = await Promise.all([
+    dernieresConnexions(sb, authIds), logsInvitations(sb, employes.map(e => e.id)), liensUtilises(sb, authIds), connexionsDuJournal(sb, employes.map(e => e.id)),
+  ])
+  const parEmploye = new Map<string, LogInvitation[]>()
+  for (const l of logs) if (l.cible_employe_id) parEmploye.set(l.cible_employe_id, [...(parEmploye.get(l.cible_employe_id) ?? []), l])
+  return new Map(employes.map(e => [e.id, etatAcces({
+    derniereConnexion: e.auth_user_id ? connexions.get(e.auth_user_id) ?? null : null,
+    logs: parEmploye.get(e.id) ?? [],
+    lienUtiliseLe: e.auth_user_id ? liens.get(e.auth_user_id) ?? null : null,
+    connexionsJournal: journal.get(e.id) ?? null,
+  })]))
+}

@@ -3267,4 +3267,11 @@ export const EN: Record<string, string> = {
   'Déposez chaque édition en PDF : la couverture est créée à partir de la page 1. Une édition en brouillon n’est visible que par l’équipe de La Passerelle.': 'Upload each edition as a PDF: the cover is made from page 1. A draft edition is only visible to the La Passerelle team.',
   'Équipe :': 'Team:',
   'Enregistrée. L’édition est en brouillon : seule l’équipe de La Passerelle la voit.': 'Saved. The edition is a draft: only the La Passerelle team can see it.',
+  'Renvoyer le courriel d’activation aux {n} employé(s) invités qui n’ont pas encore activé leur compte ? Les comptes déjà activés ne reçoivent rien.': 'Resend the activation email to the {n} invited employee(s) who haven’t activated their account yet? Accounts already activated receive nothing.',
+  'Relancer': 'Send reminder',
+  'Envoi… {fait} sur {total}': 'Sending… {fait} of {total}',
+  '{n} courriel(s) d’activation renvoyé(s).': '{n} activation email(s) resent.',
+  'Relancer tous les invités': 'Remind all invited employees',
+  'Seulement les employés invités qui n’ont pas encore activé leur compte.': 'Only invited employees who haven’t activated their account yet.',
+  'Renvoyer le courriel d’activation aux {n} employé(s) invités qui n’ont pas encore activé leur compte ? Les comptes déjà activés ne reçoivent rien.': 'Resend the activation email to the {n} invited employee(s) who haven’t activated their account yet? Accounts already activated receive nothing.',
 }
