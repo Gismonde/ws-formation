@@ -1,8 +1,10 @@
 import { journeeOuverte } from '@/lib/journees'
+import { estExterne } from '@/lib/membres-externes'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
+import { chargerComites, chargerBanniereComites, imageBanniere, peutGererComites, CLINIQUE_COMITES } from '@/lib/comites'
 import { CLINIQUE_INFO, estAdministrateur } from '@/lib/cliniques'
 import { chargerAccueil } from '@/lib/accueil-serveur'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
@@ -19,6 +21,9 @@ export default async function AccueilPage() {
   const espace = await getEspace(acteur)
   const sb = serviceClient()
   const { t, langue } = await i18n()
+  // Comités (espace WSSC) : carte d'accès ; brouillons visibles par les administrateurs seulement
+  const { comites } = espace.actif === CLINIQUE_COMITES && !estExterne(acteur) ? await chargerComites(sb, { brouillons: peutGererComites(acteur) }) : { comites: [] }
+  const banniereComites = comites.length ? await chargerBanniereComites(sb) : null
 
   // Formations à faire (dans l'espace actif)
   const { data: assignations } = await sb.from('assignations').select('formation_id').eq('employe_id', acteur.id)
@@ -75,6 +80,8 @@ export default async function AccueilPage() {
         )}
       </section>
 
+      {/* Bannière des comités (espace WSSC) : image et textes modifiables dans Administration → Comités */}
+
       {(journees ?? []).length > 0 && (
         <section style={{ display: 'grid', gap: '10px', marginBottom: '24px' }}>
           {(journees ?? []).map(j => (
@@ -123,6 +130,23 @@ export default async function AccueilPage() {
               : <Link key={i} href={c.lien} style={style}>{corps}</Link>
           })}
         </section>
+      )}
+
+      {/* Bannière des comités (espace WSSC), sous les cartes : image à gauche, comités et bouton à droite */}
+      {comites.length > 0 && banniereComites && (
+        <Link href="/dashboard/comites" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'center', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px', textDecoration: 'none', background: '#0b2a5b', maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
+          {banniereComites.image ? (
+            // L'image porte déjà le titre : affichée en entier, le titre sert de texte de remplacement
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageBanniere(banniereComites.image, langue)} alt={t(banniereComites.titre)} style={{ display: 'block', width: '100%', height: 'auto' }} />
+          ) : (
+            <span style={{ display: 'block', padding: '20px 22px', color: '#fff', fontSize: '22px', fontWeight: 800, lineHeight: 1.2 }}>{t(banniereComites.titre)}</span>
+          )}
+          <span style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px', color: '#fff' }}>
+            {banniereComites.texte && <span style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.92 }}>{t(banniereComites.texte)}</span>}
+            <span style={{ alignSelf: 'flex-start', fontSize: '13px', fontWeight: 700, padding: '8px 14px', borderRadius: '9px', background: 'linear-gradient(180deg, #f3d27a, #d9a63e)', color: '#0b2a5b', whiteSpace: 'nowrap' }}>{t('Découvrir vos comités')} →</span>
+          </span>
+        </Link>
       )}
 
       {/* Visite virtuelle */}

@@ -8,7 +8,7 @@ import { estComplete, type StatutFormation } from '@/lib/etat-formations'
 import { agregerReponses, chargerReponses, sondagesDisponibles, type ResultatsSondage } from '@/lib/sondages'
 
 export type LigneEmployeStat = {
-  id: string; nom: string; departement: string; statut: StatutFormation; progression: number
+  id: string; nom: string; departement: string; statut: StatutFormation; progression: number; formation_id: string
   date_assignation: string | null; date_echeance: string | null; en_retard: boolean
 }
 export type StatistiquesFormation = {
@@ -58,7 +58,7 @@ export async function statistiquesFormation(sb: SupabaseClient, acteur: Acteur, 
   const assignesIds = Array.from(new Set((assign ?? []).map(a => a.employe_id as string))).filter(id => !portee || portee.includes(id))
   const conformite = assignesIds.length ? await chargerConformite(sb, acteur, { employe_ids: assignesIds }) : []
   const employes: LigneEmployeStat[] = conformite.flatMap(e => e.assignations.filter(a => famille.includes(a.formation_id)).map(a => ({
-    id: e.id, nom: `${e.prenom} ${e.nom}`.trim(), departement: e.departement || '—', statut: a.statut, progression: a.progression,
+    id: e.id, nom: `${e.prenom} ${e.nom}`.trim(), departement: e.departement || '—', statut: a.statut, progression: a.progression, formation_id: a.formation_id,
     date_assignation: a.date_assignation, date_echeance: a.date_echeance, en_retard: a.en_retard,
   }))).sort((x, y) => x.nom.localeCompare(y.nom, 'fr'))
   const ids = employes.map(e => e.id)

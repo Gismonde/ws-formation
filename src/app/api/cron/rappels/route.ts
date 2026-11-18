@@ -8,6 +8,7 @@ import { origineDepuis } from '@/lib/courriels'
 import { executerRappels } from '@/lib/rappels'
 import { tachesEvenements } from '@/lib/evenements-courriels'
 import { ouvrirJourneesDues } from '@/lib/journees-ouverture'
+import { envoyerCourrielsDus } from '@/lib/courriels-information'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -26,9 +27,10 @@ export async function GET(req: NextRequest) {
   // Journées de formation programmées pour aujourd'hui : ouvertes avant les rappels
   const journees = await ouvrirJourneesDues(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
   console.log('[Journées]', JSON.stringify(journees))
+  const courrielsInfo = await envoyerCourrielsDus(sb, origineDepuis(req)).catch(() => 0)
   const resultat = await executerRappels(sb, origineDepuis(req))
   const evenements = await tachesEvenements(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
   console.log('[Événements]', JSON.stringify(evenements))
   console.log('[Rappels]', JSON.stringify(resultat))
-  return NextResponse.json({ ...resultat, evenements, journees })
+  return NextResponse.json({ ...resultat, evenements, journees, courrielsInfo })
 }

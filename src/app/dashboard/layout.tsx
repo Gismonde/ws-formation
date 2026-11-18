@@ -1,3 +1,4 @@
+import { verifierCourrielsDus } from '@/lib/courriels-information-dus'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -18,6 +19,8 @@ import { CLINIQUE_INFO, THEME_CLINIQUE, THEME_NEUTRE, variablesTheme } from '@/l
 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Courriels d'information programmés : envoyés dès que l'heure est passée
+  verifierCourrielsDus()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -32,7 +35,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { t } = await i18n()
   // Membre externe : formations seulement (événements, politiques, SOP, formulaires masqués)
   const externe = estExterne(employe)
-  const masques = externe ? SECTIONS_RESERVEES_EMPLOYES : espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires']
+  // Formulaires et La Passerelle : espace WSSC seulement
+  const masques = externe ? SECTIONS_RESERVEES_EMPLOYES : espace.actif === 'WSSC' ? [] : ['/dashboard/formulaires', '/dashboard/passerelle']
   const politiquesEnAttente = employe && !externe ? await nombrePolitiquesEnAttente(serviceClient(), employe, espace.actif) : 0
   const evenementsAInscrire = employe && !externe ? await nombreEvenementsAInscrire(serviceClient(), employe, espace.actif) : 0
   const compteurs = { '/dashboard/evenements': evenementsAInscrire, '/dashboard/politiques': politiquesEnAttente }

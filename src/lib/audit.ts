@@ -42,12 +42,14 @@ export type AuditActionType =
   | 'INSCRIPTION_VOLONTAIRE'
   | 'DEMANDE_ACCES_ENVOYEE'
   | 'DEMANDE_ACCES_TRAITEE'
+  | 'FORMATION_DESASSIGNEE'
 
 /** Type existant utilisé si un nouveau type n'est pas encore dans l'énumération de la base */
 const TYPES_DE_REPLI: Partial<Record<AuditActionType, AuditActionType>> = {
   INSCRIPTION_VOLONTAIRE: 'FORMATION_ASSIGNEE',
   DEMANDE_ACCES_ENVOYEE: 'FORMATION_ASSIGNEE',
   DEMANDE_ACCES_TRAITEE: 'FORMATION_ASSIGNEE',
+  FORMATION_DESASSIGNEE: 'FORMATION_ASSIGNEE',
 }
 
 export interface LogAuditParams {

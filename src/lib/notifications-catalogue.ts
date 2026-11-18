@@ -141,6 +141,10 @@ export function rendreCourriel(p: {
   vars: Record<string, string | null | undefined>
   bouton?: { libelle: string; lien: string } | null
   reglages?: Partial<ReglagesNotifications>
+  /** Texte au-dessus du bouton (par défaut : « Vous pouvez consulter cette activité… ») */
+  introBouton?: string | null
+  /** Mise en forme simple : lignes « • » ou « - » en liste à puces, **gras** */
+  riche?: boolean
 }): { html: string; texte: string } {
   const cl = cliniquesDe(p.clinique ?? 'LES_DEUX') as Clinique[]
   const accent = cl.length === 1 ? THEME_CLINIQUE[cl[0]].accent : '#7d5a8e'
@@ -155,14 +159,32 @@ export function rendreCourriel(p: {
   const brut = remplir(p.message, { ...p.vars, activite: activite ? marque : '' })
   const paragraphes = brut.split('\n').map(l => l.trim()).filter(Boolean)
   const versHtml = (l: string) => echapper(l).split(marque).join(`<span style="color:${accent};font-weight:600">${echapper(activite)}</span>`)
-  const corps = paragraphes.map(l => `<p style="margin:0 0 14px;font-size:17px;line-height:1.55;color:#1f2937">${versHtml(l)}</p>`).join('')
+  const gras = (h: string) => p.riche ? h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') : h
+  const estPuce = (l: string) => p.riche === true && /^[•\-*]\s+/.test(l)
+  let corps = ''
+  // Image sur sa propre ligne : ![texte](https://… ou /chemin)
+  const image = (l: string) => p.riche ? /^!\[([^\]]*)\]\((https:\/\/[^\s)]+|\/[^\s)]*)\)$/.exec(l) : null
+  for (let i = 0; i < paragraphes.length; i++) {
+    const img = image(paragraphes[i])
+    if (img) {
+      const src = img[2].startsWith('/') ? p.origine + img[2] : img[2]
+      corps += `<p style="margin:6px 0 20px"><img src="${echapper(src)}" alt="${echapper(img[1])}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;border-radius:12px"></p>`
+      continue
+    }
+    if (estPuce(paragraphes[i])) {
+      const items: string[] = []
+      while (i < paragraphes.length && estPuce(paragraphes[i])) items.push(paragraphes[i++].replace(/^[•\-*]\s+/, ''))
+      i--
+      corps += `<ul style="margin:0 0 14px;padding-left:22px">${items.map(it => `<li style="margin:0 0 6px;font-size:17px;line-height:1.5;color:#1f2937">${gras(versHtml(it))}</li>`).join('')}</ul>`
+    } else corps += `<p style="margin:0 0 14px;font-size:17px;line-height:1.55;color:#1f2937">${gras(versHtml(paragraphes[i]))}</p>`
+  }
   const salut = p.destinataire
     ? `<h1 style="margin:0 0 36px;font-size:26px;font-weight:600;color:#111827">Bonjour <span style="color:${accent}">${echapper(p.destinataire)}</span>,</h1>`
     : p.titre ? `<h1 style="margin:0 0 28px;font-size:24px;font-weight:600;color:#111827">${echapper(p.titre)}</h1>` : ''
   const r = { ...REGLAGES_DEFAUT, ...(p.reglages ?? {}) }
   const btn = p.bouton ? `
 <tr><td style="background:#e5e7eb;padding:40px 32px;text-align:center">
-  <p style="margin:0 0 22px;font-size:16px;color:#1f2937">Vous pouvez consulter cette activité<br>en cliquant sur le lien suivant :</p>
+  ${p.introBouton === null ? '' : `<p style="margin:0 0 22px;font-size:16px;color:#1f2937">${p.introBouton ? echapper(p.introBouton) : 'Vous pouvez consulter cette activité<br>en cliquant sur le lien suivant :'}</p>`}
   <a href="${p.bouton.lien}" style="display:inline-block;background:#3f3f46;color:${accent === '#7d5a8e' ? '#d8c4e2' : '#ffffff'};text-decoration:none;font-weight:600;font-size:16px;padding:13px 26px;border-radius:999px">${echapper(p.bouton.libelle)}</a>
   <p style="margin:18px 0 0;font-size:11px;color:#6b7280;word-break:break-all">${echapper(p.bouton.lien)}</p>
 </td></tr>` : ''
@@ -178,7 +200,7 @@ export function rendreCourriel(p: {
   <td style="background:#f3f4f6;padding:22px 32px;font-size:15px;color:#111827;vertical-align:middle">Merci de ne pas répondre<br>à ce message généré<br>automatiquement.</td>${contact}
 </tr></table></td></tr>
 </table></td></tr></table></body></html>`
-  const texte = [p.destinataire ? `Bonjour ${p.destinataire},` : (p.titre ?? ''), '', ...remplir(p.message, p.vars).split('\n').filter(Boolean),
+  const texte = [p.destinataire ? `Bonjour ${p.destinataire},` : (p.titre ?? ''), '', ...remplir(p.message, p.vars).split('\n').filter(Boolean).filter(l => !(p.riche && /^!\[/.test(l.trim()))),
     ...(p.bouton ? ['', `${p.bouton.libelle} : ${p.bouton.lien}`] : []), '', 'Merci de ne pas répondre à ce message généré automatiquement.',
     ...(r.contact_courriel || r.contact_telephone ? [`${r.contact_libelle} : ${[r.contact_courriel, r.contact_telephone].filter(Boolean).join(' · ')}`] : [])].join('\n')
   return { html, texte }
