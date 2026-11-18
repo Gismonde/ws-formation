@@ -3,8 +3,11 @@ import { redirect } from 'next/navigation'
 import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
-import { chargerAppel, chargerEditions, couleurEdition, peutGererPasserelle } from '@/lib/passerelle'
+import { chargerAppel, chargerEditions, couleurEdition, peutGererPasserelle, CLINIQUE_PASSERELLE } from '@/lib/passerelle'
 import AppelForm from './AppelForm'
+import DestinatairesForm from './DestinatairesForm'
+import { cliniquesDe } from '@/lib/cliniques'
+import { chargerDestinataires } from '@/lib/passerelle-propositions'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +18,13 @@ export default async function PasserelleAdminPage() {
   if (!acteur) redirect('/login')
   if (!peutGererPasserelle(acteur)) redirect('/admin')
   const sb = serviceClient()
-  const [{ editions, migration }, appel] = await Promise.all([chargerEditions(sb, true), chargerAppel(sb)])
+  const [{ editions, migration }, appel, destinataires, { data: emps }, { count: nouvelles }] = await Promise.all([
+    chargerEditions(sb, true), chargerAppel(sb), chargerDestinataires(sb),
+    sb.from('employes').select('id, prenom, nom, poste, email, clinique, role').eq('actif', true).order('nom'),
+    sb.from('passerelle_propositions').select('id', { count: 'exact', head: true }).eq('statut', 'nouvelle'),
+  ])
+  const candidats = (emps ?? []).filter(e => e.role === 'super_admin' || cliniquesDe(e.clinique as string | null).includes(CLINIQUE_PASSERELLE))
+    .map(e => ({ id: e.id as string, prenom: e.prenom as string | null, nom: e.nom as string | null, poste: e.poste as string | null, email: e.email as string | null }))
   const urls = await signerUrlsMedias(editions.map(e => e.couverture))
   const { data: lectures } = migration ? { data: [] } : await sb.from('passerelle_lectures').select('edition_id')
   const nbLectures = new Map<string, number>()
@@ -28,7 +37,8 @@ export default async function PasserelleAdminPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('La Passerelle')}</h1>
           <p className="text-sm text-gray-500 mt-1 max-w-2xl">{t('Le journal de la clinique, dans le portail employé (WSSC). Déposez chaque édition en PDF : la couverture est créée à partir de la page 1. Une édition en brouillon n’est visible que par les administrateurs.')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/dashboard/passerelle/propositions" className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">📥 {t('Propositions reçues')}{nouvelles ? ` (${nouvelles})` : ''}</Link>
           <Link href="/dashboard/passerelle" className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">{t('Voir comme un employé')}</Link>
           {!migration && <Link href="/admin/passerelle/nouvelle" className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ {t('Nouvelle édition')}</Link>}
         </div>
@@ -57,6 +67,7 @@ export default async function PasserelleAdminPage() {
               )
             })}
           </div>
+          <DestinatairesForm employes={candidats} choisis={destinataires} />
           <AppelForm appel={appel} />
         </>
       )}

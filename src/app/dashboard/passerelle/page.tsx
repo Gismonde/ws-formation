@@ -3,7 +3,10 @@ import { i18n } from '@/lib/i18n/serveur'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { getEspace } from '@/lib/espace'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
+import Link from 'next/link'
 import { chargerAppel, chargerEditions, couleurEdition, peutGererPasserelle, CLINIQUE_PASSERELLE, type Edition } from '@/lib/passerelle'
+import { chargerDestinataires, peutVoirPropositions, type FichierProposition } from '@/lib/passerelle-propositions'
+import PropositionForm, { type MaProposition } from './PropositionForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,10 +19,15 @@ export default async function PasserellePage() {
   if (espace.actif !== CLINIQUE_PASSERELLE) redirect('/dashboard/accueil')
   const sb = serviceClient()
   const admin = peutGererPasserelle(acteur)
-  const [{ editions }, appel, { data: lues }] = await Promise.all([
+  const [{ editions }, appel, { data: lues }, destinataires, { data: miennes }] = await Promise.all([
     chargerEditions(sb, admin), chargerAppel(sb),
     sb.from('passerelle_lectures').select('edition_id').eq('employe_id', acteur.id),
+    chargerDestinataires(sb),
+    sb.from('passerelle_propositions').select('id, sujet, statut, cree_le, fichiers').eq('employe_id', acteur.id).order('cree_le', { ascending: false }).limit(10),
   ])
+  const mesPropositions: MaProposition[] = (miennes ?? []).map(p => ({ id: p.id, sujet: p.sujet, statut: p.statut, cree_le: p.cree_le, nbFichiers: ((p.fichiers ?? []) as FichierProposition[]).length }))
+  const recoit = peutVoirPropositions(acteur, destinataires)
+  const { count: nouvelles } = recoit ? await sb.from('passerelle_propositions').select('id', { count: 'exact', head: true }).eq('statut', 'nouvelle') : { count: 0 }
   const dejaLues = new Set((lues ?? []).map(l => l.edition_id as string))
   const urls = await signerUrlsMedias(editions.map(e => e.couverture))
   const [une, ...anciennes] = editions
@@ -37,6 +45,12 @@ export default async function PasserellePage() {
         </div>
         <p className="text-xs tracking-[0.4em] text-gray-500 mt-2">{t('LE PONT ENTRE NOUS')}</p>
         <p className="text-sm text-gray-500 mt-3">{t('Le journal de la clinique : toutes les éditions, à lire ou à télécharger.')}</p>
+        {recoit && (
+          <Link href="/dashboard/passerelle/propositions" className="inline-flex items-center gap-2 mt-4 text-sm font-semibold px-4 py-2 rounded-xl border border-[#D4537E] text-[#72243E] bg-white hover:bg-[#FBEAF0]">
+            📥 {t('Propositions reçues')}
+            {(nouvelles ?? 0) > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ background: '#D4537E' }}>{t('{n} nouvelle(s)', { n: nouvelles ?? 0 })}</span>}
+          </Link>
+        )}
       </header>
 
       {!une ? (
@@ -118,12 +132,11 @@ export default async function PasserellePage() {
         </section>
       )}
 
-      {appel.texte && (
-        <section className="rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #FBEAF0 0%, #FAEEDA 50%, #E1F5EE 100%)' }}>
-          <h2 className="text-2xl font-bold text-[#72243E]">{appel.titre}</h2>
-          <p className="text-[15px] text-gray-800 mt-3 leading-relaxed whitespace-pre-line max-w-3xl">{appel.texte}</p>
-        </section>
-      )}
+      <section id="proposer" className="rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden scroll-mt-6" style={{ background: 'linear-gradient(135deg, #FBEAF0 0%, #FAEEDA 50%, #E1F5EE 100%)' }}>
+        <h2 className="text-2xl font-bold text-[#72243E]">{appel.titre}</h2>
+        {appel.texte && <p className="text-[15px] text-gray-800 mt-3 leading-relaxed whitespace-pre-line max-w-3xl">{appel.texte}</p>}
+        <PropositionForm mesPropositions={mesPropositions} />
+      </section>
     </div>
   )
 }
