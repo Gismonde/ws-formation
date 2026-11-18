@@ -5,7 +5,8 @@ import { getActeur, serviceClient, filtrerEmployes } from '@/lib/permissions'
 import { aAccesAdmin } from '@/lib/cliniques'
 import { CliniqueBadge } from '@/components/CliniqueBadge'
 import { FUSEAU } from '@/lib/fuseau'
-import { etatAcces, dernieresConnexions, logsInvitations, liensUtilises, connexionsDuJournal, type EtatAcces, type LogInvitation } from '@/lib/acces-employes'
+import { etatsAcces, type EtatAcces } from '@/lib/acces-employes'
+import RelancerInvites from './RelancerInvites'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,22 +29,8 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
   const { data: employes } = await filtrerEmployes(sb.from('employes').select('id, prenom, nom, email, poste, role, clinique, auth_user_id, departements(nom)').eq('actif', true).order('nom'), acteur)
   const liste = (employes ?? []) as unknown as { id: string; prenom: string | null; nom: string | null; email: string | null; poste: string | null; role: string; clinique: string | null; auth_user_id: string | null; departements: { nom: string } | null }[]
 
-  const authIds = liste.map(e => e.auth_user_id).filter((x): x is string => !!x)
-  const [connexions, logs, liens, journal] = await Promise.all([
-    dernieresConnexions(sb, authIds), logsInvitations(sb, liste.map(e => e.id)), liensUtilises(sb, authIds), connexionsDuJournal(sb, liste.map(e => e.id)),
-  ])
-  const parEmploye = new Map<string, LogInvitation[]>()
-  for (const l of logs) if (l.cible_employe_id) parEmploye.set(l.cible_employe_id, [...(parEmploye.get(l.cible_employe_id) ?? []), l])
-
-  const lignes = liste.map(e => ({
-    e,
-    acces: etatAcces({
-      derniereConnexion: e.auth_user_id ? connexions.get(e.auth_user_id) ?? null : null,
-      logs: parEmploye.get(e.id) ?? [],
-      lienUtiliseLe: e.auth_user_id ? liens.get(e.auth_user_id) ?? null : null,
-      connexionsJournal: journal.get(e.id) ?? null,
-    }),
-  }))
+  const etats = await etatsAcces(sb, liste)
+  const lignes = liste.map(e => ({ e, acces: etats.get(e.id)! }))
   const compte = (x: EtatAcces) => lignes.filter(l => l.acces.etat === x).length
   const affichees = lignes
     .filter(l => !filtreEtat || l.acces.etat === filtreEtat)
@@ -57,6 +44,8 @@ export default async function AccesEmployesPage({ searchParams }: { searchParams
       <p className="text-sm text-gray-500 mt-1 mb-6 max-w-3xl">
         {t('Qui a créé son accès au portail, qui a reçu le courriel d’activation sans l’avoir encore utilisé, et qui ne l’a jamais reçu. Employés actifs seulement. Pour envoyer ou renvoyer le courriel, ouvrez la fiche de l’employé : « Renvoyer l’invitation ».')}
       </p>
+
+      <RelancerInvites ids={lignes.filter(l => l.acces.etat === 'invite').map(l => l.e.id)} />
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
         <Link href="/admin/employes/acces" className={`rounded-xl border p-4 bg-white hover:border-gray-400 ${!filtreEtat ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-200'}`}>
