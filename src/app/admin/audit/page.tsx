@@ -22,6 +22,7 @@ export default async function AuditPage() {
       }))}
       departements={departements.map(d => ({ id: d.id, nom: d.nom }))}
       cliniques={cliniquesAdministrees(acteur)}
+      vue={acteur.vue ?? null}
     />
   )
 }

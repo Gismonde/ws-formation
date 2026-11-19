@@ -64,3 +64,7 @@ COMMIT;
 -- Rappels des journées de formation (politiques à confirmer avant l'échéance de la journée)
 ALTER TABLE public.rappels_envoyes DROP CONSTRAINT IF EXISTS rappels_envoyes_type_check;
 ALTER TABLE public.rappels_envoyes ADD CONSTRAINT rappels_envoyes_type_check CHECK (type IN ('certificat_expiration', 'formation_echeance', 'journee_echeance'));
+
+-- Journal d'audit séparé par clinique : chaque entrée porte sa clinique (employé visé, sinon formation, sinon auteur)
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS clinique text;
+CREATE INDEX IF NOT EXISTS audit_logs_clinique_date_idx ON public.audit_logs (clinique, created_at DESC);

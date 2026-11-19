@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   if ('erreur' in v) return NextResponse.json({ error: v.erreur }, { status: 400 })
   const { data, error } = await serviceClient().from('passerelle_editions').insert({ ...v.valeurs, clinique: CLINIQUE_PASSERELLE, cree_par: acteur!.id }).select('*').single()
   if (error) return NextResponse.json({ error: /passerelle/.test(error.message) ? 'Exécutez d’abord supabase/migrations/passerelle.sql dans Supabase.' : error.message }, { status: 500 })
-  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data.numero} ajoutée${data.publie ? ' (publiée)' : ' (brouillon)'}`, metadata: { edition_id: data.id }, ...ipEtAgent(req) })
+  await logAudit({ clinique: 'WSSC', acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data.numero} ajoutée${data.publie ? ' (publiée)' : ' (brouillon)'}`, metadata: { edition_id: data.id }, ...ipEtAgent(req) })
   return NextResponse.json({ edition: data })
 }

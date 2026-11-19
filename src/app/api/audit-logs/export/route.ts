@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { estAdministrateur, CLINIQUE_EMPLOYE_LABEL, estCliniqueEmploye, ROLE_LABEL, estRole, cliniqueAffichee } from '@/lib/cliniques'
-import { lireFiltresAudit, employesConcernes, requeteAudit, libelleAudit, concerne, type LigneAudit, type EmployeAudit } from '@/lib/audit-journal'
+import { porteeClinique, lireFiltresAudit, employesConcernes, requeteAudit, libelleAudit, concerne, type LigneAudit, type EmployeAudit } from '@/lib/audit-journal'
 import { classeurExcel, fichierCsv, nomFichier, reponseFichier, type Colonne, type Feuille } from '@/lib/export-tableur'
 import { logAudit } from '@/lib/audit'
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const format = sp.get('format') === 'csv' ? 'csv' : 'xlsx'
   const parEmploye = sp.get('par_employe') === '1'
-  const filtres = lireFiltresAudit(sp)
+  const filtres = porteeClinique(lireFiltresAudit(sp), acteur)
 
   const employes = await employesConcernes(sb, acteur, filtres)
   const q = requeteAudit(sb, filtres, employes?.map(e => e.id) ?? null)

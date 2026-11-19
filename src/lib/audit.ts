@@ -61,6 +61,32 @@ export interface LogAuditParams {
     metadata?: Record<string, any> | null
     ip_address?: string | null
     user_agent?: string | null
+    /** Clinique de l'entrée (WSSC ou CMC). Sinon : celle de l'employé visé, de la formation, puis de l'auteur. */
+    clinique?: 'WSSC' | 'CMC' | null
+}
+
+const estClinique = (c: unknown): c is 'WSSC' | 'CMC' => c === 'WSSC' || c === 'CMC'
+
+/** Clinique d'une entrée du journal (null : action globale, visible seulement en vue « Les deux »). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function cliniqueAudit(sb: any, p: Pick<LogAuditParams, 'clinique' | 'cible_employe_id' | 'formation_id' | 'acteur_id' | 'metadata'>): Promise<'WSSC' | 'CMC' | null> {
+  if (estClinique(p.clinique)) return p.clinique
+  if (estClinique(p.metadata?.clinique)) return p.metadata.clinique
+  const employe = async (id: string | null | undefined) => {
+    if (!id) return null
+    const { data } = await sb.from('employes').select('clinique').eq('id', id).maybeSingle()
+    const c = (data as { clinique?: unknown } | null)?.clinique
+    return estClinique(c) ? c : null
+  }
+  const cible = await employe(p.cible_employe_id)
+  if (cible) return cible
+  const formationId = p.formation_id ?? (typeof p.metadata?.formation_id === 'string' ? p.metadata.formation_id : null)
+  if (formationId) {
+    const { data } = await sb.from('formations').select('clinique').eq('id', formationId).maybeSingle()
+    const c = (data as { clinique?: unknown } | null)?.clinique
+    if (estClinique(c)) return c
+  }
+  return employe(p.acteur_id)
 }
 
   /**
@@ -76,7 +102,9 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
             { auth: { autoRefreshToken: false, persistSession: false } }
                 )
 
-      const ligne = {
+      const clinique = await cliniqueAudit(serviceClient, params).catch(() => null)
+      const ligne: Record<string, unknown> = {
+                      clinique,
                       acteur_id: params.acteur_id,
                       type_action: params.type_action as string,
                       description: params.description,
@@ -87,10 +115,12 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
                       user_agent: params.user_agent ?? null,
             }
       let { error } = await serviceClient.from('audit_logs').insert(ligne)
+      // Colonne clinique pas encore créée : on enregistre sans elle
+      if (error && /clinique/.test(error.message)) { delete ligne.clinique; ({ error } = await serviceClient.from('audit_logs').insert(ligne)) }
       // Type pas encore ajouté à l'énumération de la base (migration non exécutée) : on garde la trace sous un type voisin
       const repli = TYPES_DE_REPLI[params.type_action]
       if (error && repli && /enum|invalid input value/i.test(error.message)) {
-              ({ error } = await serviceClient.from('audit_logs').insert({ ...ligne, type_action: repli, metadata: { ...(ligne.metadata ?? {}), type_prevu: params.type_action } }))
+              ({ error } = await serviceClient.from('audit_logs').insert({ ...ligne, type_action: repli, metadata: { ...((ligne.metadata as Record<string, unknown>) ?? {}), type_prevu: params.type_action } }))
       }
 
       if (error) {
