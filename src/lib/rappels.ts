@@ -4,6 +4,7 @@
 import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { envoyerCourriels, gabarit, courrielsActifs, type Courriel } from '@/lib/courriels'
+import { adressesNonActivees } from '@/lib/comptes-actives'
 import { joursRestants, palierRappelCertificat } from '@/lib/expirations'
 import { palierRelanceEcheance, estEnRetard } from '@/lib/echeances'
 import { chargerEtatsFormations, estComplete } from '@/lib/etat-formations'
@@ -17,6 +18,7 @@ export type BilanRappels = {
   candidats: number
   envoyes: number
   aEnvoyer?: string[]
+  nonActives?: number
   ignores: number
   erreur?: string
 }
@@ -44,10 +46,16 @@ export async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, en
   const bilan: BilanRappels = { type, candidats: envois.length, envoyes: 0, ignores: 0 }
   if (envois.length === 0) return bilan
   const deja = await dejaEnvoyes(sb, type, Array.from(new Set(envois.map(e => e.reference))))
-  const aEnvoyer = envois.filter(e => !deja.has(`${e.reference}|${e.palier}`))
+  let aEnvoyer = envois.filter(e => !deja.has(`${e.reference}|${e.palier}`))
   bilan.ignores = envois.length - aEnvoyer.length
   if (aEnvoyer.length === 0) return bilan
+  // Comptes pas encore activés : rien (ni envoi, ni inscription) ; écartés ici pour que la liste envoyée
+  // corresponde exactement à celle inscrite dans rappels_envoyes.
+  const non = await adressesNonActivees(sb, aEnvoyer.map(e => e.courriel.a)).catch(() => new Set<string>())
+  const retenus = aEnvoyer.filter(e => non.has(e.courriel.a.trim().toLowerCase()))
+  if (retenus.length) { bilan.nonActives = retenus.length; aEnvoyer = aEnvoyer.filter(e => !retenus.includes(e)) }
   if (simulation) { bilan.aEnvoyer = aEnvoyer.map(e => `${e.courriel.a} · ${e.palier}`); return bilan }
+  if (aEnvoyer.length === 0) return bilan
 
   const r = await envoyerCourriels(aEnvoyer.map(e => e.courriel))
   // On n'inscrit que ce qui est réellement parti (les lots sont envoyés dans l'ordre)
