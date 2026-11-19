@@ -5,6 +5,7 @@ import { getActeur, serviceClient } from '@/lib/permissions'
 import { origineDepuis } from '@/lib/courriels'
 import { simulerRappels, executerRappels } from '@/lib/rappels'
 import { logAudit } from '@/lib/audit'
+import { ouvrirJourneesDues } from '@/lib/journees-ouverture'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -14,6 +15,11 @@ export async function GET(req: NextRequest) {
   if (acteur?.role !== 'super_admin') return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const sb = serviceClient()
   const debut = Date.now()
+  // ?journees=1 : ouvre les journées programmées dont le jour est arrivé (comme la tâche quotidienne) et rapporte les erreurs
+  if (req.nextUrl.searchParams.get('journees') === '1') {
+    const r = await ouvrirJourneesDues(sb, origineDepuis(req)).catch(e => ({ erreur: e instanceof Error ? e.stack ?? e.message : String(e) }))
+    return NextResponse.json({ journees: r })
+  }
   // ?envoyer=1 : exécute réellement les rappels du jour (comme la tâche quotidienne)
   const envoyer = req.nextUrl.searchParams.get('envoyer') === '1'
   const resultat = await (envoyer ? executerRappels : simulerRappels)(sb, origineDepuis(req)).catch(e => ({ erreur: String(e) }))
