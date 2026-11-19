@@ -89,7 +89,9 @@ export async function ouvrirJourneesDues(sb: SupabaseClient, origine: string): P
       acteur = sa ? acteurDepuisEmploye(sa) : null
     }
     if (!acteur) { erreurs.push(`${j.id} : aucun administrateur pour ouvrir la journée`); continue }
+    // Une journée en erreur n'empêche pas d'ouvrir les suivantes
     const r = await ouvrirJournee(sb, acteur, j, origine, { notifier: j.notifier !== false })
+      .catch(e => ({ erreur: e instanceof Error ? e.message : String(e), statut: 500 }))
     if ('erreur' in r) {
       erreurs.push(`${j.id} : ${r.erreur}`)
       // Plus aucun employé actif : rien à ouvrir, on ne réessaie pas chaque matin
