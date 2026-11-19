@@ -58,6 +58,7 @@ export const libelleAudit = (t: string) => LIBELLES_AUDIT[t]?.label ?? t
 export type LigneAudit = {
   id: string
   created_at: string
+  clinique?: string | null
   type_action: string
   description: string
   formation_id: string | null

@@ -14,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     .eq('id', id).eq('clinique', CLINIQUE_PASSERELLE).select('*').maybeSingle()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: 'Édition introuvable' }, { status: 404 })
-  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data.numero} ${data.publie ? 'publiée / modifiée' : 'en brouillon'}`, metadata: { edition_id: id }, ...ipEtAgent(req) })
+  await logAudit({ clinique: 'WSSC', acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data.numero} ${data.publie ? 'publiée / modifiée' : 'en brouillon'}`, metadata: { edition_id: id }, ...ipEtAgent(req) })
   return NextResponse.json({ edition: data })
 }
 
@@ -25,6 +25,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { data, error } = await serviceClient().from('passerelle_editions').delete().eq('id', id).eq('clinique', CLINIQUE_PASSERELLE).select('numero')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data?.length) return NextResponse.json({ error: 'Édition introuvable' }, { status: 404 })
-  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data[0].numero} retirée`, metadata: { edition_id: id }, ...ipEtAgent(req) })
+  await logAudit({ clinique: 'WSSC', acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : édition ${data[0].numero} retirée`, metadata: { edition_id: id }, ...ipEtAgent(req) })
   return NextResponse.json({ ok: true })
 }

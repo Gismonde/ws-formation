@@ -2,7 +2,7 @@
 // et requête limitée à la portée de l'administrateur. Côté serveur pour la requête.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Acteur } from '@/lib/permissions'
-import { filtrerEmployes } from '@/lib/permissions'
+import { filtrerEmployes, cliniquesAdministrees } from '@/lib/permissions'
 
 import { LIBELLES_AUDIT, type LigneAudit } from '@/lib/audit-journal-libelles'
 export { LIBELLES_AUDIT, GROUPES_AUDIT, libelleAudit, type LigneAudit } from '@/lib/audit-journal-libelles'
@@ -45,17 +45,17 @@ export type EmployeAudit = { id: string; prenom: string | null; nom: string | nu
  * null = aucune restriction (admin global sans filtre de personne).
  */
 export async function employesConcernes(sb: SupabaseClient, acteur: Acteur, f: FiltresAudit): Promise<EmployeAudit[] | null> {
-  const restreint = acteur.role !== 'super_admin' || f.clinique || f.departement_id || f.employe_ids.length > 0
+  // La clinique se filtre sur l'entrée elle-même (colonne audit_logs.clinique), pas sur les personnes
+  const restreint = acteur.role !== 'super_admin' || f.departement_id || f.employe_ids.length > 0
   if (!restreint) return null
-  let q = filtrerEmployes(sb.from('employes').select('id, prenom, nom, email, clinique, departement_id'), acteur)
-  if (f.clinique) q = q.in('clinique', [f.clinique, 'LES_DEUX'])
+  let q = filtrerEmployes(sb.from('employes').select('id, prenom, nom, email, clinique, departement_id'), { ...acteur, vue: null })
   if (f.departement_id) q = q.eq('departement_id', f.departement_id)
   if (f.employe_ids.length) q = q.in('id', f.employe_ids)
   const { data } = await q
   return (data ?? []) as EmployeAudit[]
 }
 
-export const CHAMPS_AUDIT = `id, created_at, type_action, description, formation_id, acteur_id, cible_employe_id, metadata, ip_address, user_agent,
+export const CHAMPS_AUDIT = `id, created_at, clinique, type_action, description, formation_id, acteur_id, cible_employe_id, metadata, ip_address, user_agent,
   acteur:employes!audit_logs_acteur_id_fkey(id, prenom, nom, email, role, clinique),
   cible:employes!audit_logs_cible_employe_id_fkey(id, prenom, nom, email)`
 
@@ -80,6 +80,7 @@ export function requeteAudit(sb: SupabaseClient, f: FiltresAudit, ids: string[] 
     const liste = ids.join(',')
     q = q.or(`acteur_id.in.(${liste}),cible_employe_id.in.(${liste})`)
   }
+  if (f.clinique) q = q.eq('clinique', f.clinique)
   if (f.types.length) q = q.in('type_action', f.types)
   if (f.date_debut) q = q.gte('created_at', borneToronto(f.date_debut, false))
   if (f.date_fin) q = q.lte('created_at', borneToronto(f.date_fin, true))
@@ -90,3 +91,10 @@ export function requeteAudit(sb: SupabaseClient, f: FiltresAudit, ids: string[] 
 /** Une entrée concerne-t-elle cet employé (auteur de l'action ou personne visée) ? */
 export const concerne = (l: Pick<LigneAudit, 'acteur_id' | 'cible_employe_id'>, employeId: string) =>
   l.acteur_id === employeId || l.cible_employe_id === employeId
+
+/** Un administrateur d'une seule clinique ne voit que les entrées de sa clinique. */
+export function porteeClinique(f: FiltresAudit, acteur: Acteur): FiltresAudit {
+  if (acteur.role === 'super_admin' || f.clinique) return f
+  const cl = cliniquesAdministrees(acteur)
+  return cl.length === 1 && (cl[0] === 'WSSC' || cl[0] === 'CMC') ? { ...f, clinique: cl[0] } : f
+}

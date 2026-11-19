@@ -3274,4 +3274,6 @@ export const EN: Record<string, string> = {
   'Relancer tous les invités': 'Remind all invited employees',
   'Seulement les employés invités qui n’ont pas encore activé leur compte.': 'Only invited employees who haven’t activated their account yet.',
   'Renvoyer le courriel d’activation aux {n} employé(s) invités qui n’ont pas encore activé leur compte ? Les comptes déjà activés ne reçoivent rien.': 'Resend the activation email to the {n} invited employee(s) who haven’t activated their account yet? Accounts already activated receive nothing.',
+  'Les deux (toutes les entrées)': 'Both (all entries)',
+  'Global': 'Global',
 }

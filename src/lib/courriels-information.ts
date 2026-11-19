@@ -114,6 +114,7 @@ export async function envoyerInformation(sb: SupabaseClient, c: CourrielInfo, or
     acteur_id: a.id, type_action: 'PARAMETRE_MODIFIE',
     description: `Courriel d’information « ${c.objet} » envoyé : ${r.envoyes} courriel(s) sur ${liste.length} destinataire(s) (${non.size} compte(s) pas encore activé(s))`,
     metadata: { courriel_information_id: c.id, cible: c.cible },
+    clinique: c.cible.type === 'cliniques' && c.cible.cliniques.length === 1 ? c.cible.cliniques[0] : null,
   })
   return { envoyes: r.envoyes, destinataires: liste.length, nonActives: non.size, erreur: r.erreur }
 }

@@ -16,6 +16,6 @@ export async function PUT(req: Request) {
   const { error } = await sb.from('reglages').upsert({ cle: CLE_EQUIPE_PASSERELLE, valeur: { employes }, modifie_par: acteur!.id, modifie_le: new Date().toISOString() })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const noms = (valides ?? []).map(e => [e.prenom, e.nom].filter(Boolean).join(' ')).join(', ') || 'personne'
-  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : équipe = ${noms}`, metadata: { employes }, ...ipEtAgent(req) })
+  await logAudit({ clinique: 'WSSC', acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `La Passerelle : équipe = ${noms}`, metadata: { employes }, ...ipEtAgent(req) })
   return NextResponse.json({ employes })
 }

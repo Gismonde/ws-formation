@@ -11,14 +11,16 @@ type EmployeOption = { id: string; nom: string; email: string; clinique: string 
 const LIMITE = 50
 const champ = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white'
 
-export default function JournalAudit({ employes, departements, cliniques }: {
+export default function JournalAudit({ employes, departements, cliniques, vue }: {
   employes: EmployeOption[]
   departements: { id: string; nom: string }[]
   cliniques: Clinique[]
+  /** Clinique affichée dans l'administration : le journal s'ouvre sur ses entrées */
+  vue: Clinique | null
 }) {
   const { t, loc } = useT()
   const [types, setTypes] = useState<string[]>([])
-  const [clinique, setClinique] = useState('')
+  const [clinique, setClinique] = useState<string>(vue === 'WSSC' || vue === 'CMC' ? vue : '')
   const [departement, setDepartement] = useState('')
   const [choisis, setChoisis] = useState<string[]>([])
   const [rechercheEmp, setRechercheEmp] = useState('')
@@ -134,7 +136,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('Clinique')}</p>
               <select value={clinique} onChange={e => setClinique(e.target.value)} className={champ}>
-                <option value="">{t('Toutes')}</option>
+                <option value="">{t('Les deux (toutes les entrées)')}</option>
                 {cliniques.map(c => <option key={c} value={c}>{CLINIQUE_INFO[c].nom}</option>)}
               </select>
             </div>
@@ -194,6 +196,7 @@ export default function JournalAudit({ employes, departements, cliniques }: {
               <thead>
                 <tr className="bg-gray-50 text-xs uppercase text-gray-500">
                   <th className="text-left px-4 py-3 font-semibold">{t('Date')}</th>
+                  <th className="text-left px-3 py-3 font-semibold">{t('Clinique')}</th>
                   <th className="text-left px-3 py-3 font-semibold">{t('Type')}</th>
                   <th className="text-left px-3 py-3 font-semibold">{t('Auteur')}</th>
                   <th className="text-left px-3 py-3 font-semibold">{t('Description')}</th>
@@ -201,12 +204,17 @@ export default function JournalAudit({ employes, departements, cliniques }: {
                 </tr>
               </thead>
               <tbody className={chargement ? 'opacity-50' : ''}>
-                {!chargement && logs.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">{t('Aucun événement pour ces filtres.')}</td></tr>}
+                {!chargement && logs.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">{t('Aucun événement pour ces filtres.')}</td></tr>}
                 {logs.map(l => {
                   const s = LIBELLES_AUDIT[l.type_action] ?? { color: '#374151', bg: '#f3f4f6' }
                   return (
                     <tr key={l.id} className="border-t border-gray-100 align-top">
                       <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{new Date(l.created_at).toLocaleString(loc, { dateStyle: 'short', timeStyle: 'short' })}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        {l.clinique === 'WSSC' || l.clinique === 'CMC'
+                          ? <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ color: CLINIQUE_INFO[l.clinique].couleur, background: CLINIQUE_INFO[l.clinique].fond }}>{l.clinique}</span>
+                          : <span className="text-[11px] text-gray-400">{t('Global')}</span>}
+                      </td>
                       <td className="px-3 py-2.5"><span className="text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap" style={{ color: s.color, background: s.bg }}>{libelleAudit(l.type_action)}</span></td>
                       <td className="px-3 py-2.5">
                         {l.acteur ? <Link href={`/admin/employes/${l.acteur.id}`} className="text-gray-900 hover:underline">{l.acteur.prenom} {l.acteur.nom}</Link> : <span className="text-gray-400">{t('Système')}</span>}
