@@ -39,7 +39,7 @@ export function lireCourrielInfo(c: Record<string, unknown>, options: { brouillo
   if (!cible) return { erreur: 'Choisissez les destinataires.' }
   const libelle = texte(c.bouton_libelle, 60)
   const lien = texte(c.bouton_lien, 500)
-  if (libelle && !/^(https:\/\/|\/)/.test(lien)) return { erreur: 'Le lien du bouton doit commencer par https:// ou / (page de la plateforme).' }
+  if (libelle && (!/^(https:\/\/|\/(?!\/))/.test(lien) || /["'<>\s]/.test(lien))) return { erreur: 'Le lien du bouton doit commencer par https:// ou / (page de la plateforme).' }
   let prevu = new Date()
   if (c.envoi_prevu) {
     const d = new Date(String(c.envoi_prevu))

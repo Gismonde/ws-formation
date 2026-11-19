@@ -2,6 +2,7 @@
 // Chaque rappel n'est envoyé qu'une fois : il est inscrit dans la table rappels_envoyes
 // (supabase/migrations/conformite_suivi.sql). Sans cette table, aucun rappel n'est envoyé.
 import { chargerNotifications, composerNotification } from '@/lib/notifications-courriel'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { envoyerCourriels, gabarit, courrielsActifs, type Courriel } from '@/lib/courriels'
 import { adressesNonActivees } from '@/lib/comptes-actives'
@@ -54,7 +55,7 @@ export async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, en
   const non = await adressesNonActivees(sb, aEnvoyer.map(e => e.courriel.a)).catch(() => new Set<string>())
   const retenus = aEnvoyer.filter(e => non.has(e.courriel.a.trim().toLowerCase()))
   if (retenus.length) { bilan.nonActives = retenus.length; aEnvoyer = aEnvoyer.filter(e => !retenus.includes(e)) }
-  if (simulation) { bilan.aEnvoyer = aEnvoyer.map(e => `${e.courriel.a} · ${e.palier}`); return bilan }
+  if (simulation.getStore()) { bilan.aEnvoyer = aEnvoyer.map(e => `${e.courriel.a} · ${e.palier}`); return bilan }
   if (aEnvoyer.length === 0) return bilan
 
   const r = await envoyerCourriels(aEnvoyer.map(e => e.courriel))
@@ -281,8 +282,8 @@ export async function executerRappels(sb: SupabaseClient, origine: string): Prom
 }
 
 /** Diagnostic (administrateur global) : calcule les rappels du jour sans rien envoyer ni inscrire. */
-let simulation = false
+// Propre à chaque requête (une simulation n'affecte jamais une exécution réelle simultanée)
+const simulation = new AsyncLocalStorage<boolean>()
 export async function simulerRappels(sb: SupabaseClient, origine: string) {
-  simulation = true
-  try { return await executerRappels(sb, origine) } finally { simulation = false }
+  return simulation.run(true, () => executerRappels(sb, origine))
 }

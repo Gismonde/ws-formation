@@ -78,13 +78,14 @@ export function lireEdition(c: Record<string, unknown>): { valeurs: Omit<Edition
   const date = texte(c.date_parution, 10)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { erreur: 'La date de parution est requise.' }
   const pdf = texte(c.pdf, 500)
-  if (!pdf.startsWith('media:')) return { erreur: 'Déposez le PDF de l’édition.' }
+  const refPermise = (r: string) => r.startsWith('media:') && !r.startsWith('media:passerelle-propositions/') && !r.includes('..')
+  if (!refPermise(pdf)) return { erreur: 'Déposez le PDF de l’édition.' }
   const couverture = texte(c.couverture, 500)
   return { valeurs: {
     numero, volume: entier(c.volume, 1, 99) ?? 1, date_parution: date, temps_lecture: entier(c.temps_lecture, 1, 240),
     accroche: texte(c.accroche, 400), sommaire: lireSommaire(c.sommaire),
     couleur: COULEURS_EDITION[String(c.couleur)] ? String(c.couleur) : 'bleu',
-    pdf, couverture: couverture.startsWith('media:') ? couverture : '', publie: c.publie === true,
+    pdf, couverture: refPermise(couverture) ? couverture : '', publie: c.publie === true,
   } }
 }
 

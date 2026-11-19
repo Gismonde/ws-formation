@@ -185,7 +185,7 @@ export function rendreCourriel(p: {
   const btn = p.bouton ? `
 <tr><td style="background:#e5e7eb;padding:40px 32px;text-align:center">
   ${p.introBouton === null ? '' : `<p style="margin:0 0 22px;font-size:16px;color:#1f2937">${p.introBouton ? echapper(p.introBouton) : 'Vous pouvez consulter cette activité<br>en cliquant sur le lien suivant :'}</p>`}
-  <a href="${p.bouton.lien}" style="display:inline-block;background:#3f3f46;color:${accent === '#7d5a8e' ? '#d8c4e2' : '#ffffff'};text-decoration:none;font-weight:600;font-size:16px;padding:13px 26px;border-radius:999px">${echapper(p.bouton.libelle)}</a>
+  <a href="${echapper(p.bouton.lien)}" style="display:inline-block;background:#3f3f46;color:${accent === '#7d5a8e' ? '#d8c4e2' : '#ffffff'};text-decoration:none;font-weight:600;font-size:16px;padding:13px 26px;border-radius:999px">${echapper(p.bouton.libelle)}</a>
   <p style="margin:18px 0 0;font-size:11px;color:#6b7280;word-break:break-all">${echapper(p.bouton.lien)}</p>
 </td></tr>` : ''
   const contact = r.contact_courriel || r.contact_telephone
