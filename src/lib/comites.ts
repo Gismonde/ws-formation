@@ -46,7 +46,7 @@ export function initiales(nom: string): string {
 
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 /** Image : adresse https:// ou chemin /… seulement */
-export const imageValide = (v: unknown) => { const s = texte(v, 1000); return /^(https:\/\/|\/)/.test(s) ? s : '' }
+export const imageValide = (v: unknown) => { const s = texte(v, 1000); return /^(https:\/\/|\/(?!\/))/.test(s) && !/["'<>\s]/.test(s) ? s : '' }
 
 /** Valide ce qu'envoie le formulaire d'administration. */
 export function lireComite(c: Record<string, unknown>): { valeurs: DonneesComite } | { erreur: string } {

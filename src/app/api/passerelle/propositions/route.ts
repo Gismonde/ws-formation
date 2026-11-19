@@ -12,6 +12,10 @@ export async function POST(req: Request) {
   const lu = lireProposition(await req.json().catch(() => ({})), acteur!.id)
   if ('erreur' in lu) return NextResponse.json({ error: lu.erreur }, { status: 400 })
   const sb = serviceClient()
+  // Garde-fou : 10 propositions par employé et par jour (chaque proposition envoie un courriel à l'équipe)
+  const { count: duJour } = await sb.from('passerelle_propositions').select('id', { count: 'exact', head: true })
+    .eq('employe_id', acteur!.id).gte('cree_le', new Date(Date.now() - 86400_000).toISOString())
+  if ((duJour ?? 0) >= 10) return NextResponse.json({ error: 'Vous avez déjà envoyé 10 propositions aujourd’hui. Réessayez demain.' }, { status: 429 })
   const { data: p, error } = await sb.from('passerelle_propositions').insert({ ...lu.valeurs, employe_id: acteur!.id }).select('id').single()
   if (error) return NextResponse.json({ error: /passerelle_propositions/.test(error.message) ? 'Exécutez d’abord supabase/migrations/passerelle_propositions.sql dans Supabase.' : error.message }, { status: 500 })
 

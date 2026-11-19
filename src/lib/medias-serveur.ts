@@ -6,7 +6,8 @@ const DUREE_SIGNATURE_SECONDES = 60 * 60 * 3 // 3 h : le temps de suivre une le�
 
 /** Remplace chaque « media:<chemin> » par une adresse temporaire signée. */
 export async function signerUrlsMedias(urls: (string | null | undefined)[]): Promise<Record<string, string>> {
-  const chemins = Array.from(new Set(urls.filter(estMediaPrive).map(cheminMedia)))
+  // Les fichiers des propositions de La Passerelle ont leur propre accès contrôlé : jamais signés ici
+  const chemins = Array.from(new Set(urls.filter(estMediaPrive).map(cheminMedia))).filter(c => !c.startsWith('passerelle-propositions/') && !c.includes('..'))
   if (chemins.length === 0) return {}
   const { data } = await serviceClient().storage.from(BUCKET_MEDIAS).createSignedUrls(chemins, DUREE_SIGNATURE_SECONDES)
   const resultat: Record<string, string> = {}
