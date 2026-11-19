@@ -16,6 +16,7 @@ export type BilanRappels = {
   type: TypeRappel
   candidats: number
   envoyes: number
+  aEnvoyer?: string[]
   ignores: number
   erreur?: string
 }
@@ -46,14 +47,16 @@ export async function envoyerEtInscrire(sb: SupabaseClient, type: TypeRappel, en
   const aEnvoyer = envois.filter(e => !deja.has(`${e.reference}|${e.palier}`))
   bilan.ignores = envois.length - aEnvoyer.length
   if (aEnvoyer.length === 0) return bilan
+  if (simulation) { bilan.aEnvoyer = aEnvoyer.map(e => `${e.courriel.a} · ${e.palier}`); return bilan }
 
   const r = await envoyerCourriels(aEnvoyer.map(e => e.courriel))
   // On n'inscrit que ce qui est réellement parti (les lots sont envoyés dans l'ordre)
   const partis = aEnvoyer.slice(0, r.envoyes)
   if (partis.length) {
-    await sb.from('rappels_envoyes').insert(partis.map(e => ({
+    const { error: ins } = await sb.from('rappels_envoyes').insert(partis.map(e => ({
       type, reference: e.reference, palier: e.palier, employe_id: e.employe_id, destinataire: e.courriel.a,
     })))
+    if (ins) { console.error('[Rappels] Inscription impossible', type, ins.message); bilan.erreur = 'Inscription : ' + ins.message }
   }
   bilan.envoyes = partis.length
   if (r.erreur) bilan.erreur = r.erreur
@@ -259,10 +262,19 @@ export async function rappelsRevisionPolitiques(sb: SupabaseClient, origine: str
 export async function executerRappels(sb: SupabaseClient, origine: string): Promise<{ actif: boolean; raison?: string; bilans: BilanRappels[] }> {
   if (!courrielsActifs()) return { actif: false, raison: 'Courriels non configurés (SMTP_HOST + SMTP_USER + SMTP_PASS, ou MAILGUN_API_KEY + MAILGUN_DOMAIN, ou RESEND_API_KEY ; et COURRIEL_EXPEDITEUR)', bilans: [] }
   if (!(await suiviRappelsDisponible(sb))) return { actif: false, raison: 'Table rappels_envoyes absente : exécuter supabase/migrations/conformite_suivi.sql', bilans: [] }
+  // Chaque type de rappel est indépendant : une erreur dans l'un n'empêche pas les autres
+  const etape = (type: TypeRappel, f: () => Promise<BilanRappels>) => f().catch(e => ({ type, candidats: 0, envoyes: 0, ignores: 0, erreur: String(e) }))
   const bilans: BilanRappels[] = []
-  bilans.push(await rappelsCertificats(sb, origine))
-  bilans.push(await rappelsEcheances(sb, origine))
-  bilans.push(await rappelsRevisionPolitiques(sb, origine))
-  bilans.push(await rappelsJournees(sb, origine).catch(e => ({ type: 'journee_echeance' as const, candidats: 0, envoyes: 0, ignores: 0, erreur: String(e) })))
+  bilans.push(await etape('certificat_expiration', () => rappelsCertificats(sb, origine)))
+  bilans.push(await etape('formation_echeance', () => rappelsEcheances(sb, origine)))
+  bilans.push(await etape('politique_revision', () => rappelsRevisionPolitiques(sb, origine)))
+  bilans.push(await etape('journee_echeance', () => rappelsJournees(sb, origine)))
   return { actif: true, bilans }
+}
+
+/** Diagnostic (administrateur global) : calcule les rappels du jour sans rien envoyer ni inscrire. */
+let simulation = false
+export async function simulerRappels(sb: SupabaseClient, origine: string) {
+  simulation = true
+  try { return await executerRappels(sb, origine) } finally { simulation = false }
 }
