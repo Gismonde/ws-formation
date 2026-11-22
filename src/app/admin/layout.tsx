@@ -39,7 +39,7 @@ const adminNav: { id: string; label: string; icon: string; liens: EntreeNav[] }[
     { href: '/admin/politiques', label: 'Politiques', icon: 'policy', droits: ['suivi'] },
     { href: '/admin/formulaires', label: 'Formulaires', icon: 'assignment', formulaires: true },
     { href: '/admin/passerelle', label: 'La Passerelle', icon: 'newspaper', adminOnly: true, superAdmin: true },
-    { href: '/admin/sop', label: 'SOP', icon: 'description', adminOnly: true },
+    { href: '/admin/sop', label: 'Procédures', icon: 'description', adminOnly: true },
   ] },
   { id: 'suivi', label: 'Suivi & conformité', icon: 'verified', liens: [
     { href: '/admin/conformite', label: 'Conformité', icon: 'verified', droits: ['suivi'] },

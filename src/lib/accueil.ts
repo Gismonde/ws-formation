@@ -104,7 +104,7 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
     cartes: [
       { titre: 'Visite virtuelle', texte: 'Découvrez nos installations en photos.', image: '/cliniques/cmc/visite-virtuelle.webp', lien: '#visite' },
       { titre: 'Nos installations', texte: 'Le Centre Métropolitain de Chirurgie sur le site de GrS Montréal.', image: '/cliniques/cmc/exterieur.webp', lien: 'https://www.grsmontreal.com/en/nos-installations/centre-metropolitain-de-chirurgie.html' },
-      { titre: 'Bibliothèque', texte: 'Procédures (SOP) et documents de référence.', image: '/cliniques/cmc/bibliotheque.webp', lien: '/dashboard/sop' },
+      { titre: 'Bibliothèque', texte: 'Procédures et documents de référence.', image: '/cliniques/cmc/bibliotheque.webp', lien: '/dashboard/sop' },
       { titre: 'Blogue Transavenue', texte: 'Articles et actualités sur l’affirmation de genre.', image: '/cliniques/cmc/questions.webp', lien: 'https://blog.grsmontreal.com/' },
     ],
     visite: {
@@ -130,7 +130,7 @@ export const ACCUEIL_PAR_DEFAUT: Record<Clinique, ContenuAccueil> = {
     cartes: [
       { titre: 'Visite virtuelle', texte: 'Découvrez nos installations en photos.', image: B_WSSC + '1792597624209.webp', lien: '#visite' },
       { titre: 'Site du WSSC', texte: 'Chirurgies, informations aux patients et articles.', image: B_WSSC + '1792597654000.webp', lien: 'https://wssurgical.com/' },
-      { titre: 'Bibliothèque', texte: 'Procédures (SOP) et documents de référence.', image: B_WSSC + '1792597634377.webp', lien: '/dashboard/sop' },
+      { titre: 'Bibliothèque', texte: 'Procédures et documents de référence.', image: B_WSSC + '1792597634377.webp', lien: '/dashboard/sop' },
       { titre: 'Gérer vos horaires', texte: 'Consultez votre horaire dans Agendrix.', image: '/cliniques/wssc/agendrix.webp', lien: 'https://app.agendrix.com/fr/connexion' },
     ],
     visite: {
@@ -163,7 +163,8 @@ const ACCUEIL_EN: Record<string, string> = {
   'Nos installations': 'Our facilities',
   'Le Centre Métropolitain de Chirurgie sur le site de GrS Montréal.': 'The Centre Métropolitain de Chirurgie on the GrS Montréal website.',
   'Bibliothèque': 'Library',
-  'Procédures (SOP) et documents de référence.': 'Procedures (SOPs) and reference documents.',
+  'Procédures et documents de référence.': 'Procedures and reference documents.',
+  'Procédures (SOP) et documents de référence.': 'Procedures and reference documents.',
   'Blogue Transavenue': 'Transavenue blog',
   'Articles et actualités sur l’affirmation de genre.': 'Articles and news about gender affirmation.',
   'Site du WSSC': 'WSSC website',
