@@ -1,7 +1,7 @@
 'use client'
-// Menu latéral (5 entrées) et onglets du groupe actif, pour le portail employé.
+// Menu latéral (menus déroulants) et onglets du groupe actif, pour le portail employé.
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { MENU_EMPLOYE, groupeActif, correspond } from '@/lib/menu-employe'
@@ -15,20 +15,52 @@ const COULEUR: Record<string, string> = { '/dashboard/evenements': '#4f46e5', '/
 
 export function MenuEmploye({ compteurs, masques = [] }: { compteurs: Compteurs; masques?: string[] }) {
   const { t } = useT()
-  const actif = groupeActif(usePathname() ?? '')
+  const chemin = usePathname() ?? ''
+  const actif = groupeActif(chemin)
+  // Menus déroulants : le groupe de la page ouverte est déplié ; les autres s'ouvrent d'un clic
+  const [ouverts, setOuverts] = useState<string[]>(actif ? [actif.groupe.id] : [])
+  useEffect(() => { if (actif) setOuverts(o => (o.includes(actif.groupe.id) ? o : [...o, actif.groupe.id])) }, [actif?.groupe.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const basculer = (id: string) => setOuverts(o => (o.includes(id) ? o.filter(x => x !== id) : [...o, id]))
   return (
     <nav className="sidebar-nav">
       {MENU_EMPLOYE.filter(g => g.onglets.some(o => !masques.includes(o.href))).map(g => {
-        const total = g.onglets.reduce((s, o) => s + (compteurs[o.href] ?? 0), 0)
-        const couleur = g.onglets.map(o => COULEUR[o.href]).find((c, i) => c && (compteurs[g.onglets[i].href] ?? 0) > 0) ?? '#4f46e5'
+        const onglets = g.onglets.filter(o => !masques.includes(o.href))
+        const total = onglets.reduce((s, o) => s + (compteurs[o.href] ?? 0), 0)
+        const couleur = onglets.map(o => COULEUR[o.href]).find((c, i) => c && (compteurs[onglets[i].href] ?? 0) > 0) ?? '#4f46e5'
         const estActif = actif?.groupe.id === g.id
-        return (
-          <Link key={g.id} href={g.onglets[0].href} className="sidebar-nav-item" aria-current={estActif ? 'page' : undefined}
-            style={estActif ? { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 600 } : undefined}>
+        const styleActif = estActif ? { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 600 } : undefined
+        if (onglets.length < 2) return (
+          <Link key={g.id} href={onglets[0].href} className="sidebar-nav-item" aria-current={estActif ? 'page' : undefined} style={styleActif}>
             <span className="sidebar-icone"><IconeMenu id={g.id} /></span>
             <span>{t(g.label)}</span>
             <Pastille n={total} couleur={couleur} />
           </Link>
+        )
+        const ouvert = ouverts.includes(g.id)
+        return (
+          <div key={g.id}>
+            <button type="button" className="sidebar-nav-item" aria-expanded={ouvert} aria-controls={`menu-${g.id}`} onClick={() => basculer(g.id)}
+              style={{ ...styleActif, width: '100%', background: styleActif?.background ?? 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', font: 'inherit' }}>
+              <span className="sidebar-icone"><IconeMenu id={g.id} /></span>
+              <span>{t(g.label)}</span>
+              {!ouvert && <Pastille n={total} couleur={couleur} />}
+              <span aria-hidden="true" style={{ marginLeft: ouvert || total === 0 ? 'auto' : '6px', fontSize: '11px', opacity: 0.8, transition: 'transform .15s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>▶</span>
+            </button>
+            {ouvert && (
+              <div id={`menu-${g.id}`} style={{ display: 'grid', gap: '2px', margin: '2px 0 6px', paddingLeft: '34px' }}>
+                {onglets.map(o => {
+                  const sur = correspond(o.href, chemin)
+                  return (
+                    <Link key={o.href} href={o.href} aria-current={sur ? 'page' : undefined} className="sidebar-nav-item"
+                      style={{ fontSize: '13px', padding: '7px 10px', ...(sur ? { background: 'rgba(255,255,255,0.18)', color: '#fff', fontWeight: 600 } : { opacity: 0.85 }) }}>
+                      <span>{t(o.label)}</span>
+                      <Pastille n={compteurs[o.href] ?? 0} couleur={COULEUR[o.href] ?? '#4f46e5'} />
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )
       })}
     </nav>

@@ -37,6 +37,8 @@ export type Evenement = CiblePolitique & {
   places_prevues?: number | null
   /** Afficher un compte à rebours (carte, page, bannière) */
   compte_a_rebours?: boolean
+  /** Message montré à l'employé quand il s'inscrit (ex. : « Remplis le formulaire des RH ») */
+  message_inscription?: string | null
   /** Archivé par un admin (annulé ou passé) : masqué pour les employés */
   archive_le?: string | null
   /** Type créé par un admin, joint au chargement */

@@ -5,7 +5,7 @@ export type GroupeEmploye = { id: string; label: string; emoji: string; onglets:
 export const MENU_EMPLOYE: GroupeEmploye[] = [
   { id: 'accueil', label: 'Accueil', emoji: '🏠', onglets: [{ href: '/dashboard/accueil', label: 'Accueil', emoji: '🏠' }] },
   { id: 'formations', label: 'Formations', emoji: '🎓', onglets: [
-    { href: '/dashboard', label: 'Mes formations', emoji: '🎓' },
+    { href: '/dashboard', label: 'Formations obligatoires', emoji: '🎓' },
     { href: '/dashboard/disponibles', label: 'Formations disponibles', emoji: '🧭' },
     { href: '/dashboard/historique', label: 'Historique', emoji: '🕐' },
   ] },
