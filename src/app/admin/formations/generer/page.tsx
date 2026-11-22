@@ -376,7 +376,7 @@ export default function GenererFormationPage() {
               {t('ou cliquez pour sélectionner un fichier')}
             </p>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
-              Formats supportés: .txt, .md, .pdf (procédures, politiques, SOPs)
+              Formats supportés: .txt, .md, .pdf (procédures, politiques)
             </p>
           </div>
           <input

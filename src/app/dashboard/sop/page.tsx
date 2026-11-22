@@ -56,7 +56,7 @@ export default async function SOPPage() {
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>{t('Mes SOP')}</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1a1f36', margin: 0 }}>{t('Mes procédures')}</h1>
         <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
           {t('Procédures opérationnelles normalisées disponibles pour votre rôle')}
         </p>
@@ -79,7 +79,7 @@ export default async function SOPPage() {
 
       {sopList.length === 0 ? (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-          <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>{t('Aucune SOP disponible pour le moment.')}</p>
+          <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>{t('Aucune procédure disponible pour le moment.')}</p>
         </div>
       ) : (
         <div>

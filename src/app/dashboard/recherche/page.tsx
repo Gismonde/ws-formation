@@ -10,7 +10,7 @@ const GROUPES: { type: ResultatRecherche['type']; icone: string; titre: string }
   { type: 'formation', icone: '🎓', titre: 'Formations' },
   { type: 'lecon', icone: '📖', titre: 'Dans les leçons' },
   { type: 'politique', icone: '📜', titre: 'Politiques' },
-  { type: 'sop', icone: '📋', titre: 'SOP' },
+  { type: 'sop', icone: '📋', titre: 'Procédures' },
 ]
 
 export default async function RecherchePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {

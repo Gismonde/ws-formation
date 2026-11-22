@@ -15,9 +15,9 @@ export const MENU_EMPLOYE: GroupeEmploye[] = [
     { href: '/dashboard/badges', label: 'Mes badges', emoji: '🏅' },
     { href: '/dashboard/preuves', label: 'Mes preuves', emoji: '📎' },
   ] },
-  { id: 'politiques', label: 'Politiques & SOP', emoji: '📜', onglets: [
+  { id: 'politiques', label: 'Politiques & procédures', emoji: '📜', onglets: [
     { href: '/dashboard/politiques', label: 'Politiques', emoji: '📜' },
-    { href: '/dashboard/sop', label: 'Mes SOP', emoji: '📋' },
+    { href: '/dashboard/sop', label: 'Mes procédures', emoji: '📋' },
   ] },
   { id: 'formulaires', label: 'Formulaires', emoji: '📝', onglets: [{ href: '/dashboard/formulaires', label: 'Formulaires', emoji: '📝' }] },
   { id: 'passerelle', label: 'La Passerelle', emoji: '📰', onglets: [{ href: '/dashboard/passerelle', label: 'La Passerelle', emoji: '📰' }] },

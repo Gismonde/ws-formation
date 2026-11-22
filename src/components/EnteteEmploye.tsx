@@ -58,7 +58,7 @@ export default function EnteteEmploye() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
       <form role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) router.push('/dashboard/recherche?q=' + encodeURIComponent(q.trim())) }} style={{ flex: 1, maxWidth: '520px' }}>
-        <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher une formation, une politique, une SOP…')} aria-label={t('Rechercher')}
+        <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Rechercher une formation, une politique, une procédure…')} aria-label={t('Rechercher')}
           style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px 10px 38px', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '14px', background: '#fff url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 fill=%27none%27 stroke=%27%239ca3af%27 stroke-width=%272%27%3E%3Ccircle cx=%277%27 cy=%277%27 r=%275%27/%3E%3Cpath d=%27m11 11 4 4%27/%3E%3C/svg%3E") no-repeat 13px center', fontFamily: 'inherit' }} />
       </form>
       <div ref={boite} style={{ position: 'relative', marginLeft: 'auto' }}>

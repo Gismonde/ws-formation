@@ -39,7 +39,7 @@ export const MODELES_LECON: ModeleLecon[] = [
   },
   {
     id: 'procedure',
-    nom: 'Procédure (SOP)',
+    nom: 'Procédure',
     icone: '✅',
     description: 'Objectif, étapes, vigilance, quiz',
     blocs: [

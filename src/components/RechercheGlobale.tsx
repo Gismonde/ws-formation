@@ -20,7 +20,7 @@ export function RechercheGlobale() {
 
   const GROUPE: Record<ResultatRecherche['type'], string> = {
     employe: t('Employés'), formation: t('Formations'), politique: t('Politiques'),
-    journee: t('Journées de formation'), sop: t('Procédures (SOP)'), librairie: t('Librairie'),
+    journee: t('Journées de formation'), sop: t('Procédures'), librairie: t('Librairie'),
   }
   const ETAT: Record<NonNullable<ResultatRecherche['etat']>, string> = {
     archive: t('archivé'), publiee: t('publiée'), brouillon: t('brouillon'), modele: t('modèle'),
