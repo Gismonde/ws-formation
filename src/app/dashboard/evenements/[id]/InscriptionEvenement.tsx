@@ -7,8 +7,10 @@ import { useConfirmer } from '@/components/Confirmation'
 
 type S = { id: string; jour: string; heures: string; lieu: string | null; restantes: number; places: number; ouverte: boolean }
 
-export default function InscriptionEvenement({ evenementId, maSeance, seances, participer }: {
+export default function InscriptionEvenement({ evenementId, maSeance, seances, participer, message }: {
   participer?: boolean
+  /** Message de l'organisateur, montré à l'inscription puis rappelé dans l'encadré */
+  message?: string | null
   evenementId: string
   maSeance: { id: string; statut: string; present: boolean | null; peutAnnuler: boolean; limite: string } | null
   seances: S[]
@@ -18,6 +20,7 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances, p
   const confirmer = useConfirmer()
   const [envoi, setEnvoi] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; texte: string } | null>(null)
+  const [fenetre, setFenetre] = useState(false)
 
   async function sInscrire(s: S) {
     if (maSeance && maSeance.id !== s.id && !(await confirmer({ message: t('Changer pour la séance du {jour} ? Votre inscription actuelle sera annulée.', { jour: s.jour }), bouton: t('Changer de séance') }))) return
@@ -26,6 +29,7 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances, p
     const d = await r.json().catch(() => ({}))
     setEnvoi(null)
     if (!r.ok) { setMsg({ ok: false, texte: d.error ?? t('Erreur') }); return }
+    if (message) setFenetre(true)
     setMsg({ ok: true, texte: d.statut === 'inscrit' ? t('Vous êtes inscrit(e) ! Une confirmation vous est envoyée par courriel.') : t('La séance est complète : vous êtes sur la liste d’attente. Vous serez prévenu(e) si une place se libère.') })
     router.refresh()
   }
@@ -46,6 +50,15 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances, p
 
   return (
     <div style={{ marginTop: '20px', display: 'grid', gap: '12px' }}>
+      {fenetre && message && (
+        <div role="dialog" aria-modal="true" onClick={() => setFenetre(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(17,24,39,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '440px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
+            <p style={{ fontSize: '16px', color: '#111827', lineHeight: 1.5, whiteSpace: 'pre-line', margin: 0 }}>{message}</p>
+            <button type="button" autoFocus onClick={() => setFenetre(false)} style={{ ...bouton(true), marginTop: '18px', padding: '10px 28px' }}>{t('J’ai compris')}</button>
+          </div>
+        </div>
+      )}
       {msg && <div style={{ padding: '12px 16px', borderRadius: '10px', fontSize: '14px', background: msg.ok ? '#f0fdf4' : '#fef2f2', color: msg.ok ? '#166534' : '#991b1b', border: `1px solid ${msg.ok ? '#bbf7d0' : '#fecaca'}` }}>{msg.texte}</div>}
 
       {maSeance && (
@@ -56,6 +69,7 @@ export default function InscriptionEvenement({ evenementId, maSeance, seances, p
           {(() => { const s = seances.find(x => x.id === maSeance.id); return s ? <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px', textTransform: 'none' }}>{s.jour} · {s.heures}{s.lieu ? ` · ${s.lieu}` : ''}</div> : null })()}
           {maSeance.present === null && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', alignItems: 'center' }}>
+              {message && maSeance.statut === 'inscrit' && <div style={{ width: '100%', fontSize: '13px', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '8px 12px', whiteSpace: 'pre-line' }}>📌 {message}</div>}
               {maSeance.statut === 'inscrit' && <a href={`/api/evenements/${evenementId}/calendrier?seance=${maSeance.id}`} style={{ ...bouton(false), textDecoration: 'none' }}>📅 {t('Ajouter à mon calendrier')}</a>}
               {maSeance.peutAnnuler
                 ? <button type="button" disabled={!!envoi} onClick={annuler} style={bouton(false)}>{t('Me désinscrire')}</button>

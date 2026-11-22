@@ -35,6 +35,7 @@ export type ValeursEvenement = {
   emoji?: string | null
   places_prevues?: number | null
   compte_a_rebours?: boolean
+  message_inscription?: string
 }
 
 type SeanceForm = { date: string; debut: string; fin: string; places: string; lieu: string; illimite?: boolean }
@@ -93,6 +94,7 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
       ...(v.emoji || initial?.emoji ? { emoji: v.emoji || null } : {}),
       ...(v.date_a_venir && v.places_prevues ? { places_prevues: v.places_prevues } : initial?.places_prevues ? { places_prevues: null } : {}),
       ...(v.compte_a_rebours || initial?.compte_a_rebours ? { compte_a_rebours: !!v.compte_a_rebours } : {}),
+      message_inscription: v.message_inscription ?? '',
     }
     const r = evenementId
       ? await fetch(`/api/admin/evenements/${evenementId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'modifier', ...corps }) })
@@ -209,6 +211,12 @@ export default function FormulaireEvenement({ options, initial, evenementId }: {
         <input type="checkbox" className="mt-0.5" checked={!!v.compte_a_rebours} onChange={e => set({ compte_a_rebours: e.target.checked })} />
         <span className="text-sm"><strong>⏳ {t('Afficher un compte à rebours')}</strong><span className="block text-xs text-gray-500">{t('Sur la carte, dans la page de l’événement et dans la bannière, jusqu’à la prochaine date.')}</span></span>
       </label>
+
+      <div>
+        <label className={label}>{t('Message après l’inscription (facultatif)')}</label>
+        <textarea className={input} rows={2} maxLength={1000} value={v.message_inscription ?? ''} onChange={e => set({ message_inscription: e.target.value })} placeholder={t('Ex. : Remplis le formulaire transmis par les RH pour confirmer ta présence.')} />
+        <p className="mt-1 text-xs text-gray-500">{t('Affiché dans une fenêtre quand l’employé clique pour s’inscrire, puis rappelé dans son encadré d’inscription.')}</p>
+      </div>
 
       {!evenementId && !v.date_a_venir && (
         <div>

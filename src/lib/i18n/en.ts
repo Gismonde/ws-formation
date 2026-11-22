@@ -3277,4 +3277,9 @@ export const EN: Record<string, string> = {
   'Renvoyer le courriel d’activation aux {n} employé(s) invités qui n’ont pas encore activé leur compte ? Les comptes déjà activés ne reçoivent rien.': 'Resend the activation email to the {n} invited employee(s) who haven’t activated their account yet? Accounts already activated receive nothing.',
   'Les deux (toutes les entrées)': 'Both (all entries)',
   'Global': 'Global',
+  'Message après l’inscription (facultatif)': 'Message after sign-up (optional)',
+  'Ex. : Remplis le formulaire transmis par les RH pour confirmer ta présence.': 'E.g.: Fill in the form sent by HR to confirm your attendance.',
+  'Affiché dans une fenêtre quand l’employé clique pour s’inscrire, puis rappelé dans son encadré d’inscription.': 'Shown in a window when the employee clicks to sign up, then repeated in their sign-up box.',
+  'J’ai compris': 'Got it',
+  'Formations obligatoires': 'Required trainings',
 }
