@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   await logAudit({ acteur_id: moi.id, formation_id: id, type_action: 'DEMANDE_ACCES_ENVOYEE', description: `Demande d’accès : « ${f.titre} »`, metadata: { demande: true } })
 
-  // Avis au responsable de la formation, sinon aux admins de la clinique
+  // Avis au responsable de la formation, sinon aux admins de la clinique ; l'administrateur global dans tous les cas
   if (courrielsActifs()) {
     let dest: { email: string | null; prenom: string | null }[] = []
     if (f.responsable_id) {
@@ -52,6 +52,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const { data } = await sb.from('employes').select('id, email, prenom, actif, clinique, role').eq('role', 'admin')
       dest = (data ?? []).filter(e => adminConcerne(e, f.clinique) && traiteDemandeDe({ id: e.id as string, role: e.role as string, clinique: e.clinique as string | null }, {}, moi.clinique ?? null))
     }
+    // L'administrateur global est toujours averti (toutes les demandes, des deux cliniques)
+    const { data: globaux } = await sb.from('employes').select('email, prenom, actif').eq('role', 'super_admin')
+    for (const g of globaux ?? []) if (g.actif !== false && g.email && !dest.some(d => d.email === g.email)) dest.push(g)
     const origine = origineDepuis(req)
     // Les demandes de la version anglaise se traitent depuis la version française
     const racine = (await chargerVersions(sb, [id])).racine(id)
