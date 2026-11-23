@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
-import { inscrireVolontaire, peutTraiterDemandes } from '@/lib/formations-libres'
+import { inscrireVolontaire, peutTraiterDemandes, traiteDemandeDe } from '@/lib/formations-libres'
 import { chargerVersions } from '@/lib/langues-formation'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
 
@@ -20,6 +20,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const versions = await chargerVersions(sb, [id])
   const { data: d } = await sb.from('demandes_acces_formation').select('id, formation_id, employe_id, statut').eq('id', corps.demandeId).in('formation_id', versions.famille(id)).maybeSingle()
   if (!d) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 })
+  // Seuls les administrateurs de la clinique de l'employé (ou le responsable / l'administrateur global)
+  const { data: demandeur } = await sb.from('employes').select('clinique').eq('id', d.employe_id).maybeSingle()
+  if (!traiteDemandeDe(moi, f, (demandeur?.clinique as string | null) ?? null)) return NextResponse.json({ error: 'Cette demande revient aux administrateurs de la clinique de l’employé.' }, { status: 403 })
   const cibleId = d.formation_id as string
   const { data: cible } = cibleId === id ? { data: f } : await sb.from('formations').select('id, titre, clinique, responsable_id').eq('id', cibleId).maybeSingle()
   if (!cible || (cible.clinique ?? 'LES_DEUX') !== (f.clinique ?? 'LES_DEUX')) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })

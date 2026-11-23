@@ -58,18 +58,30 @@ export function peutTraiterDemandes(a: Acteur | null, f: { clinique: string | nu
   return (a.role === 'super_admin' || a.role === 'admin') && peutGererContenu(a, f.clinique)
 }
 
+/**
+ * La demande d'un employé revient aux administrateurs de SA clinique : pour une formation commune aux deux
+ * cliniques, un administrateur CMC ne traite pas la demande d'un employé WSSC (et inversement).
+ * L'administrateur global et le responsable désigné de la formation traitent toutes les demandes. (Fonction pure, testée.)
+ */
+export function traiteDemandeDe(a: { id: string; role: string; clinique?: string | null } | null, f: { responsable_id?: string | null }, cliniqueEmploye: string | null): boolean {
+  if (!a) return false
+  if (a.role === 'super_admin' || (f.responsable_id && f.responsable_id === a.id)) return true
+  const miennes = cliniquesDe(a.clinique ?? null)
+  return cliniquesDe(cliniqueEmploye ?? 'LES_DEUX').some(c => miennes.includes(c))
+}
+
 /** Demandes d'accès d'une formation et de ses autres versions (FR / EN), les plus récentes d'abord. */
-export async function demandesDeFormation(sb: SupabaseClient, formationId: string): Promise<DemandeAcces[]> {
+export async function demandesDeFormation(sb: SupabaseClient, formationId: string, a?: Acteur | null, f?: { responsable_id?: string | null }): Promise<DemandeAcces[]> {
   const versions = await chargerVersions(sb, [formationId])
   const { data, error } = await sb.from('demandes_acces_formation')
     .select('id, formation_id, employe_id, statut, message, demandee_le, traitee_le, motif, traitee_par')
     .in('formation_id', versions.famille(formationId)).order('demandee_le', { ascending: false })
   if (error || !data?.length) return []
   const ids = Array.from(new Set(data.flatMap(d => [d.employe_id, d.traitee_par]).filter(Boolean) as string[]))
-  const { data: emps } = await sb.from('employes').select('id, prenom, nom, poste').in('id', ids)
+  const { data: emps } = await sb.from('employes').select('id, prenom, nom, poste, clinique').in('id', ids)
   const par = new Map((emps ?? []).map(e => [e.id as string, e]))
   const nom = (i: string | null) => { const e = i ? par.get(i) : null; return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : '' }
-  return data.map(d => ({
+  return data.filter(d => !a || traiteDemandeDe(a, f ?? {}, (par.get(d.employe_id)?.clinique as string | null) ?? null)).map(d => ({
     id: d.id, employe_id: d.employe_id, statut: d.statut as StatutDemande, message: d.message, demandee_le: d.demandee_le,
     traitee_le: d.traitee_le, motif: d.motif, nom: nom(d.employe_id) || '—', poste: (par.get(d.employe_id)?.poste as string) ?? null,
     traitee_par_nom: nom(d.traitee_par) || null,
@@ -106,6 +118,7 @@ export async function demandesEnAttente(sb: SupabaseClient, a: Acteur | null): P
     const fid = d.formation_id as string
     const f = parF.get(fid); const racine = versions.racine(fid); const fr = parF.get(racine) ?? f
     if (!f || !fr || !(peutTraiterDemandes(a, f) || peutTraiterDemandes(a, fr)) || !dansLEspace(fr, d.employe_id as string)) return []
+    if (!traiteDemandeDe(a, fr, cliniqueEmp.get(d.employe_id as string) ?? null)) return []
     return [{ id: d.id as string, formation_id: fid, racine_id: racine, titre: fr.titre as string, nom: parE.get(d.employe_id as string) || '—', demandee_le: d.demandee_le as string, langue: versions.langue(fid) }]
   })
 }
