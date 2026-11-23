@@ -5,6 +5,7 @@ import { getEspace } from '@/lib/espace'
 import { logAudit } from '@/lib/audit'
 import { inscrireVolontaire } from '@/lib/formations-libres'
 import { responsableAdmissible, adminConcerne } from '@/lib/cliniques'
+import { traiteDemandeDe } from '@/lib/formations-libres'
 import { chargerVersions } from '@/lib/langues-formation'
 import { courrielsActifs, envoyerCourriels, gabarit, origineDepuis } from '@/lib/courriels'
 
@@ -47,8 +48,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (data && data.actif !== false && responsableAdmissible(data, f.clinique)) dest = [data]
     }
     if (!dest.length) {
-      const { data } = await sb.from('employes').select('email, prenom, actif, clinique, role').eq('role', 'admin')
-      dest = (data ?? []).filter(e => adminConcerne(e, f.clinique))
+      // Administrateurs de la clinique de la formation ET de celle de l'employé (formation commune : sa clinique seulement)
+      const { data } = await sb.from('employes').select('id, email, prenom, actif, clinique, role').eq('role', 'admin')
+      dest = (data ?? []).filter(e => adminConcerne(e, f.clinique) && traiteDemandeDe({ id: e.id as string, role: e.role as string, clinique: e.clinique as string | null }, {}, moi.clinique ?? null))
     }
     const origine = origineDepuis(req)
     // Les demandes de la version anglaise se traitent depuis la version française

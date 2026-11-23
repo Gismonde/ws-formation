@@ -40,7 +40,7 @@ export default async function FormationDetailPage({ params, searchParams }: { pa
   const estResponsable = !!brut && !!brut.responsable_id && brut.responsable_id === employe.id
 
   if (traiteDemandes && onglet === 'demandes' && brut) {
-    const demandes = await demandesDeFormation(serviceClient(), id)
+    const demandes = await demandesDeFormation(serviceClient(), id, await getActeur(), brut)
     return (
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">

@@ -98,7 +98,7 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   const fa = formation as unknown as { acces_hors_assignation?: string; responsable_id?: string | null; clinique: string | null }
   const avecAcces = fa.acces_hors_assignation !== undefined
   const traiteDemandes = avecAcces && peutTraiterDemandes(acteurCourant, fa)
-  const demandes = traiteDemandes ? await demandesDeFormation(serviceClient(), id) : []
+  const demandes = traiteDemandes ? await demandesDeFormation(serviceClient(), id, acteurCourant, fa) : []
   // Employés assignés : administrateurs et gestionnaires qui suivent leurs employés
   const voitAssignes = !!acteurCourant && (acteurCourant.role === 'super_admin' || acteurCourant.role === 'admin' || gestionnaireSuivi(acteurCourant))
   const voirAssignes = voitAssignes && onglet === 'assignes'
