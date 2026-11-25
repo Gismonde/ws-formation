@@ -14,7 +14,7 @@ export default async function CommunicationsAdminPage() {
   if (!acteur) redirect('/login')
   if (!estAdminCommunications(acteur)) redirect('/admin')
   const { data, error } = await serviceClient().from('communications').select('*').order('cree_le', { ascending: false })
-  const { data: themes } = await serviceClient().from('themes_documents').select('id, nom').order('nom')
+  const { data: themes } = await serviceClient().from('themes_documents').select('id, nom, parent_id').order('nom')
   const { data: departements } = await serviceClient().from('departements').select('id, nom').order('nom')
   const vue = acteur.vue ?? null
   const liste = ((data ?? []) as Communication[]).filter(c => peutGererCommunication(acteur, c.clinique) && (!vue || c.clinique === vue || c.clinique === 'LES_DEUX'))
