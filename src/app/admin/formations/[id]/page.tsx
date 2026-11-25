@@ -7,7 +7,7 @@ import { getFormationWithModules } from '@/lib/actions/formations'
 import { getLessonsWithBlocks } from '@/lib/actions/lessons'
 import type { Formation, Module } from '@/lib/types/formation'
 import { getActeur, peutCreerFormations, cliniquesContenuGerables, cliniquesContenuGerablesToutes } from '@/lib/permissions'
-import { peutModifierFormation } from '@/lib/droits-formation'
+import { peutModifierFormation, estValidateurEnCours } from '@/lib/droits-formation'
 import { CLINIQUE_INFO, estCliniqueContenu } from '@/lib/cliniques'
 import { titreAttendu } from '@/lib/brancher-librairie'
 import BrancherLibrairie from './BrancherLibrairie'
@@ -64,7 +64,10 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
   const idsNoms = [fv.validateur_id, fv.validation_demandee_par, fv.validee_par].filter(Boolean) as string[]
   const { data: nomsBruts } = idsNoms.length ? await serviceClient().from('employes').select('id, prenom, nom').in('id', idsNoms) : { data: [] as { id: string; prenom: string | null; nom: string | null }[] }
   const nomDe = (i: string | null | undefined) => { const e = (nomsBruts ?? []).find(x => x.id === i); return e ? `${e.prenom ?? ''} ${e.nom ?? ''}`.trim() : null }
-  const peutGererCetteFormation = !!acteurCourant && peutModifierFormation(acteurCourant, formation as { clinique: string | null; creee_par?: string | null })
+  // Réglages, publication, versions : créateurs et administrateurs (règle sans le cas du validateur)
+  const peutGererCetteFormation = !!acteurCourant && peutModifierFormation(acteurCourant, { ...(formation as { clinique: string | null; creee_par?: string | null }), validateur_id: null })
+  // Le validateur désigné peut corriger lui-même le contenu pendant la validation
+  const peutCorrigerContenu = !peutGererCetteFormation && estValidateurEnCours(acteurCourant, fv)
   // Les administrateurs publient sans validation obligatoire
   const estAdmin = acteurCourant?.role === 'super_admin' || acteurCourant?.role === 'admin'
   const langues = await chargerLanguesFormation(id, (formation as { version_de?: string | null }).version_de ?? null, formation.clinique ?? null)
@@ -220,6 +223,13 @@ export default async function AdminFormationDetailPage({ params, searchParams }:
         {copieDe && original && peutGererCetteFormation && <BandeauCopie copieId={id} original={original} approuvee={approuvee} motif={motifBlocage} />}
         {!copieDe && formation.publiee && peutGererCetteFormation && 'copie_de' in formation && (
           <CarteCopieTravail formationId={id} copie={copie ? { id: copie.id, statut: copie.statut_validation ?? 'brouillon' } : null} />
+        )}
+
+        {peutCorrigerContenu && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+            <p className="text-sm text-indigo-900">{t('Vous validez cette formation : vous pouvez corriger vous-même son contenu avant de l’approuver. Vos modifications sont inscrites dans l’historique.')}</p>
+            <Link href={`/admin/formations/${id}/editeur`} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">✏️ {t('Modifier le contenu')}</Link>
+          </div>
         )}
 
         {avecValidation && (peutGererCetteFormation || fv.validateur_id === acteurCourant?.id) && (

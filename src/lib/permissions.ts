@@ -175,6 +175,18 @@ export function peutMettreEnPageEvenements(a: Acteur | null): boolean {
   return !!a && (a.role === 'super_admin' || (peutCreerEvenements(a) && a.peut_mise_en_page_evenements === true))
 }
 
+/** Modifier le contenu d'une formation existante : créateurs de formations, et validateurs (pour les formations
+ *  qu'on leur a envoyées en validation — la règle par formation est dans droits-formation.ts). */
+export function peutEditerFormations(a: Acteur | null): boolean {
+  return peutCreerFormations(a) || peutValiderFormations(a)
+}
+
+/** Acteur connecté s'il peut modifier des formations (créateur ou validateur), sinon null. */
+export async function getEditeurFormations(): Promise<Acteur | null> {
+  const a = await getActeur()
+  return peutEditerFormations(a) ? a : null
+}
+
 /** Acteur connecté s'il peut créer/modifier des formations, sinon null. */
 export async function getCreateurFormations(): Promise<Acteur | null> {
   const a = await getActeur()

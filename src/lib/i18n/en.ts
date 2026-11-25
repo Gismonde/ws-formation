@@ -3282,4 +3282,6 @@ export const EN: Record<string, string> = {
   'Affiché dans une fenêtre quand l’employé clique pour s’inscrire, puis rappelé dans son encadré d’inscription.': 'Shown in a window when the employee clicks to sign up, then repeated in their sign-up box.',
   'J’ai compris': 'Got it',
   'Formations obligatoires': 'Required trainings',
+  'Vous validez cette formation : vous pouvez corriger vous-même son contenu avant de l’approuver. Vos modifications sont inscrites dans l’historique.': 'You are validating this training: you can correct its content yourself before approving it. Your changes are recorded in the history.',
+  'Modifier le contenu': 'Edit content',
 }

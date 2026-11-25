@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
-import { getCreateurFormations, serviceClient } from '@/lib/permissions'
+import { getEditeurFormations, serviceClient } from '@/lib/permissions'
 import { BUCKET_MEDIAS, PREFIXE_MEDIA, REGLES_MEDIAS, GenreMedia } from '@/lib/medias'
 import { signerUrlsMedias } from '@/lib/medias-serveur'
 
@@ -21,7 +21,7 @@ const EXTENSIONS: Record<string, string> = {
  * puis renvoie une autorisation d'envoi direct vers l'espace privé (le fichier ne transite pas par le serveur).
  */
 export async function POST(request: Request) {
-  const createur = await getCreateurFormations()
+  const createur = await getEditeurFormations()
   if (!createur) return NextResponse.json({ error: 'Non autorisé : création de formations non permise' }, { status: 403 })
 
   const { genre, type, taille } = await request.json() as { genre: GenreMedia; type: string; taille: number }
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
 /** Adresses temporaires pour prévisualiser des médias privés dans l'éditeur. */
 export async function GET(request: Request) {
-  const createur = await getCreateurFormations()
+  const createur = await getEditeurFormations()
   if (!createur) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const refs = new URL(request.url).searchParams.getAll('ref')
   return NextResponse.json({ urls: await signerUrlsMedias(refs) })
