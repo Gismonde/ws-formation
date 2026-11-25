@@ -3339,4 +3339,9 @@ export const EN: Record<string, string> = {
   'Tous les documents': 'All documents',
   'Toutes les langues': 'All languages',
   '{n} document(s)': '{n} document(s)',
+  'Réservé à certains départements': 'Restricted to certain departments',
+  'Tous les accès': 'All access levels',
+  'Tous les publics': 'All audiences',
+  'Tous les statuts': 'All statuses',
+  'Toutes les pages': 'All pages',
 }

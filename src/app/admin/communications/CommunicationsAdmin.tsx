@@ -1,12 +1,13 @@
 'use client'
 // Liste et formulaire des affiches, guides et consentements (administration).
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { useConfirmer } from '@/components/Confirmation'
 import { envoyerMedia } from '@/lib/medias-client'
-import { CATEGORIES, categorieDe, avecThemes, PUBLICS, publicDe, themesEnArbre, themesDe, cheminTheme, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
+import { CATEGORIES, categorieDe, avecThemes, PUBLICS, publicDe, themesEnArbre, themesDe, cheminTheme, filtrerDocuments, langueDe, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
 import GestionThemes from './GestionThemes'
+import ArbreThemes from '@/components/ArbreThemes'
 
 const ROUTE = '/api/admin/communications/medias'
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -36,6 +37,15 @@ export default function CommunicationsAdmin({ communications, themes, departemen
   const vide: Edition = { id: null, categorie: 'communication', themes: [], public: 'employes', departements: [], titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
   const [ed, setEd] = useState<Edition | null>(null)
   const arbre = themesEnArbre(themes)
+  // Rangement de la liste : arbre des catégories, recherche et filtres
+  const [fl, setFl] = useState({ theme: null as string | null, q: '', langue: '' as '' | 'fr' | 'en', page: '' as '' | Categorie, pour: '', statut: '', acces: '' })
+  const filtresBase = useMemo(() => communications.filter(c =>
+    (!fl.page || categorieDe(c.categorie) === fl.page) && (!fl.pour || (c.categorie === 'guide' && publicDe(c.public) === fl.pour)) &&
+    (!fl.statut || (fl.statut === 'publie') === c.publie) && (!fl.acces || (fl.acces === 'reserve') === ((c.departements ?? []).length > 0))), [communications, fl])
+  const sansCat = useMemo(() => filtrerDocuments(filtresBase, themes, { theme: null, q: fl.q, langue: fl.langue }), [filtresBase, themes, fl])
+  const listeVisible = useMemo(() => filtrerDocuments(filtresBase, themes, { theme: fl.theme, q: fl.q, langue: fl.langue }).sort((a, b) => a.titre.localeCompare(b.titre, 'fr')), [filtresBase, themes, fl])
+  const filtreActif = !!(fl.theme || fl.q || fl.langue || fl.page || fl.pour || fl.statut || fl.acces)
+  const sel = 'rounded-lg border border-gray-300 px-2 py-2 text-sm'
   const [prevenir, setPrevenir] = useState(false)
   const [depot, setDepot] = useState<string | null>(null)
   const [envoi, setEnvoi] = useState(false)
@@ -165,9 +175,37 @@ export default function CommunicationsAdmin({ communications, themes, departemen
         </section>
       )}
 
+      <div className="flex flex-wrap gap-2">
+        <input type="search" value={fl.q} onChange={e => setFl({ ...fl, q: e.target.value })} placeholder={t('Rechercher (titre, chirurgien, intervention…)')} className={sel + ' flex-1 min-w-[220px] px-3'} />
+        <select aria-label={t('Page')} value={fl.page} onChange={e => setFl({ ...fl, page: e.target.value as Categorie | '' })} className={sel}>
+          <option value="">{t('Toutes les pages')}</option>
+          {(Object.keys(CATEGORIES) as Categorie[]).map(k => <option key={k} value={k}>{CATEGORIES[k].emoji} {t(CATEGORIES[k].libelle)}</option>)}
+        </select>
+        <select aria-label={t('Destiné à')} value={fl.pour} onChange={e => setFl({ ...fl, pour: e.target.value })} className={sel}>
+          <option value="">{t('Tous les publics')}</option>
+          {(Object.keys(PUBLICS) as Public[]).map(k => <option key={k} value={k}>{t(PUBLICS[k])}</option>)}
+        </select>
+        <select aria-label={t('Statut')} value={fl.statut} onChange={e => setFl({ ...fl, statut: e.target.value })} className={sel}>
+          <option value="">{t('Tous les statuts')}</option><option value="publie">{t('Publiée')}</option><option value="brouillon">{t('Brouillon')}</option>
+        </select>
+        <select aria-label={t('Accès')} value={fl.acces} onChange={e => setFl({ ...fl, acces: e.target.value })} className={sel}>
+          <option value="">{t('Tous les accès')}</option><option value="reserve">🔒 {t('Réservé à certains départements')}</option><option value="tous">{t('Toute la clinique')}</option>
+        </select>
+        <select aria-label={t('Langue')} value={fl.langue} onChange={e => setFl({ ...fl, langue: e.target.value as '' | 'fr' | 'en' })} className={sel}>
+          <option value="">{t('Toutes les langues')}</option><option value="fr">Français</option><option value="en">English</option>
+        </select>
+        {filtreActif && <button type="button" onClick={() => setFl({ theme: null, q: '', langue: '', page: '', pour: '', statut: '', acces: '' })} className="text-sm text-indigo-700 hover:underline px-2">{t('Effacer les filtres')}</button>}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[240px_1fr] items-start">
+      <aside className="bg-white border border-gray-200 rounded-xl p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <ArbreThemes docs={sansCat} themes={themes} choisi={fl.theme} onChoisir={id => setFl({ ...fl, theme: id })} />
+      </aside>
+      <div className="min-w-0">
+      <p className="text-sm text-gray-500 mb-2">{fl.theme && fl.theme !== 'sans' ? <span className="font-medium text-gray-700">{cheminTheme(fl.theme, themes).map(x => x.nom).join(' › ')} · </span> : null}{t('{n} document(s)', { n: listeVisible.length })}</p>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {communications.length === 0 && <p className="p-8 text-center text-sm text-gray-400">{t('Aucun document pour le moment.')}</p>}
-        {communications.map(c => (
+        {listeVisible.length === 0 && <p className="p-8 text-center text-sm text-gray-400">{communications.length === 0 ? t('Aucun document pour le moment.') : t('Aucun document ne correspond à votre recherche.')}</p>}
+        {listeVisible.map(c => (
           <div key={c.id} className="flex items-center gap-4 px-5 py-3 border-b border-gray-100 last:border-0">
             <a href={`/api/communications/${c.id}/ouvrir`} target="_blank" rel="noopener" className="w-12 h-16 rounded bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">
               {c.type_fichier.startsWith('image/') || c.apercu
@@ -176,7 +214,7 @@ export default function CommunicationsAdmin({ communications, themes, departemen
                 : <span>📄</span>}
             </a>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{c.titre}</p>
+              <p className="font-semibold text-gray-900 truncate">{c.titre} <span className="text-xs font-normal text-gray-400">{langueDe(c) === 'en' ? 'EN' : 'FR'}</span></p>
               <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)}{c.categorie === 'guide' ? ` (${t(PUBLICS[publicDe(c.public)])})` : ''}{themesDe(c).map(id => cheminTheme(id, themes).map(x => x.nom).join(' › ')).filter(Boolean).map(ch => ` · ${ch}`).join('')}{(c.departements ?? []).length > 0 ? ` · 🔒 ${(c.departements ?? []).map(id => departements.find(d => d.id === id)?.nom ?? '?').join(', ')}` : ''} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
             </div>
             <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (c.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{c.publie ? t('Publiée') : t('Brouillon')}</span>
@@ -184,6 +222,8 @@ export default function CommunicationsAdmin({ communications, themes, departemen
             <button type="button" onClick={() => supprimer(c)} className="text-sm text-red-600 hover:underline">{t('Supprimer')}</button>
           </div>
         ))}
+      </div>
+      </div>
       </div>
 
       <GestionThemes themes={themes} />

@@ -2,57 +2,20 @@
 // Nos guides / Nos consentements : arbre des catégories à gauche, recherche et filtre de langue, cartes à droite.
 import { useMemo, useState } from 'react'
 import { useT } from '@/lib/i18n/client'
-import { cheminTheme, descendants, filtrerDocuments, langueDe, themesDe, type FiltreDocs, type Theme } from '@/lib/communications'
+import { cheminTheme, filtrerDocuments, langueDe, themesDe, type FiltreDocs, type Theme } from '@/lib/communications'
+import ArbreThemes from '@/components/ArbreThemes'
 
 export type DocExplorateur = { id: string; titre: string; description: string; themes: string[]; theme_id: string | null; date: string; pdf: boolean; vignette: boolean }
 
 export default function ExplorateurDocuments({ docs, themes, telechargeable }: { docs: DocExplorateur[]; themes: Theme[]; telechargeable: boolean }) {
   const { t } = useT()
   const [f, setF] = useState<FiltreDocs>({ theme: null, q: '', langue: '' })
-  const [ouverts, setOuverts] = useState<Set<string>>(() => new Set(themes.filter(x => !x.parent_id).map(x => x.id)))
   const [arbreMobile, setArbreMobile] = useState(false)
 
-  // Comptes par catégorie (avec la recherche et la langue, sans le filtre de catégorie)
   const sansCat = useMemo(() => filtrerDocuments(docs, themes, { ...f, theme: null }), [docs, themes, f])
-  const compte = (id: string) => { const d = descendants(id, themes); return sansCat.filter(c => themesDe(c).some(x => d.has(x))).length }
-  const nbSans = useMemo(() => filtrerDocuments(sansCat, themes, { theme: 'sans', q: '', langue: '' }).length, [sansCat, themes])
   const visibles = useMemo(() => filtrerDocuments(docs, themes, f).sort((a, b) => a.titre.localeCompare(b.titre, 'fr')), [docs, themes, f])
-  const enfants = (p: string | null) => themes.filter(x => x.parent_id === p).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
   const choisi = f.theme && f.theme !== 'sans' ? cheminTheme(f.theme, themes) : []
-
-  const noeud = (th: Theme, niveau: number): React.ReactNode => {
-    const n = compte(th.id)
-    if (n === 0) return null
-    const sous = enfants(th.id)
-    const ouvert = ouverts.has(th.id)
-    const actif = f.theme === th.id
-    return (
-      <li key={th.id}>
-        <div className={'flex items-center gap-1 rounded-lg pr-2 ' + (actif ? 'bg-indigo-100 text-indigo-900' : 'hover:bg-gray-100 text-gray-800')} style={{ paddingLeft: 4 + niveau * 14 }}>
-          {sous.some(s => compte(s.id) > 0)
-            ? <button type="button" aria-label={ouvert ? t('Replier') : t('Déplier')} onClick={() => setOuverts(o => { const n2 = new Set(o); if (n2.has(th.id)) n2.delete(th.id); else n2.add(th.id); return n2 })} className="w-5 text-gray-500 text-xs">{ouvert ? '▾' : '▸'}</button>
-            : <span className="w-5" />}
-          <button type="button" onClick={() => { setF({ ...f, theme: actif ? null : th.id }); setArbreMobile(false) }} className={'flex-1 text-left py-1.5 text-sm ' + (niveau === 0 ? 'font-semibold' : '')}>{th.nom}</button>
-          <span className="text-xs text-gray-400">{n}</span>
-        </div>
-        {ouvert && sous.length > 0 && <ul>{sous.map(s => noeud(s, niveau + 1))}</ul>}
-      </li>
-    )
-  }
-
-  const arbre = (
-    <nav aria-label={t('Catégories')} className="text-sm">
-      <button type="button" onClick={() => setF({ ...f, theme: null })} className={'w-full flex justify-between rounded-lg px-2 py-1.5 font-semibold ' + (f.theme === null ? 'bg-indigo-100 text-indigo-900' : 'hover:bg-gray-100 text-gray-800')}>
-        <span>{t('Tous les documents')}</span><span className="text-xs text-gray-400 font-normal">{sansCat.length}</span>
-      </button>
-      <ul className="mt-1">{enfants(null).map(th => noeud(th, 0))}</ul>
-      {nbSans > 0 && (
-        <button type="button" onClick={() => setF({ ...f, theme: 'sans' })} className={'w-full flex justify-between rounded-lg px-2 py-1.5 mt-1 ' + (f.theme === 'sans' ? 'bg-indigo-100 text-indigo-900' : 'hover:bg-gray-100 text-gray-700')}>
-          <span>{t('Autres')}</span><span className="text-xs text-gray-400">{nbSans}</span>
-        </button>
-      )}
-    </nav>
-  )
+  const arbre = <ArbreThemes docs={sansCat} themes={themes} choisi={f.theme} onChoisir={id => { setF({ ...f, theme: id }); setArbreMobile(false) }} />
 
   return (
     <div className="grid gap-6 lg:grid-cols-[260px_1fr] items-start">
