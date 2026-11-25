@@ -3315,4 +3315,12 @@ export const EN: Record<string, string> = {
   'Aucun guide pour le moment.': 'No guides yet.',
   'Les formulaires de consentement de la clinique, à télécharger au besoin.': "The clinic's consent forms, to download as needed.",
   'Aucun consentement pour le moment.': 'No consent forms yet.',
+  'Catégories des guides et consentements': 'Guide and consent form categories',
+  'Destiné à': 'Intended for',
+  'Les catégories se gèrent plus bas sur cette page.': 'Categories are managed further down this page.',
+  'Les employés voient les guides et consentements regroupés par catégorie. Une catégorie sert aux deux pages.': 'Employees see guides and consent forms grouped by category. A category is used on both pages.',
+  'Nouvelle catégorie (ex. Nutrition)': 'New category (e.g. Nutrition)',
+  'Retirer la catégorie « {nom} » ? Les documents qui y sont classés restent publiés, sans catégorie.': 'Remove the category “{nom}”? Documents filed under it stay published, without a category.',
+  'Pour les employés': 'For employees',
+  'Pour les patients': 'For patients',
 }

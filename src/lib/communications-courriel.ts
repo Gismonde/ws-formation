@@ -15,7 +15,7 @@ export async function prevenirEmployes(sb: SupabaseClient, c: Communication, req
       origine, clinique: c.clinique === 'LES_DEUX' ? ((e.clinique as string | null) ?? null) : c.clinique,
       titre: cat.nouveau,
       paragraphes: [`Bonjour ${e.prenom ?? ''},`.replace(' ,', ','), `Nouveau dans WS Formation (${cat.libelle}) : « ${c.titre} ».`, c.description].filter(Boolean),
-      bouton: { libelle: 'La consulter', lien: `${origine}${cat.page}` },
+      bouton: { libelle: 'La consulter', lien: `${origine}${cat.page}${c.categorie === 'guide' && c.public === 'patients' ? '?pour=patients' : ''}` },
     }),
   }))
   const r = await envoyerCourriels(courriels).catch(e => ({ envoyes: 0, erreur: String(e) }))

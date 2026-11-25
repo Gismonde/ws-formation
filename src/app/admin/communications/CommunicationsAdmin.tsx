@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { useConfirmer } from '@/components/Confirmation'
 import { envoyerMedia } from '@/lib/medias-client'
-import { CATEGORIES, categorieDe, type Categorie, type Communication } from '@/lib/communications'
+import { CATEGORIES, categorieDe, avecThemes, PUBLICS, publicDe, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
+import GestionThemes from './GestionThemes'
 
 const ROUTE = '/api/admin/communications/medias'
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -25,14 +26,14 @@ async function vignettePdf(fichier: File): Promise<File> {
   return new File([blob], 'apercu.webp', { type: 'image/webp' })
 }
 
-type Edition = { id: string | null; categorie: Categorie; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
+type Edition = { id: string | null; categorie: Categorie; theme_id: string; public: Public; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
 
-export default function CommunicationsAdmin({ communications, cliniques, cliniqueDefaut }: { communications: Communication[]; cliniques: string[]; cliniqueDefaut: string }) {
+export default function CommunicationsAdmin({ communications, themes, cliniques, cliniqueDefaut }: { communications: Communication[]; themes: Theme[]; cliniques: string[]; cliniqueDefaut: string }) {
   const { t, loc } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
   const entree = useRef<HTMLInputElement>(null)
-  const vide: Edition = { id: null, categorie: 'communication', titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
+  const vide: Edition = { id: null, categorie: 'communication', theme_id: '', public: 'employes', titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
   const [ed, setEd] = useState<Edition | null>(null)
   const [prevenir, setPrevenir] = useState(false)
   const [depot, setDepot] = useState<string | null>(null)
@@ -56,7 +57,7 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
     setEnvoi(true); setMsg(null)
     const r = await fetch(ed.id ? `/api/admin/communications/${ed.id}` : '/api/admin/communications', {
       method: ed.id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categorie: ed.categorie, titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
+      body: JSON.stringify({ categorie: ed.categorie, theme_id: ed.theme_id || null, public: ed.public, titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
     })
     const d = await r.json().catch(() => ({}))
     setEnvoi(false)
@@ -97,6 +98,22 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
                   {(Object.keys(CATEGORIES) as Categorie[]).map(k => <option key={k} value={k}>{CATEGORIES[k].emoji} {t(CATEGORIES[k].libelle)}</option>)}
                 </select>
               </label>
+              {ed.categorie === 'guide' && (
+                <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Destiné à')}</span>
+                  <select className={champ} value={ed.public} onChange={e => setEd({ ...ed, public: publicDe(e.target.value) })}>
+                    {(Object.keys(PUBLICS) as Public[]).map(k => <option key={k} value={k}>{t(PUBLICS[k])}</option>)}
+                  </select>
+                </label>
+              )}
+              {avecThemes(ed.categorie) && (
+                <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Catégorie')}</span>
+                  <select className={champ} value={ed.theme_id} onChange={e => setEd({ ...ed, theme_id: e.target.value })}>
+                    <option value="">{t('— Sans catégorie —')}</option>
+                    {themes.map(th => <option key={th.id} value={th.id}>{th.nom}</option>)}
+                  </select>
+                  <span className="block text-xs text-gray-500 mt-1">{t('Les catégories se gèrent plus bas sur cette page.')}</span>
+                </label>
+              )}
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Titre')}</span><input className={champ} value={ed.titre} maxLength={200} onChange={e => setEd({ ...ed, titre: e.target.value })} /></label>
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Description (facultatif)')}</span><textarea className={champ} rows={3} maxLength={2000} value={ed.description} onChange={e => setEd({ ...ed, description: e.target.value })} /></label>
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Clinique')}</span>
@@ -133,14 +150,16 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
             </a>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-900 truncate">{c.titre}</p>
-              <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
+              <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)}{c.categorie === 'guide' ? ` (${t(PUBLICS[publicDe(c.public)])})` : ''}{c.theme_id && themes.find(th => th.id === c.theme_id) ? ` · ${themes.find(th => th.id === c.theme_id)!.nom}` : ''} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
             </div>
             <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (c.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{c.publie ? t('Publiée') : t('Brouillon')}</span>
-            <button type="button" onClick={() => { setEd({ id: c.id, categorie: categorieDe(c.categorie), titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
+            <button type="button" onClick={() => { setEd({ id: c.id, categorie: categorieDe(c.categorie), theme_id: c.theme_id ?? '', public: publicDe(c.public), titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
             <button type="button" onClick={() => supprimer(c)} className="text-sm text-red-600 hover:underline">{t('Supprimer')}</button>
           </div>
         ))}
       </div>
+
+      <GestionThemes themes={themes} />
     </div>
   )
 }

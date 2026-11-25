@@ -6,6 +6,7 @@ import { adminConcerne, cliniquesDe } from '@/lib/cliniques'
 
 export type Communication = {
   id: string; clinique: string; categorie: Categorie; titre: string; description: string; fichier: string; type_fichier: string
+  theme_id: string | null; public: Public
   apercu: string; publie: boolean; publie_le: string | null; cree_par: string | null; cree_le: string; modifie_le: string
 }
 export const CLINIQUES_COMMUNICATION = ['WSSC', 'CMC', 'LES_DEUX'] as const
@@ -17,6 +18,26 @@ export const CATEGORIES: Record<Categorie, { libelle: string; page: string; emoj
   consentement: { libelle: 'Nos consentements', page: '/dashboard/consentements', emoji: '✍️', un: 'Consentement', intro: 'Les formulaires de consentement de la clinique, à télécharger au besoin.', vide: 'Aucun consentement pour le moment.', nouveau: 'Nouveau consentement', telechargeable: true },
 }
 export const categorieDe = (c: unknown): Categorie => (typeof c === 'string' && c in CATEGORIES ? c as Categorie : 'communication')
+/** Public d'un guide : employés ou patients. */
+export type Public = 'employes' | 'patients'
+export const PUBLICS: Record<Public, string> = { employes: 'Pour les employés', patients: 'Pour les patients' }
+export const publicDe = (p: unknown): Public => (p === 'patients' ? 'patients' : 'employes')
+/** Catégories générales (Recherche, Nutrition…) des guides et consentements, créées par les administrateurs. */
+export type Theme = { id: string; nom: string }
+export const avecThemes = (c: Categorie) => c !== 'communication'
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export function lireNomTheme(v: unknown): { nom: string } | { erreur: string } {
+  const nom = String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 80)
+  return nom ? { nom } : { erreur: 'Donnez un nom à la catégorie.' }
+}
+/** Regroupe par catégorie (ordre alphabétique, « sans catégorie » à la fin). (Fonction pure, testée.) */
+export function grouperParTheme<T extends { theme_id: string | null }>(liste: T[], themes: Theme[]): { theme: Theme | null; elements: T[] }[] {
+  const tries = [...themes].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  const groupes: { theme: Theme | null; elements: T[] }[] = tries.map(theme => ({ theme, elements: liste.filter(c => c.theme_id === theme.id) }))
+  const connus = new Set(themes.map(t => t.id))
+  groupes.push({ theme: null, elements: liste.filter(c => !c.theme_id || !connus.has(c.theme_id)) })
+  return groupes.filter(g => g.elements.length > 0)
+}
 export const TYPES_COMMUNICATION: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
 /** Gérer une communication : administrateur de la clinique concernée, ou administrateur global. */
@@ -28,7 +49,7 @@ export const estAdminCommunications = (a: { role: string } | null) => !!a && (a.
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 
 /** Lit le formulaire d'une communication. (Fonction pure, testée.) */
-export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
+export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'theme_id' | 'public' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
   const titre = texte(c.titre, 200)
   if (!titre) return { erreur: 'Donnez un titre.' }
   const clinique = texte(c.clinique, 10)
@@ -39,7 +60,9 @@ export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<C
   const type_fichier = texte(c.type_fichier, 60)
   if (!TYPES_COMMUNICATION[type_fichier]) return { erreur: 'Format non accepté (PDF, JPEG, PNG ou WebP).' }
   const apercu = texte(c.apercu, 500)
-  return { valeurs: { categorie: categorieDe(c.categorie), clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
+  const categorie = categorieDe(c.categorie)
+  const theme = texte(c.theme_id, 40)
+  return { valeurs: { categorie, theme_id: avecThemes(categorie) && UUID.test(theme) ? theme : null, public: categorie === 'guide' ? publicDe(c.public) : 'employes', clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
 }
 
 /** Une communication est visible par un employé de cette clinique. */
