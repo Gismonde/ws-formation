@@ -3330,4 +3330,5 @@ export const EN: Record<string, string> = {
   'Les employés voient les guides et consentements regroupés par catégorie et sous-catégorie. Une catégorie sert aux deux pages.': 'Employees see guides and consent forms grouped by category and subcategory. A category is used on both pages.',
   'Nom de la sous-catégorie': 'Subcategory name',
   'Sous-catégorie': 'Subcategory',
+  'Importer en lot': 'Bulk import',
 }
