@@ -1,6 +1,6 @@
 // Questionnaire d'une formation, pour l'éditeur de cours. GET : lecture ; PUT : enregistrement.
 import { NextResponse } from 'next/server'
-import { getActeur, serviceClient, peutEditerFormations, peutGererContenu, ipEtAgent } from '@/lib/permissions'
+import { getActeur, serviceClient, peutEditerFormations, ipEtAgent } from '@/lib/permissions'
 import { lireQuestionnaire, validerQuestionnaire, enregistrerQuestionnaire } from '@/lib/questionnaire-edition'
 import { logAudit } from '@/lib/audit'
 import { peutModifierFormation, REFUS_MODIFICATION } from '@/lib/droits-formation'
@@ -11,7 +11,7 @@ async function autoriser(id: string) {
   const sb = serviceClient()
   const { data: f } = await sb.from('formations').select('id, titre, clinique, creee_par, validateur_id, statut_validation').eq('id', id).maybeSingle()
   if (!f) return { erreur: NextResponse.json({ error: 'Formation introuvable' }, { status: 404 }) }
-  if (!peutGererContenu(acteur, f.clinique)) return { erreur: NextResponse.json({ error: 'Formation hors de votre périmètre' }, { status: 403 }) }
+  // Le périmètre de clinique est vérifié dans peutModifierFormation (créateurs ET validateur désigné)
   if (!peutModifierFormation(acteur, f)) return { erreur: NextResponse.json({ error: REFUS_MODIFICATION }, { status: 403 }) }
   return { acteur, sb, f }
 }
