@@ -125,3 +125,34 @@ export async function destinatairesCommunication(sb: SupabaseClient, clinique: s
   return (data ?? []).filter(e => e.email && e.externe !== true && cliniquesDe((e.clinique as string | null) ?? null).some(c => cibles.includes(c))
     && departementPermis({ departements }, { role: e.role as string, departement_id: (e.departement_id as string | null) ?? null }))
 }
+
+// ——— Explorateur (arbre + recherche + filtres) des guides et consentements ———
+/** Texte sans accents ni majuscules, pour la recherche. */
+export const normaliser = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+/** Langue d'un document : anglais si le titre se termine par (EN) ou si la description l'indique. */
+export const langueDe = (c: { titre: string; description?: string | null }): 'fr' | 'en' =>
+  /\(EN\)/.test(c.titre) || /(^|·)\s*English\s*$/.test(c.description ?? '') ? 'en' : 'fr'
+/** Une catégorie et toutes ses sous-catégories. */
+export function descendants(id: string, themes: Theme[]): Set<string> {
+  const out = new Set([id])
+  for (let ajout = true; ajout;) { ajout = false; for (const t of themes) if (t.parent_id && out.has(t.parent_id) && !out.has(t.id)) { out.add(t.id); ajout = true } }
+  return out
+}
+export type FiltreDocs = { theme: string | null | 'sans'; q: string; langue: '' | 'fr' | 'en' }
+/** Documents qui correspondent au filtre (catégorie et sous-catégories, mots, langue). (Fonction pure, testée.) */
+export function filtrerDocuments<T extends { titre: string; description?: string | null; themes?: string[] | null; theme_id?: string | null }>(liste: T[], themes: Theme[], f: FiltreDocs): T[] {
+  const sousArbre = f.theme && f.theme !== 'sans' ? descendants(f.theme, themes) : null
+  const connus = new Set(themes.map(t => t.id))
+  const mots = normaliser(f.q).split(/\s+/).filter(Boolean)
+  return liste.filter(c => {
+    const ids = themesDe(c)
+    if (f.theme === 'sans' && ids.some(id => connus.has(id))) return false
+    if (sousArbre && !ids.some(id => sousArbre.has(id))) return false
+    if (f.langue && langueDe(c) !== f.langue) return false
+    if (mots.length) {
+      const texte = normaliser([c.titre, c.description ?? '', ...ids.flatMap(id => cheminTheme(id, themes).map(t => t.nom))].join(' '))
+      if (!mots.every(m => texte.includes(m))) return false
+    }
+    return true
+  })
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lireCommunication, visiblePour, peutGererCommunication, grouperParTheme, lireNomTheme, themesEnArbre, cheminTheme } from '@/lib/communications'
+import { lireCommunication, visiblePour, peutGererCommunication, grouperParTheme, lireNomTheme, themesEnArbre, cheminTheme, filtrerDocuments, type FiltreDocs } from '@/lib/communications'
 
 const base = { titre: 'Affiche', clinique: 'WSSC', fichier: 'media:communications/2026/11/a.pdf', type_fichier: 'application/pdf' }
 describe('Affiches & communications', () => {
@@ -96,5 +96,30 @@ describe('Sous-catégories (Chirurgie › type › chirurgien)', () => {
     const u = '11111111-2222-3333-4444-555555555555', v = '11111111-2222-3333-4444-666666666666'
     expect(lireCommunication({ titre: 'G', clinique: 'WSSC', categorie: 'guide', fichier: 'media:communications/a.pdf', type_fichier: 'application/pdf', themes: [u, v, u, 'x'] }))
       .toMatchObject({ valeurs: { themes: [u, v], theme_id: u } })
+  })
+})
+
+describe('Explorateur : filtres', () => {
+  const T = (id: string, nom: string, parent_id: string | null = null) => ({ id, nom, parent_id })
+  const themes = [T('chir', 'Chirurgie'), T('ortho', 'Orthopédie', 'chir'), T('morcos', 'Dr Mina Morcos', 'ortho'), T('gen', 'Chirurgie générale', 'chir'), T('doyon', 'Dre Caroline Doyon', 'gen'), T('acc', 'Accès aux dossiers')]
+  const docs = [
+    { titre: 'Arthroscopie du genou – Dr Mina Morcos', description: 'Clinique Ortho Westmount · Novembre 2025 · Français', themes: ['morcos'] },
+    { titre: 'Knee arthroscopy (EN) – Dr Mina Morcos', description: 'Clinique Ortho Westmount · November 2025 · English', themes: ['morcos'] },
+    { titre: 'Cholécystectomie – Dre Caroline Doyon', description: 'Français', themes: ['doyon'] },
+    { titre: 'Guide – Réception 250', description: 'Français', themes: [] },
+  ]
+  const f = (o: Partial<FiltreDocs>) => filtrerDocuments(docs, themes, { theme: null, q: '', langue: '', ...o }).map(d => d.titre)
+  it('catégorie : inclut les sous-catégories', () => {
+    expect(f({ theme: 'chir' })).toHaveLength(3)
+    expect(f({ theme: 'ortho' })).toHaveLength(2)
+    expect(f({ theme: 'sans' })).toEqual(['Guide – Réception 250'])
+  })
+  it('recherche sans accents, dans le titre et le chemin', () => {
+    expect(f({ q: 'cholecystectomie' })).toEqual(['Cholécystectomie – Dre Caroline Doyon'])
+    expect(f({ q: 'orthopedie genou' })).toEqual(['Arthroscopie du genou – Dr Mina Morcos'])
+  })
+  it('langue', () => {
+    expect(f({ langue: 'en' })).toEqual(['Knee arthroscopy (EN) – Dr Mina Morcos'])
+    expect(f({ langue: 'fr', theme: 'morcos' })).toEqual(['Arthroscopie du genou – Dr Mina Morcos'])
   })
 })

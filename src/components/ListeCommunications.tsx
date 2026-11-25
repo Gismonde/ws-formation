@@ -5,6 +5,7 @@ import { getEspace } from '@/lib/espace'
 import { estExterne } from '@/lib/membres-externes'
 import { FUSEAU } from '@/lib/fuseau'
 import Link from 'next/link'
+import ExplorateurDocuments from '@/components/ExplorateurDocuments'
 import { CATEGORIES, PUBLICS, avecThemes, departementPermis, grouperParTheme, type Groupe, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
 
 // Politiques & procédures → Affiches & communications, Nos guides, Nos consentements (par clinique).
@@ -68,7 +69,7 @@ export default async function ListeCommunications({ categorie, pour = 'employes'
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900">{CATEGORIES[categorie].emoji} {t(CATEGORIES[categorie].libelle)}</h1>
       <p className="text-sm text-gray-500 mt-1 mb-6">{t(CATEGORIES[categorie].intro)}</p>
       {categorie === 'guide' && (
@@ -84,9 +85,14 @@ export default async function ListeCommunications({ categorie, pour = 'employes'
       {liste.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center text-sm text-gray-400">{t(CATEGORIES[categorie].vide)}</div>
       ) : (
+        avecThemes(categorie) ? (
+          <ExplorateurDocuments themes={(themes ?? []) as Theme[]} telechargeable={CATEGORIES[categorie].telechargeable}
+            docs={liste.map(c => ({ id: c.id, titre: c.titre, description: c.description, themes: c.themes ?? [], theme_id: c.theme_id, date: date(c.publie_le), pdf: c.type_fichier === 'application/pdf', vignette: c.type_fichier.startsWith('image/') || !!c.apercu }))} />
+        ) : (
         <div className="space-y-8">
           {groupes.map(g => rendreGroupe(g, 0))}
         </div>
+        )
       )}
     </div>
   )
