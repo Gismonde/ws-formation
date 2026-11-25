@@ -22,3 +22,14 @@ describe('Le validateur désigné corrige la formation en validation', () => {
     expect(peutModifierFormation({ ...gest, peut_creer_formations: true }, f({ creee_par: 'g', validateur_id: null, statut_validation: 'brouillon' }))).toBe(true)
   })
 })
+
+describe('Validateur : questionnaire et librairie', () => {
+  it("les routes de l'éditeur ne demandent pas le droit de créer (peutGererContenu) en plus de peutModifierFormation", async () => {
+    const { readFileSync } = await import('node:fs')
+    for (const f of ['src/app/api/admin/formations/[id]/questionnaire/route.ts', 'src/app/api/admin/formations/[id]/brancher-librairie/route.ts']) {
+      const src = readFileSync(f, 'utf8')
+      expect(src).toContain('peutModifierFormation(acteur, f)')
+      expect(src).not.toContain('peutGererContenu(')
+    }
+  })
+})
