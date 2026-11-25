@@ -3326,4 +3326,8 @@ export const EN: Record<string, string> = {
   'Réserver à certains départements': 'Restrict to certain departments',
   'Visible par tous les employés de la clinique.': "Visible to all of the clinic's employees.",
   'Visible seulement par ces départements, les administrateurs et l’administrateur global.': 'Visible only to these departments, administrators and the global administrator.',
+  'Cochez la catégorie la plus précise (ex. le chirurgien). Plusieurs choix possibles. Les catégories se gèrent plus bas sur cette page.': 'Tick the most specific category (e.g. the surgeon). Several choices allowed. Categories are managed further down this page.',
+  'Les employés voient les guides et consentements regroupés par catégorie et sous-catégorie. Une catégorie sert aux deux pages.': 'Employees see guides and consent forms grouped by category and subcategory. A category is used on both pages.',
+  'Nom de la sous-catégorie': 'Subcategory name',
+  'Sous-catégorie': 'Subcategory',
 }

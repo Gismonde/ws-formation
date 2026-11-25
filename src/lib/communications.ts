@@ -7,6 +7,8 @@ import { adminConcerne, cliniquesDe } from '@/lib/cliniques'
 export type Communication = {
   id: string; clinique: string; categorie: Categorie; titre: string; description: string; fichier: string; type_fichier: string
   theme_id: string | null; public: Public
+  /** Catégories du document (plusieurs possibles, à n'importe quel niveau : Chirurgie › Chirurgie générale › Dre Doyon). */
+  themes: string[]
   /** Vide : toute la clinique. Sinon : seulement ces départements (plus les administrateurs). */
   departements: string[]
   apercu: string; publie: boolean; publie_le: string | null; cree_par: string | null; cree_le: string; modifie_le: string
@@ -25,20 +27,55 @@ export type Public = 'employes' | 'patients'
 export const PUBLICS: Record<Public, string> = { employes: 'Pour les employés', patients: 'Pour les patients' }
 export const publicDe = (p: unknown): Public => (p === 'patients' ? 'patients' : 'employes')
 /** Catégories générales (Recherche, Nutrition…) des guides et consentements, créées par les administrateurs. */
-export type Theme = { id: string; nom: string }
+export type Theme = { id: string; nom: string; parent_id: string | null }
 export const avecThemes = (c: Categorie) => c !== 'communication'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function lireNomTheme(v: unknown): { nom: string } | { erreur: string } {
   const nom = String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 80)
   return nom ? { nom } : { erreur: 'Donnez un nom à la catégorie.' }
 }
-/** Regroupe par catégorie (ordre alphabétique, « sans catégorie » à la fin). (Fonction pure, testée.) */
-export function grouperParTheme<T extends { theme_id: string | null }>(liste: T[], themes: Theme[]): { theme: Theme | null; elements: T[] }[] {
-  const tries = [...themes].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
-  const groupes: { theme: Theme | null; elements: T[] }[] = tries.map(theme => ({ theme, elements: liste.filter(c => c.theme_id === theme.id) }))
+export const estUuid = (v: unknown): v is string => typeof v === 'string' && UUID.test(v)
+const parNom = (a: Theme, b: Theme) => a.nom.localeCompare(b.nom, 'fr')
+
+/** Catégories d'un document (nouvelle colonne themes, ou ancienne theme_id). */
+export const themesDe = (c: { themes?: string[] | null; theme_id?: string | null }) => (c.themes?.length ? c.themes : c.theme_id ? [c.theme_id] : [])
+
+/** Chemin d'une catégorie : « Chirurgie › Chirurgie générale › Dre Doyon ». */
+export function cheminTheme(id: string, themes: Theme[]): Theme[] {
+  const parId = new Map(themes.map(t => [t.id, t]))
+  const chemin: Theme[] = []
+  for (let t = parId.get(id); t && chemin.length < 10; t = t.parent_id ? parId.get(t.parent_id) : undefined) chemin.unshift(t)
+  return chemin
+}
+
+/** Les catégories en liste à plat, dans l'ordre de l'arbre, avec leur niveau (0, 1, 2…). (Fonction pure, testée.) */
+export function themesEnArbre(themes: Theme[]): (Theme & { niveau: number })[] {
   const connus = new Set(themes.map(t => t.id))
-  groupes.push({ theme: null, elements: liste.filter(c => !c.theme_id || !connus.has(c.theme_id)) })
-  return groupes.filter(g => g.elements.length > 0)
+  const enfants = (p: string | null) => themes.filter(t => (t.parent_id && connus.has(t.parent_id) ? t.parent_id : null) === p).sort(parNom)
+  const out: (Theme & { niveau: number })[] = []
+  const vus = new Set<string>()
+  const visiter = (p: string | null, niveau: number) => { for (const t of enfants(p)) { if (vus.has(t.id)) continue; vus.add(t.id); out.push({ ...t, niveau }); visiter(t.id, niveau + 1) } }
+  visiter(null, 0)
+  return out
+}
+
+export type Groupe<T> = { theme: Theme | null; elements: T[]; sous: Groupe<T>[]; total: number }
+/** Range les documents dans l'arbre des catégories (un document peut être à plusieurs endroits) ; « sans catégorie » à la fin. (Fonction pure, testée.) */
+export function grouperParTheme<T extends { id?: string; themes?: string[] | null; theme_id?: string | null }>(liste: T[], themes: Theme[]): Groupe<T>[] {
+  const connus = new Set(themes.map(t => t.id))
+  const construire = (p: string | null): Groupe<T>[] => themes
+    .filter(t => (t.parent_id && connus.has(t.parent_id) ? t.parent_id : null) === p).sort(parNom)
+    .map(theme => {
+      const sous = construire(theme.id)
+      const elements = liste.filter(c => themesDe(c).includes(theme.id))
+      const ids = new Set<unknown>([...elements, ...sous.flatMap(function tous(g: Groupe<T>): T[] { return [...g.elements, ...g.sous.flatMap(tous)] })].map(e => e.id ?? e))
+      return { theme, elements, sous, total: ids.size }
+    })
+    .filter(g => g.total > 0)
+  const groupes = construire(null)
+  const sans = liste.filter(c => !themesDe(c).some(id => connus.has(id)))
+  if (sans.length) groupes.push({ theme: null, elements: sans, sous: [], total: sans.length })
+  return groupes
 }
 export const TYPES_COMMUNICATION: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
@@ -51,7 +88,7 @@ export const estAdminCommunications = (a: { role: string } | null) => !!a && (a.
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 
 /** Lit le formulaire d'une communication. (Fonction pure, testée.) */
-export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'theme_id' | 'public' | 'departements' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
+export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'theme_id' | 'themes' | 'public' | 'departements' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
   const titre = texte(c.titre, 200)
   if (!titre) return { erreur: 'Donnez un titre.' }
   const clinique = texte(c.clinique, 10)
@@ -63,9 +100,10 @@ export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<C
   if (!TYPES_COMMUNICATION[type_fichier]) return { erreur: 'Format non accepté (PDF, JPEG, PNG ou WebP).' }
   const apercu = texte(c.apercu, 500)
   const categorie = categorieDe(c.categorie)
-  const theme = texte(c.theme_id, 40)
+  const brutes = Array.isArray(c.themes) ? c.themes : c.theme_id ? [c.theme_id] : []
+  const themes = avecThemes(categorie) ? [...new Set((brutes as unknown[]).map(v => texte(v, 40)).filter(estUuid))].slice(0, 20) : []
   const departements = Array.isArray(c.departements) ? [...new Set((c.departements as unknown[]).map(d => texte(d, 40)).filter(d => UUID.test(d)))].slice(0, 50) : []
-  return { valeurs: { categorie, departements, theme_id: avecThemes(categorie) && UUID.test(theme) ? theme : null, public: categorie === 'guide' ? publicDe(c.public) : 'employes', clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
+  return { valeurs: { categorie, departements, themes, theme_id: themes[0] ?? null, public: categorie === 'guide' ? publicDe(c.public) : 'employes', clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
 }
 
 /** Une communication est visible par un employé de cette clinique (et de l'un des départements, si elle leur est réservée). */

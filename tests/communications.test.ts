@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lireCommunication, visiblePour, peutGererCommunication, grouperParTheme, lireNomTheme } from '@/lib/communications'
+import { lireCommunication, visiblePour, peutGererCommunication, grouperParTheme, lireNomTheme, themesEnArbre, cheminTheme } from '@/lib/communications'
 
 const base = { titre: 'Affiche', clinique: 'WSSC', fichier: 'media:communications/2026/11/a.pdf', type_fichier: 'application/pdf' }
 describe('Affiches & communications', () => {
@@ -41,7 +41,7 @@ describe('Catégories et public des guides / consentements', () => {
     expect(lireCommunication({ ...base, categorie: 'guide', theme_id: "x' or 1=1" })).toMatchObject({ valeurs: { theme_id: null } })
   })
   it('regroupe par catégorie, ordre alphabétique, sans catégorie à la fin', () => {
-    const themes = [{ id: 'n', nom: 'Nutrition' }, { id: 'c', nom: 'Chirurgie' }, { id: 'r', nom: 'Recherche' }]
+    const themes = [{ id: 'n', nom: 'Nutrition', parent_id: null }, { id: 'c', nom: 'Chirurgie', parent_id: null }, { id: 'r', nom: 'Recherche', parent_id: null }]
     const g = grouperParTheme([{ theme_id: 'n' }, { theme_id: null }, { theme_id: 'c' }, { theme_id: 'disparu' }], themes)
     expect(g.map(x => x.theme?.nom ?? null)).toEqual(['Chirurgie', 'Nutrition', null])
     expect(g[2].elements).toHaveLength(2)
@@ -70,5 +70,31 @@ describe('Documents réservés à certains départements', () => {
     const u = '11111111-2222-3333-4444-555555555555'
     const r = lireCommunication({ titre: 'G', clinique: 'WSSC', fichier: 'media:communications/a.pdf', type_fichier: 'application/pdf', departements: [u, u, 'x'] })
     expect(r).toMatchObject({ valeurs: { departements: [u] } })
+  })
+})
+
+describe('Sous-catégories (Chirurgie › type › chirurgien)', () => {
+  const T = (id: string, nom: string, parent_id: string | null = null) => ({ id, nom, parent_id })
+  const themes = [T('chir', 'Chirurgie'), T('gen', 'Chirurgie générale', 'chir'), T('bar', 'Chirurgie bariatrique', 'chir'),
+    T('doyon', 'Dre Caroline Doyon', 'gen'), T('gagG', 'Dr Michel Gagner', 'gen'), T('gagB', 'Dr Michel Gagner', 'bar'), T('rech', 'Recherche')]
+  it('arbre à plat, ordre alphabétique, niveaux', () => {
+    expect(themesEnArbre(themes).map(t => `${t.niveau}:${t.nom}`)).toEqual([
+      '0:Chirurgie', '1:Chirurgie bariatrique', '2:Dr Michel Gagner', '1:Chirurgie générale', '2:Dr Michel Gagner', '2:Dre Caroline Doyon', '0:Recherche'])
+  })
+  it('chemin complet', () => {
+    expect(cheminTheme('doyon', themes).map(t => t.nom)).toEqual(['Chirurgie', 'Chirurgie générale', 'Dre Caroline Doyon'])
+  })
+  it('un document à plusieurs endroits ; totaux sans doublon', () => {
+    const docs = [{ id: '1', themes: ['doyon'] }, { id: '2', themes: ['gagG', 'doyon'] }, { id: '3', themes: ['gagB'] }, { id: '4', themes: [] }, { id: '5', theme_id: 'rech' }]
+    const g = grouperParTheme(docs, themes)
+    expect(g.map(x => [x.theme?.nom ?? null, x.total])).toEqual([['Chirurgie', 3], ['Recherche', 1], [null, 1]])
+    const gen = g[0].sous.find(s => s.theme?.id === 'gen')!
+    expect(gen.total).toBe(2)
+    expect(gen.sous.map(s => [s.theme?.nom, s.elements.map(e => e.id)])).toEqual([['Dr Michel Gagner', ['2']], ['Dre Caroline Doyon', ['1', '2']]])
+  })
+  it('lit plusieurs catégories', () => {
+    const u = '11111111-2222-3333-4444-555555555555', v = '11111111-2222-3333-4444-666666666666'
+    expect(lireCommunication({ titre: 'G', clinique: 'WSSC', categorie: 'guide', fichier: 'media:communications/a.pdf', type_fichier: 'application/pdf', themes: [u, v, u, 'x'] }))
+      .toMatchObject({ valeurs: { themes: [u, v], theme_id: u } })
   })
 })
