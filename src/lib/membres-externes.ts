@@ -23,6 +23,6 @@ export function valeursExterne(
  * (menu masqué, pages redirigées, jamais visé par un événement ou une politique, aucun courriel).
  * Il garde : Accueil, Formations, Réussites et Mon compte.
  */
-export const SECTIONS_RESERVEES_EMPLOYES = ['/dashboard/evenements', '/dashboard/politiques', '/dashboard/sop', '/dashboard/formulaires', '/dashboard/passerelle', '/dashboard/comites']
+export const SECTIONS_RESERVEES_EMPLOYES = ['/dashboard/evenements', '/dashboard/politiques', '/dashboard/sop', '/dashboard/formulaires', '/dashboard/passerelle', '/dashboard/comites', '/dashboard/communications']
 
 export const estExterne = (e: { externe?: boolean | null } | null | undefined): boolean => e?.externe === true
