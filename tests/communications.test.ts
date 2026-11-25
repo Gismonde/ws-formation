@@ -51,3 +51,24 @@ describe('Catégories et public des guides / consentements', () => {
     expect(lireNomTheme('  Accès   aux dossiers ')).toEqual({ nom: 'Accès aux dossiers' })
   })
 })
+
+describe('Documents réservés à certains départements', () => {
+  const doc = { clinique: 'WSSC', publie: true, departements: ['dep-admin', 'dep-rech'] }
+  it('visible par ces départements, les admins et l’admin global seulement', () => {
+    expect(visiblePour(doc, ['WSSC'], { role: 'employe', departement_id: 'dep-admin' })).toBe(true)
+    expect(visiblePour(doc, ['WSSC'], { role: 'gestionnaire', departement_id: 'dep-rech' })).toBe(true)
+    expect(visiblePour(doc, ['WSSC'], { role: 'admin', departement_id: null })).toBe(true)
+    expect(visiblePour(doc, ['WSSC'], { role: 'super_admin', departement_id: null })).toBe(true)
+    expect(visiblePour(doc, ['WSSC'], { role: 'employe', departement_id: 'dep-clinique' })).toBe(false)
+    expect(visiblePour(doc, ['WSSC'], { role: 'gestionnaire', departement_id: null })).toBe(false)
+    expect(visiblePour(doc, ['WSSC'], null)).toBe(false)
+  })
+  it('sans restriction : toute la clinique', () => {
+    expect(visiblePour({ ...doc, departements: [] }, ['WSSC'], { role: 'employe', departement_id: 'x' })).toBe(true)
+  })
+  it('lit les départements (identifiants valides seulement)', () => {
+    const u = '11111111-2222-3333-4444-555555555555'
+    const r = lireCommunication({ titre: 'G', clinique: 'WSSC', fichier: 'media:communications/a.pdf', type_fichier: 'application/pdf', departements: [u, u, 'x'] })
+    expect(r).toMatchObject({ valeurs: { departements: [u] } })
+  })
+})

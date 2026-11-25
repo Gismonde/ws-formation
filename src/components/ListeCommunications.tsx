@@ -5,7 +5,7 @@ import { getEspace } from '@/lib/espace'
 import { estExterne } from '@/lib/membres-externes'
 import { FUSEAU } from '@/lib/fuseau'
 import Link from 'next/link'
-import { CATEGORIES, PUBLICS, avecThemes, grouperParTheme, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
+import { CATEGORIES, PUBLICS, avecThemes, departementPermis, grouperParTheme, type Categorie, type Communication, type Public, type Theme } from '@/lib/communications'
 
 // Politiques & procédures → Affiches & communications, Nos guides, Nos consentements (par clinique).
 export default async function ListeCommunications({ categorie, pour = 'employes' }: { categorie: Categorie; pour?: Public }) {
@@ -18,7 +18,7 @@ export default async function ListeCommunications({ categorie, pour = 'employes'
   let requete = sb.from('communications').select('*').eq('publie', true).eq('categorie', categorie)
   if (categorie === 'guide') requete = requete.eq('public', pour)
   const { data } = await requete.in('clinique', espace.cliniquesContenu).order('publie_le', { ascending: false })
-  const liste = (data ?? []) as Communication[]
+  const liste = ((data ?? []) as Communication[]).filter(c => departementPermis(c, acteur))
   const { data: themes } = avecThemes(categorie) ? await sb.from('themes_documents').select('id, nom') : { data: [] }
   const groupes = avecThemes(categorie) ? grouperParTheme(liste, (themes ?? []) as Theme[]) : [{ theme: null, elements: liste }]
   const date = (d: string | null) => d ? new Date(d).toLocaleDateString(loc, { timeZone: FUSEAU, dateStyle: 'long' }) : ''

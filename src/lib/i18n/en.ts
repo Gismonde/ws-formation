@@ -3323,4 +3323,7 @@ export const EN: Record<string, string> = {
   'Retirer la catégorie « {nom} » ? Les documents qui y sont classés restent publiés, sans catégorie.': 'Remove the category “{nom}”? Documents filed under it stay published, without a category.',
   'Pour les employés': 'For employees',
   'Pour les patients': 'For patients',
+  'Réserver à certains départements': 'Restrict to certain departments',
+  'Visible par tous les employés de la clinique.': "Visible to all of the clinic's employees.",
+  'Visible seulement par ces départements, les administrateurs et l’administrateur global.': 'Visible only to these departments, administrators and the global administrator.',
 }

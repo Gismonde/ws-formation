@@ -7,6 +7,8 @@ import { adminConcerne, cliniquesDe } from '@/lib/cliniques'
 export type Communication = {
   id: string; clinique: string; categorie: Categorie; titre: string; description: string; fichier: string; type_fichier: string
   theme_id: string | null; public: Public
+  /** Vide : toute la clinique. Sinon : seulement ces départements (plus les administrateurs). */
+  departements: string[]
   apercu: string; publie: boolean; publie_le: string | null; cree_par: string | null; cree_le: string; modifie_le: string
 }
 export const CLINIQUES_COMMUNICATION = ['WSSC', 'CMC', 'LES_DEUX'] as const
@@ -49,7 +51,7 @@ export const estAdminCommunications = (a: { role: string } | null) => !!a && (a.
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 
 /** Lit le formulaire d'une communication. (Fonction pure, testée.) */
-export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'theme_id' | 'public' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
+export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'theme_id' | 'public' | 'departements' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
   const titre = texte(c.titre, 200)
   if (!titre) return { erreur: 'Donnez un titre.' }
   const clinique = texte(c.clinique, 10)
@@ -62,17 +64,26 @@ export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<C
   const apercu = texte(c.apercu, 500)
   const categorie = categorieDe(c.categorie)
   const theme = texte(c.theme_id, 40)
-  return { valeurs: { categorie, theme_id: avecThemes(categorie) && UUID.test(theme) ? theme : null, public: categorie === 'guide' ? publicDe(c.public) : 'employes', clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
+  const departements = Array.isArray(c.departements) ? [...new Set((c.departements as unknown[]).map(d => texte(d, 40)).filter(d => UUID.test(d)))].slice(0, 50) : []
+  return { valeurs: { categorie, departements, theme_id: avecThemes(categorie) && UUID.test(theme) ? theme : null, public: categorie === 'guide' ? publicDe(c.public) : 'employes', clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
 }
 
-/** Une communication est visible par un employé de cette clinique. */
-export function visiblePour(c: { clinique: string; publie: boolean }, cliniquesEspace: string[]): boolean {
-  return c.publie && (c.clinique === 'LES_DEUX' || cliniquesEspace.includes(c.clinique))
+/** Une communication est visible par un employé de cette clinique (et de l'un des départements, si elle leur est réservée). */
+export function visiblePour(c: { clinique: string; publie: boolean; departements?: string[] | null }, cliniquesEspace: string[], a?: { role: string; departement_id: string | null } | null): boolean {
+  return c.publie && (c.clinique === 'LES_DEUX' || cliniquesEspace.includes(c.clinique)) && departementPermis(c, a ?? null)
+}
+/** Document réservé à certains départements : seuls ces départements, les administrateurs et l'administrateur global. */
+export function departementPermis(c: { departements?: string[] | null }, a: { role: string; departement_id: string | null } | null): boolean {
+  const d = c.departements ?? []
+  if (d.length === 0) return true
+  if (!a) return false
+  return a.role === 'admin' || a.role === 'super_admin' || (!!a.departement_id && d.includes(a.departement_id))
 }
 
 /** Employés à prévenir d'une nouvelle communication : actifs, non externes, de la clinique. */
-export async function destinatairesCommunication(sb: SupabaseClient, clinique: string) {
-  const { data } = await sb.from('employes').select('id, prenom, email, clinique, actif, externe').eq('actif', true)
+export async function destinatairesCommunication(sb: SupabaseClient, clinique: string, departements: string[] = []) {
+  const { data } = await sb.from('employes').select('id, prenom, email, clinique, actif, externe, role, departement_id').eq('actif', true)
   const cibles = cliniquesDe(clinique === 'LES_DEUX' ? 'LES_DEUX' : clinique)
-  return (data ?? []).filter(e => e.email && e.externe !== true && cliniquesDe((e.clinique as string | null) ?? null).some(c => cibles.includes(c)))
+  return (data ?? []).filter(e => e.email && e.externe !== true && cliniquesDe((e.clinique as string | null) ?? null).some(c => cibles.includes(c))
+    && departementPermis({ departements }, { role: e.role as string, departement_id: (e.departement_id as string | null) ?? null }))
 }

@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { data: c } = await sb.from('communications').select('*').eq('id', id).maybeSingle()
   if (!c) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
   const espace = await getEspace(acteur)
-  if (!visiblePour(c, espace.cliniquesContenu as string[]) && !peutGererCommunication(acteur, c.clinique)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  if (!visiblePour(c, espace.cliniquesContenu as string[], acteur) && !peutGererCommunication(acteur, c.clinique)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   const q = new URL(req.url).searchParams
   const ref = q.get('apercu') === '1' && c.apercu ? c.apercu : c.fichier
   const ext = String(c.fichier).split('.').pop()

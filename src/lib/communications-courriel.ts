@@ -5,7 +5,7 @@ import { destinatairesCommunication, CATEGORIES, categorieDe, type Communication
 
 export async function prevenirEmployes(sb: SupabaseClient, c: Communication, req: Request): Promise<{ envoyes: number; destinataires: number } | { erreur: string }> {
   if (!courrielsActifs()) return { erreur: 'Envoi de courriels désactivé' }
-  const dest = await destinatairesCommunication(sb, c.clinique)
+  const dest = await destinatairesCommunication(sb, c.clinique, c.departements ?? [])
   const origine = origineDepuis(req)
   const cat = CATEGORIES[categorieDe(c.categorie)]
   const courriels = dest.map(e => ({
