@@ -51,6 +51,7 @@ export default async function AValiderPage() {
                 </div>
                 <div className="flex gap-2">
                   <a href={`/api/admin/formations/${f.id}/mode-employe?retour=fiche`} className="text-sm px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900">👁 {t('Mode employé')}</a>
+                  <Link href={`/admin/formations/${f.id}/editeur`} className="text-sm px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700">✏️ {t('Modifier')}</Link>
                   <Link href={`/admin/formations/${f.id}`} className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 text-white">{t('Valider')}</Link>
                 </div>
               </li>

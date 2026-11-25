@@ -6,7 +6,8 @@ import { serviceClient, peutGererContenu } from '@/lib/permissions'
 import { peutEtrePubliee, type FormationValidation } from '@/lib/validation-formation'
 import { noterModification, formationDuModule, formationDeLaLecon, formationDuBloc } from '@/lib/historique-formation'
 import { createClient } from '@/lib/supabase/server'
-import { getCreateurFormations } from '@/lib/permissions'
+import { getCreateurFormations, getEditeurFormations } from '@/lib/permissions'
+import { clientEcriture } from '@/lib/droits-formation'
 import type { Formation, Module, FormationComplete } from '@/lib/types/formation'
 
 export type ActionResult<T = void> =
@@ -59,9 +60,10 @@ export async function updateFormation(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
   { const refus = await refusModification(acteur, formationId); if (refus) return { success: false, error: refus } }
+  const db = clientEcriture(acteur, supabase)
   // Publication : seulement une formation approuvée par un validateur
   if (payload.publiee === true) {
     const { data: f } = await serviceClient().from('formations').select('*').eq('id', formationId).single()
@@ -70,7 +72,7 @@ export async function updateFormation(
       return { success: false, error: 'La publication est faite par un administrateur, après validation.' }
     }
   }
-  const { data, error } = await supabase.from('formations').update(payload).eq('id', formationId).select().single()
+  const { data, error } = await db.from('formations').update(payload).eq('id', formationId).select().single()
   if (error) return { success: false, error: error.message }
   const seulementPublication = 'publiee' in payload && Object.keys(payload).length === 1
   await noterModification(acteur, formationId, seulementPublication ? (payload.publiee ? `Formation publiée` : `Formation repassée en brouillon`) : `Réglages modifiés : ${Object.keys(payload).map(c => LIBELLE_REGLAGE[c] ?? c).join(', ')}`, undefined, { invalider: !seulementPublication })
@@ -139,10 +141,11 @@ export async function createModule(payload: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
   { const refus = await refusModification(acteur, payload.formation_id); if (refus) return { success: false, error: refus } }
-  const { data, error } = await supabase.from('modules').insert(payload).select().single()
+  const db = clientEcriture(acteur, supabase)
+  const { data, error } = await db.from('modules').insert(payload).select().single()
   if (error) return { success: false, error: error.message }
   await noterModification(acteur, payload.formation_id, `Module « ${payload.titre} » ajouté`)
   return { success: true, data: data as Module }
@@ -155,10 +158,11 @@ export async function updateModule(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
   { const refus = await refusPourModule(acteur, moduleId); if (refus) return { success: false, error: refus } }
-  const { data, error } = await supabase.from('modules').update(payload).eq('id', moduleId).select().single()
+  const db = clientEcriture(acteur, supabase)
+  const { data, error } = await db.from('modules').update(payload).eq('id', moduleId).select().single()
   if (error) return { success: false, error: error.message }
   await noterModification(acteur, (data as Module).formation_id, `Module « ${(data as Module).titre} » modifié`, 'module:' + moduleId)
   return { success: true, data: data as Module }
@@ -168,11 +172,12 @@ export async function deleteModule(moduleId: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
   { const refus = await refusPourModule(acteur, moduleId); if (refus) return { success: false, error: refus } }
+  const db = clientEcriture(acteur, supabase)
   const f = await formationDuModule(moduleId)
-  const { error } = await supabase.from('modules').delete().eq('id', moduleId)
+  const { error } = await db.from('modules').delete().eq('id', moduleId)
   if (error) return { success: false, error: error.message }
   await noterModification(acteur, f?.formationId, `Module « ${f?.module ?? ''} » supprimé`)
   return { success: true, data: undefined }
@@ -185,11 +190,12 @@ export async function reorderModules(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Non authentifié' }
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé : création de formations non permise' }
   { const refus = await refusModification(acteur, formationId); if (refus) return { success: false, error: refus } }
+  const db = clientEcriture(acteur, supabase)
   await Promise.all(ordre.map(({ id, ordre: o }) =>
-    supabase.from('modules').update({ ordre: o }).eq('id', id).eq('formation_id', formationId)
+    db.from('modules').update({ ordre: o }).eq('id', id).eq('formation_id', formationId)
   ))
   await noterModification(acteur, formationId, 'Ordre des modules modifié', 'ordre-modules')
   return { success: true, data: undefined }
@@ -205,7 +211,7 @@ const LIBELLE_REGLAGE: Record<string, string> = {
 
 /** Note dans l'historique les réglages modifiés depuis la page « Modifier ». */
 export async function noterReglages(formationId: string, champs: string[]): Promise<ActionResult> {
-  const acteur = await getCreateurFormations()
+  const acteur = await getEditeurFormations()
   if (!acteur) return { success: false, error: 'Non autorisé' }
   const liste = champs.filter(c => c in LIBELLE_REGLAGE).map(c => LIBELLE_REGLAGE[c])
   if (liste.length) await noterModification(acteur, formationId, `Réglages modifiés : ${liste.join(', ')}`)
