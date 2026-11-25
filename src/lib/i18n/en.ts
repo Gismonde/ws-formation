@@ -3331,4 +3331,12 @@ export const EN: Record<string, string> = {
   'Nom de la sous-catégorie': 'Subcategory name',
   'Sous-catégorie': 'Subcategory',
   'Importer en lot': 'Bulk import',
+  'Aucun document ne correspond à votre recherche.': 'No document matches your search.',
+  'Déplier': 'Expand',
+  'Langue': 'Language',
+  'Rechercher (titre, chirurgien, intervention…)': 'Search (title, surgeon, procedure…)',
+  'Replier': 'Collapse',
+  'Tous les documents': 'All documents',
+  'Toutes les langues': 'All languages',
+  '{n} document(s)': '{n} document(s)',
 }
