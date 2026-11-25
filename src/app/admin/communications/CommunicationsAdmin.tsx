@@ -13,7 +13,7 @@ const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:
 const LIBELLE_CLINIQUE: Record<string, string> = { WSSC: 'WSSC', CMC: 'CMC', LES_DEUX: 'Les deux cliniques' }
 
 /** Page 1 d'un PDF en image (vignette), dans le navigateur. */
-async function vignettePdf(fichier: File): Promise<File> {
+export async function vignettePdf(fichier: File): Promise<File> {
   const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@' + pdfjsLib.version + '/build/pdf.worker.min.mjs'
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await fichier.arrayBuffer()) }).promise
@@ -80,7 +80,10 @@ export default function CommunicationsAdmin({ communications, themes, departemen
     <div className="space-y-5">
       {msg && <div className={'rounded-lg px-4 py-3 text-sm ' + (msg.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700')}>{msg.texte}</div>}
       {!ed ? (
+        <div>
         <button type="button" onClick={() => { setEd(vide); setMsg(null) }} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ {t('Nouveau document')}</button>
+          <a href="/admin/communications/import" className="ml-2 inline-block text-sm font-semibold px-4 py-2 rounded-lg border border-indigo-600 text-indigo-700 hover:bg-indigo-50">📂 {t('Importer en lot')}</a>
+        </div>
       ) : (
         <section className="bg-white border border-gray-200 rounded-xl p-5 grid gap-4">
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>

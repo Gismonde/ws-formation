@@ -1,0 +1,2906 @@
+{
+ "8a82e8bd4054e778": {
+  "titre": "Guide – Réception 250",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [],
+  "type": "application/pdf"
+ },
+ "66b1599f2065913f": {
+  "titre": "Arthrodèse des doigts – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Août 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "af3dda230bbf3227": {
+  "titre": "Chirurgie orthopédique – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c33385dc6a1a77d8": {
+  "titre": "Orthopedic surgery (EN) – Dr Hai Nguyen",
+  "description": "Clinique Ortho Westmount · August 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Hai Nguyen"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f1d753664382402e": {
+  "titre": "Cholécystectomie – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · October 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f1a781c6d402cff9": {
+  "titre": "Arthroscopy (EN) – Dr Ryan Coughlin",
+  "description": "Clinique Ortho Westmount · June 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Ryan Coughlin"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "faf5b11c1d19a7a9": {
+  "titre": "Chirurgie de l’épaule par arthroscopie – Dr Moreno Morelli",
+  "description": "Clinique Ortho Westmount · Février 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Moreno Morelli"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "82606ff1b5c1a480": {
+  "titre": "Décompression du tunnel carpien – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8923abd19331987c": {
+  "titre": "Ostéointégration – Dr Robert Turcotte",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Robert Turcotte"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4f865cca0325f4cc": {
+  "titre": "Reconstruction acromio-claviculaire – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7b441c21024afea4": {
+  "titre": "Internal lateral sphincterotomy / sphincterotoplasty (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "190e807087e45fd2": {
+  "titre": "Chirurgie du pied et de la cheville – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · Janvier 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "69252daddf991d85": {
+  "titre": "Guide représentant aux patients – Chirurgie bariatrique / générale",
+  "description": "Clinique Michel Gagner · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7623c0a51a34e9b9": {
+  "titre": "Chirurgie orthopédique – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "061897e15df97527": {
+  "titre": "Orthopedic surgery (EN) – Dr Anthony Albers",
+  "description": "Clinique Ortho Westmount · February 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Anthony Albers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c89aee3d2a78ade4": {
+  "titre": "Réparation de Brostrom – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "28f017c62542622b": {
+  "titre": "Hip replacement pathway (EN) – Dr Michael G. Zywiel",
+  "description": "Westmount Square Surgical Centre · September 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Michael G. Zywiel"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e86dda052e4bb98d": {
+  "titre": "Chirurgie orthopédique guide général – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "73715c0c70b62c95": {
+  "titre": "Arthroplastie de l'épaule – Dr Moreno Morelli",
+  "description": "Clinique Ortho Westmount · Février 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Moreno Morelli"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4161775faa259e37": {
+  "titre": "Knee arthroscopy: post-op care (EN) – Dr Jihad Abouali",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "438a2a48c0dc4209": {
+  "titre": "Lumbar decompression (EN) – Dr Éric Truffer",
+  "description": "Westmount Square Surgical Centre · September 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie",
+    "Dr Éric Truffer"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "9e6d737a3c768288": {
+  "titre": "ACL reconstruction: post-op care (EN) – Dr Jihad Abouali",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d6295e2c2263d428": {
+  "titre": "Chirurgie orthopédique – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "a4d2411265aba29c": {
+  "titre": "Chirurgie orthopédique – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · Janvier 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "028a132ee8a00447": {
+  "titre": "Foot and ankle surgery (EN) – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · January 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "9b7f3ade03bbfef1": {
+  "titre": "Fistulotomie – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Octobre 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e0e41b6d07de8a89": {
+  "titre": "Orthopedic surgery (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "37d891f82de46852": {
+  "titre": "Vasectomy (sterilization for men) (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · May 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f9390b1d52950436": {
+  "titre": "Intragastric balloon removal (EN) – Dre Lamees Almutlaq",
+  "description": "Clinique Michel Gagner · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dre Lamees Almutlaq"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c51ac9f04e601fc9": {
+  "titre": "Guide – Réception 801",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [],
+  "type": "application/pdf"
+ },
+ "ec70c0c8d99f35a9": {
+  "titre": "Orthopedic surgery general guide (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "81ba3d999e63b6c4": {
+  "titre": "Protocole – Paiements par carte de crédit",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [],
+  "type": "application/pdf"
+ },
+ "372b8a3bd5038ffc": {
+  "titre": "Tubal ligature (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · January 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "41abb7317c26f95e": {
+  "titre": "Arthrodèse sous talienne – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · Janvier 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "6707bbdd8c352459": {
+  "titre": "Fundoplicature de Nissen – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "806b9519184fe537": {
+  "titre": "Exérèse de matériel – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c75fc2630f19289a": {
+  "titre": "Open reduction and internal fixation (ORIF) (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ef7a03e0cb18cf82": {
+  "titre": "Excision du kyste synovial – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "2366eced7753e2b4": {
+  "titre": "Carpal tunnel release (EN) – Dr Éric Truffer",
+  "description": "Westmount Square Surgical Centre · June 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie",
+    "Dr Éric Truffer"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c24e2fe2259fd574": {
+  "titre": "Cholécystectomie – Dre Lamees Almutlaq et Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Lamees Almutlaq"
+   ],
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "247c906b3118929f": {
+  "titre": "Réduction ouverte et fixation interne (ROFI) du radius – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · Décembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4431ec1b428bf765": {
+  "titre": "Hémorroïdes, saignement et douleur",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "6ade36e6ff252446": {
+  "titre": "Bunionectomy (hallux valgus cure) / hammer toe correction (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "abfb9844855e295e": {
+  "titre": "Chirurgie bariatrique – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7183a7a664d9896d": {
+  "titre": "Orthopedic surgery (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "3813047b1028cc17": {
+  "titre": "Orthopedic surgery (EN) – Dr Christopher Pedneault",
+  "description": "Clinique Ortho Westmount · August 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Christopher Pedneault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e7f8c6fe5d436242": {
+  "titre": "Open achilles reconstruction (EN) – Dr Danny Arora",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Danny Arora"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "5a702398191f67f5": {
+  "titre": "Oignonectomie (cure de l'hallux valgus) / cure d'orteil en marteau – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "dc740828b510caeb": {
+  "titre": "Lower limb nerve block (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Blocs nerveux"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ad0c6eea3c2ab80f": {
+  "titre": "Consentement à la communication du dossier médical – WSSC / CMC (EN)",
+  "description": "English",
+  "categorie": "consentement",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "LES_DEUX",
+  "chemins": [
+   [
+    "Accès aux dossiers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4b8504b5745cf7c9": {
+  "titre": "Knee replacement pathway (EN) – Dr Michael G. Zywiel",
+  "description": "Westmount Square Surgical Centre · September 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Michael G. Zywiel"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4d0932238b550de0": {
+  "titre": "Le système Magnet – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Janvier 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "3f44731f7b0760dc": {
+  "titre": "Endometriosis and you (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "67bc8a37417dd983": {
+  "titre": "Finger arthrodesis (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · August 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "bee85a419e347af4": {
+  "titre": "Knee arthroscopy / anterior cruciate ligament (ACL) reconstruction (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8024c336c66a926b": {
+  "titre": "Synovial cyst excision (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "56f6186b5833e204": {
+  "titre": "Réparation du tendon quadricep – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "71eb29d78c179d20": {
+  "titre": "Exérèse de matériel – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Mars 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d7d294061b7cbf31": {
+  "titre": "Subtalar arthrodesis (EN) – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · January 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "11302e81d1ecb1b9": {
+  "titre": "Fasciotomy (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · August 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "1b0237b336ffa80e": {
+  "titre": "Shoulder arthroscopy: post-surgical care (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "afc8f7a62fcfc2d4": {
+  "titre": "A guide to your minimally invasive hysterectomy (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "3559c28e5a2322c7": {
+  "titre": "Upper limb nerve block (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Blocs nerveux"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d28f88eb8d776f48": {
+  "titre": "Guide post-chirurgie de laminectomie lombaire",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "46fa476a7d25fec6": {
+  "titre": "Excision radicale du kyste pilonidal (WSSC) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Février 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "446bad277a8756d2": {
+  "titre": "Arthrodèse de la cheville – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Août 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "afac15ac5a0d8c52": {
+  "titre": "Nissen fundoplication (EN) – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "be42f20edb662b0e": {
+  "titre": "Osteointegration (EN) – Dr Robert Turcotte",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Robert Turcotte"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "2c667ddd25d0f891": {
+  "titre": "Osteochondritis dissecans fixation (EN) – Dr Jihad Abouali",
+  "description": "Westmount Square Surgical Center · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "6d9cd30718a0da8e": {
+  "titre": "Ankle arthroscopy (EN) – Dr Danny Arora",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Danny Arora"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "453bf2d61f50db63": {
+  "titre": "Bursectomie olécranienne – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "40136d081edc970a": {
+  "titre": "Protocole – Archives",
+  "description": "Centre de chirurgie Westmount Square · Octobre 2025 · Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Accès aux dossiers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "5993dc314c44a067": {
+  "titre": "Excision of cutaneous and subcutaneous lesions (cyst, lipoma, nevus, localized pilonidal sinus) (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · October 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "b78787d3f0ab5a77": {
+  "titre": "Bursectomie de la hanche – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7f7cf1321882edbc": {
+  "titre": "Arthroscopie – Dr Ryan Coughlin",
+  "description": "Clinique Ortho Westmount · Juin 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Ryan Coughlin"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "b4525fad3e8192e1": {
+  "titre": "Protocole – Fitness to Fly",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "882683c31dda6f6a": {
+  "titre": "Toes amputations (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "65aa0a58612928a2": {
+  "titre": "Libération du doigt à ressaut – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Septembre 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8993b5bbc4c9a3fb": {
+  "titre": "L'endométriose",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e004ed93453dfa69": {
+  "titre": "Ankle arthrodesis (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · August 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d8e192f4d65d78aa": {
+  "titre": "Réparation du tendon pectoral majeur – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "49e825d0568b1c60": {
+  "titre": "Arthroscopy (EN) – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · December 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "b70e92cbc2eac05b": {
+  "titre": "Hémorroïdectomie – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Septembre 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "024031b6f5a407d1": {
+  "titre": "Shoulder arthroplasty (EN) – Dr Moreno Morelli",
+  "description": "Clinique Ortho Westmount · February 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Moreno Morelli"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "39184aba9705c538": {
+  "titre": "Hallux cheilectomy (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · October 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "46174840cc802054": {
+  "titre": "Consentement à la communication du dossier médical – WSSC / CMC",
+  "description": "Français",
+  "categorie": "consentement",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "LES_DEUX",
+  "chemins": [
+   [
+    "Accès aux dossiers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8d119cef4bc65d23": {
+  "titre": "Vasectomie (sterilisation chez l’homme) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Mai 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "5be6e20604caf800": {
+  "titre": "Chirurgie orthopédique – Dr John Antoniou",
+  "description": "Clinique Ortho Westmount · Janvier 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr John Antoniou"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "56dbf7a54bef50cc": {
+  "titre": "Removal of hardware (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "1ae0537f36969446": {
+  "titre": "Bloc nerveux du membre inférieur",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Blocs nerveux"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e3e2292dc5bcce84": {
+  "titre": "Bloc nerveux du membre supérieur",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Blocs nerveux"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7201547d58768408": {
+  "titre": "Procédure bariatrique par endoscopie – Dre Lamees Almutlaq et Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dre Lamees Almutlaq"
+   ],
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "a1159d67d8725c32": {
+  "titre": "Chirurgie orthopédique – Dr David Zukor",
+  "description": "Clinique Ortho Westmount · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr David Zukor"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c3ddc557425873e5": {
+  "titre": "Chéilectomie de l'hallux – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Octobre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "665bae23a3e15c73": {
+  "titre": "Deep infiltrating endometriosis (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e4728e33ec50b43b": {
+  "titre": "Retrait du ballon intra-gastrique – Dre Lamees Almutlaq",
+  "description": "Clinique Michel Gagner · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dre Lamees Almutlaq"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "35bfdb4ab45c82b4": {
+  "titre": "Olecranon bursectomy (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "67c840e81f6a875f": {
+  "titre": "Endoscopic bariatric procedure (EN) – Dre Lamees Almutlaq et Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dre Lamees Almutlaq"
+   ],
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "2af82e4d22dfcddf": {
+  "titre": "Anterior / posterior cruciate ligament reconstruction pathway (EN) – Dr Jihad Abouali",
+  "description": "Westmount Square Surgical Center · May 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "caedb475f9d1f092": {
+  "titre": "Reconstruction du ligament croisé antérieur (LCA) – Dr John Antoniou",
+  "description": "Clinique Ortho Westmount · Janvier 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr John Antoniou"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d280e1acdd11b9c6": {
+  "titre": "Arthroscopy pathway (EN) – Dr Jihad Abouali",
+  "description": "Westmount Square Surgical Center · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f744605ab18b2768": {
+  "titre": "Chirurgie générale – informations générales (WSSC)",
+  "description": "Clinique Michel Gagner · Janvier 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f3f58bc2ef65e3c5": {
+  "titre": "Orthopedic surgery pathway (EN) – Dr Sebastian Rodriguez-Elizalde",
+  "description": "Westmount Square Surgical Centre · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Sebastian Rodriguez-Elizalde"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "47e4780ed9c280a2": {
+  "titre": "Tibialis anterior tendon repair or reconstruction (EN) – Dr Danny Arora",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Danny Arora"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "43a5db9c2c9041da": {
+  "titre": "Chirurgie générale – informations générales (Centre de convalescence)",
+  "description": "Clinique Michel Gagner · Janvier 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "0b3bf695412cf718": {
+  "titre": "Chirurgie orthopédique – Dr Anthony Albers",
+  "description": "Clinique Ortho Westmount · Février 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Anthony Albers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "0027f706df2864f4": {
+  "titre": "Orthopedic surgery (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "dc586c8753e8ea34": {
+  "titre": "Os peroneum excision (EN) – Dr Danny Arora",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Danny Arora"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "5c59cc92f2974785": {
+  "titre": "Arthroscopie – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · Décembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "de1c0ecee839f05f": {
+  "titre": "Exérèse d’une lésion cutanée et sous-cutanée (kyste, lipome, naevus, sinus pilonidal localisé) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Octobre 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "09bec46f40b72220": {
+  "titre": "Excision of bony prominence of the toes (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "afbfa2c70744c404": {
+  "titre": "Orthopedic surgery (EN) – Dr David Zukor",
+  "description": "Clinique Ortho Westmount · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr David Zukor"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c3fdfca8092121bd": {
+  "titre": "Ligature des trompes – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Janvier 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "79c94f045d9b71db": {
+  "titre": "Hernia repair (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · September 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "055a7faed1bcd8e6": {
+  "titre": "Prothèse totale de l’épaule – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Août 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8df8a27e7c7e94aa": {
+  "titre": "Cholecystectomy (EN) – Dre Lamees Almutlaq et Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Lamees Almutlaq"
+   ],
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d6b20f21874eb1dc": {
+  "titre": "Pilonidal cyst radical excision (Centre de convalescence) (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · February 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f4621f79e7fe6c7b": {
+  "titre": "Protocole – Prise en charge des patients H. pylori positif",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "54f2addfeaf868e2": {
+  "titre": "Chirurgie majeure – Dr Andrew Mina Zakhari",
+  "description": "Gynécologie Westmount · Mars 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie",
+    "Dr Andrew Mina Zakhari"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "cd19275176410bb5": {
+  "titre": "Arthroscopie du genou / reconstruction de la ligament croisé antérieur (LCA) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f211c82576c7bae8": {
+  "titre": "Réduction ouverte et fixation interne (ROFI) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "25de25f63f2addef": {
+  "titre": "Rotator cuff repair: physiotherapy (EN) – Dr Jihad Abouali",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "22702d160fd5a8a4": {
+  "titre": "Orthopedic surgery (EN) – Dr Reuben James Moore",
+  "description": "Ortho MD Surgery · April 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Reuben James Moore"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "b93214dfaf3444cc": {
+  "titre": "Bariatric surgery (EN) – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "23d817bd9f0b1234": {
+  "titre": "Removal of hardware (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · March 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "7a835b17fbc7b7fa": {
+  "titre": "Chirurgie orthopédique – Dr Reuben James Moore",
+  "description": "Ortho MD Surgery · Avril 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Reuben James Moore"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "a58d31bb5f4aad0a": {
+  "titre": "ACL reconstruction: physiotherapy (EN) – Dr Jihad Abouali",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "68736144d879de54": {
+  "titre": "Guide générale orthopédique – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · Décembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f1f4b50396062f94": {
+  "titre": "Orthopedic surgery (EN) – Dr John Antoniou",
+  "description": "Clinique Ortho Westmount · January 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr John Antoniou"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "13270d96c4004940": {
+  "titre": "Guide de bienvenue – Gynécologie Westmount",
+  "description": "Gynécologie Westmount · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "90d0a4d43c255b8e": {
+  "titre": "Amputation des orteils – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "28696769932259da": {
+  "titre": "Knee arthroscopy (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e8713693f467ae4a": {
+  "titre": "Anterior cruciate ligament (ACL) reconstruction (EN) – Dr John Antoniou",
+  "description": "Clinique Ortho Westmount · January 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr John Antoniou"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "8d52d32576662ed5": {
+  "titre": "Guide opératoire – Neurochirurgie",
+  "description": "Centre de chirurgie Westmount Square · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "213e822d1840c853": {
+  "titre": "Carpal tunnel release (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "80a8de7a6d0be00f": {
+  "titre": "Cure de hernie – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Septembre 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "26da68d6e039c5d7": {
+  "titre": "Brostrom repair (EN) – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "1a05f5a9bbc7aa0d": {
+  "titre": "Fiche de particularités du chirurgien",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "employes",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "19636b7e2ff91347": {
+  "titre": "Hemorrhoidectomy (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · September 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "a8b004dade7253c9": {
+  "titre": "Hip bursectomy (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "819c3aac721692bd": {
+  "titre": "The Magnet (EN) – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · January 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ff61f9db6295dda9": {
+  "titre": "Arthroscopie du genou – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "006f2a8c43b26898": {
+  "titre": "Trigger finger release (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · September 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "0413064c162dc27d": {
+  "titre": "Recovery after laparoscopy for endometriosis (EN)",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "a8e52beeca012b4c": {
+  "titre": "Quadriceps tendon repair (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · April 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "941c0e1b7455b5be": {
+  "titre": "Welcome guide – Bariatric surgery (EN)",
+  "description": "Clinique Michel Gagner · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ebaa56c9a48a490b": {
+  "titre": "Chronic pain management procedures (EN) – Dr Juan Francisco Asenjo",
+  "description": "Westmount Square Surgical Centre · September 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gestion de la douleur chronique",
+    "Dr Juan Francisco Asenjo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "bd6d2cca3aa9b2cc": {
+  "titre": "Orthopedic general guide (EN) – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · December 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e84d5c3c80af0735": {
+  "titre": "Orthopedic surgery (EN) – Dr Adam Hart",
+  "description": "Clinique Ortho Westmount · June 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adam Hart"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "9a0f86d25194ac37": {
+  "titre": "Chirurgie orthopédique – Dr Christopher Pedneault",
+  "description": "Clinique Ortho Westmount · Août 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Christopher Pedneault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ff507924eac253a1": {
+  "titre": "Excision radicale du kyste pilonidal (Centre de convalescence) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Février 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ec25b7cd3c26c5b9": {
+  "titre": "Orthopedic surgery (EN) – Dr Adriana Martinez",
+  "description": "Clinique Ortho Westmount · January 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adriana Martinez"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "2e257d41efe1cc11": {
+  "titre": "Cholecystectomy (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · October 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "bff468dab1574db8": {
+  "titre": "Major surgery (EN) – Dr Andrew Mina Zakhari",
+  "description": "Gynecology Westmount · March 2026 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie",
+    "Dr Andrew Mina Zakhari"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "13420d180d5f2e4c": {
+  "titre": "Chirurgie orthopédique – Dr Adam Hart",
+  "description": "Clinique Ortho Westmount · Juin 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Adam Hart"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "2d5a45342e5db145": {
+  "titre": "Consentement à la communication du dossier médical – WSSC / CMC / Steinberg",
+  "description": "Français",
+  "categorie": "consentement",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "LES_DEUX",
+  "chemins": [
+   [
+    "Accès aux dossiers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "84b07f68cf8002f5": {
+  "titre": "Total shoulder replacement (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · August 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f30a328d76f4ebd3": {
+  "titre": "L'endométriose pelvienne profonde",
+  "description": "Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "ef2f3788bebd2ad2": {
+  "titre": "Excision de l’excès osseux des orteils – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "74bec9805c7a4aed": {
+  "titre": "Shoulder surgery / clavicle resection (EN) – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · November 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "95bfec7c3b79a0ce": {
+  "titre": "Procédures de gestion de la douleur chronique – Dr Juan Francisco Asenjo",
+  "description": "Centre de chirurgie Westmount Square · Septembre 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gestion de la douleur chronique",
+    "Dr Juan Francisco Asenjo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "e0088d3c78343167": {
+  "titre": "Sphinctérotomie latérale interne / sphinctéroplastie – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · Avril 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d9e25f1fa8063cf4": {
+  "titre": "Guide de bienvenue – Chirurgie bariatrique",
+  "description": "Clinique Michel Gagner · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie bariatrique"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c2e15fc9f98d542c": {
+  "titre": "Décompression lombaire – Dr Éric Truffer",
+  "description": "Centre de chirurgie Westmount Square · Septembre 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie",
+    "Dr Éric Truffer"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d39cc2058a28fca2": {
+  "titre": "Acromioclavicular reconstruction (EN) – Dr Jennifer Mutch",
+  "description": "Clinique Ortho Westmount · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jennifer Mutch"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "afbbdf7ce593d114": {
+  "titre": "Chirurgie de l'épaule / résection de la clavicule – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Novembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "10b5cd6488099374": {
+  "titre": "Radius open reduction and internal fixation (ORIF) (EN) – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · December 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "b66f6a7105678308": {
+  "titre": "Shoulder surgery by arthroscopy (EN) – Dr Moreno Morelli",
+  "description": "Clinique Ortho Westmount · February 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Moreno Morelli"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "310f6e1ebf366747": {
+  "titre": "Fistulotomy (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · October 2024 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f7dbccd4e6079189": {
+  "titre": "Shoulder arthroscopy pathway (EN) – Dr Bashar Alolabi",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Bashar Alolabi"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "03e07e3bf524935f": {
+  "titre": "Condylectomie du métatarse – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · Juillet 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "d300a6c448534f73": {
+  "titre": "Laparoscopic colectomy (EN) – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "f11c92c0e40438cc": {
+  "titre": "Bunion surgery (hallux valgus correction) / hammer toe correction / cheilectomy pathway (EN) – Dr Danny Arora",
+  "description": "Westmount Square Surgical Center · September 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Danny Arora"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "703112e13d7898f2": {
+  "titre": "Welcome guide – Gynecology Westmount (EN)",
+  "description": "Gynecology Westmount · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Gynécologie"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "65eaefef33ea8df2": {
+  "titre": "Pectoralis major tendon repair (EN) – Dr Thierry Pauyo",
+  "description": "Clinique Ortho Westmount · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Thierry Pauyo"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "0dc02d693069c546": {
+  "titre": "Bankart labral repair: physiotherapy (EN) – Dr Jihad Abouali",
+  "description": "English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Jihad Abouali"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "408828ea78c3c10f": {
+  "titre": "Décompression du canal carpien – Dr Éric Truffer",
+  "description": "Centre de chirurgie Westmount Square · Juin 2026 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Neurochirurgie",
+    "Dr Éric Truffer"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "295e7604bc22fcfb": {
+  "titre": "Chirurgie orthopédique – Dr Hai Nguyen",
+  "description": "Clinique Ortho Westmount · Août 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Hai Nguyen"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "913587566a99b6d5": {
+  "titre": "Colectomie par laparoscopie – Dr Michel Gagner",
+  "description": "Clinique Michel Gagner · Septembre 2025 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dr Michel Gagner"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "4e836d3913a6a83f": {
+  "titre": "Metatarsal condylectomy (EN) – Dr Mina Morcos",
+  "description": "Clinique Ortho Westmount · July 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Mina Morcos"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "c12001da99e5c2f1": {
+  "titre": "Consentement à la communication du dossier médical – WSSC / CMC / Steinberg (EN)",
+  "description": "English",
+  "categorie": "consentement",
+  "public": "employes",
+  "reserve": true,
+  "clinique": "LES_DEUX",
+  "chemins": [
+   [
+    "Accès aux dossiers"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "caf234ebd03616be": {
+  "titre": "Fasciotomie – Dr Maxime Gaudreault",
+  "description": "Clinique Ortho Westmount · Août 2024 · Français",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Orthopédie",
+    "Dr Maxime Gaudreault"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "9661022f5e1b2729": {
+  "titre": "Pilonidal cyst radical excision (WSSC) (EN) – Dre Caroline Doyon",
+  "description": "Clinique Michel Gagner · February 2025 · English",
+  "categorie": "guide",
+  "public": "patients",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [
+   [
+    "Chirurgie",
+    "Chirurgie générale",
+    "Dre Caroline Doyon"
+   ]
+  ],
+  "type": "application/pdf"
+ },
+ "23e2e405cd272264": {
+  "titre": "Avis de vidéosurveillance",
+  "description": "",
+  "categorie": "communication",
+  "public": "employes",
+  "reserve": false,
+  "clinique": "WSSC",
+  "chemins": [],
+  "type": "image/png"
+ }
+}
