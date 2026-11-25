@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient, ipEtAgent } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit'
-import { lireCommunication, peutGererCommunication } from '@/lib/communications'
+import { lireCommunication, peutGererCommunication, CATEGORIES, categorieDe } from '@/lib/communications'
 import { prevenirEmployes } from '@/lib/communications-courriel'
 
 export async function POST(req: Request) {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const sb = serviceClient()
   const { data, error } = await sb.from('communications').insert({ ...lu.valeurs, publie, publie_le: publie ? new Date().toISOString() : null, cree_par: acteur!.id }).select('*').single()
   if (error) return NextResponse.json({ error: /communications/.test(error.message) ? 'Exécutez d’abord supabase/migrations/communications.sql dans Supabase.' : error.message }, { status: 500 })
-  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `Affiche / communication « ${data.titre} » ${publie ? 'publiée' : 'créée (brouillon)'}`, clinique: data.clinique === 'LES_DEUX' ? null : data.clinique, ...ipEtAgent(req) })
+  await logAudit({ acteur_id: acteur!.id, type_action: 'PARAMETRE_MODIFIE', description: `${CATEGORIES[categorieDe(data.categorie)].un} « ${data.titre} » ${publie ? 'publiée' : 'créée (brouillon)'}`, clinique: data.clinique === 'LES_DEUX' ? null : data.clinique, ...ipEtAgent(req) })
   const courriels = publie && c.prevenir === true ? await prevenirEmployes(sb, data, req) : null
   return NextResponse.json({ communication: data, courriels })
 }

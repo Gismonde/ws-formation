@@ -1,4 +1,4 @@
-// GET [?apercu=1] : ouvre le fichier d'une affiche / communication (adresse temporaire signée).
+// GET [?apercu=1 | ?telecharger=1] : ouvre le fichier d'une affiche / communication (adresse temporaire signée).
 import { NextResponse } from 'next/server'
 import { getActeur, serviceClient } from '@/lib/permissions'
 import { BUCKET_MEDIAS, cheminMedia } from '@/lib/medias'
@@ -16,8 +16,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!c) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
   const espace = await getEspace(acteur)
   if (!visiblePour(c, espace.cliniquesContenu as string[]) && !peutGererCommunication(acteur, c.clinique)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-  const ref = new URL(req.url).searchParams.get('apercu') === '1' && c.apercu ? c.apercu : c.fichier
-  const { data: s, error } = await sb.storage.from(BUCKET_MEDIAS).createSignedUrl(cheminMedia(ref), 60 * 30)
+  const q = new URL(req.url).searchParams
+  const ref = q.get('apercu') === '1' && c.apercu ? c.apercu : c.fichier
+  const ext = String(c.fichier).split('.').pop()
+  const nom = `${String(c.titre).replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 120) || 'document'}.${ext}`
+  const { data: s, error } = await sb.storage.from(BUCKET_MEDIAS).createSignedUrl(cheminMedia(ref), 60 * 30, q.get('telecharger') === '1' ? { download: nom } : undefined)
   if (error || !s?.signedUrl) return NextResponse.json({ error: 'Fichier indisponible' }, { status: 500 })
   return NextResponse.redirect(s.signedUrl)
 }

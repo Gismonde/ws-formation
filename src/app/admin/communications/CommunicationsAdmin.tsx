@@ -1,11 +1,11 @@
 'use client'
-// Liste et formulaire des affiches / communications (administration).
+// Liste et formulaire des affiches, guides et consentements (administration).
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n/client'
 import { useConfirmer } from '@/components/Confirmation'
 import { envoyerMedia } from '@/lib/medias-client'
-import type { Communication } from '@/lib/communications'
+import { CATEGORIES, categorieDe, type Categorie, type Communication } from '@/lib/communications'
 
 const ROUTE = '/api/admin/communications/medias'
 const champ = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -25,14 +25,14 @@ async function vignettePdf(fichier: File): Promise<File> {
   return new File([blob], 'apercu.webp', { type: 'image/webp' })
 }
 
-type Edition = { id: string | null; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
+type Edition = { id: string | null; categorie: Categorie; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
 
 export default function CommunicationsAdmin({ communications, cliniques, cliniqueDefaut }: { communications: Communication[]; cliniques: string[]; cliniqueDefaut: string }) {
   const { t, loc } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
   const entree = useRef<HTMLInputElement>(null)
-  const vide: Edition = { id: null, titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
+  const vide: Edition = { id: null, categorie: 'communication', titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
   const [ed, setEd] = useState<Edition | null>(null)
   const [prevenir, setPrevenir] = useState(false)
   const [depot, setDepot] = useState<string | null>(null)
@@ -56,7 +56,7 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
     setEnvoi(true); setMsg(null)
     const r = await fetch(ed.id ? `/api/admin/communications/${ed.id}` : '/api/admin/communications', {
       method: ed.id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
+      body: JSON.stringify({ categorie: ed.categorie, titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
     })
     const d = await r.json().catch(() => ({}))
     setEnvoi(false)
@@ -78,7 +78,7 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
     <div className="space-y-5">
       {msg && <div className={'rounded-lg px-4 py-3 text-sm ' + (msg.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700')}>{msg.texte}</div>}
       {!ed ? (
-        <button type="button" onClick={() => { setEd(vide); setMsg(null) }} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ {t('Nouvelle affiche / communication')}</button>
+        <button type="button" onClick={() => { setEd(vide); setMsg(null) }} className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ {t('Nouveau document')}</button>
       ) : (
         <section className="bg-white border border-gray-200 rounded-xl p-5 grid gap-4">
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
@@ -92,6 +92,11 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
               <input ref={entree} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) deposer(f); e.target.value = '' }} />
             </div>
             <div className="grid gap-3 content-start">
+              <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Page')}</span>
+                <select className={champ} value={ed.categorie} onChange={e => setEd({ ...ed, categorie: e.target.value as Categorie })}>
+                  {(Object.keys(CATEGORIES) as Categorie[]).map(k => <option key={k} value={k}>{CATEGORIES[k].emoji} {t(CATEGORIES[k].libelle)}</option>)}
+                </select>
+              </label>
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Titre')}</span><input className={champ} value={ed.titre} maxLength={200} onChange={e => setEd({ ...ed, titre: e.target.value })} /></label>
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Description (facultatif)')}</span><textarea className={champ} rows={3} maxLength={2000} value={ed.description} onChange={e => setEd({ ...ed, description: e.target.value })} /></label>
               <label><span className="block text-xs font-semibold text-gray-700 mb-1">{t('Clinique')}</span>
@@ -117,7 +122,7 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
       )}
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {communications.length === 0 && <p className="p-8 text-center text-sm text-gray-400">{t('Aucune affiche ou communication pour le moment.')}</p>}
+        {communications.length === 0 && <p className="p-8 text-center text-sm text-gray-400">{t('Aucun document pour le moment.')}</p>}
         {communications.map(c => (
           <div key={c.id} className="flex items-center gap-4 px-5 py-3 border-b border-gray-100 last:border-0">
             <a href={`/api/communications/${c.id}/ouvrir`} target="_blank" rel="noopener" className="w-12 h-16 rounded bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">
@@ -128,10 +133,10 @@ export default function CommunicationsAdmin({ communications, cliniques, cliniqu
             </a>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-900 truncate">{c.titre}</p>
-              <p className="text-xs text-gray-500">{t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
+              <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
             </div>
             <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (c.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{c.publie ? t('Publiée') : t('Brouillon')}</span>
-            <button type="button" onClick={() => { setEd({ id: c.id, titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
+            <button type="button" onClick={() => { setEd({ id: c.id, categorie: categorieDe(c.categorie), titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
             <button type="button" onClick={() => supprimer(c)} className="text-sm text-red-600 hover:underline">{t('Supprimer')}</button>
           </div>
         ))}
