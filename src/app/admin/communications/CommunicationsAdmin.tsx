@@ -26,14 +26,14 @@ async function vignettePdf(fichier: File): Promise<File> {
   return new File([blob], 'apercu.webp', { type: 'image/webp' })
 }
 
-type Edition = { id: string | null; categorie: Categorie; theme_id: string; public: Public; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
+type Edition = { id: string | null; categorie: Categorie; theme_id: string; public: Public; departements: string[]; titre: string; description: string; clinique: string; fichier: string; type_fichier: string; apercu: string; nomFichier: string; publie: boolean }
 
-export default function CommunicationsAdmin({ communications, themes, cliniques, cliniqueDefaut }: { communications: Communication[]; themes: Theme[]; cliniques: string[]; cliniqueDefaut: string }) {
+export default function CommunicationsAdmin({ communications, themes, departements, cliniques, cliniqueDefaut }: { communications: Communication[]; themes: Theme[]; departements: { id: string; nom: string }[]; cliniques: string[]; cliniqueDefaut: string }) {
   const { t, loc } = useT()
   const router = useRouter()
   const confirmer = useConfirmer()
   const entree = useRef<HTMLInputElement>(null)
-  const vide: Edition = { id: null, categorie: 'communication', theme_id: '', public: 'employes', titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
+  const vide: Edition = { id: null, categorie: 'communication', theme_id: '', public: 'employes', departements: [], titre: '', description: '', clinique: cliniqueDefaut, fichier: '', type_fichier: '', apercu: '', nomFichier: '', publie: false }
   const [ed, setEd] = useState<Edition | null>(null)
   const [prevenir, setPrevenir] = useState(false)
   const [depot, setDepot] = useState<string | null>(null)
@@ -57,7 +57,7 @@ export default function CommunicationsAdmin({ communications, themes, cliniques,
     setEnvoi(true); setMsg(null)
     const r = await fetch(ed.id ? `/api/admin/communications/${ed.id}` : '/api/admin/communications', {
       method: ed.id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categorie: ed.categorie, theme_id: ed.theme_id || null, public: ed.public, titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
+      body: JSON.stringify({ categorie: ed.categorie, theme_id: ed.theme_id || null, public: ed.public, departements: ed.departements, titre: ed.titre, description: ed.description, clinique: ed.clinique, fichier: ed.fichier, type_fichier: ed.type_fichier, apercu: ed.apercu, publie, prevenir: publie && !ed.publie && prevenir }),
     })
     const d = await r.json().catch(() => ({}))
     setEnvoi(false)
@@ -121,6 +121,24 @@ export default function CommunicationsAdmin({ communications, themes, cliniques,
                   {cliniques.map(c => <option key={c} value={c}>{t(LIBELLE_CLINIQUE[c] ?? c)}</option>)}
                 </select>
               </label>
+              <div>
+                <span className="block text-xs font-semibold text-gray-700 mb-1">{t('Accès')}</span>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={ed.departements.length > 0} onChange={e => setEd({ ...ed, departements: e.target.checked ? departements.slice(0, 1).map(d => d.id) : [] })} />
+                  {t('Réserver à certains départements')}
+                </label>
+                {ed.departements.length > 0 && (
+                  <div className="mt-2 rounded-lg border border-gray-200 p-2 max-h-44 overflow-y-auto grid gap-1">
+                    {departements.map(d => (
+                      <label key={d.id} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" checked={ed.departements.includes(d.id)} onChange={e => setEd({ ...ed, departements: e.target.checked ? [...ed.departements, d.id] : ed.departements.filter(x => x !== d.id) })} />
+                        {d.nom}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <span className="block text-xs text-gray-500 mt-1">{ed.departements.length > 0 ? t('Visible seulement par ces départements, les administrateurs et l’administrateur global.') : t('Visible par tous les employés de la clinique.')}</span>
+              </div>
               {!ed.publie && (
                 <label className="flex items-start gap-2 text-sm text-gray-700">
                   <input type="checkbox" className="mt-1" checked={prevenir} onChange={e => setPrevenir(e.target.checked)} />
@@ -150,10 +168,10 @@ export default function CommunicationsAdmin({ communications, themes, cliniques,
             </a>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-900 truncate">{c.titre}</p>
-              <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)}{c.categorie === 'guide' ? ` (${t(PUBLICS[publicDe(c.public)])})` : ''}{c.theme_id && themes.find(th => th.id === c.theme_id) ? ` · ${themes.find(th => th.id === c.theme_id)!.nom}` : ''} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
+              <p className="text-xs text-gray-500">{CATEGORIES[categorieDe(c.categorie)].emoji} {t(CATEGORIES[categorieDe(c.categorie)].libelle)}{c.categorie === 'guide' ? ` (${t(PUBLICS[publicDe(c.public)])})` : ''}{c.theme_id && themes.find(th => th.id === c.theme_id) ? ` · ${themes.find(th => th.id === c.theme_id)!.nom}` : ''}{(c.departements ?? []).length > 0 ? ` · 🔒 ${(c.departements ?? []).map(id => departements.find(d => d.id === id)?.nom ?? '?').join(', ')}` : ''} · {t(LIBELLE_CLINIQUE[c.clinique] ?? c.clinique)} · {new Date(c.publie_le ?? c.cree_le).toLocaleDateString(loc, { dateStyle: 'medium' })}</p>
             </div>
             <span className={'text-xs font-semibold px-2.5 py-1 rounded-full ' + (c.publie ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>{c.publie ? t('Publiée') : t('Brouillon')}</span>
-            <button type="button" onClick={() => { setEd({ id: c.id, categorie: categorieDe(c.categorie), theme_id: c.theme_id ?? '', public: publicDe(c.public), titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
+            <button type="button" onClick={() => { setEd({ id: c.id, categorie: categorieDe(c.categorie), theme_id: c.theme_id ?? '', public: publicDe(c.public), departements: c.departements ?? [], titre: c.titre, description: c.description, clinique: c.clinique, fichier: c.fichier, type_fichier: c.type_fichier, apercu: c.apercu, nomFichier: '', publie: c.publie }); setPrevenir(false); setMsg(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-sm text-indigo-700 hover:underline">{t('Modifier')}</button>
             <button type="button" onClick={() => supprimer(c)} className="text-sm text-red-600 hover:underline">{t('Supprimer')}</button>
           </div>
         ))}
