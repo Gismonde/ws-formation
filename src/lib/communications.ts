@@ -1,14 +1,22 @@
-// « Affiches & communications » : affiches et communications déposées par les administrateurs (PDF ou image),
+// « Affiches & communications », « Nos guides », « Nos consentements » : documents déposés par les administrateurs (PDF ou image),
 // par clinique, consultées par les employés (section Politiques & procédures). Pas de confirmation de lecture.
 // À la publication, l'administrateur peut prévenir les employés de la clinique par courriel.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { adminConcerne, cliniquesDe } from '@/lib/cliniques'
 
 export type Communication = {
-  id: string; clinique: string; titre: string; description: string; fichier: string; type_fichier: string
+  id: string; clinique: string; categorie: Categorie; titre: string; description: string; fichier: string; type_fichier: string
   apercu: string; publie: boolean; publie_le: string | null; cree_par: string | null; cree_le: string; modifie_le: string
 }
 export const CLINIQUES_COMMUNICATION = ['WSSC', 'CMC', 'LES_DEUX'] as const
+/** Deux pages côté employé : affiches & communications, et nos guides. */
+export type Categorie = 'communication' | 'guide' | 'consentement'
+export const CATEGORIES: Record<Categorie, { libelle: string; page: string; emoji: string; un: string; intro: string; vide: string; nouveau: string; telechargeable: boolean }> = {
+  communication: { libelle: 'Affiches & communications', page: '/dashboard/communications', emoji: '📢', un: 'Affiche / communication', intro: 'Les affiches et communications de la clinique. Cliquez pour les ouvrir.', vide: 'Aucune affiche ou communication pour le moment.', nouveau: 'Nouvelle affiche / communication', telechargeable: false },
+  guide: { libelle: 'Nos guides', page: '/dashboard/guides', emoji: '📘', un: 'Guide', intro: 'Les guides de la clinique. Cliquez pour les ouvrir.', vide: 'Aucun guide pour le moment.', nouveau: 'Nouveau guide', telechargeable: false },
+  consentement: { libelle: 'Nos consentements', page: '/dashboard/consentements', emoji: '✍️', un: 'Consentement', intro: 'Les formulaires de consentement de la clinique, à télécharger au besoin.', vide: 'Aucun consentement pour le moment.', nouveau: 'Nouveau consentement', telechargeable: true },
+}
+export const categorieDe = (c: unknown): Categorie => (typeof c === 'string' && c in CATEGORIES ? c as Categorie : 'communication')
 export const TYPES_COMMUNICATION: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
 /** Gérer une communication : administrateur de la clinique concernée, ou administrateur global. */
@@ -20,7 +28,7 @@ export const estAdminCommunications = (a: { role: string } | null) => !!a && (a.
 const texte = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
 
 /** Lit le formulaire d'une communication. (Fonction pure, testée.) */
-export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
+export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<Communication, 'categorie' | 'clinique' | 'titre' | 'description' | 'fichier' | 'type_fichier' | 'apercu'> } | { erreur: string } {
   const titre = texte(c.titre, 200)
   if (!titre) return { erreur: 'Donnez un titre.' }
   const clinique = texte(c.clinique, 10)
@@ -31,7 +39,7 @@ export function lireCommunication(c: Record<string, unknown>): { valeurs: Pick<C
   const type_fichier = texte(c.type_fichier, 60)
   if (!TYPES_COMMUNICATION[type_fichier]) return { erreur: 'Format non accepté (PDF, JPEG, PNG ou WebP).' }
   const apercu = texte(c.apercu, 500)
-  return { valeurs: { clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
+  return { valeurs: { categorie: categorieDe(c.categorie), clinique, titre, description: texte(c.description, 2000), fichier, type_fichier, apercu: refPermise(apercu) ? apercu : '' } }
 }
 
 /** Une communication est visible par un employé de cette clinique. */
